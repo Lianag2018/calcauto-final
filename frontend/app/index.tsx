@@ -666,9 +666,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     minWidth: 60,
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   filterChipActive: {
     backgroundColor: '#4ECDC4',
+    borderColor: '#4ECDC4',
+  },
+  filterChipPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.95 }],
   },
   filterChipText: {
     color: '#aaa',
