@@ -370,6 +370,11 @@ async def seed_data():
          "option1_rates": standard_rates.dict(),
          "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0.99, "rate_96": 3.49}},
         
+        {"brand": "Ram", "model": "Chassis Cab", "trim": None, "year": 2026,
+         "consumer_cash": 0,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": None},
+        
         # ============ 2025 MODELS ============
         # Chrysler 2025
         {"brand": "Chrysler", "model": "Grand Caravan", "trim": "SXT", "year": 2025,
