@@ -266,10 +266,11 @@ export default function HomeScreen() {
           {/* Year Filter */}
           <View style={styles.filterSection}>
             <Text style={styles.filterLabel}>{t.filterByYear}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.filterRow}>
               <TouchableOpacity
                 style={[styles.filterChip, !selectedYear && styles.filterChipActive]}
                 onPress={() => setSelectedYear(null)}
+                activeOpacity={0.7}
               >
                 <Text style={[styles.filterChipText, !selectedYear && styles.filterChipTextActive]}>
                   {t.all}
@@ -279,23 +280,25 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   key={year}
                   style={[styles.filterChip, selectedYear === year && styles.filterChipActive]}
-                  onPress={() => setSelectedYear(selectedYear === year ? null : year)}
+                  onPress={() => setSelectedYear(year)}
+                  activeOpacity={0.7}
                 >
                   <Text style={[styles.filterChipText, selectedYear === year && styles.filterChipTextActive]}>
                     {year}
                   </Text>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </View>
           </View>
 
           {/* Brand Filter */}
           <View style={styles.filterSection}>
             <Text style={styles.filterLabel}>{t.filterByBrand}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.filterRow}>
               <TouchableOpacity
                 style={[styles.filterChip, !selectedBrand && styles.filterChipActive]}
                 onPress={() => setSelectedBrand(null)}
+                activeOpacity={0.7}
               >
                 <Text style={[styles.filterChipText, !selectedBrand && styles.filterChipTextActive]}>
                   {t.all}
@@ -305,14 +308,15 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   key={brand}
                   style={[styles.filterChip, selectedBrand === brand && styles.filterChipActive]}
-                  onPress={() => setSelectedBrand(selectedBrand === brand ? null : brand)}
+                  onPress={() => setSelectedBrand(brand)}
+                  activeOpacity={0.7}
                 >
                   <Text style={[styles.filterChipText, selectedBrand === brand && styles.filterChipTextActive]}>
                     {brand}
                   </Text>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </View>
           </View>
 
           {/* Vehicle Selection */}
