@@ -26,80 +26,104 @@ api_router = APIRouter(prefix="/api")
 
 # ============ Models ============
 
-class FinancingTerm(BaseModel):
-    term_months: int
-    interest_rate: float
-    rebate_amount: float = 0
+class FinancingRates(BaseModel):
+    rate_36: float
+    rate_48: float
+    rate_60: float
+    rate_72: float
+    rate_84: float
+    rate_96: float
 
 class VehicleProgram(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     brand: str
     model: str
+    trim: Optional[str] = None
     year: int
-    financing_terms: List[FinancingTerm]
+    # Option 1: Consumer Cash + 4.99% rate
     consumer_cash: float = 0
-    special_notes: str = ""
+    option1_rates: FinancingRates
+    # Option 2: No cash + Subvented rates
+    option2_rates: Optional[FinancingRates] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class VehicleProgramCreate(BaseModel):
     brand: str
     model: str
+    trim: Optional[str] = None
     year: int
-    financing_terms: List[FinancingTerm]
     consumer_cash: float = 0
-    special_notes: str = ""
+    option1_rates: FinancingRates
+    option2_rates: Optional[FinancingRates] = None
 
 class VehicleProgramUpdate(BaseModel):
     brand: Optional[str] = None
     model: Optional[str] = None
+    trim: Optional[str] = None
     year: Optional[int] = None
-    financing_terms: Optional[List[FinancingTerm]] = None
     consumer_cash: Optional[float] = None
-    special_notes: Optional[str] = None
+    option1_rates: Optional[FinancingRates] = None
+    option2_rates: Optional[FinancingRates] = None
 
 class CalculationRequest(BaseModel):
     vehicle_price: float
     program_id: Optional[str] = None
-    custom_rates: Optional[List[FinancingTerm]] = None
-    consumer_cash: float = 0
 
-class PaymentOption(BaseModel):
+class PaymentComparison(BaseModel):
     term_months: int
-    option_a_rate: float  # Taux réduit
-    option_a_monthly: float
-    option_a_total: float
-    option_b_rate: float  # 4.99% avec 10% comptant
-    option_b_monthly: float
-    option_b_total: float
-    option_b_down_payment: float
-    best_option: str  # "A" or "B"
-    savings: float
+    # Option 1: With Consumer Cash + standard rate
+    option1_rate: float
+    option1_monthly: float
+    option1_total: float
+    option1_rebate: float
+    # Option 2: No cash + subvented rate
+    option2_rate: Optional[float] = None
+    option2_monthly: Optional[float] = None
+    option2_total: Optional[float] = None
+    # Best option
+    best_option: Optional[str] = None  # "1" or "2" or None
+    savings: Optional[float] = None
 
 class CalculationResponse(BaseModel):
     vehicle_price: float
     consumer_cash: float
-    payment_options: List[PaymentOption]
+    brand: str
+    model: str
+    trim: Optional[str]
+    year: int
+    comparisons: List[PaymentComparison]
 
 # ============ Utility Functions ============
 
 def calculate_monthly_payment(principal: float, annual_rate: float, months: int) -> float:
     """Calculate monthly payment using amortization formula"""
+    if principal <= 0 or months <= 0:
+        return 0
     if annual_rate == 0:
-        return principal / months if months > 0 else 0
+        return round(principal / months, 2)
     
     monthly_rate = annual_rate / 100 / 12
-    if monthly_rate == 0:
-        return principal / months if months > 0 else 0
-    
     payment = principal * (monthly_rate * (1 + monthly_rate) ** months) / ((1 + monthly_rate) ** months - 1)
     return round(payment, 2)
+
+def get_rate_for_term(rates: FinancingRates, term: int) -> float:
+    """Get rate for specific term"""
+    rate_map = {
+        36: rates.rate_36,
+        48: rates.rate_48,
+        60: rates.rate_60,
+        72: rates.rate_72,
+        84: rates.rate_84,
+        96: rates.rate_96
+    }
+    return rate_map.get(term, 4.99)
 
 # ============ Routes ============
 
 @api_router.get("/")
 async def root():
-    return {"message": "Vehicle Financing Calculator API"}
+    return {"message": "Vehicle Financing Calculator API - v2"}
 
 # Programs CRUD
 @api_router.post("/programs", response_model=VehicleProgram)
@@ -145,290 +169,382 @@ async def delete_program(program_id: str):
 @api_router.post("/calculate", response_model=CalculationResponse)
 async def calculate_financing(request: CalculationRequest):
     vehicle_price = request.vehicle_price
-    consumer_cash = request.consumer_cash
     
-    # Get financing terms either from program or custom
-    financing_terms = []
+    if not request.program_id:
+        raise HTTPException(status_code=400, detail="Program ID is required")
     
-    if request.program_id:
-        program = await db.programs.find_one({"id": request.program_id})
-        if program:
-            financing_terms = [FinancingTerm(**t) for t in program.get("financing_terms", [])]
-            consumer_cash = program.get("consumer_cash", 0)
+    program = await db.programs.find_one({"id": request.program_id})
+    if not program:
+        raise HTTPException(status_code=404, detail="Program not found")
     
-    if request.custom_rates:
-        financing_terms = request.custom_rates
+    program_obj = VehicleProgram(**program)
+    consumer_cash = program_obj.consumer_cash
     
-    # Default terms if none provided
-    if not financing_terms:
-        default_terms = [36, 48, 60, 72, 84, 96]
-        financing_terms = [FinancingTerm(term_months=t, interest_rate=4.99, rebate_amount=0) for t in default_terms]
+    comparisons = []
+    terms = [36, 48, 60, 72, 84, 96]
     
-    payment_options = []
-    
-    for term in financing_terms:
-        # Option A: Taux réduit (promotional rate)
-        principal_a = vehicle_price - consumer_cash
-        monthly_a = calculate_monthly_payment(principal_a, term.interest_rate, term.term_months)
-        total_a = monthly_a * term.term_months
+    for term in terms:
+        # Option 1: With Consumer Cash + standard rate (usually 4.99%)
+        option1_rate = get_rate_for_term(program_obj.option1_rates, term)
+        principal1 = vehicle_price - consumer_cash
+        monthly1 = calculate_monthly_payment(principal1, option1_rate, term)
+        total1 = round(monthly1 * term, 2)
         
-        # Option B: 10% comptant + 4.99% + rabais
-        down_payment = vehicle_price * 0.10
-        principal_b = vehicle_price - down_payment - term.rebate_amount
-        rate_b = 4.99
-        monthly_b = calculate_monthly_payment(principal_b, rate_b, term.term_months)
-        total_b = monthly_b * term.term_months + down_payment
+        comparison = PaymentComparison(
+            term_months=term,
+            option1_rate=option1_rate,
+            option1_monthly=monthly1,
+            option1_total=total1,
+            option1_rebate=consumer_cash
+        )
         
-        # Determine best option
-        best = "A" if total_a <= total_b else "B"
-        savings = abs(total_a - total_b)
+        # Option 2: No cash + subvented rate (if available)
+        if program_obj.option2_rates:
+            option2_rate = get_rate_for_term(program_obj.option2_rates, term)
+            if option2_rate is not None:
+                principal2 = vehicle_price  # No rebate
+                monthly2 = calculate_monthly_payment(principal2, option2_rate, term)
+                total2 = round(monthly2 * term, 2)
+                
+                comparison.option2_rate = option2_rate
+                comparison.option2_monthly = monthly2
+                comparison.option2_total = total2
+                
+                # Determine best option (lowest total cost)
+                if total1 < total2:
+                    comparison.best_option = "1"
+                    comparison.savings = round(total2 - total1, 2)
+                elif total2 < total1:
+                    comparison.best_option = "2"
+                    comparison.savings = round(total1 - total2, 2)
+                else:
+                    comparison.best_option = "1"  # Equal, prefer cash option
+                    comparison.savings = 0
         
-        payment_options.append(PaymentOption(
-            term_months=term.term_months,
-            option_a_rate=term.interest_rate,
-            option_a_monthly=monthly_a,
-            option_a_total=total_a,
-            option_b_rate=rate_b,
-            option_b_monthly=monthly_b,
-            option_b_total=total_b,
-            option_b_down_payment=down_payment,
-            best_option=best,
-            savings=round(savings, 2)
-        ))
+        comparisons.append(comparison)
     
     return CalculationResponse(
         vehicle_price=vehicle_price,
         consumer_cash=consumer_cash,
-        payment_options=payment_options
+        brand=program_obj.brand,
+        model=program_obj.model,
+        trim=program_obj.trim,
+        year=program_obj.year,
+        comparisons=comparisons
     )
 
-# Seed initial data
+# Seed initial data from PDF pages 20-21
 @api_router.post("/seed")
 async def seed_data():
-    # Check if data already exists
-    count = await db.programs.count_documents({})
-    if count > 0:
-        return {"message": f"Database already has {count} programs"}
+    # Clear existing data
+    await db.programs.delete_many({})
     
-    # Initial programs from PDF
-    initial_programs = [
-        {
-            "brand": "Ram",
-            "model": "1500 DT",
-            "year": 2026,
-            "financing_terms": [
-                {"term_months": 36, "interest_rate": 0, "rebate_amount": 8000},
-                {"term_months": 48, "interest_rate": 0, "rebate_amount": 9000},
-                {"term_months": 60, "interest_rate": 0, "rebate_amount": 10000},
-                {"term_months": 72, "interest_rate": 1.99, "rebate_amount": 11000},
-                {"term_months": 84, "interest_rate": 2.99, "rebate_amount": 11500},
-                {"term_months": 96, "interest_rate": 4.99, "rebate_amount": 11500}
-            ],
-            "consumer_cash": 11500,
-            "special_notes": "No Finance Payments for 90 Days"
-        },
-        {
-            "brand": "Ram",
-            "model": "1500 DT",
-            "year": 2025,
-            "financing_terms": [
-                {"term_months": 36, "interest_rate": 0, "rebate_amount": 9000},
-                {"term_months": 48, "interest_rate": 0, "rebate_amount": 10000},
-                {"term_months": 60, "interest_rate": 0, "rebate_amount": 11000},
-                {"term_months": 72, "interest_rate": 0, "rebate_amount": 12250},
-                {"term_months": 84, "interest_rate": 1.99, "rebate_amount": 12250},
-                {"term_months": 96, "interest_rate": 4.99, "rebate_amount": 12250}
-            ],
-            "consumer_cash": 12250,
-            "special_notes": "No Finance Payments for 90 Days"
-        },
-        {
-            "brand": "Jeep",
-            "model": "Wrangler",
-            "year": 2026,
-            "financing_terms": [
-                {"term_months": 36, "interest_rate": 0, "rebate_amount": 4000},
-                {"term_months": 48, "interest_rate": 0, "rebate_amount": 5000},
-                {"term_months": 60, "interest_rate": 0, "rebate_amount": 6000},
-                {"term_months": 72, "interest_rate": 1.99, "rebate_amount": 6000},
-                {"term_months": 84, "interest_rate": 2.99, "rebate_amount": 6000},
-                {"term_months": 96, "interest_rate": 4.99, "rebate_amount": 6000}
-            ],
-            "consumer_cash": 6000,
-            "special_notes": "Enhanced to 0% for 60 Months"
-        },
-        {
-            "brand": "Jeep",
-            "model": "Wrangler",
-            "year": 2025,
-            "financing_terms": [
-                {"term_months": 36, "interest_rate": 0, "rebate_amount": 6000},
-                {"term_months": 48, "interest_rate": 0, "rebate_amount": 7000},
-                {"term_months": 60, "interest_rate": 0, "rebate_amount": 8000},
-                {"term_months": 72, "interest_rate": 0, "rebate_amount": 8500},
-                {"term_months": 84, "interest_rate": 1.49, "rebate_amount": 8500},
-                {"term_months": 96, "interest_rate": 4.99, "rebate_amount": 8500}
-            ],
-            "consumer_cash": 8500,
-            "special_notes": "No Finance Payments for 90 Days"
-        },
-        {
-            "brand": "Jeep",
-            "model": "Compass",
-            "year": 2026,
-            "financing_terms": [
-                {"term_months": 36, "interest_rate": 0, "rebate_amount": 2500},
-                {"term_months": 48, "interest_rate": 0, "rebate_amount": 3000},
-                {"term_months": 60, "interest_rate": 0, "rebate_amount": 4000},
-                {"term_months": 72, "interest_rate": 1.49, "rebate_amount": 4000},
-                {"term_months": 84, "interest_rate": 2.49, "rebate_amount": 4000},
-                {"term_months": 96, "interest_rate": 4.99, "rebate_amount": 4000}
-            ],
-            "consumer_cash": 4000,
-            "special_notes": "Enhanced Alternative Lease rates as low as 1.99%"
-        },
-        {
-            "brand": "Jeep",
-            "model": "Compass",
-            "year": 2025,
-            "financing_terms": [
-                {"term_months": 36, "interest_rate": 0, "rebate_amount": 5000},
-                {"term_months": 48, "interest_rate": 0, "rebate_amount": 6000},
-                {"term_months": 60, "interest_rate": 0, "rebate_amount": 7000},
-                {"term_months": 72, "interest_rate": 0, "rebate_amount": 7500},
-                {"term_months": 84, "interest_rate": 1.49, "rebate_amount": 7500},
-                {"term_months": 96, "interest_rate": 4.99, "rebate_amount": 7500}
-            ],
-            "consumer_cash": 7500,
-            "special_notes": "No Finance Payments for 90 Days"
-        },
-        {
-            "brand": "Jeep",
-            "model": "Grand Cherokee",
-            "year": 2025,
-            "financing_terms": [
-                {"term_months": 36, "interest_rate": 0, "rebate_amount": 7000},
-                {"term_months": 48, "interest_rate": 0, "rebate_amount": 8000},
-                {"term_months": 60, "interest_rate": 0, "rebate_amount": 9000},
-                {"term_months": 72, "interest_rate": 0, "rebate_amount": 9500},
-                {"term_months": 84, "interest_rate": 1.99, "rebate_amount": 9500},
-                {"term_months": 96, "interest_rate": 4.99, "rebate_amount": 9500}
-            ],
-            "consumer_cash": 9500,
-            "special_notes": "Enhanced Consumer Cash by up to $1,000"
-        },
-        {
-            "brand": "Dodge",
-            "model": "Durango",
-            "year": 2026,
-            "financing_terms": [
-                {"term_months": 36, "interest_rate": 0, "rebate_amount": 6000},
-                {"term_months": 48, "interest_rate": 0, "rebate_amount": 7000},
-                {"term_months": 60, "interest_rate": 0, "rebate_amount": 9000},
-                {"term_months": 72, "interest_rate": 1.99, "rebate_amount": 9000},
-                {"term_months": 84, "interest_rate": 2.99, "rebate_amount": 9000},
-                {"term_months": 96, "interest_rate": 4.99, "rebate_amount": 9000}
-            ],
-            "consumer_cash": 9000,
-            "special_notes": "Enhanced Consumer Cash by $1,000"
-        },
-        {
-            "brand": "Chrysler",
-            "model": "Pacifica",
-            "year": 2026,
-            "financing_terms": [
-                {"term_months": 36, "interest_rate": 0, "rebate_amount": 3000},
-                {"term_months": 48, "interest_rate": 0, "rebate_amount": 4000},
-                {"term_months": 60, "interest_rate": 0, "rebate_amount": 5000},
-                {"term_months": 72, "interest_rate": 0, "rebate_amount": 5500},
-                {"term_months": 84, "interest_rate": 1.99, "rebate_amount": 5500},
-                {"term_months": 96, "interest_rate": 4.99, "rebate_amount": 5500}
-            ],
-            "consumer_cash": 5500,
-            "special_notes": "No Finance Payments for 90 Days"
-        },
-        {
-            "brand": "Chrysler",
-            "model": "Grand Caravan",
-            "year": 2026,
-            "financing_terms": [
-                {"term_months": 36, "interest_rate": 4.99, "rebate_amount": 0},
-                {"term_months": 48, "interest_rate": 4.99, "rebate_amount": 0},
-                {"term_months": 60, "interest_rate": 5.49, "rebate_amount": 0},
-                {"term_months": 72, "interest_rate": 5.99, "rebate_amount": 0},
-                {"term_months": 84, "interest_rate": 6.49, "rebate_amount": 0},
-                {"term_months": 96, "interest_rate": 6.99, "rebate_amount": 0}
-            ],
-            "consumer_cash": 0,
-            "special_notes": "Starting at $49,995"
-        },
-        {
-            "brand": "Ram",
-            "model": "HD 2500/3500 Gas",
-            "year": 2026,
-            "financing_terms": [
-                {"term_months": 36, "interest_rate": 0, "rebate_amount": 5000},
-                {"term_months": 48, "interest_rate": 0, "rebate_amount": 6000},
-                {"term_months": 60, "interest_rate": 0, "rebate_amount": 7000},
-                {"term_months": 72, "interest_rate": 0, "rebate_amount": 7000},
-                {"term_months": 84, "interest_rate": 1.99, "rebate_amount": 7000},
-                {"term_months": 96, "interest_rate": 4.99, "rebate_amount": 7000}
-            ],
-            "consumer_cash": 7000,
-            "special_notes": "Gas Models - No Finance Payments for 90 Days"
-        },
-        {
-            "brand": "Ram",
-            "model": "HD 2500/3500 Diesel",
-            "year": 2026,
-            "financing_terms": [
-                {"term_months": 36, "interest_rate": 0.99, "rebate_amount": 3000},
-                {"term_months": 48, "interest_rate": 0.99, "rebate_amount": 4000},
-                {"term_months": 60, "interest_rate": 0.99, "rebate_amount": 5000},
-                {"term_months": 72, "interest_rate": 0.99, "rebate_amount": 5000},
-                {"term_months": 84, "interest_rate": 2.49, "rebate_amount": 5000},
-                {"term_months": 96, "interest_rate": 4.99, "rebate_amount": 5000}
-            ],
-            "consumer_cash": 5000,
-            "special_notes": "Diesel Models - Enhanced rates as low as 0.99%"
-        },
-        {
-            "brand": "Jeep",
-            "model": "Gladiator",
-            "year": 2026,
-            "financing_terms": [
-                {"term_months": 36, "interest_rate": 2.99, "rebate_amount": 2000},
-                {"term_months": 48, "interest_rate": 2.99, "rebate_amount": 3000},
-                {"term_months": 60, "interest_rate": 3.49, "rebate_amount": 4000},
-                {"term_months": 72, "interest_rate": 3.99, "rebate_amount": 4000},
-                {"term_months": 84, "interest_rate": 4.49, "rebate_amount": 4000},
-                {"term_months": 96, "interest_rate": 4.99, "rebate_amount": 4000}
-            ],
-            "consumer_cash": 4000,
-            "special_notes": "No Finance Payments for 90 Days"
-        },
-        {
-            "brand": "Jeep",
-            "model": "Cherokee",
-            "year": 2026,
-            "financing_terms": [
-                {"term_months": 36, "interest_rate": 4.99, "rebate_amount": 0},
-                {"term_months": 48, "interest_rate": 4.99, "rebate_amount": 0},
-                {"term_months": 60, "interest_rate": 4.99, "rebate_amount": 0},
-                {"term_months": 72, "interest_rate": 4.99, "rebate_amount": 0},
-                {"term_months": 84, "interest_rate": 4.99, "rebate_amount": 0},
-                {"term_months": 96, "interest_rate": 4.99, "rebate_amount": 0}
-            ],
-            "consumer_cash": 0,
-            "special_notes": "No Finance Payments for 90 Days"
-        }
+    # Standard 4.99% rates for Option 1
+    standard_rates = FinancingRates(
+        rate_36=4.99, rate_48=4.99, rate_60=4.99,
+        rate_72=4.99, rate_84=4.99, rate_96=4.99
+    )
+    
+    programs_data = [
+        # ============ 2026 MODELS ============
+        # Chrysler
+        {"brand": "Chrysler", "model": "Pacifica PHEV", "trim": None, "year": 2026,
+         "consumer_cash": 0,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49}},
+        
+        {"brand": "Chrysler", "model": "Pacifica", "trim": None, "year": 2026,
+         "consumer_cash": 0,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49}},
+        
+        {"brand": "Chrysler", "model": "Grand Caravan", "trim": "SXT", "year": 2026,
+         "consumer_cash": 0,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": None},
+        
+        # Jeep Compass 2026
+        {"brand": "Jeep", "model": "Compass", "trim": "Sport", "year": 2026,
+         "consumer_cash": 0,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49}},
+        
+        {"brand": "Jeep", "model": "Compass", "trim": "North", "year": 2026,
+         "consumer_cash": 3500,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49}},
+        
+        {"brand": "Jeep", "model": "Compass", "trim": "North w/ Altitude Package", "year": 2026,
+         "consumer_cash": 4000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49}},
+        
+        {"brand": "Jeep", "model": "Compass", "trim": "Trailhawk", "year": 2026,
+         "consumer_cash": 4000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49}},
+        
+        {"brand": "Jeep", "model": "Compass", "trim": "Limited", "year": 2026,
+         "consumer_cash": 0,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49}},
+        
+        # Jeep Wrangler 2026
+        {"brand": "Jeep", "model": "Wrangler", "trim": "2-Door Rubicon", "year": 2026,
+         "consumer_cash": 5250,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        {"brand": "Jeep", "model": "Wrangler", "trim": "4-Door (excl. 392 et 4xe)", "year": 2026,
+         "consumer_cash": 6000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        # Jeep Grand Cherokee 2026
+        {"brand": "Jeep", "model": "Grand Cherokee/L", "trim": "Laredo/Laredo X", "year": 2026,
+         "consumer_cash": 0,
+         "option1_rates": {"rate_36": 1.99, "rate_48": 2.99, "rate_60": 3.49, "rate_72": 3.99, "rate_84": 4.49, "rate_96": 4.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 2.49, "rate_96": 3.49}},
+        
+        {"brand": "Jeep", "model": "Grand Cherokee/L", "trim": "Altitude", "year": 2026,
+         "consumer_cash": 0,
+         "option1_rates": {"rate_36": 1.99, "rate_48": 2.99, "rate_60": 3.49, "rate_72": 3.99, "rate_84": 4.49, "rate_96": 4.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 2.49, "rate_96": 3.49}},
+        
+        {"brand": "Jeep", "model": "Grand Cherokee/L", "trim": "Limited/Summit", "year": 2026,
+         "consumer_cash": 0,
+         "option1_rates": {"rate_36": 1.99, "rate_48": 2.99, "rate_60": 3.49, "rate_72": 3.99, "rate_84": 4.49, "rate_96": 4.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 2.49, "rate_96": 3.49}},
+        
+        # Jeep Grand Wagoneer 2026
+        {"brand": "Jeep", "model": "Grand Wagoneer/L", "trim": None, "year": 2026,
+         "consumer_cash": 0,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 3.99}},
+        
+        # Dodge Durango 2026
+        {"brand": "Dodge", "model": "Durango", "trim": "SXT, GT, GT Plus", "year": 2026,
+         "consumer_cash": 7500,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.49, "rate_96": 2.49}},
+        
+        {"brand": "Dodge", "model": "Durango", "trim": "GT Hemi V8 Plus/Premium", "year": 2026,
+         "consumer_cash": 9000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.49, "rate_96": 2.49}},
+        
+        {"brand": "Dodge", "model": "Durango", "trim": "SRT Hellcat", "year": 2026,
+         "consumer_cash": 15500,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.49, "rate_96": 2.49}},
+        
+        # Ram 1500 2026
+        {"brand": "Ram", "model": "1500", "trim": "Tradesman, Express, Warlock", "year": 2026,
+         "consumer_cash": 6500,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        {"brand": "Ram", "model": "1500", "trim": "Big Horn", "year": 2026,
+         "consumer_cash": 6000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        {"brand": "Ram", "model": "1500", "trim": "Sport, Rebel", "year": 2026,
+         "consumer_cash": 8250,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        {"brand": "Ram", "model": "1500", "trim": "Laramie, Limited, Longhorn, Tungsten, RHO", "year": 2026,
+         "consumer_cash": 11500,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        # Ram HD 2026
+        {"brand": "Ram", "model": "2500/3500", "trim": "Gas Models", "year": 2026,
+         "consumer_cash": 7000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        {"brand": "Ram", "model": "2500/3500", "trim": "Diesel Models", "year": 2026,
+         "consumer_cash": 5000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0.99, "rate_96": 3.49}},
+        
+        # ============ 2025 MODELS ============
+        # Chrysler 2025
+        {"brand": "Chrysler", "model": "Grand Caravan", "trim": "SXT", "year": 2025,
+         "consumer_cash": 0,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 1.99, "rate_72": 2.99, "rate_84": 3.99, "rate_96": 4.99}},
+        
+        {"brand": "Chrysler", "model": "Pacifica", "trim": "Select Models", "year": 2025,
+         "consumer_cash": 750,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.49, "rate_96": 2.99}},
+        
+        {"brand": "Chrysler", "model": "Pacifica", "trim": "(excl. Select & Hybrid)", "year": 2025,
+         "consumer_cash": 5500,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.49, "rate_96": 2.49}},
+        
+        # Jeep Compass 2025
+        {"brand": "Jeep", "model": "Compass", "trim": "Sport", "year": 2025,
+         "consumer_cash": 7500,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0.99, "rate_60": 1.99, "rate_72": 1.99, "rate_84": 3.99, "rate_96": 4.99}},
+        
+        {"brand": "Jeep", "model": "Compass", "trim": "North", "year": 2025,
+         "consumer_cash": 0,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.49, "rate_96": 2.49}},
+        
+        {"brand": "Jeep", "model": "Compass", "trim": "Altitude, Trailhawk", "year": 2025,
+         "consumer_cash": 750,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.49, "rate_96": 2.49}},
+        
+        {"brand": "Jeep", "model": "Compass", "trim": "Limited", "year": 2025,
+         "consumer_cash": 1000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.49, "rate_96": 2.49}},
+        
+        # Jeep Wrangler 2025
+        {"brand": "Jeep", "model": "Wrangler", "trim": "4-Door 4xe", "year": 2025,
+         "consumer_cash": 4000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0.99, "rate_48": 1.99, "rate_60": 2.49, "rate_72": 3.49, "rate_84": 3.99, "rate_96": 4.99}},
+        
+        {"brand": "Jeep", "model": "Wrangler", "trim": "2-Door Rubicon", "year": 2025,
+         "consumer_cash": 8500,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        {"brand": "Jeep", "model": "Wrangler", "trim": "4-Door (excl. Rubicon 2.0L et 4xe)", "year": 2025,
+         "consumer_cash": 8500,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        # Jeep Gladiator 2025
+        {"brand": "Jeep", "model": "Gladiator", "trim": None, "year": 2025,
+         "consumer_cash": 11000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 3.49}},
+        
+        # Jeep Grand Cherokee 2025
+        {"brand": "Jeep", "model": "Grand Cherokee 4xe", "trim": None, "year": 2025,
+         "consumer_cash": 4000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0.99, "rate_48": 1.99, "rate_60": 2.49, "rate_72": 3.49, "rate_84": 3.99, "rate_96": 4.99}},
+        
+        {"brand": "Jeep", "model": "Grand Cherokee L", "trim": "Laredo", "year": 2025,
+         "consumer_cash": 6000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.99}},
+        
+        {"brand": "Jeep", "model": "Grand Cherokee L", "trim": "Altitude", "year": 2025,
+         "consumer_cash": 7500,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.99}},
+        
+        {"brand": "Jeep", "model": "Grand Cherokee L", "trim": "(excl. Laredo, Altitude, Overland)", "year": 2025,
+         "consumer_cash": 9500,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.99}},
+        
+        # Jeep Wagoneer 2025
+        {"brand": "Jeep", "model": "Wagoneer/L", "trim": None, "year": 2025,
+         "consumer_cash": 7500,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 3.99}},
+        
+        {"brand": "Jeep", "model": "Grand Wagoneer/L", "trim": None, "year": 2025,
+         "consumer_cash": 9500,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 3.99}},
+        
+        {"brand": "Jeep", "model": "Wagoneer S", "trim": "Limited & Premium (BEV)", "year": 2025,
+         "consumer_cash": 8000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        # Dodge Durango 2025
+        {"brand": "Dodge", "model": "Durango", "trim": "GT, GT Plus", "year": 2025,
+         "consumer_cash": 8000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.49}},
+        
+        {"brand": "Dodge", "model": "Durango", "trim": "R/T, R/T Plus, Citadel", "year": 2025,
+         "consumer_cash": 9500,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.49}},
+        
+        {"brand": "Dodge", "model": "Durango", "trim": "SRT Hellcat", "year": 2025,
+         "consumer_cash": 16000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.49}},
+        
+        # Dodge Charger 2025
+        {"brand": "Dodge", "model": "Charger Daytona", "trim": "R/T (BEV)", "year": 2025,
+         "consumer_cash": 3000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        {"brand": "Dodge", "model": "Charger Daytona", "trim": "R/T Plus (BEV)", "year": 2025,
+         "consumer_cash": 5000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        {"brand": "Dodge", "model": "Charger Daytona", "trim": "Scat Pack (BEV)", "year": 2025,
+         "consumer_cash": 7000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        # Ram 1500 2025
+        {"brand": "Ram", "model": "1500", "trim": "Tradesman, Express, Warlock", "year": 2025,
+         "consumer_cash": 9250,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        {"brand": "Ram", "model": "1500", "trim": "Big Horn", "year": 2025,
+         "consumer_cash": 9250,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        {"brand": "Ram", "model": "1500", "trim": "Sport, Rebel", "year": 2025,
+         "consumer_cash": 10000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        {"brand": "Ram", "model": "1500", "trim": "Laramie, Limited, Longhorn, Tungsten, RHO", "year": 2025,
+         "consumer_cash": 12250,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        # Ram HD 2025
+        {"brand": "Ram", "model": "2500/3500", "trim": "Gas Models", "year": 2025,
+         "consumer_cash": 9500,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        {"brand": "Ram", "model": "2500/3500", "trim": "Diesel Models", "year": 2025,
+         "consumer_cash": 7000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0.99, "rate_48": 0.99, "rate_60": 0.99, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 2.99}},
+        
+        {"brand": "Ram", "model": "Chassis Cab", "trim": None, "year": 2025,
+         "consumer_cash": 6000,
+         "option1_rates": standard_rates.dict(),
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 1.99, "rate_72": 3.49, "rate_84": 3.99, "rate_96": 4.99}},
     ]
     
-    for prog_data in initial_programs:
+    for prog_data in programs_data:
+        if prog_data.get("option2_rates"):
+            prog_data["option2_rates"] = FinancingRates(**prog_data["option2_rates"]).dict()
+        prog_data["option1_rates"] = FinancingRates(**prog_data["option1_rates"]).dict()
         prog = VehicleProgram(**prog_data)
         await db.programs.insert_one(prog.dict())
     
-    return {"message": f"Seeded {len(initial_programs)} programs"}
+    return {"message": f"Seeded {len(programs_data)} programs"}
 
 # Include the router in the main app
 app.include_router(api_router)
