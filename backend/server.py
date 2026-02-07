@@ -342,28 +342,28 @@ async def seed_data():
         {"brand": "Ram", "model": "1500", "trim": "Tradesman, Express, Warlock", "year": 2026,
          "consumer_cash": 6500,
          "option1_rates": standard_rates.dict(),
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 3.99}},
         
         {"brand": "Ram", "model": "1500", "trim": "Big Horn", "year": 2026,
          "consumer_cash": 6000,
          "option1_rates": standard_rates.dict(),
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 3.99}},
         
         {"brand": "Ram", "model": "1500", "trim": "Sport, Rebel", "year": 2026,
          "consumer_cash": 8250,
          "option1_rates": standard_rates.dict(),
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 3.99}},
         
         {"brand": "Ram", "model": "1500", "trim": "Laramie, Limited, Longhorn, Tungsten, RHO", "year": 2026,
          "consumer_cash": 11500,
          "option1_rates": standard_rates.dict(),
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 3.99}},
         
         # Ram HD 2026
         {"brand": "Ram", "model": "2500/3500", "trim": "Gas Models", "year": 2026,
          "consumer_cash": 7000,
          "option1_rates": standard_rates.dict(),
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 3.99}},
         
         {"brand": "Ram", "model": "2500/3500", "trim": "Diesel Models", "year": 2026,
          "consumer_cash": 5000,
