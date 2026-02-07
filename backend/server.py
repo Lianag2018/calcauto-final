@@ -303,17 +303,17 @@ async def seed_data():
         # Jeep Grand Cherokee 2026
         {"brand": "Jeep", "model": "Grand Cherokee/L", "trim": "Laredo/Laredo X", "year": 2026,
          "consumer_cash": 0,
-         "option1_rates": {"rate_36": 1.99, "rate_48": 2.99, "rate_60": 3.49, "rate_72": 3.99, "rate_84": 4.49, "rate_96": 4.99},
+         "option1_rates": standard_rates.dict(),
          "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 2.49, "rate_96": 3.49}},
         
         {"brand": "Jeep", "model": "Grand Cherokee/L", "trim": "Altitude", "year": 2026,
          "consumer_cash": 0,
-         "option1_rates": {"rate_36": 1.99, "rate_48": 2.99, "rate_60": 3.49, "rate_72": 3.99, "rate_84": 4.49, "rate_96": 4.99},
+         "option1_rates": standard_rates.dict(),
          "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 2.49, "rate_96": 3.49}},
         
         {"brand": "Jeep", "model": "Grand Cherokee/L", "trim": "Limited/Summit", "year": 2026,
          "consumer_cash": 0,
-         "option1_rates": {"rate_36": 1.99, "rate_48": 2.99, "rate_60": 3.49, "rate_72": 3.99, "rate_84": 4.49, "rate_96": 4.99},
+         "option1_rates": standard_rates.dict(),
          "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 2.49, "rate_96": 3.49}},
         
         # Jeep Grand Wagoneer 2026
