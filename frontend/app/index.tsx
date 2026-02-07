@@ -268,26 +268,38 @@ export default function HomeScreen() {
           <View style={styles.filterSection}>
             <Text style={styles.filterLabel}>{t.filterByYear}</Text>
             <View style={styles.filterRow}>
-              <TouchableOpacity
-                style={[styles.filterChip, !selectedYear && styles.filterChipActive]}
-                onPress={() => setSelectedYear(null)}
-                activeOpacity={0.7}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.filterChip,
+                  !selectedYear && styles.filterChipActive,
+                  pressed && styles.filterChipPressed
+                ]}
+                onPress={() => {
+                  console.log('Pressed: Tous (year)');
+                  setSelectedYear(null);
+                }}
               >
                 <Text style={[styles.filterChipText, !selectedYear && styles.filterChipTextActive]}>
                   {t.all}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
               {years.map(year => (
-                <TouchableOpacity
+                <Pressable
                   key={year}
-                  style={[styles.filterChip, selectedYear === year && styles.filterChipActive]}
-                  onPress={() => setSelectedYear(year)}
-                  activeOpacity={0.7}
+                  style={({ pressed }) => [
+                    styles.filterChip,
+                    selectedYear === year && styles.filterChipActive,
+                    pressed && styles.filterChipPressed
+                  ]}
+                  onPress={() => {
+                    console.log('Pressed year:', year);
+                    setSelectedYear(year);
+                  }}
                 >
                   <Text style={[styles.filterChipText, selectedYear === year && styles.filterChipTextActive]}>
                     {year}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </View>
           </View>
@@ -296,26 +308,38 @@ export default function HomeScreen() {
           <View style={styles.filterSection}>
             <Text style={styles.filterLabel}>{t.filterByBrand}</Text>
             <View style={styles.filterRow}>
-              <TouchableOpacity
-                style={[styles.filterChip, !selectedBrand && styles.filterChipActive]}
-                onPress={() => setSelectedBrand(null)}
-                activeOpacity={0.7}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.filterChip,
+                  !selectedBrand && styles.filterChipActive,
+                  pressed && styles.filterChipPressed
+                ]}
+                onPress={() => {
+                  console.log('Pressed: Tous (brand)');
+                  setSelectedBrand(null);
+                }}
               >
                 <Text style={[styles.filterChipText, !selectedBrand && styles.filterChipTextActive]}>
                   {t.all}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
               {brands.map(brand => (
-                <TouchableOpacity
+                <Pressable
                   key={brand}
-                  style={[styles.filterChip, selectedBrand === brand && styles.filterChipActive]}
-                  onPress={() => setSelectedBrand(brand)}
-                  activeOpacity={0.7}
+                  style={({ pressed }) => [
+                    styles.filterChip,
+                    selectedBrand === brand && styles.filterChipActive,
+                    pressed && styles.filterChipPressed
+                  ]}
+                  onPress={() => {
+                    console.log('Pressed brand:', brand);
+                    setSelectedBrand(brand);
+                  }}
                 >
                   <Text style={[styles.filterChipText, selectedBrand === brand && styles.filterChipTextActive]}>
                     {brand}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </View>
           </View>
