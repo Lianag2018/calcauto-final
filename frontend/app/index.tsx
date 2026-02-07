@@ -18,94 +18,108 @@ import axios from 'axios';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
-interface FinancingTerm {
-  term_months: number;
-  interest_rate: number;
-  rebate_amount: number;
+interface FinancingRates {
+  rate_36: number;
+  rate_48: number;
+  rate_60: number;
+  rate_72: number;
+  rate_84: number;
+  rate_96: number;
 }
 
 interface VehicleProgram {
   id: string;
   brand: string;
   model: string;
+  trim: string | null;
   year: number;
-  financing_terms: FinancingTerm[];
   consumer_cash: number;
-  special_notes: string;
+  option1_rates: FinancingRates;
+  option2_rates: FinancingRates | null;
 }
 
-interface PaymentOption {
+interface PaymentComparison {
   term_months: number;
-  option_a_rate: number;
-  option_a_monthly: number;
-  option_a_total: number;
-  option_b_rate: number;
-  option_b_monthly: number;
-  option_b_total: number;
-  option_b_down_payment: number;
-  best_option: string;
-  savings: number;
+  option1_rate: number;
+  option1_monthly: number;
+  option1_total: number;
+  option1_rebate: number;
+  option2_rate: number | null;
+  option2_monthly: number | null;
+  option2_total: number | null;
+  best_option: string | null;
+  savings: number | null;
 }
 
 interface CalculationResult {
   vehicle_price: number;
   consumer_cash: number;
-  payment_options: PaymentOption[];
+  brand: string;
+  model: string;
+  trim: string | null;
+  year: number;
+  comparisons: PaymentComparison[];
 }
 
 // Language translations
 const translations = {
   fr: {
     title: 'Calculateur de Financement',
+    subtitle: 'Comparez vos options',
     selectVehicle: 'Sélectionner un véhicule',
-    orEnterPrice: 'ou entrer un prix',
-    vehiclePrice: 'Prix du véhicule ($)',
+    enterPrice: 'Prix du véhicule ($)',
     calculate: 'Calculer',
     results: 'Résultats',
     term: 'Terme',
     months: 'mois',
-    optionA: 'Option A - Taux Réduit',
-    optionB: 'Option B - 10% Comptant + 4.99%',
+    option1: 'Option 1',
+    option1Desc: 'Rabais + Taux 4.99%',
+    option2: 'Option 2',
+    option2Desc: 'Taux subventionné',
     monthly: 'Mensuel',
     total: 'Total',
     rate: 'Taux',
-    downPayment: 'Comptant',
-    bestOption: 'Meilleure Option',
+    rebate: 'Rabais',
+    bestOption: 'Meilleure',
     savings: 'Économies',
-    consumerCash: 'Rabais Consommateur',
-    managePrograms: 'Gérer Programmes',
-    noPrograms: 'Aucun programme disponible',
-    loadingPrograms: 'Chargement des programmes...',
+    managePrograms: 'Gérer',
+    noPrograms: 'Aucun programme',
+    loadingPrograms: 'Chargement...',
     enterValidPrice: 'Entrez un prix valide',
-    specialNotes: 'Notes',
-    loading: 'Chargement...',
-    refresh: 'Actualiser',
+    noOption2: 'N/A',
+    filterByYear: 'Filtrer par année',
+    filterByBrand: 'Filtrer par marque',
+    all: 'Tous',
+    selected: 'Sélectionné',
   },
   en: {
     title: 'Financing Calculator',
+    subtitle: 'Compare your options',
     selectVehicle: 'Select a vehicle',
-    orEnterPrice: 'or enter a price',
-    vehiclePrice: 'Vehicle Price ($)',
+    enterPrice: 'Vehicle Price ($)',
     calculate: 'Calculate',
     results: 'Results',
     term: 'Term',
     months: 'months',
-    optionA: 'Option A - Reduced Rate',
-    optionB: 'Option B - 10% Down + 4.99%',
+    option1: 'Option 1',
+    option1Desc: 'Rebate + 4.99% Rate',
+    option2: 'Option 2',
+    option2Desc: 'Subvented Rate',
     monthly: 'Monthly',
     total: 'Total',
     rate: 'Rate',
-    downPayment: 'Down Payment',
-    bestOption: 'Best Option',
+    rebate: 'Rebate',
+    bestOption: 'Best',
     savings: 'Savings',
-    consumerCash: 'Consumer Cash',
-    managePrograms: 'Manage Programs',
-    noPrograms: 'No programs available',
-    loadingPrograms: 'Loading programs...',
+    managePrograms: 'Manage',
+    noPrograms: 'No programs',
+    loadingPrograms: 'Loading...',
     enterValidPrice: 'Enter a valid price',
-    specialNotes: 'Notes',
-    loading: 'Loading...',
-    refresh: 'Refresh',
+    noOption2: 'N/A',
+    filterByYear: 'Filter by year',
+    filterByBrand: 'Filter by brand',
+    all: 'All',
+    selected: 'Selected',
   },
 };
 
@@ -115,20 +129,24 @@ export default function HomeScreen() {
   const t = translations[lang];
 
   const [programs, setPrograms] = useState<VehicleProgram[]>([]);
+  const [filteredPrograms, setFilteredPrograms] = useState<VehicleProgram[]>([]);
   const [selectedProgram, setSelectedProgram] = useState<VehicleProgram | null>(null);
   const [vehiclePrice, setVehiclePrice] = useState('');
   const [results, setResults] = useState<CalculationResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [programsLoading, setProgramsLoading] = useState(true);
+  
+  // Filters
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
 
   const loadPrograms = useCallback(async () => {
     try {
-      // First seed data if needed
       await axios.post(`${API_URL}/api/seed`);
-      // Then fetch programs
       const response = await axios.get(`${API_URL}/api/programs`);
       setPrograms(response.data);
+      setFilteredPrograms(response.data);
     } catch (error) {
       console.error('Error loading programs:', error);
     } finally {
@@ -140,6 +158,18 @@ export default function HomeScreen() {
     loadPrograms();
   }, [loadPrograms]);
 
+  // Filter programs when year or brand changes
+  useEffect(() => {
+    let filtered = [...programs];
+    if (selectedYear) {
+      filtered = filtered.filter(p => p.year === selectedYear);
+    }
+    if (selectedBrand) {
+      filtered = filtered.filter(p => p.brand === selectedBrand);
+    }
+    setFilteredPrograms(filtered);
+  }, [programs, selectedYear, selectedBrand]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadPrograms();
@@ -148,32 +178,16 @@ export default function HomeScreen() {
 
   const handleCalculate = async () => {
     const price = parseFloat(vehiclePrice);
-    if (isNaN(price) || price <= 0) {
+    if (isNaN(price) || price <= 0 || !selectedProgram) {
       return;
     }
 
     setLoading(true);
     try {
-      const requestData: any = {
+      const response = await axios.post(`${API_URL}/api/calculate`, {
         vehicle_price: price,
-        consumer_cash: selectedProgram?.consumer_cash || 0,
-      };
-
-      if (selectedProgram) {
-        requestData.program_id = selectedProgram.id;
-      } else {
-        // Default terms for manual price entry
-        requestData.custom_rates = [
-          { term_months: 36, interest_rate: 0, rebate_amount: 0 },
-          { term_months: 48, interest_rate: 0, rebate_amount: 0 },
-          { term_months: 60, interest_rate: 0, rebate_amount: 0 },
-          { term_months: 72, interest_rate: 1.99, rebate_amount: 0 },
-          { term_months: 84, interest_rate: 2.99, rebate_amount: 0 },
-          { term_months: 96, interest_rate: 4.99, rebate_amount: 0 },
-        ];
-      }
-
-      const response = await axios.post(`${API_URL}/api/calculate`, requestData);
+        program_id: selectedProgram.id,
+      });
       setResults(response.data);
     } catch (error) {
       console.error('Error calculating:', error);
@@ -196,9 +210,22 @@ export default function HomeScreen() {
     return new Intl.NumberFormat('fr-CA', {
       style: 'currency',
       currency: 'CAD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const formatCurrencyDecimal = (value: number) => {
+    return new Intl.NumberFormat('fr-CA', {
+      style: 'currency',
+      currency: 'CAD',
       minimumFractionDigits: 2,
     }).format(value);
   };
+
+  // Get unique years and brands for filters
+  const years = [...new Set(programs.map(p => p.year))].sort((a, b) => b - a);
+  const brands = [...new Set(programs.map(p => p.brand))].sort();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -208,7 +235,10 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t.title}</Text>
+          <View>
+            <Text style={styles.headerTitle}>{t.title}</Text>
+            <Text style={styles.headerSubtitle}>{t.subtitle}</Text>
+          </View>
           <View style={styles.headerActions}>
             <TouchableOpacity
               style={styles.langButton}
@@ -220,7 +250,7 @@ export default function HomeScreen() {
               style={styles.manageButton}
               onPress={() => router.push('/manage')}
             >
-              <Ionicons name="settings-outline" size={24} color="#fff" />
+              <Ionicons name="settings-outline" size={22} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
@@ -229,14 +259,62 @@ export default function HomeScreen() {
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor="#4ECDC4"
-            />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4ECDC4" />
           }
           keyboardShouldPersistTaps="handled"
         >
+          {/* Year Filter */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterLabel}>{t.filterByYear}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <TouchableOpacity
+                style={[styles.filterChip, !selectedYear && styles.filterChipActive]}
+                onPress={() => setSelectedYear(null)}
+              >
+                <Text style={[styles.filterChipText, !selectedYear && styles.filterChipTextActive]}>
+                  {t.all}
+                </Text>
+              </TouchableOpacity>
+              {years.map(year => (
+                <TouchableOpacity
+                  key={year}
+                  style={[styles.filterChip, selectedYear === year && styles.filterChipActive]}
+                  onPress={() => setSelectedYear(selectedYear === year ? null : year)}
+                >
+                  <Text style={[styles.filterChipText, selectedYear === year && styles.filterChipTextActive]}>
+                    {year}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Brand Filter */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterLabel}>{t.filterByBrand}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <TouchableOpacity
+                style={[styles.filterChip, !selectedBrand && styles.filterChipActive]}
+                onPress={() => setSelectedBrand(null)}
+              >
+                <Text style={[styles.filterChipText, !selectedBrand && styles.filterChipTextActive]}>
+                  {t.all}
+                </Text>
+              </TouchableOpacity>
+              {brands.map(brand => (
+                <TouchableOpacity
+                  key={brand}
+                  style={[styles.filterChip, selectedBrand === brand && styles.filterChipActive]}
+                  onPress={() => setSelectedBrand(selectedBrand === brand ? null : brand)}
+                >
+                  <Text style={[styles.filterChipText, selectedBrand === brand && styles.filterChipTextActive]}>
+                    {brand}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
           {/* Vehicle Selection */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t.selectVehicle}</Text>
@@ -245,15 +323,11 @@ export default function HomeScreen() {
                 <ActivityIndicator size="small" color="#4ECDC4" />
                 <Text style={styles.loadingText}>{t.loadingPrograms}</Text>
               </View>
-            ) : programs.length === 0 ? (
+            ) : filteredPrograms.length === 0 ? (
               <Text style={styles.noDataText}>{t.noPrograms}</Text>
             ) : (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.programsScroll}
-              >
-                {programs.map((program) => (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.programsScroll}>
+                {filteredPrograms.map((program) => (
                   <TouchableOpacity
                     key={program.id}
                     style={[
@@ -262,13 +336,27 @@ export default function HomeScreen() {
                     ]}
                     onPress={() => selectProgram(program)}
                   >
-                    <Text style={styles.programBrand}>{program.brand}</Text>
+                    <View style={styles.programHeader}>
+                      <Text style={styles.programBrand}>{program.brand}</Text>
+                      <Text style={styles.programYear}>{program.year}</Text>
+                    </View>
                     <Text style={styles.programModel}>{program.model}</Text>
-                    <Text style={styles.programYear}>{program.year}</Text>
+                    {program.trim && (
+                      <Text style={styles.programTrim}>{program.trim}</Text>
+                    )}
                     {program.consumer_cash > 0 && (
-                      <Text style={styles.programCash}>
-                        {formatCurrency(program.consumer_cash)}
-                      </Text>
+                      <View style={styles.cashBadge}>
+                        <Text style={styles.cashBadgeText}>
+                          {formatCurrency(program.consumer_cash)}
+                        </Text>
+                      </View>
+                    )}
+                    {program.option2_rates && (
+                      <View style={styles.option2Badge}>
+                        <Text style={styles.option2BadgeText}>
+                          {program.option2_rates.rate_36}%
+                        </Text>
+                      </View>
                     )}
                   </TouchableOpacity>
                 ))}
@@ -277,56 +365,73 @@ export default function HomeScreen() {
 
             {selectedProgram && (
               <View style={styles.selectedInfo}>
-                <Text style={styles.selectedTitle}>
-                  {selectedProgram.brand} {selectedProgram.model} {selectedProgram.year}
-                </Text>
-                {selectedProgram.special_notes && (
-                  <Text style={styles.selectedNotes}>
-                    {t.specialNotes}: {selectedProgram.special_notes}
-                  </Text>
-                )}
-                <TouchableOpacity style={styles.clearButton} onPress={clearSelection}>
-                  <Ionicons name="close-circle" size={20} color="#FF6B6B" />
-                  <Text style={styles.clearButtonText}>Clear</Text>
-                </TouchableOpacity>
+                <View style={styles.selectedHeader}>
+                  <View>
+                    <Text style={styles.selectedBrand}>{selectedProgram.brand}</Text>
+                    <Text style={styles.selectedTitle}>
+                      {selectedProgram.model} {selectedProgram.trim || ''} {selectedProgram.year}
+                    </Text>
+                  </View>
+                  <TouchableOpacity onPress={clearSelection}>
+                    <Ionicons name="close-circle" size={28} color="#FF6B6B" />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.optionsPreview}>
+                  <View style={styles.optionPreview}>
+                    <Text style={styles.optionPreviewLabel}>{t.option1}</Text>
+                    <Text style={styles.optionPreviewValue}>
+                      {selectedProgram.consumer_cash > 0 
+                        ? `${formatCurrency(selectedProgram.consumer_cash)} + 4.99%`
+                        : '4.99%'}
+                    </Text>
+                  </View>
+                  {selectedProgram.option2_rates && (
+                    <View style={styles.optionPreview}>
+                      <Text style={styles.optionPreviewLabel}>{t.option2}</Text>
+                      <Text style={styles.optionPreviewValue}>
+                        {selectedProgram.option2_rates.rate_36}% - {selectedProgram.option2_rates.rate_96}%
+                      </Text>
+                    </View>
+                  )}
+                </View>
               </View>
             )}
           </View>
 
           {/* Price Input */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              {selectedProgram ? t.vehiclePrice : t.orEnterPrice}
-            </Text>
-            <View style={styles.inputContainer}>
-              <Text style={styles.currencySymbol}>$</Text>
-              <TextInput
-                style={styles.priceInput}
-                placeholder="50000"
-                placeholderTextColor="#666"
-                keyboardType="numeric"
-                value={vehiclePrice}
-                onChangeText={setVehiclePrice}
-              />
+          {selectedProgram && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>{t.enterPrice}</Text>
+              <View style={styles.inputContainer}>
+                <Text style={styles.currencySymbol}>$</Text>
+                <TextInput
+                  style={styles.priceInput}
+                  placeholder="55000"
+                  placeholderTextColor="#666"
+                  keyboardType="numeric"
+                  value={vehiclePrice}
+                  onChangeText={setVehiclePrice}
+                />
+              </View>
+              <TouchableOpacity
+                style={[
+                  styles.calculateButton,
+                  (!vehiclePrice || loading) && styles.calculateButtonDisabled,
+                ]}
+                onPress={handleCalculate}
+                disabled={!vehiclePrice || loading}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color="#1a1a2e" />
+                ) : (
+                  <>
+                    <Ionicons name="calculator" size={20} color="#1a1a2e" />
+                    <Text style={styles.calculateButtonText}>{t.calculate}</Text>
+                  </>
+                )}
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              style={[
-                styles.calculateButton,
-                (!vehiclePrice || loading) && styles.calculateButtonDisabled,
-              ]}
-              onPress={handleCalculate}
-              disabled={!vehiclePrice || loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <>
-                  <Ionicons name="calculator" size={20} color="#fff" />
-                  <Text style={styles.calculateButtonText}>{t.calculate}</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
+          )}
 
           {/* Results */}
           {results && (
@@ -334,102 +439,120 @@ export default function HomeScreen() {
               <Text style={styles.sectionTitle}>{t.results}</Text>
               
               <View style={styles.resultsSummary}>
-                <Text style={styles.summaryText}>
-                  {t.vehiclePrice}: {formatCurrency(results.vehicle_price)}
+                <Text style={styles.summaryTitle}>
+                  {results.brand} {results.model} {results.trim || ''} {results.year}
+                </Text>
+                <Text style={styles.summaryPrice}>
+                  {formatCurrency(results.vehicle_price)}
                 </Text>
                 {results.consumer_cash > 0 && (
-                  <Text style={styles.summaryText}>
-                    {t.consumerCash}: {formatCurrency(results.consumer_cash)}
+                  <Text style={styles.summaryCash}>
+                    {t.rebate}: {formatCurrency(results.consumer_cash)}
                   </Text>
                 )}
               </View>
 
-              {results.payment_options.map((option, index) => (
+              {/* Legend */}
+              <View style={styles.legend}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#FF6B6B' }]} />
+                  <Text style={styles.legendText}>{t.option1}: {t.option1Desc}</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#4ECDC4' }]} />
+                  <Text style={styles.legendText}>{t.option2}: {t.option2Desc}</Text>
+                </View>
+              </View>
+
+              {results.comparisons.map((comp, index) => (
                 <View key={index} style={styles.resultCard}>
                   <View style={styles.resultHeader}>
                     <Text style={styles.resultTerm}>
-                      {option.term_months} {t.months}
+                      {comp.term_months} {t.months}
                     </Text>
-                    <View
-                      style={[
+                    {comp.best_option && (
+                      <View style={[
                         styles.bestBadge,
-                        option.best_option === 'A'
-                          ? styles.bestBadgeA
-                          : styles.bestBadgeB,
-                      ]}
-                    >
-                      <Text style={styles.bestBadgeText}>
-                        {t.bestOption}: {option.best_option === 'A' ? t.optionA.split(' - ')[1] : t.optionB.split(' - ')[1]}
+                        comp.best_option === '1' ? styles.bestBadgeOption1 : styles.bestBadgeOption2
+                      ]}>
+                        <Ionicons name="trophy" size={12} color="#1a1a2e" />
+                        <Text style={styles.bestBadgeText}>
+                          {t.bestOption}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <View style={styles.optionsGrid}>
+                    {/* Option 1 */}
+                    <View style={[
+                      styles.optionCard,
+                      styles.optionCard1,
+                      comp.best_option === '1' && styles.optionCardBest
+                    ]}>
+                      <Text style={styles.optionCardTitle}>{t.option1}</Text>
+                      <View style={styles.optionDetail}>
+                        <Text style={styles.optionDetailLabel}>{t.rebate}:</Text>
+                        <Text style={styles.optionDetailValue}>
+                          {comp.option1_rebate > 0 ? formatCurrency(comp.option1_rebate) : '-'}
+                        </Text>
+                      </View>
+                      <View style={styles.optionDetail}>
+                        <Text style={styles.optionDetailLabel}>{t.rate}:</Text>
+                        <Text style={styles.optionDetailValue}>{comp.option1_rate}%</Text>
+                      </View>
+                      <View style={styles.optionDetail}>
+                        <Text style={styles.optionDetailLabel}>{t.monthly}:</Text>
+                        <Text style={styles.optionMonthly}>{formatCurrencyDecimal(comp.option1_monthly)}</Text>
+                      </View>
+                      <View style={styles.optionDetail}>
+                        <Text style={styles.optionDetailLabel}>{t.total}:</Text>
+                        <Text style={styles.optionDetailValue}>{formatCurrency(comp.option1_total)}</Text>
+                      </View>
+                    </View>
+
+                    {/* Option 2 */}
+                    <View style={[
+                      styles.optionCard,
+                      styles.optionCard2,
+                      comp.best_option === '2' && styles.optionCardBest
+                    ]}>
+                      <Text style={styles.optionCardTitle}>{t.option2}</Text>
+                      {comp.option2_rate !== null ? (
+                        <>
+                          <View style={styles.optionDetail}>
+                            <Text style={styles.optionDetailLabel}>{t.rebate}:</Text>
+                            <Text style={styles.optionDetailValue}>-</Text>
+                          </View>
+                          <View style={styles.optionDetail}>
+                            <Text style={styles.optionDetailLabel}>{t.rate}:</Text>
+                            <Text style={styles.optionDetailValue}>{comp.option2_rate}%</Text>
+                          </View>
+                          <View style={styles.optionDetail}>
+                            <Text style={styles.optionDetailLabel}>{t.monthly}:</Text>
+                            <Text style={styles.optionMonthly}>{formatCurrencyDecimal(comp.option2_monthly!)}</Text>
+                          </View>
+                          <View style={styles.optionDetail}>
+                            <Text style={styles.optionDetailLabel}>{t.total}:</Text>
+                            <Text style={styles.optionDetailValue}>{formatCurrency(comp.option2_total!)}</Text>
+                          </View>
+                        </>
+                      ) : (
+                        <View style={styles.noOption}>
+                          <Text style={styles.noOptionText}>{t.noOption2}</Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+
+                  {comp.savings && comp.savings > 0 && (
+                    <View style={styles.savingsRow}>
+                      <Ionicons name="wallet-outline" size={16} color="#4ECDC4" />
+                      <Text style={styles.savingsText}>
+                        {t.savings}: {formatCurrency(comp.savings)}
                       </Text>
                     </View>
-                  </View>
-
-                  <View style={styles.optionsContainer}>
-                    {/* Option A */}
-                    <View
-                      style={[
-                        styles.optionBox,
-                        option.best_option === 'A' && styles.optionBoxBest,
-                      ]}
-                    >
-                      <Text style={styles.optionTitle}>{t.optionA}</Text>
-                      <View style={styles.optionRow}>
-                        <Text style={styles.optionLabel}>{t.rate}:</Text>
-                        <Text style={styles.optionValue}>{option.option_a_rate}%</Text>
-                      </View>
-                      <View style={styles.optionRow}>
-                        <Text style={styles.optionLabel}>{t.monthly}:</Text>
-                        <Text style={styles.optionValueLarge}>
-                          {formatCurrency(option.option_a_monthly)}
-                        </Text>
-                      </View>
-                      <View style={styles.optionRow}>
-                        <Text style={styles.optionLabel}>{t.total}:</Text>
-                        <Text style={styles.optionValue}>
-                          {formatCurrency(option.option_a_total)}
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Option B */}
-                    <View
-                      style={[
-                        styles.optionBox,
-                        option.best_option === 'B' && styles.optionBoxBest,
-                      ]}
-                    >
-                      <Text style={styles.optionTitle}>{t.optionB}</Text>
-                      <View style={styles.optionRow}>
-                        <Text style={styles.optionLabel}>{t.downPayment}:</Text>
-                        <Text style={styles.optionValue}>
-                          {formatCurrency(option.option_b_down_payment)}
-                        </Text>
-                      </View>
-                      <View style={styles.optionRow}>
-                        <Text style={styles.optionLabel}>{t.rate}:</Text>
-                        <Text style={styles.optionValue}>{option.option_b_rate}%</Text>
-                      </View>
-                      <View style={styles.optionRow}>
-                        <Text style={styles.optionLabel}>{t.monthly}:</Text>
-                        <Text style={styles.optionValueLarge}>
-                          {formatCurrency(option.option_b_monthly)}
-                        </Text>
-                      </View>
-                      <View style={styles.optionRow}>
-                        <Text style={styles.optionLabel}>{t.total}:</Text>
-                        <Text style={styles.optionValue}>
-                          {formatCurrency(option.option_b_total)}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  <View style={styles.savingsContainer}>
-                    <Ionicons name="trending-down" size={16} color="#4ECDC4" />
-                    <Text style={styles.savingsText}>
-                      {t.savings}: {formatCurrency(option.savings)}
-                    </Text>
-                  </View>
+                  )}
                 </View>
               ))}
             </View>
@@ -452,34 +575,39 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#2d2d44',
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   langButton: {
     backgroundColor: '#4ECDC4',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
   },
   langButtonText: {
     color: '#1a1a2e',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 12,
   },
   manageButton: {
-    padding: 8,
+    padding: 6,
   },
   scrollView: {
     flex: 1,
@@ -488,11 +616,37 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 40,
   },
+  filterSection: {
+    marginBottom: 12,
+  },
+  filterLabel: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 8,
+  },
+  filterChip: {
+    backgroundColor: '#2d2d44',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    marginRight: 8,
+  },
+  filterChipActive: {
+    backgroundColor: '#4ECDC4',
+  },
+  filterChipText: {
+    color: '#888',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  filterChipTextActive: {
+    color: '#1a1a2e',
+  },
   section: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#fff',
     marginBottom: 12,
@@ -518,9 +672,9 @@ const styles = StyleSheet.create({
   programCard: {
     backgroundColor: '#2d2d44',
     borderRadius: 12,
-    padding: 16,
-    marginRight: 12,
-    minWidth: 140,
+    padding: 12,
+    marginRight: 10,
+    minWidth: 150,
     borderWidth: 2,
     borderColor: 'transparent',
   },
@@ -528,52 +682,100 @@ const styles = StyleSheet.create({
     borderColor: '#4ECDC4',
     backgroundColor: '#3d3d54',
   },
+  programHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   programBrand: {
-    fontSize: 14,
+    fontSize: 11,
     color: '#4ECDC4',
     fontWeight: '600',
   },
+  programYear: {
+    fontSize: 11,
+    color: '#888',
+    fontWeight: '500',
+  },
   programModel: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#fff',
     fontWeight: 'bold',
     marginTop: 4,
   },
-  programYear: {
-    fontSize: 14,
-    color: '#888',
+  programTrim: {
+    fontSize: 11,
+    color: '#aaa',
     marginTop: 2,
   },
-  programCash: {
-    fontSize: 13,
-    color: '#FF6B6B',
+  cashBadge: {
+    backgroundColor: '#FF6B6B',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
     marginTop: 8,
-    fontWeight: '600',
+    alignSelf: 'flex-start',
+  },
+  cashBadgeText: {
+    fontSize: 10,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  option2Badge: {
+    backgroundColor: '#4ECDC4',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginTop: 4,
+    alignSelf: 'flex-start',
+  },
+  option2BadgeText: {
+    fontSize: 10,
+    color: '#1a1a2e',
+    fontWeight: 'bold',
   },
   selectedInfo: {
     backgroundColor: '#2d2d44',
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     marginTop: 12,
+  },
+  selectedHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  selectedBrand: {
+    fontSize: 12,
+    color: '#4ECDC4',
+    fontWeight: '600',
   },
   selectedTitle: {
     fontSize: 16,
     color: '#fff',
     fontWeight: 'bold',
+    marginTop: 2,
   },
-  selectedNotes: {
-    fontSize: 13,
-    color: '#4ECDC4',
-    marginTop: 8,
-  },
-  clearButton: {
+  optionsPreview: {
     flexDirection: 'row',
-    alignItems: 'center',
     marginTop: 12,
+    gap: 12,
   },
-  clearButtonText: {
-    color: '#FF6B6B',
-    marginLeft: 4,
+  optionPreview: {
+    flex: 1,
+    backgroundColor: '#1a1a2e',
+    borderRadius: 8,
+    padding: 10,
+  },
+  optionPreviewLabel: {
+    fontSize: 11,
+    color: '#888',
+  },
+  optionPreviewValue: {
+    fontSize: 13,
+    color: '#fff',
+    fontWeight: '600',
+    marginTop: 4,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -583,25 +785,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   currencySymbol: {
-    fontSize: 24,
+    fontSize: 22,
     color: '#4ECDC4',
     fontWeight: 'bold',
   },
   priceInput: {
     flex: 1,
-    fontSize: 24,
+    fontSize: 22,
     color: '#fff',
-    paddingVertical: 16,
+    paddingVertical: 14,
     paddingHorizontal: 8,
   },
   calculateButton: {
     backgroundColor: '#4ECDC4',
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
+    marginTop: 12,
     gap: 8,
   },
   calculateButtonDisabled: {
@@ -609,106 +811,158 @@ const styles = StyleSheet.create({
   },
   calculateButtonText: {
     color: '#1a1a2e',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   resultsSummary: {
     backgroundColor: '#2d2d44',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    padding: 14,
+    marginBottom: 12,
+    alignItems: 'center',
   },
-  summaryText: {
+  summaryTitle: {
+    fontSize: 14,
     color: '#fff',
-    fontSize: 16,
-    marginBottom: 4,
+    fontWeight: '600',
+  },
+  summaryPrice: {
+    fontSize: 24,
+    color: '#4ECDC4',
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+  summaryCash: {
+    fontSize: 13,
+    color: '#FF6B6B',
+    marginTop: 4,
+  },
+  legend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 20,
+    marginBottom: 12,
+    paddingVertical: 8,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  legendText: {
+    fontSize: 11,
+    color: '#888',
   },
   resultCard: {
     backgroundColor: '#2d2d44',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    padding: 14,
+    marginBottom: 12,
   },
   resultHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   resultTerm: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
   },
   bestBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
   },
-  bestBadgeA: {
-    backgroundColor: '#4ECDC4',
-  },
-  bestBadgeB: {
+  bestBadgeOption1: {
     backgroundColor: '#FF6B6B',
   },
+  bestBadgeOption2: {
+    backgroundColor: '#4ECDC4',
+  },
   bestBadgeText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: 'bold',
     color: '#1a1a2e',
   },
-  optionsContainer: {
+  optionsGrid: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
   },
-  optionBox: {
+  optionCard: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
     borderRadius: 8,
-    padding: 12,
+    padding: 10,
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  optionBoxBest: {
+  optionCard1: {
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+  },
+  optionCard2: {
+    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+  },
+  optionCardBest: {
     borderColor: '#4ECDC4',
   },
-  optionTitle: {
+  optionCardTitle: {
     fontSize: 12,
     color: '#888',
-    marginBottom: 8,
     fontWeight: '600',
+    marginBottom: 8,
   },
-  optionRow: {
+  optionDetail: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 4,
   },
-  optionLabel: {
-    fontSize: 12,
+  optionDetailLabel: {
+    fontSize: 11,
     color: '#888',
   },
-  optionValue: {
-    fontSize: 12,
+  optionDetailValue: {
+    fontSize: 11,
     color: '#fff',
     fontWeight: '500',
   },
-  optionValueLarge: {
-    fontSize: 14,
+  optionMonthly: {
+    fontSize: 13,
     color: '#4ECDC4',
     fontWeight: 'bold',
   },
-  savingsContainer: {
+  noOption: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  noOptionText: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
+  },
+  savingsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: 10,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: '#3d3d54',
+    gap: 6,
   },
   savingsText: {
+    fontSize: 13,
     color: '#4ECDC4',
-    fontSize: 14,
     fontWeight: '600',
-    marginLeft: 6,
   },
 });
