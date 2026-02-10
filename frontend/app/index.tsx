@@ -337,19 +337,38 @@ export default function HomeScreen() {
     const bonusCash = parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0;
     const consumerCash = selectedProgram.consumer_cash;
     
-    // Option 1: Prix - Consumer Cash (avant taxes), puis taux Option 1
-    const principalOption1 = price - consumerCash;
+    // Frais taxables
+    const dossier = parseFloat(fraisDossier) || 0;
+    const pneus = parseFloat(taxePneus) || 0;
+    const rdprm = parseFloat(fraisRDPRM) || 0;
+    const fraisTaxables = dossier + pneus + rdprm;
+    
+    // Échange
+    const valeurEchange = parseFloat(prixEchange) || 0;
+    const detteSurEchange = parseFloat(montantDuEchange) || 0;
+    const echangeNet = valeurEchange - detteSurEchange; // Positif = réduction, négatif = ajout
+    
+    // Calcul du montant taxable (prix + frais - échange)
+    // Note: Consumer Cash est avant taxes, donc réduit le montant taxable
+    
+    // Option 1: Prix - Consumer Cash - valeur échange + frais + dette échange + taxes
+    const montantAvantTaxesO1 = price - consumerCash - valeurEchange + fraisTaxables;
+    const taxesO1 = montantAvantTaxesO1 * tauxTaxe;
+    const principalOption1 = montantAvantTaxesO1 + taxesO1 + detteSurEchange;
     const rate1 = getRateForTerm(selectedProgram.option1_rates, selectedTerm);
     const monthly1 = calculateMonthlyPayment(principalOption1, rate1, selectedTerm);
     const total1 = monthly1 * selectedTerm;
     
-    // Option 2: Prix complet, taux réduits (si disponible)
+    // Option 2: Prix complet - valeur échange + frais + dette échange + taxes (pas de Consumer Cash)
     let monthly2: number | null = null;
     let total2: number | null = null;
     let rate2: number | null = null;
     let bestOption: string | null = null;
     let savings = 0;
-    const principalOption2 = price;
+    
+    const montantAvantTaxesO2 = price - valeurEchange + fraisTaxables;
+    const taxesO2 = montantAvantTaxesO2 * tauxTaxe;
+    const principalOption2 = montantAvantTaxesO2 + taxesO2 + detteSurEchange;
     
     if (selectedProgram.option2_rates) {
       rate2 = getRateForTerm(selectedProgram.option2_rates, selectedTerm);
@@ -380,8 +399,11 @@ export default function HomeScreen() {
       savings,
       principalOption1,
       principalOption2,
+      fraisTaxables,
+      taxes: taxesO1,
+      echangeNet,
     });
-  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash]);
+  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, tauxTaxe]);
 
   // Recalculate when inputs change
   useEffect(() => {
