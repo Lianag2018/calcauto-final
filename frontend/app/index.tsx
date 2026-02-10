@@ -186,6 +186,23 @@ export default function HomeScreen() {
   // Selected term for calculation
   const [selectedTerm, setSelectedTerm] = useState<number>(72);
   const availableTerms = [36, 48, 60, 72, 84, 96];
+  
+  // Custom bonus cash input (after taxes)
+  const [customBonusCash, setCustomBonusCash] = useState('');
+  
+  // Local calculation result (calculated on frontend)
+  const [localResult, setLocalResult] = useState<{
+    option1Monthly: number;
+    option1Total: number;
+    option1Rate: number;
+    option2Monthly: number | null;
+    option2Total: number | null;
+    option2Rate: number | null;
+    bestOption: string | null;
+    savings: number;
+    principalOption1: number;
+    principalOption2: number;
+  } | null>(null);
 
   const loadPrograms = useCallback(async () => {
     try {
