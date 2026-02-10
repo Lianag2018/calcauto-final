@@ -68,9 +68,9 @@ interface CalculationResult {
 }
 
 interface ProgramPeriod {
-  month: int;
-  year: int;
-  count: int;
+  month: number;
+  year: number;
+  count: number;
 }
 
 // Language translations
