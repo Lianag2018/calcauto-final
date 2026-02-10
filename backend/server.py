@@ -636,7 +636,7 @@ async def seed_data():
         
         {"brand": "Jeep", "model": "Grand Cherokee", "trim": "Summit (WLJT74 23S)", "year": 2025,
          "consumer_cash": 0, 
-         "option1_rates": None,
+         "option1_rates": std,
          "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.99},
          "bonus_cash": 1000},
         
