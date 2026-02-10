@@ -319,30 +319,9 @@ export default function HomeScreen() {
           <View style={styles.filterSection}>
             <Text style={styles.filterLabel}>{t.filterByYear}</Text>
             <View style={styles.filterRow}>
-              <TouchableOpacity
-                style={[styles.filterChip, !selectedYear && styles.filterChipActive]}
-                onPress={() => setSelectedYear(null)}
-              >
-                <Text style={[styles.filterChipText, !selectedYear && styles.filterChipTextActive]}>
-                  {t.all}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.filterChip, selectedYear === 2026 && styles.filterChipActive]}
-                onPress={() => setSelectedYear(2026)}
-              >
-                <Text style={[styles.filterChipText, selectedYear === 2026 && styles.filterChipTextActive]}>
-                  2026
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.filterChip, selectedYear === 2025 && styles.filterChipActive]}
-                onPress={() => setSelectedYear(2025)}
-              >
-                <Text style={[styles.filterChipText, selectedYear === 2025 && styles.filterChipTextActive]}>
-                  2025
-                </Text>
-              </TouchableOpacity>
+              <FilterButton active={!selectedYear} onPress={() => setSelectedYear(null)} label={t.all} />
+              <FilterButton active={selectedYear === 2026} onPress={() => setSelectedYear(2026)} label="2026" />
+              <FilterButton active={selectedYear === 2025} onPress={() => setSelectedYear(2025)} label="2025" />
             </View>
           </View>
 
@@ -350,54 +329,12 @@ export default function HomeScreen() {
           <View style={styles.filterSection}>
             <Text style={styles.filterLabel}>{t.filterByBrand}</Text>
             <View style={styles.filterRow}>
-              <TouchableOpacity
-                style={[styles.filterChip, !selectedBrand && styles.filterChipActive]}
-                onPress={() => setSelectedBrand(null)}
-              >
-                <Text style={[styles.filterChipText, !selectedBrand && styles.filterChipTextActive]}>
-                  {t.all}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.filterChip, selectedBrand === 'Chrysler' && styles.filterChipActive]}
-                onPress={() => setSelectedBrand('Chrysler')}
-              >
-                <Text style={[styles.filterChipText, selectedBrand === 'Chrysler' && styles.filterChipTextActive]}>
-                  Chrysler
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.filterChip, selectedBrand === 'Dodge' && styles.filterChipActive]}
-                onPress={() => setSelectedBrand('Dodge')}
-              >
-                <Text style={[styles.filterChipText, selectedBrand === 'Dodge' && styles.filterChipTextActive]}>
-                  Dodge
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.filterChip, selectedBrand === 'Fiat' && styles.filterChipActive]}
-                onPress={() => setSelectedBrand('Fiat')}
-              >
-                <Text style={[styles.filterChipText, selectedBrand === 'Fiat' && styles.filterChipTextActive]}>
-                  Fiat
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.filterChip, selectedBrand === 'Jeep' && styles.filterChipActive]}
-                onPress={() => setSelectedBrand('Jeep')}
-              >
-                <Text style={[styles.filterChipText, selectedBrand === 'Jeep' && styles.filterChipTextActive]}>
-                  Jeep
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.filterChip, selectedBrand === 'Ram' && styles.filterChipActive]}
-                onPress={() => setSelectedBrand('Ram')}
-              >
-                <Text style={[styles.filterChipText, selectedBrand === 'Ram' && styles.filterChipTextActive]}>
-                  Ram
-                </Text>
-              </TouchableOpacity>
+              <FilterButton active={!selectedBrand} onPress={() => setSelectedBrand(null)} label={t.all} />
+              <FilterButton active={selectedBrand === 'Chrysler'} onPress={() => setSelectedBrand('Chrysler')} label="Chrysler" />
+              <FilterButton active={selectedBrand === 'Dodge'} onPress={() => setSelectedBrand('Dodge')} label="Dodge" />
+              <FilterButton active={selectedBrand === 'Fiat'} onPress={() => setSelectedBrand('Fiat')} label="Fiat" />
+              <FilterButton active={selectedBrand === 'Jeep'} onPress={() => setSelectedBrand('Jeep')} label="Jeep" />
+              <FilterButton active={selectedBrand === 'Ram'} onPress={() => setSelectedBrand('Ram')} label="Ram" />
             </View>
           </View>
 
