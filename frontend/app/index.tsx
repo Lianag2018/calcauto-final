@@ -833,6 +833,55 @@ export default function HomeScreen() {
                 </View>
               </View>
 
+              {/* Fréquence de paiement */}
+              <View style={styles.termSection}>
+                <Text style={styles.inputLabel}>Fréquence de paiement</Text>
+                <View style={styles.frequencyButtons}>
+                  <TouchableOpacity
+                    style={[
+                      styles.frequencyButton,
+                      paymentFrequency === 'monthly' && styles.frequencyButtonActive
+                    ]}
+                    onPress={() => setPaymentFrequency('monthly')}
+                  >
+                    <Text style={[
+                      styles.frequencyButtonText,
+                      paymentFrequency === 'monthly' && styles.frequencyButtonTextActive
+                    ]}>
+                      {frequencyLabels.monthly[lang]}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.frequencyButton,
+                      paymentFrequency === 'biweekly' && styles.frequencyButtonActive
+                    ]}
+                    onPress={() => setPaymentFrequency('biweekly')}
+                  >
+                    <Text style={[
+                      styles.frequencyButtonText,
+                      paymentFrequency === 'biweekly' && styles.frequencyButtonTextActive
+                    ]}>
+                      {frequencyLabels.biweekly[lang]}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.frequencyButton,
+                      paymentFrequency === 'weekly' && styles.frequencyButtonActive
+                    ]}
+                    onPress={() => setPaymentFrequency('weekly')}
+                  >
+                    <Text style={[
+                      styles.frequencyButtonText,
+                      paymentFrequency === 'weekly' && styles.frequencyButtonTextActive
+                    ]}>
+                      {frequencyLabels.weekly[lang]}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
               {/* Sélection de l'option */}
               <View style={styles.termSection}>
                 <Text style={styles.inputLabel}>Choisir l'option de financement</Text>
