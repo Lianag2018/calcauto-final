@@ -187,6 +187,9 @@ export default function HomeScreen() {
   const [selectedTerm, setSelectedTerm] = useState<number>(72);
   const availableTerms = [36, 48, 60, 72, 84, 96];
   
+  // Selected option (1 or 2) - null means show comparison
+  const [selectedOption, setSelectedOption] = useState<'1' | '2' | null>(null);
+  
   // Custom bonus cash input (after taxes)
   const [customBonusCash, setCustomBonusCash] = useState('');
   
