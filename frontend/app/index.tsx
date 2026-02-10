@@ -281,6 +281,19 @@ export default function HomeScreen() {
   const years = [...new Set(programs.map(p => p.year))].sort((a, b) => b - a);
   const brands = [...new Set(programs.map(p => p.brand))].sort();
 
+  // Get rate for a specific term
+  const getRateForTerm = (rates: FinancingRates, term: number): number => {
+    const rateMap: { [key: number]: number } = {
+      36: rates.rate_36,
+      48: rates.rate_48,
+      60: rates.rate_60,
+      72: rates.rate_72,
+      84: rates.rate_84,
+      96: rates.rate_96,
+    };
+    return rateMap[term] ?? 4.99;
+  };
+
   // Handle year filter press
   const handleYearPress = (year: number | null) => {
     console.log('Year pressed:', year);
