@@ -603,7 +603,7 @@ async def seed_data():
         
         {"brand": "Jeep", "model": "Wrangler", "trim": "4-Door Rubicon w/ 2.0L", "year": 2025,
          "consumer_cash": 0, 
-         "option1_rates": None,
+         "option1_rates": std,
          "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99},
          "bonus_cash": 1000},
         
