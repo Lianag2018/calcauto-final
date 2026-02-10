@@ -10,6 +10,7 @@ import {
   RefreshControl,
   Platform,
   KeyboardAvoidingView,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +18,57 @@ import { useRouter } from 'expo-router';
 import axios from 'axios';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+
+// Custom Button component that works better on Safari
+const FilterButton = ({ 
+  active, 
+  onPress, 
+  label 
+}: { 
+  active: boolean; 
+  onPress: () => void; 
+  label: string;
+}) => {
+  if (Platform.OS === 'web') {
+    return (
+      <div
+        onClick={onPress}
+        style={{
+          backgroundColor: active ? '#4ECDC4' : '#2d2d44',
+          paddingLeft: 18,
+          paddingRight: 18,
+          paddingTop: 12,
+          paddingBottom: 12,
+          borderRadius: 20,
+          minWidth: 60,
+          textAlign: 'center',
+          cursor: 'pointer',
+          border: active ? '2px solid #4ECDC4' : '2px solid transparent',
+          userSelect: 'none',
+        }}
+      >
+        <span style={{
+          color: active ? '#1a1a2e' : '#aaa',
+          fontSize: 15,
+          fontWeight: '600',
+        }}>
+          {label}
+        </span>
+      </div>
+    );
+  }
+  
+  return (
+    <TouchableOpacity
+      style={[styles.filterChip, active && styles.filterChipActive]}
+      onPress={onPress}
+    >
+      <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+};
 
 interface FinancingRates {
   rate_36: number;
