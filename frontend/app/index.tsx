@@ -10,7 +10,8 @@ import {
   RefreshControl,
   Platform,
   KeyboardAvoidingView,
-  Pressable,
+  Modal,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,62 +19,6 @@ import { useRouter } from 'expo-router';
 import axios from 'axios';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
-
-// Custom Button component that works better on Safari
-const FilterButton = ({ 
-  active, 
-  onPress, 
-  label 
-}: { 
-  active: boolean; 
-  onPress: () => void; 
-  label: string;
-}) => {
-  if (Platform.OS === 'web') {
-    return (
-      <div
-        onClick={onPress}
-        style={{
-          backgroundColor: active ? '#4ECDC4' : '#2d2d44',
-          paddingLeft: 18,
-          paddingRight: 18,
-          paddingTop: 12,
-          paddingBottom: 12,
-          borderRadius: 20,
-          minWidth: 60,
-          textAlign: 'center' as const,
-          cursor: 'pointer',
-          border: active ? '2px solid #4ECDC4' : '2px solid transparent',
-          userSelect: 'none' as const,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxSizing: 'border-box' as const,
-        }}
-      >
-        <span style={{
-          color: active ? '#1a1a2e' : '#aaa',
-          fontSize: 15,
-          fontWeight: 600,
-          lineHeight: 1,
-        }}>
-          {label}
-        </span>
-      </div>
-    );
-  }
-  
-  return (
-    <TouchableOpacity
-      style={[styles.filterChip, active && styles.filterChipActive]}
-      onPress={onPress}
-    >
-      <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-};
 
 interface FinancingRates {
   rate_36: number;
@@ -93,6 +38,9 @@ interface VehicleProgram {
   consumer_cash: number;
   option1_rates: FinancingRates;
   option2_rates: FinancingRates | null;
+  bonus_cash: number;
+  program_month: number;
+  program_year: number;
 }
 
 interface PaymentComparison {
@@ -111,11 +59,18 @@ interface PaymentComparison {
 interface CalculationResult {
   vehicle_price: number;
   consumer_cash: number;
+  bonus_cash: number;
   brand: string;
   model: string;
   trim: string | null;
   year: number;
   comparisons: PaymentComparison[];
+}
+
+interface ProgramPeriod {
+  month: int;
+  year: int;
+  count: int;
 }
 
 // Language translations
@@ -130,13 +85,14 @@ const translations = {
     term: 'Terme',
     months: 'mois',
     option1: 'Option 1',
-    option1Desc: 'Rabais + Taux 4.99%',
+    option1Desc: 'Rabais + Taux',
     option2: 'Option 2',
-    option2Desc: 'Taux subventionné',
+    option2Desc: 'Taux réduits',
     monthly: 'Mensuel',
     total: 'Total',
     rate: 'Taux',
     rebate: 'Rabais',
+    bonusCash: 'Bonus',
     bestOption: 'Meilleure',
     savings: 'Économies',
     managePrograms: 'Gérer',
@@ -144,10 +100,18 @@ const translations = {
     loadingPrograms: 'Chargement...',
     enterValidPrice: 'Entrez un prix valide',
     noOption2: 'N/A',
-    filterByYear: 'Filtrer par année',
-    filterByBrand: 'Filtrer par marque',
+    filterByYear: 'Année modèle',
+    filterByBrand: 'Marque',
     all: 'Tous',
     selected: 'Sélectionné',
+    importProgram: 'Importer',
+    password: 'Mot de passe',
+    cancel: 'Annuler',
+    confirm: 'Confirmer',
+    importTitle: 'Importer un programme',
+    periodLabel: 'Période du programme',
+    beforeTax: 'avant taxes',
+    afterTax: 'après taxes',
   },
   en: {
     title: 'Financing Calculator',
@@ -159,13 +123,14 @@ const translations = {
     term: 'Term',
     months: 'months',
     option1: 'Option 1',
-    option1Desc: 'Rebate + 4.99% Rate',
+    option1Desc: 'Rebate + Rate',
     option2: 'Option 2',
-    option2Desc: 'Subvented Rate',
+    option2Desc: 'Reduced rates',
     monthly: 'Monthly',
     total: 'Total',
     rate: 'Rate',
     rebate: 'Rebate',
+    bonusCash: 'Bonus',
     bestOption: 'Best',
     savings: 'Savings',
     managePrograms: 'Manage',
@@ -173,11 +138,24 @@ const translations = {
     loadingPrograms: 'Loading...',
     enterValidPrice: 'Enter a valid price',
     noOption2: 'N/A',
-    filterByYear: 'Filter by year',
-    filterByBrand: 'Filter by brand',
+    filterByYear: 'Model year',
+    filterByBrand: 'Brand',
     all: 'All',
     selected: 'Selected',
+    importProgram: 'Import',
+    password: 'Password',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+    importTitle: 'Import program',
+    periodLabel: 'Program period',
+    beforeTax: 'before tax',
+    afterTax: 'after tax',
   },
+};
+
+const monthNames = {
+  fr: ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'],
+  en: ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
 };
 
 export default function HomeScreen() {
@@ -197,6 +175,13 @@ export default function HomeScreen() {
   // Filters
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  
+  // Import modal
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importPassword, setImportPassword] = useState('');
+  
+  // Current program period
+  const [currentPeriod, setCurrentPeriod] = useState<{month: number, year: number} | null>(null);
 
   const loadPrograms = useCallback(async () => {
     try {
@@ -204,6 +189,14 @@ export default function HomeScreen() {
       const response = await axios.get(`${API_URL}/api/programs`);
       setPrograms(response.data);
       setFilteredPrograms(response.data);
+      
+      // Get current period from first program
+      if (response.data.length > 0) {
+        setCurrentPeriod({
+          month: response.data[0].program_month,
+          year: response.data[0].program_year
+        });
+      }
     } catch (error) {
       console.error('Error loading programs:', error);
     } finally {
@@ -284,6 +277,31 @@ export default function HomeScreen() {
   const years = [...new Set(programs.map(p => p.year))].sort((a, b) => b - a);
   const brands = [...new Set(programs.map(p => p.brand))].sort();
 
+  // Handle year filter press
+  const handleYearPress = (year: number | null) => {
+    console.log('Year pressed:', year);
+    setSelectedYear(year);
+  };
+
+  // Handle brand filter press
+  const handleBrandPress = (brand: string | null) => {
+    console.log('Brand pressed:', brand);
+    setSelectedBrand(brand);
+  };
+
+  // Filter button component
+  const FilterButton = ({ active, onPress, label }: { active: boolean; onPress: () => void; label: string }) => (
+    <TouchableOpacity
+      style={[styles.filterChip, active && styles.filterChipActive]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -294,7 +312,9 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.headerTitle}>{t.title}</Text>
-            <Text style={styles.headerSubtitle}>{t.subtitle}</Text>
+            <Text style={styles.headerSubtitle}>
+              {currentPeriod && `${monthNames[lang][currentPeriod.month]} ${currentPeriod.year}`}
+            </Text>
           </View>
           <View style={styles.headerActions}>
             <TouchableOpacity
@@ -304,10 +324,10 @@ export default function HomeScreen() {
               <Text style={styles.langButtonText}>{lang === 'fr' ? 'EN' : 'FR'}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.manageButton}
-              onPress={() => router.push('/manage')}
+              style={styles.importButton}
+              onPress={() => setShowImportModal(true)}
             >
-              <Ionicons name="settings-outline" size={22} color="#fff" />
+              <Ionicons name="cloud-upload-outline" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
@@ -323,29 +343,52 @@ export default function HomeScreen() {
           {/* Year Filter */}
           <View style={styles.filterSection}>
             <Text style={styles.filterLabel}>{t.filterByYear}</Text>
-            <View style={styles.filterRow}>
-              <FilterButton active={!selectedYear} onPress={() => setSelectedYear(null)} label={t.all} />
-              <FilterButton active={selectedYear === 2026} onPress={() => setSelectedYear(2026)} label="2026" />
-              <FilterButton active={selectedYear === 2025} onPress={() => setSelectedYear(2025)} label="2025" />
-            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+              <View style={styles.filterRow}>
+                <FilterButton 
+                  active={selectedYear === null} 
+                  onPress={() => handleYearPress(null)} 
+                  label={t.all} 
+                />
+                {years.map(year => (
+                  <FilterButton 
+                    key={year}
+                    active={selectedYear === year} 
+                    onPress={() => handleYearPress(year)} 
+                    label={String(year)} 
+                  />
+                ))}
+              </View>
+            </ScrollView>
           </View>
 
           {/* Brand Filter */}
           <View style={styles.filterSection}>
             <Text style={styles.filterLabel}>{t.filterByBrand}</Text>
-            <View style={styles.filterRow}>
-              <FilterButton active={!selectedBrand} onPress={() => setSelectedBrand(null)} label={t.all} />
-              <FilterButton active={selectedBrand === 'Chrysler'} onPress={() => setSelectedBrand('Chrysler')} label="Chrysler" />
-              <FilterButton active={selectedBrand === 'Dodge'} onPress={() => setSelectedBrand('Dodge')} label="Dodge" />
-              <FilterButton active={selectedBrand === 'Fiat'} onPress={() => setSelectedBrand('Fiat')} label="Fiat" />
-              <FilterButton active={selectedBrand === 'Jeep'} onPress={() => setSelectedBrand('Jeep')} label="Jeep" />
-              <FilterButton active={selectedBrand === 'Ram'} onPress={() => setSelectedBrand('Ram')} label="Ram" />
-            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+              <View style={styles.filterRow}>
+                <FilterButton 
+                  active={selectedBrand === null} 
+                  onPress={() => handleBrandPress(null)} 
+                  label={t.all} 
+                />
+                {brands.map(brand => (
+                  <FilterButton 
+                    key={brand}
+                    active={selectedBrand === brand} 
+                    onPress={() => handleBrandPress(brand)} 
+                    label={brand} 
+                  />
+                ))}
+              </View>
+            </ScrollView>
           </View>
 
           {/* Vehicle Selection */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t.selectVehicle}</Text>
+            <Text style={styles.sectionTitle}>
+              {t.selectVehicle} ({filteredPrograms.length})
+            </Text>
             {programsLoading ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color="#4ECDC4" />
@@ -363,6 +406,7 @@ export default function HomeScreen() {
                       selectedProgram?.id === program.id && styles.programCardSelected,
                     ]}
                     onPress={() => selectProgram(program)}
+                    activeOpacity={0.7}
                   >
                     <View style={styles.programHeader}>
                       <Text style={styles.programBrand}>{program.brand}</Text>
@@ -370,15 +414,24 @@ export default function HomeScreen() {
                     </View>
                     <Text style={styles.programModel}>{program.model}</Text>
                     {program.trim && (
-                      <Text style={styles.programTrim}>{program.trim}</Text>
+                      <Text style={styles.programTrim} numberOfLines={2}>{program.trim}</Text>
                     )}
-                    {program.consumer_cash > 0 && (
-                      <View style={styles.cashBadge}>
-                        <Text style={styles.cashBadgeText}>
-                          {formatCurrency(program.consumer_cash)}
-                        </Text>
-                      </View>
-                    )}
+                    <View style={styles.badgeRow}>
+                      {program.consumer_cash > 0 && (
+                        <View style={styles.cashBadge}>
+                          <Text style={styles.cashBadgeText}>
+                            {formatCurrency(program.consumer_cash)}
+                          </Text>
+                        </View>
+                      )}
+                      {program.bonus_cash > 0 && (
+                        <View style={styles.bonusBadge}>
+                          <Text style={styles.bonusBadgeText}>
+                            +{formatCurrency(program.bonus_cash)}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
                     {program.option2_rates && (
                       <View style={styles.option2Badge}>
                         <Text style={styles.option2BadgeText}>
@@ -394,13 +447,16 @@ export default function HomeScreen() {
             {selectedProgram && (
               <View style={styles.selectedInfo}>
                 <View style={styles.selectedHeader}>
-                  <View>
+                  <View style={styles.selectedTitleContainer}>
                     <Text style={styles.selectedBrand}>{selectedProgram.brand}</Text>
                     <Text style={styles.selectedTitle}>
-                      {selectedProgram.model} {selectedProgram.trim || ''} {selectedProgram.year}
+                      {selectedProgram.model} {selectedProgram.year}
                     </Text>
+                    {selectedProgram.trim && (
+                      <Text style={styles.selectedTrim}>{selectedProgram.trim}</Text>
+                    )}
                   </View>
-                  <TouchableOpacity onPress={clearSelection}>
+                  <TouchableOpacity onPress={clearSelection} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
                     <Ionicons name="close-circle" size={28} color="#FF6B6B" />
                   </TouchableOpacity>
                 </View>
@@ -409,19 +465,34 @@ export default function HomeScreen() {
                     <Text style={styles.optionPreviewLabel}>{t.option1}</Text>
                     <Text style={styles.optionPreviewValue}>
                       {selectedProgram.consumer_cash > 0 
-                        ? `${formatCurrency(selectedProgram.consumer_cash)} + 4.99%`
-                        : '4.99%'}
+                        ? formatCurrency(selectedProgram.consumer_cash)
+                        : '$0'} + {selectedProgram.option1_rates.rate_36}%
                     </Text>
+                    <Text style={styles.optionPreviewNote}>{t.beforeTax}</Text>
                   </View>
-                  {selectedProgram.option2_rates && (
+                  {selectedProgram.option2_rates ? (
                     <View style={styles.optionPreview}>
                       <Text style={styles.optionPreviewLabel}>{t.option2}</Text>
                       <Text style={styles.optionPreviewValue}>
-                        {selectedProgram.option2_rates.rate_36}% - {selectedProgram.option2_rates.rate_96}%
+                        $0 + {selectedProgram.option2_rates.rate_36}%
                       </Text>
+                      <Text style={styles.optionPreviewNote}>{t.option2Desc}</Text>
+                    </View>
+                  ) : (
+                    <View style={[styles.optionPreview, styles.optionPreviewDisabled]}>
+                      <Text style={styles.optionPreviewLabel}>{t.option2}</Text>
+                      <Text style={styles.optionPreviewValueNA}>{t.noOption2}</Text>
                     </View>
                   )}
                 </View>
+                {selectedProgram.bonus_cash > 0 && (
+                  <View style={styles.bonusCashInfo}>
+                    <Ionicons name="gift-outline" size={16} color="#FFD700" />
+                    <Text style={styles.bonusCashText}>
+                      {t.bonusCash}: {formatCurrency(selectedProgram.bonus_cash)} ({t.afterTax})
+                    </Text>
+                  </View>
+                )}
               </View>
             )}
           </View>
@@ -448,6 +519,7 @@ export default function HomeScreen() {
                 ]}
                 onPress={handleCalculate}
                 disabled={!vehiclePrice || loading}
+                activeOpacity={0.7}
               >
                 {loading ? (
                   <ActivityIndicator size="small" color="#1a1a2e" />
@@ -473,11 +545,18 @@ export default function HomeScreen() {
                 <Text style={styles.summaryPrice}>
                   {formatCurrency(results.vehicle_price)}
                 </Text>
-                {results.consumer_cash > 0 && (
-                  <Text style={styles.summaryCash}>
-                    {t.rebate}: {formatCurrency(results.consumer_cash)}
-                  </Text>
-                )}
+                <View style={styles.summaryDetails}>
+                  {results.consumer_cash > 0 && (
+                    <Text style={styles.summaryCash}>
+                      {t.rebate}: {formatCurrency(results.consumer_cash)} ({t.beforeTax})
+                    </Text>
+                  )}
+                  {results.bonus_cash > 0 && (
+                    <Text style={styles.summaryBonus}>
+                      {t.bonusCash}: {formatCurrency(results.bonus_cash)} ({t.afterTax})
+                    </Text>
+                  )}
+                </View>
               </View>
 
               {/* Legend */}
@@ -586,6 +665,61 @@ export default function HomeScreen() {
             </View>
           )}
         </ScrollView>
+
+        {/* Import Modal */}
+        <Modal
+          visible={showImportModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowImportModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>{t.importTitle}</Text>
+              <Text style={styles.modalSubtitle}>
+                Entrez le mot de passe administrateur
+              </Text>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder={t.password}
+                placeholderTextColor="#666"
+                secureTextEntry
+                value={importPassword}
+                onChangeText={setImportPassword}
+                autoCapitalize="none"
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.modalButtonCancel}
+                  onPress={() => {
+                    setShowImportModal(false);
+                    setImportPassword('');
+                  }}
+                >
+                  <Text style={styles.modalButtonCancelText}>{t.cancel}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalButtonConfirm}
+                  onPress={() => {
+                    if (importPassword === 'Admin') {
+                      setShowImportModal(false);
+                      setImportPassword('');
+                      router.push('/import');
+                    } else {
+                      if (Platform.OS === 'web') {
+                        alert('Mot de passe incorrect');
+                      } else {
+                        Alert.alert('Erreur', 'Mot de passe incorrect');
+                      }
+                    }
+                  }}
+                >
+                  <Text style={styles.modalButtonConfirmText}>{t.confirm}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -615,7 +749,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 12,
-    color: '#888',
+    color: '#4ECDC4',
     marginTop: 2,
   },
   headerActions: {
@@ -634,8 +768,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 12,
   },
-  manageButton: {
+  importButton: {
     padding: 6,
+    backgroundColor: '#2d2d44',
+    borderRadius: 8,
   },
   scrollView: {
     flex: 1,
@@ -653,9 +789,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     fontWeight: '600',
   },
+  filterScroll: {
+    marginHorizontal: -16,
+  },
   filterRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    paddingHorizontal: 16,
     gap: 8,
   },
   filterChip: {
@@ -665,6 +804,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     minWidth: 60,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
   },
@@ -712,7 +852,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     marginRight: 10,
-    minWidth: 150,
+    minWidth: 160,
+    maxWidth: 180,
     borderWidth: 2,
     borderColor: 'transparent',
   },
@@ -742,33 +883,48 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   programTrim: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#aaa',
     marginTop: 2,
   },
+  badgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 8,
+  },
   cashBadge: {
     backgroundColor: '#FF6B6B',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-    marginTop: 8,
-    alignSelf: 'flex-start',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
   cashBadgeText: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#fff',
+    fontWeight: 'bold',
+  },
+  bonusBadge: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  bonusBadgeText: {
+    fontSize: 9,
+    color: '#1a1a2e',
     fontWeight: 'bold',
   },
   option2Badge: {
     backgroundColor: '#4ECDC4',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
     marginTop: 4,
     alignSelf: 'flex-start',
   },
   option2BadgeText: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#1a1a2e',
     fontWeight: 'bold',
   },
@@ -783,6 +939,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
+  selectedTitleContainer: {
+    flex: 1,
+    marginRight: 10,
+  },
   selectedBrand: {
     fontSize: 12,
     color: '#4ECDC4',
@@ -794,16 +954,24 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 2,
   },
+  selectedTrim: {
+    fontSize: 12,
+    color: '#aaa',
+    marginTop: 2,
+  },
   optionsPreview: {
     flexDirection: 'row',
     marginTop: 12,
-    gap: 12,
+    gap: 10,
   },
   optionPreview: {
     flex: 1,
     backgroundColor: '#1a1a2e',
     borderRadius: 8,
     padding: 10,
+  },
+  optionPreviewDisabled: {
+    opacity: 0.5,
   },
   optionPreviewLabel: {
     fontSize: 11,
@@ -814,6 +982,31 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     marginTop: 4,
+  },
+  optionPreviewValueNA: {
+    fontSize: 13,
+    color: '#666',
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  optionPreviewNote: {
+    fontSize: 9,
+    color: '#666',
+    marginTop: 2,
+  },
+  bonusCashInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#3d3d54',
+    gap: 6,
+  },
+  bonusCashText: {
+    fontSize: 12,
+    color: '#FFD700',
+    fontWeight: '500',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -863,6 +1056,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#fff',
     fontWeight: '600',
+    textAlign: 'center',
   },
   summaryPrice: {
     fontSize: 24,
@@ -870,10 +1064,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 4,
   },
+  summaryDetails: {
+    marginTop: 8,
+  },
   summaryCash: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#FF6B6B',
-    marginTop: 4,
+    textAlign: 'center',
+  },
+  summaryBonus: {
+    fontSize: 12,
+    color: '#FFD700',
+    textAlign: 'center',
+    marginTop: 2,
   },
   legend: {
     flexDirection: 'row',
@@ -1001,6 +1204,70 @@ const styles = StyleSheet.create({
   savingsText: {
     fontSize: 13,
     color: '#4ECDC4',
+    fontWeight: '600',
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#2d2d44',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  passwordInput: {
+    backgroundColor: '#1a1a2e',
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 16,
+    color: '#fff',
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButtonCancel: {
+    flex: 1,
+    backgroundColor: '#3d3d54',
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+  },
+  modalButtonCancelText: {
+    color: '#aaa',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalButtonConfirm: {
+    flex: 1,
+    backgroundColor: '#4ECDC4',
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+  },
+  modalButtonConfirmText: {
+    color: '#1a1a2e',
+    fontSize: 16,
     fontWeight: '600',
   },
 });
