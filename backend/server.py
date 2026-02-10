@@ -645,73 +645,73 @@ async def seed_data():
          "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.99},
          "bonus_cash": 1000},
         
-        # JEEP GRAND CHEROKEE L 2025
+        # JEEP GRAND CHEROKEE L 2025 - Corrigé
         {"brand": "Jeep", "model": "Grand Cherokee L", "trim": "Laredo (WLJH75 2*A)", "year": 2025,
          "consumer_cash": 6000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 2.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.99},
          "bonus_cash": 1000},
         
         {"brand": "Jeep", "model": "Grand Cherokee L", "trim": "Altitude (WLJH75 2*B)", "year": 2025,
          "consumer_cash": 7500, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 2.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.99},
          "bonus_cash": 1000},
         
         {"brand": "Jeep", "model": "Grand Cherokee L", "trim": "Overland (WLJS75)", "year": 2025,
          "consumer_cash": 0, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 2.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.99},
          "bonus_cash": 1000},
         
         {"brand": "Jeep", "model": "Grand Cherokee L", "trim": "(WL) (excl. Laredo, Altitude, Overland)", "year": 2025,
          "consumer_cash": 9500, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 2.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.99},
          "bonus_cash": 1000},
         
-        # JEEP WAGONEER 2025
+        # JEEP WAGONEER 2025 - Corrigé
         {"brand": "Jeep", "model": "Wagoneer/L", "trim": None, "year": 2025,
          "consumer_cash": 7500, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 0.99, "rate_96": 0.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 3.99},
          "bonus_cash": 1000},
         
         {"brand": "Jeep", "model": "Grand Wagoneer/L", "trim": None, "year": 2025,
          "consumer_cash": 9500, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 0.99, "rate_96": 0.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 3.99},
          "bonus_cash": 1000},
         
         {"brand": "Jeep", "model": "Wagoneer S", "trim": "Limited & Premium (BEV)", "year": 2025,
          "consumer_cash": 8000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 0.99, "rate_96": 0.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 2.99},
          "bonus_cash": 1000},
         
-        # DODGE DURANGO 2025
+        # DODGE DURANGO 2025 - Corrigé
         {"brand": "Dodge", "model": "Durango", "trim": "GT, GT Plus", "year": 2025,
          "consumer_cash": 8000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.49},
          "bonus_cash": 1000},
         
         {"brand": "Dodge", "model": "Durango", "trim": "R/T, R/T Plus, R/T 20th Anniversary", "year": 2025,
          "consumer_cash": 9500, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.49},
          "bonus_cash": 1000},
         
         {"brand": "Dodge", "model": "Durango", "trim": "SRT Hellcat", "year": 2025,
          "consumer_cash": 16000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.49},
          "bonus_cash": 1000},
         
-        # DODGE CHARGER 2025
+        # DODGE CHARGER 2025 - Corrigé
         {"brand": "Dodge", "model": "Charger Daytona", "trim": "R/T (BEV)", "year": 2025,
          "consumer_cash": 3000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 0.99, "rate_96": 0.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 2.99},
          "bonus_cash": 1000},
         
         {"brand": "Dodge", "model": "Charger Daytona", "trim": "R/T Plus (BEV)", "year": 2025,
          "consumer_cash": 5000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 0.99, "rate_96": 0.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 2.99},
          "bonus_cash": 1000},
         
         {"brand": "Dodge", "model": "Charger Daytona", "trim": "Scat Pack (BEV)", "year": 2025,
          "consumer_cash": 7000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 0.99, "rate_96": 0.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 2.99},
          "bonus_cash": 1000},
         
         # DODGE HORNET 2025
