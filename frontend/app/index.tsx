@@ -687,6 +687,63 @@ export default function HomeScreen() {
                   ))}
                 </View>
               </View>
+
+              {/* Sélection de l'option */}
+              <View style={styles.termSection}>
+                <Text style={styles.inputLabel}>Choisir l'option de financement</Text>
+                <View style={styles.optionButtons}>
+                  <TouchableOpacity
+                    style={[
+                      styles.optionButton,
+                      styles.optionButton1,
+                      selectedOption === '1' && styles.optionButtonActive1
+                    ]}
+                    onPress={() => setSelectedOption(selectedOption === '1' ? null : '1')}
+                  >
+                    <Text style={[
+                      styles.optionButtonText,
+                      selectedOption === '1' && styles.optionButtonTextActive
+                    ]}>
+                      {t.option1}
+                    </Text>
+                    <Text style={[
+                      styles.optionButtonSubtext,
+                      selectedOption === '1' && styles.optionButtonTextActive
+                    ]}>
+                      {selectedProgram.consumer_cash > 0 ? formatCurrency(selectedProgram.consumer_cash) : '$0'} + {localResult?.option1Rate || getRateForTerm(selectedProgram.option1_rates, selectedTerm)}%
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  {selectedProgram.option2_rates ? (
+                    <TouchableOpacity
+                      style={[
+                        styles.optionButton,
+                        styles.optionButton2,
+                        selectedOption === '2' && styles.optionButtonActive2
+                      ]}
+                      onPress={() => setSelectedOption(selectedOption === '2' ? null : '2')}
+                    >
+                      <Text style={[
+                        styles.optionButtonText,
+                        selectedOption === '2' && styles.optionButtonTextActive
+                      ]}>
+                        {t.option2}
+                      </Text>
+                      <Text style={[
+                        styles.optionButtonSubtext,
+                        selectedOption === '2' && styles.optionButtonTextActive
+                      ]}>
+                        $0 + {localResult?.option2Rate || getRateForTerm(selectedProgram.option2_rates, selectedTerm)}%
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={[styles.optionButton, styles.optionButtonDisabled]}>
+                      <Text style={styles.optionButtonTextDisabled}>{t.option2}</Text>
+                      <Text style={styles.optionButtonTextDisabled}>{t.noOption2}</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
             </View>
           )}
 
