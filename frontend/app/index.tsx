@@ -1304,4 +1304,80 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  // Rates table styles
+  ratesTable: {
+    marginTop: 12,
+    backgroundColor: '#1a1a2e',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  ratesHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#3d3d54',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  ratesHeaderCell: {
+    flex: 1,
+    fontSize: 11,
+    color: '#aaa',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  ratesRow: {
+    flexDirection: 'row',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2d2d44',
+  },
+  ratesRowSelected: {
+    backgroundColor: '#4ECDC4',
+  },
+  ratesCell: {
+    flex: 1,
+    fontSize: 13,
+    color: '#fff',
+    textAlign: 'center',
+  },
+  ratesCellSelected: {
+    color: '#1a1a2e',
+    fontWeight: 'bold',
+  },
+  ratesCellOption1: {
+    color: '#FF6B6B',
+  },
+  ratesCellOption2: {
+    color: '#4ECDC4',
+  },
+  rebatesSummary: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#3d3d54',
+    gap: 6,
+  },
+  rebateItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  rebateLabel: {
+    fontSize: 12,
+    color: '#FF6B6B',
+  },
+  rebateValue: {
+    fontSize: 12,
+    color: '#FF6B6B',
+    fontWeight: 'bold',
+  },
+  rebateLabelBonus: {
+    fontSize: 12,
+    color: '#FFD700',
+  },
+  rebateValueBonus: {
+    fontSize: 12,
+    color: '#FFD700',
+    fontWeight: 'bold',
+  },
 });
