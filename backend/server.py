@@ -423,15 +423,19 @@ async def seed_data():
         {"brand": "Jeep", "model": "Cherokee", "trim": "(excluding Base)", "year": 2026,
          "consumer_cash": 0, "option1_rates": std, "option2_rates": None, "bonus_cash": 0},
         
-        # JEEP WRANGLER 2026
+        # JEEP WRANGLER 2026 - Corrigé avec Option 2
         {"brand": "Jeep", "model": "Wrangler", "trim": "2-Door (JL) non Rubicon", "year": 2026,
          "consumer_cash": 0, "option1_rates": std, "option2_rates": None, "bonus_cash": 0},
         
         {"brand": "Jeep", "model": "Wrangler", "trim": "2-Door Rubicon (JL)", "year": 2026,
-         "consumer_cash": 0, "option1_rates": std, "option2_rates": None, "bonus_cash": 0},
+         "consumer_cash": 0, "option1_rates": std, 
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}, 
+         "bonus_cash": 0},
         
         {"brand": "Jeep", "model": "Wrangler", "trim": "4-Door (excl. 392 et 4xe)", "year": 2026,
-         "consumer_cash": 5250, "option1_rates": std, "option2_rates": None, "bonus_cash": 0},
+         "consumer_cash": 5250, "option1_rates": std, 
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99}, 
+         "bonus_cash": 0},
         
         {"brand": "Jeep", "model": "Wrangler", "trim": "4-Door MOAB 392", "year": 2026,
          "consumer_cash": 6000, "option1_rates": std, "option2_rates": None, "bonus_cash": 0},
@@ -441,30 +445,34 @@ async def seed_data():
          "consumer_cash": 0, "option1_rates": std, "option2_rates": None, "bonus_cash": 0},
         
         {"brand": "Jeep", "model": "Gladiator", "trim": "(excl. Sport S, Willys, Sahara, Willys '41)", "year": 2026,
-         "consumer_cash": 0, "option1_rates": std, "option2_rates": None, "bonus_cash": 0},
+         "consumer_cash": 0, "option1_rates": std, 
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.49, "rate_96": 2.49}, 
+         "bonus_cash": 0},
         
-        # JEEP GRAND CHEROKEE 2026 - Taux variables dans Option 1!
+        # JEEP GRAND CHEROKEE 2026 - Taux variables Option 1 et Option 2 corrigés
         {"brand": "Jeep", "model": "Grand Cherokee/L", "trim": "Laredo/Laredo X", "year": 2026,
          "consumer_cash": 0,
-         "option1_rates": {"rate_36": 1.99, "rate_48": 1.99, "rate_60": 1.99, "rate_72": 1.99, "rate_84": 2.99, "rate_96": 2.99},
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option1_rates": {"rate_36": 1.99, "rate_48": 2.99, "rate_60": 3.49, "rate_72": 3.99, "rate_84": 4.49, "rate_96": 4.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 2.49, "rate_96": 3.49},
          "bonus_cash": 0},
         
         {"brand": "Jeep", "model": "Grand Cherokee/L", "trim": "Altitude", "year": 2026,
          "consumer_cash": 0,
-         "option1_rates": {"rate_36": 1.99, "rate_48": 1.99, "rate_60": 1.99, "rate_72": 1.99, "rate_84": 2.99, "rate_96": 2.99},
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option1_rates": {"rate_36": 1.99, "rate_48": 2.99, "rate_60": 3.49, "rate_72": 3.99, "rate_84": 4.49, "rate_96": 4.99},
+         "option2_rates": None,
          "bonus_cash": 0},
         
         {"brand": "Jeep", "model": "Grand Cherokee/L", "trim": "Limited/Limited Reserve/Summit", "year": 2026,
          "consumer_cash": 0,
-         "option1_rates": {"rate_36": 1.99, "rate_48": 1.99, "rate_60": 1.99, "rate_72": 1.99, "rate_84": 2.99, "rate_96": 2.99},
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option1_rates": {"rate_36": 1.99, "rate_48": 2.99, "rate_60": 3.49, "rate_72": 3.99, "rate_84": 4.49, "rate_96": 4.99},
+         "option2_rates": None,
          "bonus_cash": 0},
         
         # JEEP GRAND WAGONEER 2026
         {"brand": "Jeep", "model": "Grand Wagoneer/L", "trim": None, "year": 2026,
-         "consumer_cash": 0, "option1_rates": std, "option2_rates": None, "bonus_cash": 0},
+         "consumer_cash": 0, "option1_rates": std, 
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 3.99}, 
+         "bonus_cash": 0},
         
         # DODGE DURANGO 2026
         {"brand": "Dodge", "model": "Durango", "trim": "SXT, GT, GT Plus", "year": 2026,
