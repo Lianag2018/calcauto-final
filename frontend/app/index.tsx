@@ -477,39 +477,56 @@ export default function HomeScreen() {
                     <Ionicons name="close-circle" size={28} color="#FF6B6B" />
                   </TouchableOpacity>
                 </View>
-                <View style={styles.optionsPreview}>
-                  <View style={styles.optionPreview}>
-                    <Text style={styles.optionPreviewLabel}>{t.option1}</Text>
-                    <Text style={styles.optionPreviewValue}>
-                      {selectedProgram.consumer_cash > 0 
-                        ? formatCurrency(selectedProgram.consumer_cash)
-                        : '$0'} + {selectedProgram.option1_rates.rate_36}%
-                    </Text>
-                    <Text style={styles.optionPreviewNote}>{t.beforeTax}</Text>
+                
+                {/* Rates table by term */}
+                <View style={styles.ratesTable}>
+                  <View style={styles.ratesHeader}>
+                    <Text style={styles.ratesHeaderCell}>{t.term}</Text>
+                    <Text style={styles.ratesHeaderCell}>{t.option1}</Text>
+                    {selectedProgram.option2_rates && (
+                      <Text style={styles.ratesHeaderCell}>{t.option2}</Text>
+                    )}
                   </View>
-                  {selectedProgram.option2_rates ? (
-                    <View style={styles.optionPreview}>
-                      <Text style={styles.optionPreviewLabel}>{t.option2}</Text>
-                      <Text style={styles.optionPreviewValue}>
-                        $0 + {selectedProgram.option2_rates.rate_36}%
+                  {availableTerms.map(term => (
+                    <TouchableOpacity 
+                      key={term} 
+                      style={[
+                        styles.ratesRow,
+                        selectedTerm === term && styles.ratesRowSelected
+                      ]}
+                      onPress={() => setSelectedTerm(term)}
+                    >
+                      <Text style={[styles.ratesCell, selectedTerm === term && styles.ratesCellSelected]}>
+                        {term} {t.months}
                       </Text>
-                      <Text style={styles.optionPreviewNote}>{t.option2Desc}</Text>
+                      <Text style={[styles.ratesCell, styles.ratesCellOption1, selectedTerm === term && styles.ratesCellSelected]}>
+                        {getRateForTerm(selectedProgram.option1_rates, term)}%
+                      </Text>
+                      {selectedProgram.option2_rates && (
+                        <Text style={[styles.ratesCell, styles.ratesCellOption2, selectedTerm === term && styles.ratesCellSelected]}>
+                          {getRateForTerm(selectedProgram.option2_rates, term)}%
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Rebates summary */}
+                <View style={styles.rebatesSummary}>
+                  {selectedProgram.consumer_cash > 0 && (
+                    <View style={styles.rebateItem}>
+                      <Text style={styles.rebateLabel}>{t.rebate} ({t.beforeTax}):</Text>
+                      <Text style={styles.rebateValue}>{formatCurrency(selectedProgram.consumer_cash)}</Text>
                     </View>
-                  ) : (
-                    <View style={[styles.optionPreview, styles.optionPreviewDisabled]}>
-                      <Text style={styles.optionPreviewLabel}>{t.option2}</Text>
-                      <Text style={styles.optionPreviewValueNA}>{t.noOption2}</Text>
+                  )}
+                  {selectedProgram.bonus_cash > 0 && (
+                    <View style={styles.rebateItem}>
+                      <Ionicons name="gift-outline" size={14} color="#FFD700" />
+                      <Text style={styles.rebateLabelBonus}>{t.bonusCash} ({t.afterTax}):</Text>
+                      <Text style={styles.rebateValueBonus}>{formatCurrency(selectedProgram.bonus_cash)}</Text>
                     </View>
                   )}
                 </View>
-                {selectedProgram.bonus_cash > 0 && (
-                  <View style={styles.bonusCashInfo}>
-                    <Ionicons name="gift-outline" size={16} color="#FFD700" />
-                    <Text style={styles.bonusCashText}>
-                      {t.bonusCash}: {formatCurrency(selectedProgram.bonus_cash)} ({t.afterTax})
-                    </Text>
-                  </View>
-                )}
               </View>
             )}
           </View>
