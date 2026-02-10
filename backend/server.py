@@ -273,8 +273,9 @@ async def seed_data():
          "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49}},
         
         {"brand": "Jeep", "model": "Compass", "trim": "Limited", "year": 2026,
-         "consumer_cash": 0, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49}},
+         "consumer_cash": 0,
+         "option1_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49},
+         "option2_rates": None},
         
         # JEEP CHEROKEE 2026
         {"brand": "Jeep", "model": "Cherokee", "trim": "Base (KMJL74)", "year": 2026,
