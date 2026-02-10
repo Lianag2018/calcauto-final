@@ -1725,6 +1725,64 @@ const styles = StyleSheet.create({
   termButtonTextActive: {
     color: '#1a1a2e',
   },
+  // Fees section styles
+  feesSection: {
+    marginTop: 16,
+    backgroundColor: '#2d2d44',
+    borderRadius: 12,
+    padding: 12,
+  },
+  feesSectionTitle: {
+    fontSize: 13,
+    color: '#aaa',
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  feesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  feeField: {
+    flex: 1,
+    minWidth: 100,
+  },
+  feeLabel: {
+    fontSize: 11,
+    color: '#888',
+    marginBottom: 4,
+  },
+  feeInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a1a2e',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+  },
+  feeSymbol: {
+    fontSize: 14,
+    color: '#4ECDC4',
+    fontWeight: '600',
+  },
+  feeInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#fff',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  feeNote: {
+    fontSize: 9,
+    color: '#666',
+    marginTop: 2,
+  },
+  exchangeRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  exchangeField: {
+    flex: 1,
+  },
   // Option selection buttons
   optionButtons: {
     flexDirection: 'row',
