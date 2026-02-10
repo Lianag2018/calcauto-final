@@ -678,10 +678,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#4ECDC4',
     borderColor: '#4ECDC4',
   },
-  filterChipPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.95 }],
-  },
   filterChipText: {
     color: '#aaa',
     fontSize: 15,
