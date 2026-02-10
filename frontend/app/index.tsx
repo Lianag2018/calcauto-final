@@ -187,6 +187,14 @@ export default function HomeScreen() {
   const [selectedTerm, setSelectedTerm] = useState<number>(72);
   const availableTerms = [36, 48, 60, 72, 84, 96];
   
+  // Payment frequency
+  const [paymentFrequency, setPaymentFrequency] = useState<'monthly' | 'biweekly' | 'weekly'>('monthly');
+  const frequencyLabels = {
+    monthly: { fr: 'Mensuel', en: 'Monthly', factor: 1 },
+    biweekly: { fr: 'Aux 2 sem.', en: 'Bi-weekly', factor: 12/26 },
+    weekly: { fr: 'Hebdo', en: 'Weekly', factor: 12/52 },
+  };
+  
   // Selected option (1 or 2) - null means show comparison
   const [selectedOption, setSelectedOption] = useState<'1' | '2' | null>(null);
   
@@ -208,6 +216,8 @@ export default function HomeScreen() {
   // Local calculation result (calculated on frontend)
   const [localResult, setLocalResult] = useState<{
     option1Monthly: number;
+    option1Biweekly: number;
+    option1Weekly: number;
     option1Total: number;
     option1Rate: number;
     option2Monthly: number | null;
