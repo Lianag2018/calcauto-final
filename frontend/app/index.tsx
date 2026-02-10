@@ -701,6 +701,92 @@ export default function HomeScreen() {
                 </View>
               </View>
 
+              {/* Frais additionnels (taxables) */}
+              <View style={styles.feesSection}>
+                <Text style={styles.feesSectionTitle}>Frais additionnels (taxables)</Text>
+                <View style={styles.feesRow}>
+                  <View style={styles.feeField}>
+                    <Text style={styles.feeLabel}>Frais dossier</Text>
+                    <View style={styles.feeInputContainer}>
+                      <Text style={styles.feeSymbol}>$</Text>
+                      <TextInput
+                        style={styles.feeInput}
+                        placeholder="259.95"
+                        placeholderTextColor="#666"
+                        keyboardType="decimal-pad"
+                        value={fraisDossier}
+                        onChangeText={setFraisDossier}
+                      />
+                    </View>
+                  </View>
+                  <View style={styles.feeField}>
+                    <Text style={styles.feeLabel}>Taxe pneus</Text>
+                    <View style={styles.feeInputContainer}>
+                      <Text style={styles.feeSymbol}>$</Text>
+                      <TextInput
+                        style={styles.feeInput}
+                        placeholder="15"
+                        placeholderTextColor="#666"
+                        keyboardType="decimal-pad"
+                        value={taxePneus}
+                        onChangeText={setTaxePneus}
+                      />
+                    </View>
+                  </View>
+                  <View style={styles.feeField}>
+                    <Text style={styles.feeLabel}>Frais RDPRM</Text>
+                    <View style={styles.feeInputContainer}>
+                      <Text style={styles.feeSymbol}>$</Text>
+                      <TextInput
+                        style={styles.feeInput}
+                        placeholder="100"
+                        placeholderTextColor="#666"
+                        keyboardType="decimal-pad"
+                        value={fraisRDPRM}
+                        onChangeText={setFraisRDPRM}
+                      />
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              {/* Échange */}
+              <View style={styles.feesSection}>
+                <Text style={styles.feesSectionTitle}>Échange (optionnel)</Text>
+                <View style={styles.exchangeRow}>
+                  <View style={styles.exchangeField}>
+                    <Text style={styles.feeLabel}>Valeur de l'échange</Text>
+                    <View style={styles.feeInputContainer}>
+                      <Text style={styles.feeSymbol}>$</Text>
+                      <TextInput
+                        style={styles.feeInput}
+                        placeholder="0"
+                        placeholderTextColor="#666"
+                        keyboardType="numeric"
+                        value={prixEchange}
+                        onChangeText={setPrixEchange}
+                      />
+                    </View>
+                    <Text style={styles.feeNote}>Réduit le montant</Text>
+                  </View>
+                  <View style={styles.exchangeField}>
+                    <Text style={styles.feeLabel}>Montant dû</Text>
+                    <View style={styles.feeInputContainer}>
+                      <Text style={styles.feeSymbol}>$</Text>
+                      <TextInput
+                        style={styles.feeInput}
+                        placeholder="0"
+                        placeholderTextColor="#666"
+                        keyboardType="numeric"
+                        value={montantDuEchange}
+                        onChangeText={setMontantDuEchange}
+                      />
+                    </View>
+                    <Text style={styles.feeNote}>Ajouté au financement</Text>
+                  </View>
+                </View>
+              </View>
+
               {/* Sélection du terme */}
               <View style={styles.termSection}>
                 <Text style={styles.inputLabel}>Sélectionner le terme</Text>
