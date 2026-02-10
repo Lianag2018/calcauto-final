@@ -390,28 +390,30 @@ async def seed_data():
          "option1_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 3.49},
          "option2_rates": None, "bonus_cash": 0},
         
-        # JEEP COMPASS 2026
+        # JEEP COMPASS 2026 - Taux Option 2 corrigés
         {"brand": "Jeep", "model": "Compass", "trim": "Sport", "year": 2026,
-         "consumer_cash": 0, "option1_rates": std, "option2_rates": None, "bonus_cash": 0},
+         "consumer_cash": 0, "option1_rates": std, 
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49}, 
+         "bonus_cash": 0},
         
         {"brand": "Jeep", "model": "Compass", "trim": "North", "year": 2026,
          "consumer_cash": 3500, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49},
          "bonus_cash": 0},
         
         {"brand": "Jeep", "model": "Compass", "trim": "North w/ Altitude Package (ADZ)", "year": 2026,
          "consumer_cash": 4000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49},
          "bonus_cash": 0},
         
         {"brand": "Jeep", "model": "Compass", "trim": "Trailhawk", "year": 2026,
          "consumer_cash": 4000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49},
          "bonus_cash": 0},
         
         {"brand": "Jeep", "model": "Compass", "trim": "Limited", "year": 2026,
          "consumer_cash": 0, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49},
          "bonus_cash": 0},
         
         # JEEP CHEROKEE 2026
