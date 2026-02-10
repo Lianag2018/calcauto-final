@@ -1870,6 +1870,33 @@ const styles = StyleSheet.create({
   exchangeField: {
     flex: 1,
   },
+  // Frequency buttons
+  frequencyButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  frequencyButton: {
+    flex: 1,
+    backgroundColor: '#2d2d44',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  frequencyButtonActive: {
+    backgroundColor: '#FFD700',
+    borderColor: '#FFD700',
+  },
+  frequencyButtonText: {
+    fontSize: 13,
+    color: '#aaa',
+    fontWeight: '600',
+  },
+  frequencyButtonTextActive: {
+    color: '#1a1a2e',
+  },
   // Option selection buttons
   optionButtons: {
     flexDirection: 'row',
