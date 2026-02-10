@@ -193,6 +193,18 @@ export default function HomeScreen() {
   // Custom bonus cash input (after taxes)
   const [customBonusCash, setCustomBonusCash] = useState('');
   
+  // Frais additionnels (taxables)
+  const [fraisDossier, setFraisDossier] = useState('259.95');
+  const [taxePneus, setTaxePneus] = useState('15');
+  const [fraisRDPRM, setFraisRDPRM] = useState('100');
+  
+  // Échange
+  const [prixEchange, setPrixEchange] = useState('');
+  const [montantDuEchange, setMontantDuEchange] = useState('');
+  
+  // Taux de taxe (TPS + TVQ Québec)
+  const tauxTaxe = 0.14975; // 5% TPS + 9.975% TVQ
+  
   // Local calculation result (calculated on frontend)
   const [localResult, setLocalResult] = useState<{
     option1Monthly: number;
@@ -205,6 +217,9 @@ export default function HomeScreen() {
     savings: number;
     principalOption1: number;
     principalOption2: number;
+    fraisTaxables: number;
+    taxes: number;
+    echangeNet: number;
   } | null>(null);
 
   const loadPrograms = useCallback(async () => {
