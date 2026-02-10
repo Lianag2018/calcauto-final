@@ -494,23 +494,23 @@ async def seed_data():
         {"brand": "Dodge", "model": "Charger", "trim": "2-Door & 4-Door (ICE)", "year": 2026,
          "consumer_cash": 0, "option1_rates": std, "option2_rates": None, "bonus_cash": 0},
         
-        # RAM 2026
+        # RAM 2026 - Corrigé
         {"brand": "Ram", "model": "ProMaster", "trim": None, "year": 2026,
          "consumer_cash": 0, "option1_rates": std, "option2_rates": None, "bonus_cash": 0},
         
         {"brand": "Ram", "model": "1500", "trim": "Tradesman, Express, Warlock", "year": 2026,
          "consumer_cash": 6500, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.99, "rate_84": 2.99, "rate_96": 3.99},
          "bonus_cash": 0},
         
         {"brand": "Ram", "model": "1500", "trim": "Big Horn", "year": 2026,
          "consumer_cash": 6000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.99, "rate_84": 2.99, "rate_96": 3.99},
          "bonus_cash": 0},
         
         {"brand": "Ram", "model": "1500", "trim": "Sport, Rebel", "year": 2026,
          "consumer_cash": 8250, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.99, "rate_84": 2.99, "rate_96": 3.99},
          "bonus_cash": 0},
         
         {"brand": "Ram", "model": "1500", "trim": "Laramie (DT6P98)", "year": 2026,
@@ -518,7 +518,7 @@ async def seed_data():
         
         {"brand": "Ram", "model": "1500", "trim": "Laramie, Limited, Longhorn, Tungsten, RHO (excl. DT6P98)", "year": 2026,
          "consumer_cash": 11500, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 3.49},
          "bonus_cash": 0},
         
         {"brand": "Ram", "model": "2500 Power Wagon Crew Cab", "trim": "(DJ7X91 2UP)", "year": 2026,
@@ -526,12 +526,12 @@ async def seed_data():
         
         {"brand": "Ram", "model": "2500/3500", "trim": "Gas Models", "year": 2026,
          "consumer_cash": 7000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.99, "rate_84": 2.99, "rate_96": 3.99},
          "bonus_cash": 0},
         
         {"brand": "Ram", "model": "2500/3500", "trim": "Diesel Models", "year": 2026,
          "consumer_cash": 5000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option2_rates": {"rate_36": 0.99, "rate_48": 0.99, "rate_60": 0.99, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 3.49},
          "bonus_cash": 0},
         
         {"brand": "Ram", "model": "Chassis Cab", "trim": None, "year": 2026,
