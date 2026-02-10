@@ -245,21 +245,26 @@ async def seed_data():
         # ==================== 2026 MODELS ====================
         
         # CHRYSLER 2026
+        # Grand Caravan: Seulement Option 1 (4.99%), pas d'Alternative
         {"brand": "Chrysler", "model": "Grand Caravan", "trim": "SXT", "year": 2026,
          "consumer_cash": 0, "option1_rates": std, "option2_rates": None},
         
+        # Pacifica PHEV: Seulement Option 1 (4.99%), pas d'Alternative
         {"brand": "Chrysler", "model": "Pacifica", "trim": "PHEV", "year": 2026,
          "consumer_cash": 0, "option1_rates": std, "option2_rates": None},
         
+        # Pacifica (excluding PHEV): Seulement Alternative (taux bas), pas de Consumer Cash
         {"brand": "Chrysler", "model": "Pacifica", "trim": "(excluding PHEV)", "year": 2026,
          "consumer_cash": 0,
-         "option1_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 3.49},
-         "option2_rates": None},
+         "option1_rates": std,
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 3.49}},
         
         # JEEP COMPASS 2026
+        # Sport: Seulement Option 1 (4.99%), pas d'Alternative
         {"brand": "Jeep", "model": "Compass", "trim": "Sport", "year": 2026,
          "consumer_cash": 0, "option1_rates": std, "option2_rates": None},
         
+        # North: $3,500 rabais + 4.99% OU $0 + taux bas
         {"brand": "Jeep", "model": "Compass", "trim": "North", "year": 2026,
          "consumer_cash": 3500, "option1_rates": std,
          "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49}},
@@ -272,10 +277,10 @@ async def seed_data():
          "consumer_cash": 4000, "option1_rates": std,
          "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49}},
         
+        # Limited: Pas de Consumer Cash, seulement Alternative
         {"brand": "Jeep", "model": "Compass", "trim": "Limited", "year": 2026,
-         "consumer_cash": 0,
-         "option1_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49},
-         "option2_rates": None},
+         "consumer_cash": 0, "option1_rates": std,
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49}},
         
         # JEEP CHEROKEE 2026
         {"brand": "Jeep", "model": "Cherokee", "trim": "Base (KMJL74)", "year": 2026,
