@@ -539,57 +539,58 @@ async def seed_data():
         
         # ==================== 2025 MODELS (Page 21) ====================
         
-        # CHRYSLER 2025
+        # CHRYSLER 2025 - Corrigé
         {"brand": "Chrysler", "model": "Grand Caravan", "trim": "SXT", "year": 2025,
          "consumer_cash": 0, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.49, "rate_96": 2.99},
          "bonus_cash": 1000},
         
         {"brand": "Chrysler", "model": "Pacifica", "trim": "Hybrid", "year": 2025,
          "consumer_cash": 0, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 1.99, "rate_72": 2.99, "rate_84": 3.99, "rate_96": 4.99},
          "bonus_cash": 1000},
         
         {"brand": "Chrysler", "model": "Pacifica", "trim": "Select Models (excl. Hybrid)", "year": 2025,
-         "consumer_cash": 0, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "consumer_cash": 0, 
+         "option1_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 1.99, "rate_72": 2.99, "rate_84": 3.99, "rate_96": 4.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.49, "rate_96": 2.49},
          "bonus_cash": 1000},
         
         {"brand": "Chrysler", "model": "Pacifica", "trim": "(excl. Select & Hybrid)", "year": 2025,
-         "consumer_cash": 0, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "consumer_cash": 750, "option1_rates": std,
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.49, "rate_96": 2.49},
          "bonus_cash": 1000},
         
-        # JEEP COMPASS 2025
+        # JEEP COMPASS 2025 - Corrigé
         {"brand": "Jeep", "model": "Compass", "trim": "Sport", "year": 2025,
-         "consumer_cash": 750, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "consumer_cash": 5500, "option1_rates": std,
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.49, "rate_96": 2.49},
          "bonus_cash": 1000},
         
         {"brand": "Jeep", "model": "Compass", "trim": "North", "year": 2025,
-         "consumer_cash": 5500, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "consumer_cash": 7500, "option1_rates": std,
+         "option2_rates": {"rate_36": 0, "rate_48": 0.99, "rate_60": 1.99, "rate_72": 1.99, "rate_84": 3.99, "rate_96": 4.99},
          "bonus_cash": 1000},
         
         {"brand": "Jeep", "model": "Compass", "trim": "Altitude, Trailhawk, Trailhawk Elite", "year": 2025,
-         "consumer_cash": 7500, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "consumer_cash": 4000, "option1_rates": std,
+         "option2_rates": {"rate_36": 0.99, "rate_48": 1.99, "rate_60": 2.49, "rate_72": 3.49, "rate_84": 3.99, "rate_96": 4.99},
          "bonus_cash": 1000},
         
         {"brand": "Jeep", "model": "Compass", "trim": "Limited", "year": 2025,
          "consumer_cash": 0, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0, "rate_96": 0},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.49, "rate_96": 2.49},
          "bonus_cash": 1000},
         
-        # JEEP WRANGLER 2025
+        # JEEP WRANGLER 2025 - Corrigé
         {"brand": "Jeep", "model": "Wrangler", "trim": "4-Door (JL) 4xe (JLXL74)", "year": 2025,
          "consumer_cash": 4000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0.99, "rate_48": 0.99, "rate_60": 1.99, "rate_72": 1.99, "rate_84": 1.99, "rate_96": 1.99},
+         "option2_rates": {"rate_36": 0.99, "rate_48": 1.99, "rate_60": 2.49, "rate_72": 3.49, "rate_84": 3.99, "rate_96": 4.99},
          "bonus_cash": 1000},
         
         {"brand": "Jeep", "model": "Wrangler", "trim": "4-Door (JL) 4xe (excl. JLXL74)", "year": 2025,
          "consumer_cash": 4000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0.99, "rate_48": 0.99, "rate_60": 1.99, "rate_72": 1.99, "rate_84": 1.99, "rate_96": 1.99},
+         "option2_rates": {"rate_36": 0.99, "rate_48": 1.99, "rate_60": 2.49, "rate_72": 3.49, "rate_84": 3.99, "rate_96": 4.99},
          "bonus_cash": 1000},
         
         {"brand": "Jeep", "model": "Wrangler", "trim": "2-Door (JL) non Rubicon", "year": 2025,
@@ -597,49 +598,51 @@ async def seed_data():
         
         {"brand": "Jeep", "model": "Wrangler", "trim": "2-Door Rubicon (JL)", "year": 2025,
          "consumer_cash": 8500, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 1.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99},
          "bonus_cash": 1000},
         
         {"brand": "Jeep", "model": "Wrangler", "trim": "4-Door Rubicon w/ 2.0L", "year": 2025,
-         "consumer_cash": 0, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 1.99},
+         "consumer_cash": 0, 
+         "option1_rates": None,
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99},
          "bonus_cash": 1000},
         
         {"brand": "Jeep", "model": "Wrangler", "trim": "4-Door (JL) (excl. Rubicon 2.0L & 4xe)", "year": 2025,
          "consumer_cash": 8500, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 1.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99},
          "bonus_cash": 1000},
         
         # JEEP GLADIATOR 2025
         {"brand": "Jeep", "model": "Gladiator", "trim": None, "year": 2025,
          "consumer_cash": 11000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 1.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 3.49},
          "bonus_cash": 1000},
         
-        # JEEP GRAND CHEROKEE 2025
+        # JEEP GRAND CHEROKEE 2025 - Corrigé
         {"brand": "Jeep", "model": "Grand Cherokee", "trim": "4xe (WL)", "year": 2025,
          "consumer_cash": 4000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0.99, "rate_48": 0.99, "rate_60": 1.99, "rate_72": 1.99, "rate_84": 1.99, "rate_96": 1.99},
+         "option2_rates": {"rate_36": 0.99, "rate_48": 1.99, "rate_60": 2.49, "rate_72": 3.49, "rate_84": 3.99, "rate_96": 4.99},
          "bonus_cash": 1000},
         
         {"brand": "Jeep", "model": "Grand Cherokee", "trim": "Laredo (WLJH74 2*A)", "year": 2025,
          "consumer_cash": 6000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 2.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.99},
          "bonus_cash": 1000},
         
         {"brand": "Jeep", "model": "Grand Cherokee", "trim": "Altitude (WLJH74 2*B)", "year": 2025,
          "consumer_cash": 7500, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 2.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.99},
          "bonus_cash": 1000},
         
         {"brand": "Jeep", "model": "Grand Cherokee", "trim": "Summit (WLJT74 23S)", "year": 2025,
-         "consumer_cash": 0, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 2.99},
+         "consumer_cash": 0, 
+         "option1_rates": None,
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.99},
          "bonus_cash": 1000},
         
         {"brand": "Jeep", "model": "Grand Cherokee", "trim": "(WL) (excl. Laredo, Altitude, Summit, 4xe)", "year": 2025,
          "consumer_cash": 9500, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 2.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 2.99, "rate_96": 3.99},
          "bonus_cash": 1000},
         
         # JEEP GRAND CHEROKEE L 2025
