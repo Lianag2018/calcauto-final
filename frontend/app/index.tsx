@@ -41,16 +41,21 @@ const FilterButton = ({
           paddingBottom: 12,
           borderRadius: 20,
           minWidth: 60,
-          textAlign: 'center',
+          textAlign: 'center' as const,
           cursor: 'pointer',
           border: active ? '2px solid #4ECDC4' : '2px solid transparent',
-          userSelect: 'none',
+          userSelect: 'none' as const,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxSizing: 'border-box' as const,
         }}
       >
         <span style={{
           color: active ? '#1a1a2e' : '#aaa',
           fontSize: 15,
-          fontWeight: '600',
+          fontWeight: 600,
+          lineHeight: 1,
         }}>
           {label}
         </span>
