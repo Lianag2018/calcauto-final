@@ -221,6 +221,8 @@ export default function HomeScreen() {
     option1Total: number;
     option1Rate: number;
     option2Monthly: number | null;
+    option2Biweekly: number | null;
+    option2Weekly: number | null;
     option2Total: number | null;
     option2Rate: number | null;
     bestOption: string | null;
