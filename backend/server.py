@@ -727,33 +727,33 @@ async def seed_data():
         {"brand": "Dodge", "model": "Hornet", "trim": "GT Plus (Gas)", "year": 2025,
          "consumer_cash": 0, "option1_rates": std, "option2_rates": None, "bonus_cash": 1000},
         
-        # RAM 2025
+        # RAM 2025 - Corrigé
         {"brand": "Ram", "model": "ProMaster", "trim": None, "year": 2025,
          "consumer_cash": 0, "option1_rates": std, "option2_rates": None, "bonus_cash": 3000},
         
         {"brand": "Ram", "model": "1500", "trim": "Tradesman, Warlock, Express (DT)", "year": 2025,
          "consumer_cash": 9250, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 1.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99},
          "bonus_cash": 3000},
         
         {"brand": "Ram", "model": "1500", "trim": "Big Horn (DT) w/ Off-Roader Value Package (4KF)", "year": 2025,
          "consumer_cash": 0, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 1.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99},
          "bonus_cash": 3000},
         
         {"brand": "Ram", "model": "1500", "trim": "Big Horn (DT) (excl. Off-Roader)", "year": 2025,
          "consumer_cash": 9250, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 1.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99},
          "bonus_cash": 3000},
         
         {"brand": "Ram", "model": "1500", "trim": "Sport, Rebel (DT)", "year": 2025,
          "consumer_cash": 10000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 1.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99},
          "bonus_cash": 3000},
         
         {"brand": "Ram", "model": "1500", "trim": "Laramie, Limited, Longhorn, Tungsten, RHO (DT)", "year": 2025,
          "consumer_cash": 12250, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 1.99},
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 2.99},
          "bonus_cash": 3000},
         
         {"brand": "Ram", "model": "2500/3500", "trim": "Gas Models (excl. Chassis Cab, Diesel)", "year": 2025,
@@ -761,16 +761,16 @@ async def seed_data():
         
         {"brand": "Ram", "model": "2500/3500", "trim": "6.7L High Output Diesel (ETM)", "year": 2025,
          "consumer_cash": 7000, "option1_rates": std,
-         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 0.99, "rate_96": 0.99},
+         "option2_rates": {"rate_36": 0.99, "rate_48": 0.99, "rate_60": 0.99, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 2.99},
          "bonus_cash": 3000},
         
         {"brand": "Ram", "model": "Chassis Cab", "trim": None, "year": 2025,
-         "consumer_cash": 0, "option1_rates": std, "option2_rates": None, "bonus_cash": 3000},
+         "consumer_cash": 5000, "option1_rates": std, "option2_rates": None, "bonus_cash": 3000},
         
-        # FIAT 2025 - Note: AFTER TAX pour Consumer Cash
+        # FIAT 2025
         {"brand": "Fiat", "model": "500e", "trim": "BEV", "year": 2025,
          "consumer_cash": 6000,
-         "option1_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 1.99, "rate_72": 3.49, "rate_84": 3.99, "rate_96": 3.99},
+         "option1_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 1.99, "rate_72": 3.49, "rate_84": 3.99, "rate_96": 4.99},
          "option2_rates": None, "bonus_cash": 5000},
     ]
     
