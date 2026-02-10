@@ -1007,8 +1007,16 @@ export default function HomeScreen() {
                     <Text style={styles.optionRateValue}>{localResult.option1Rate}%</Text>
                   </View>
                   <View style={styles.optionMainResult}>
-                    <Text style={styles.optionMonthlyLabel}>{t.monthly}</Text>
-                    <Text style={styles.optionMonthlyValue}>{formatCurrencyDecimal(localResult.option1Monthly)}</Text>
+                    <Text style={styles.optionMonthlyLabel}>
+                      {paymentFrequency === 'monthly' ? 'Mensuel' : paymentFrequency === 'biweekly' ? 'Aux 2 sem.' : 'Hebdo'}
+                    </Text>
+                    <Text style={styles.optionMonthlyValue}>
+                      {formatCurrencyDecimal(
+                        paymentFrequency === 'monthly' ? localResult.option1Monthly :
+                        paymentFrequency === 'biweekly' ? localResult.option1Biweekly :
+                        localResult.option1Weekly
+                      )}
+                    </Text>
                   </View>
                   <View style={styles.optionDetail}>
                     <Text style={styles.optionDetailLabel}>{t.total} ({selectedTerm} {t.months}):</Text>
