@@ -380,10 +380,10 @@ async def seed_data():
         {"brand": "Chrysler", "model": "Pacifica", "trim": "PHEV", "year": 2026,
          "consumer_cash": 0, "option1_rates": std, "option2_rates": None, "bonus_cash": 0},
         
-        # Pacifica (excluding PHEV): Taux bas, pas de rabais, PAS d'Option 2
+        # Pacifica (excluding PHEV): Taux bas (0% jusqu'à 72mo, 1.99% à 84mo, 3.49% à 96mo), PAS d'Option 2
         {"brand": "Chrysler", "model": "Pacifica", "trim": "(excluding PHEV)", "year": 2026,
          "consumer_cash": 0,
-         "option1_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 1.99, "rate_72": 1.99, "rate_84": 1.99, "rate_96": 1.99},
+         "option1_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 0, "rate_84": 1.99, "rate_96": 3.49},
          "option2_rates": None, "bonus_cash": 0},
         
         # JEEP COMPASS 2026
