@@ -1502,4 +1502,128 @@ const styles = StyleSheet.create({
     color: '#FFD700',
     fontWeight: 'bold',
   },
+  // Input styles
+  inputRow: {
+    marginBottom: 12,
+  },
+  inputLabel: {
+    fontSize: 13,
+    color: '#aaa',
+    marginBottom: 6,
+  },
+  // Term selection styles
+  termSection: {
+    marginTop: 8,
+  },
+  termButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  termButton: {
+    backgroundColor: '#2d2d44',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 10,
+    minWidth: 90,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  termButtonActive: {
+    backgroundColor: '#4ECDC4',
+    borderColor: '#4ECDC4',
+  },
+  termButtonText: {
+    fontSize: 14,
+    color: '#aaa',
+    fontWeight: '600',
+  },
+  termButtonTextActive: {
+    color: '#1a1a2e',
+  },
+  // Best option banner
+  bestOptionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 12,
+    gap: 8,
+  },
+  bestOptionBanner1: {
+    backgroundColor: '#FF6B6B',
+  },
+  bestOptionBanner2: {
+    backgroundColor: '#4ECDC4',
+  },
+  bestOptionText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1a1a2e',
+  },
+  bestOptionSavings: {
+    fontSize: 12,
+    color: '#1a1a2e',
+    fontWeight: '600',
+  },
+  // Option card enhancements
+  optionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  optionSubtitle: {
+    fontSize: 10,
+    color: '#888',
+    marginBottom: 10,
+  },
+  optionRateValue: {
+    fontSize: 14,
+    color: '#4ECDC4',
+    fontWeight: 'bold',
+  },
+  optionMainResult: {
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderRadius: 8,
+    padding: 10,
+    marginVertical: 8,
+    alignItems: 'center',
+  },
+  optionMonthlyLabel: {
+    fontSize: 10,
+    color: '#aaa',
+  },
+  optionMonthlyValue: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#4ECDC4',
+  },
+  optionTotalValue: {
+    fontSize: 13,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  noOptionSubtext: {
+    fontSize: 11,
+    color: '#555',
+    marginTop: 4,
+  },
+  // Bonus cash note
+  bonusCashNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 12,
+    gap: 8,
+  },
+  bonusCashNoteText: {
+    fontSize: 12,
+    color: '#FFD700',
+    flex: 1,
+  },
 });
