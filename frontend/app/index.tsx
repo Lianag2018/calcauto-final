@@ -624,171 +624,200 @@ export default function HomeScreen() {
             )}
           </View>
 
-          {/* Price Input */}
+          {/* Price Input and Calculation */}
           {selectedProgram && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{t.enterPrice}</Text>
-              <View style={styles.inputContainer}>
-                <Text style={styles.currencySymbol}>$</Text>
-                <TextInput
-                  style={styles.priceInput}
-                  placeholder="55000"
-                  placeholderTextColor="#666"
-                  keyboardType="numeric"
-                  value={vehiclePrice}
-                  onChangeText={setVehiclePrice}
-                />
+              
+              {/* Prix du véhicule */}
+              <View style={styles.inputRow}>
+                <Text style={styles.inputLabel}>Prix du véhicule</Text>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.currencySymbol}>$</Text>
+                  <TextInput
+                    style={styles.priceInput}
+                    placeholder="55000"
+                    placeholderTextColor="#666"
+                    keyboardType="numeric"
+                    value={vehiclePrice}
+                    onChangeText={setVehiclePrice}
+                  />
+                </View>
               </View>
-              <TouchableOpacity
-                style={[
-                  styles.calculateButton,
-                  (!vehiclePrice || loading) && styles.calculateButtonDisabled,
-                ]}
-                onPress={handleCalculate}
-                disabled={!vehiclePrice || loading}
-                activeOpacity={0.7}
-              >
-                {loading ? (
-                  <ActivityIndicator size="small" color="#1a1a2e" />
-                ) : (
-                  <>
-                    <Ionicons name="calculator" size={20} color="#1a1a2e" />
-                    <Text style={styles.calculateButtonText}>{t.calculate}</Text>
-                  </>
-                )}
-              </TouchableOpacity>
+              
+              {/* Bonus Cash optionnel */}
+              <View style={styles.inputRow}>
+                <Text style={styles.inputLabel}>{t.bonusCash} ({t.afterTax})</Text>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.currencySymbol}>$</Text>
+                  <TextInput
+                    style={styles.priceInput}
+                    placeholder={String(selectedProgram.bonus_cash || 0)}
+                    placeholderTextColor="#666"
+                    keyboardType="numeric"
+                    value={customBonusCash}
+                    onChangeText={setCustomBonusCash}
+                  />
+                </View>
+              </View>
+
+              {/* Sélection du terme */}
+              <View style={styles.termSection}>
+                <Text style={styles.inputLabel}>Sélectionner le terme</Text>
+                <View style={styles.termButtons}>
+                  {availableTerms.map(term => (
+                    <TouchableOpacity
+                      key={term}
+                      style={[
+                        styles.termButton,
+                        selectedTerm === term && styles.termButtonActive
+                      ]}
+                      onPress={() => setSelectedTerm(term)}
+                    >
+                      <Text style={[
+                        styles.termButtonText,
+                        selectedTerm === term && styles.termButtonTextActive
+                      ]}>
+                        {term} {t.months}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
             </View>
           )}
 
-          {/* Results */}
-          {results && (
+          {/* Results - Real-time calculation */}
+          {selectedProgram && localResult && vehiclePrice && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t.results}</Text>
+              <Text style={styles.sectionTitle}>
+                {t.results} - {selectedTerm} {t.months}
+              </Text>
               
+              {/* Summary */}
               <View style={styles.resultsSummary}>
                 <Text style={styles.summaryTitle}>
-                  {results.brand} {results.model} {results.trim || ''} {results.year}
+                  {selectedProgram.brand} {selectedProgram.model} {selectedProgram.trim || ''} {selectedProgram.year}
                 </Text>
                 <Text style={styles.summaryPrice}>
-                  {formatCurrency(results.vehicle_price)}
+                  {formatCurrency(parseFloat(vehiclePrice))}
                 </Text>
-                <View style={styles.summaryDetails}>
-                  {results.consumer_cash > 0 && (
-                    <Text style={styles.summaryCash}>
-                      {t.rebate}: {formatCurrency(results.consumer_cash)} ({t.beforeTax})
-                    </Text>
-                  )}
-                  {results.bonus_cash > 0 && (
-                    <Text style={styles.summaryBonus}>
-                      {t.bonusCash}: {formatCurrency(results.bonus_cash)} ({t.afterTax})
-                    </Text>
-                  )}
-                </View>
               </View>
 
-              {/* Legend */}
-              <View style={styles.legend}>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#FF6B6B' }]} />
-                  <Text style={styles.legendText}>{t.option1}: {t.option1Desc}</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#4ECDC4' }]} />
-                  <Text style={styles.legendText}>{t.option2}: {t.option2Desc}</Text>
-                </View>
-              </View>
-
-              {results.comparisons.map((comp, index) => (
-                <View key={index} style={styles.resultCard}>
-                  <View style={styles.resultHeader}>
-                    <Text style={styles.resultTerm}>
-                      {comp.term_months} {t.months}
+              {/* Best Option Banner */}
+              {localResult.bestOption && (
+                <View style={[
+                  styles.bestOptionBanner,
+                  localResult.bestOption === '1' ? styles.bestOptionBanner1 : styles.bestOptionBanner2
+                ]}>
+                  <Ionicons name="trophy" size={20} color="#1a1a2e" />
+                  <Text style={styles.bestOptionText}>
+                    {localResult.bestOption === '1' ? t.option1 : t.option2} = Meilleur choix!
+                  </Text>
+                  {localResult.savings > 0 && (
+                    <Text style={styles.bestOptionSavings}>
+                      Économies: {formatCurrency(localResult.savings)}
                     </Text>
-                    {comp.best_option && (
-                      <View style={[
-                        styles.bestBadge,
-                        comp.best_option === '1' ? styles.bestBadgeOption1 : styles.bestBadgeOption2
-                      ]}>
-                        <Ionicons name="trophy" size={12} color="#1a1a2e" />
-                        <Text style={styles.bestBadgeText}>
-                          {t.bestOption}
-                        </Text>
-                      </View>
+                  )}
+                </View>
+              )}
+
+              {/* Options comparison */}
+              <View style={styles.optionsGrid}>
+                {/* Option 1 */}
+                <View style={[
+                  styles.optionCard,
+                  styles.optionCard1,
+                  localResult.bestOption === '1' && styles.optionCardBest
+                ]}>
+                  <View style={styles.optionHeader}>
+                    <Text style={styles.optionCardTitle}>{t.option1}</Text>
+                    {localResult.bestOption === '1' && (
+                      <Ionicons name="checkmark-circle" size={18} color="#4ECDC4" />
                     )}
                   </View>
+                  <Text style={styles.optionSubtitle}>{t.option1Desc}</Text>
+                  
+                  {selectedProgram.consumer_cash > 0 && (
+                    <View style={styles.optionDetail}>
+                      <Text style={styles.optionDetailLabel}>{t.rebate}:</Text>
+                      <Text style={styles.optionDetailValue}>{formatCurrency(selectedProgram.consumer_cash)}</Text>
+                    </View>
+                  )}
+                  <View style={styles.optionDetail}>
+                    <Text style={styles.optionDetailLabel}>Capital financé:</Text>
+                    <Text style={styles.optionDetailValue}>{formatCurrency(localResult.principalOption1)}</Text>
+                  </View>
+                  <View style={styles.optionDetail}>
+                    <Text style={styles.optionDetailLabel}>{t.rate}:</Text>
+                    <Text style={styles.optionRateValue}>{localResult.option1Rate}%</Text>
+                  </View>
+                  <View style={styles.optionMainResult}>
+                    <Text style={styles.optionMonthlyLabel}>{t.monthly}</Text>
+                    <Text style={styles.optionMonthlyValue}>{formatCurrencyDecimal(localResult.option1Monthly)}</Text>
+                  </View>
+                  <View style={styles.optionDetail}>
+                    <Text style={styles.optionDetailLabel}>{t.total} ({selectedTerm} {t.months}):</Text>
+                    <Text style={styles.optionTotalValue}>{formatCurrency(localResult.option1Total)}</Text>
+                  </View>
+                </View>
 
-                  <View style={styles.optionsGrid}>
-                    {/* Option 1 */}
-                    <View style={[
-                      styles.optionCard,
-                      styles.optionCard1,
-                      comp.best_option === '1' && styles.optionCardBest
-                    ]}>
-                      <Text style={styles.optionCardTitle}>{t.option1}</Text>
+                {/* Option 2 */}
+                <View style={[
+                  styles.optionCard,
+                  styles.optionCard2,
+                  localResult.bestOption === '2' && styles.optionCardBest
+                ]}>
+                  <View style={styles.optionHeader}>
+                    <Text style={styles.optionCardTitle}>{t.option2}</Text>
+                    {localResult.bestOption === '2' && (
+                      <Ionicons name="checkmark-circle" size={18} color="#4ECDC4" />
+                    )}
+                  </View>
+                  <Text style={styles.optionSubtitle}>{t.option2Desc}</Text>
+                  
+                  {localResult.option2Rate !== null ? (
+                    <>
                       <View style={styles.optionDetail}>
                         <Text style={styles.optionDetailLabel}>{t.rebate}:</Text>
-                        <Text style={styles.optionDetailValue}>
-                          {comp.option1_rebate > 0 ? formatCurrency(comp.option1_rebate) : '-'}
-                        </Text>
+                        <Text style={styles.optionDetailValue}>$0</Text>
+                      </View>
+                      <View style={styles.optionDetail}>
+                        <Text style={styles.optionDetailLabel}>Capital financé:</Text>
+                        <Text style={styles.optionDetailValue}>{formatCurrency(localResult.principalOption2)}</Text>
                       </View>
                       <View style={styles.optionDetail}>
                         <Text style={styles.optionDetailLabel}>{t.rate}:</Text>
-                        <Text style={styles.optionDetailValue}>{comp.option1_rate}%</Text>
+                        <Text style={styles.optionRateValue}>{localResult.option2Rate}%</Text>
+                      </View>
+                      <View style={styles.optionMainResult}>
+                        <Text style={styles.optionMonthlyLabel}>{t.monthly}</Text>
+                        <Text style={styles.optionMonthlyValue}>{formatCurrencyDecimal(localResult.option2Monthly!)}</Text>
                       </View>
                       <View style={styles.optionDetail}>
-                        <Text style={styles.optionDetailLabel}>{t.monthly}:</Text>
-                        <Text style={styles.optionMonthly}>{formatCurrencyDecimal(comp.option1_monthly)}</Text>
+                        <Text style={styles.optionDetailLabel}>{t.total} ({selectedTerm} {t.months}):</Text>
+                        <Text style={styles.optionTotalValue}>{formatCurrency(localResult.option2Total!)}</Text>
                       </View>
-                      <View style={styles.optionDetail}>
-                        <Text style={styles.optionDetailLabel}>{t.total}:</Text>
-                        <Text style={styles.optionDetailValue}>{formatCurrency(comp.option1_total)}</Text>
-                      </View>
-                    </View>
-
-                    {/* Option 2 */}
-                    <View style={[
-                      styles.optionCard,
-                      styles.optionCard2,
-                      comp.best_option === '2' && styles.optionCardBest
-                    ]}>
-                      <Text style={styles.optionCardTitle}>{t.option2}</Text>
-                      {comp.option2_rate !== null ? (
-                        <>
-                          <View style={styles.optionDetail}>
-                            <Text style={styles.optionDetailLabel}>{t.rebate}:</Text>
-                            <Text style={styles.optionDetailValue}>-</Text>
-                          </View>
-                          <View style={styles.optionDetail}>
-                            <Text style={styles.optionDetailLabel}>{t.rate}:</Text>
-                            <Text style={styles.optionDetailValue}>{comp.option2_rate}%</Text>
-                          </View>
-                          <View style={styles.optionDetail}>
-                            <Text style={styles.optionDetailLabel}>{t.monthly}:</Text>
-                            <Text style={styles.optionMonthly}>{formatCurrencyDecimal(comp.option2_monthly!)}</Text>
-                          </View>
-                          <View style={styles.optionDetail}>
-                            <Text style={styles.optionDetailLabel}>{t.total}:</Text>
-                            <Text style={styles.optionDetailValue}>{formatCurrency(comp.option2_total!)}</Text>
-                          </View>
-                        </>
-                      ) : (
-                        <View style={styles.noOption}>
-                          <Text style={styles.noOptionText}>{t.noOption2}</Text>
-                        </View>
-                      )}
-                    </View>
-                  </View>
-
-                  {comp.savings && comp.savings > 0 && (
-                    <View style={styles.savingsRow}>
-                      <Ionicons name="wallet-outline" size={16} color="#4ECDC4" />
-                      <Text style={styles.savingsText}>
-                        {t.savings}: {formatCurrency(comp.savings)}
-                      </Text>
+                    </>
+                  ) : (
+                    <View style={styles.noOption}>
+                      <Ionicons name="close-circle-outline" size={32} color="#666" />
+                      <Text style={styles.noOptionText}>{t.noOption2}</Text>
+                      <Text style={styles.noOptionSubtext}>Non disponible pour ce véhicule</Text>
                     </View>
                   )}
                 </View>
-              ))}
+              </View>
+
+              {/* Bonus Cash Note */}
+              {(parseFloat(customBonusCash) > 0 || selectedProgram.bonus_cash > 0) && (
+                <View style={styles.bonusCashNote}>
+                  <Ionicons name="information-circle" size={16} color="#FFD700" />
+                  <Text style={styles.bonusCashNoteText}>
+                    {t.bonusCash} de {formatCurrency(parseFloat(customBonusCash) || selectedProgram.bonus_cash)} sera déduit après taxes (au comptant)
+                  </Text>
+                </View>
+              )}
             </View>
           )}
         </ScrollView>
