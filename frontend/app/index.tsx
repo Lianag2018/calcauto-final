@@ -275,6 +275,7 @@ export default function HomeScreen() {
   const clearSelection = () => {
     setSelectedProgram(null);
     setResults(null);
+    setLocalResult(null);
   };
 
   const formatCurrency = (value: number) => {
@@ -293,6 +294,81 @@ export default function HomeScreen() {
       minimumFractionDigits: 2,
     }).format(value);
   };
+
+  // Calculate monthly payment
+  const calculateMonthlyPayment = (principal: number, annualRate: number, months: number): number => {
+    if (principal <= 0 || months <= 0) return 0;
+    if (annualRate === 0) return principal / months;
+    const monthlyRate = annualRate / 100 / 12;
+    return principal * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
+  };
+
+  // Calculate financing for selected term
+  const calculateForTerm = useCallback(() => {
+    if (!selectedProgram || !vehiclePrice) {
+      setLocalResult(null);
+      return;
+    }
+    
+    const price = parseFloat(vehiclePrice);
+    if (isNaN(price) || price <= 0) {
+      setLocalResult(null);
+      return;
+    }
+    
+    const bonusCash = parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0;
+    const consumerCash = selectedProgram.consumer_cash;
+    
+    // Option 1: Prix - Consumer Cash (avant taxes), puis taux Option 1
+    const principalOption1 = price - consumerCash;
+    const rate1 = getRateForTerm(selectedProgram.option1_rates, selectedTerm);
+    const monthly1 = calculateMonthlyPayment(principalOption1, rate1, selectedTerm);
+    const total1 = monthly1 * selectedTerm;
+    
+    // Option 2: Prix complet, taux réduits (si disponible)
+    let monthly2: number | null = null;
+    let total2: number | null = null;
+    let rate2: number | null = null;
+    let bestOption: string | null = null;
+    let savings = 0;
+    const principalOption2 = price;
+    
+    if (selectedProgram.option2_rates) {
+      rate2 = getRateForTerm(selectedProgram.option2_rates, selectedTerm);
+      monthly2 = calculateMonthlyPayment(principalOption2, rate2, selectedTerm);
+      total2 = monthly2 * selectedTerm;
+      
+      // Comparer les totaux
+      if (total1 < total2) {
+        bestOption = '1';
+        savings = total2 - total1;
+      } else if (total2 < total1) {
+        bestOption = '2';
+        savings = total1 - total2;
+      } else {
+        bestOption = '1'; // Égalité, on préfère l'option avec rabais
+        savings = 0;
+      }
+    }
+    
+    setLocalResult({
+      option1Monthly: monthly1,
+      option1Total: total1,
+      option1Rate: rate1,
+      option2Monthly: monthly2,
+      option2Total: total2,
+      option2Rate: rate2,
+      bestOption,
+      savings,
+      principalOption1,
+      principalOption2,
+    });
+  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash]);
+
+  // Recalculate when inputs change
+  useEffect(() => {
+    calculateForTerm();
+  }, [calculateForTerm]);
 
   // Get unique years and brands for filters
   const years = [...new Set(programs.map(p => p.year))].sort((a, b) => b - a);
