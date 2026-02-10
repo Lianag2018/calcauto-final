@@ -375,10 +375,14 @@ async def seed_data():
         
         # CHRYSLER 2026
         {"brand": "Chrysler", "model": "Grand Caravan", "trim": "SXT", "year": 2026,
-         "consumer_cash": 0, "option1_rates": std, "option2_rates": None, "bonus_cash": 0},
+         "consumer_cash": 0, "option1_rates": std, 
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49}, 
+         "bonus_cash": 0},
         
         {"brand": "Chrysler", "model": "Pacifica", "trim": "PHEV", "year": 2026,
-         "consumer_cash": 0, "option1_rates": std, "option2_rates": None, "bonus_cash": 0},
+         "consumer_cash": 0, "option1_rates": std, 
+         "option2_rates": {"rate_36": 0, "rate_48": 0, "rate_60": 0, "rate_72": 1.49, "rate_84": 1.99, "rate_96": 3.49}, 
+         "bonus_cash": 0},
         
         # Pacifica (excluding PHEV): Taux bas (0% jusqu'à 72mo, 1.99% à 84mo, 3.49% à 96mo), PAS d'Option 2
         {"brand": "Chrysler", "model": "Pacifica", "trim": "(excluding PHEV)", "year": 2026,
