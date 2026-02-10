@@ -369,10 +369,14 @@ export default function HomeScreen() {
     const principalOption1 = montantAvantTaxesO1 + taxesO1 + detteSurEchange;
     const rate1 = getRateForTerm(selectedProgram.option1_rates, selectedTerm);
     const monthly1 = calculateMonthlyPayment(principalOption1, rate1, selectedTerm);
+    const biweekly1 = monthly1 * 12 / 26; // 26 paiements par an
+    const weekly1 = monthly1 * 12 / 52; // 52 paiements par an
     const total1 = monthly1 * selectedTerm;
     
     // Option 2: Prix complet - valeur échange + frais + dette échange + taxes (pas de Consumer Cash)
     let monthly2: number | null = null;
+    let biweekly2: number | null = null;
+    let weekly2: number | null = null;
     let total2: number | null = null;
     let rate2: number | null = null;
     let bestOption: string | null = null;
@@ -385,6 +389,8 @@ export default function HomeScreen() {
     if (selectedProgram.option2_rates) {
       rate2 = getRateForTerm(selectedProgram.option2_rates, selectedTerm);
       monthly2 = calculateMonthlyPayment(principalOption2, rate2, selectedTerm);
+      biweekly2 = monthly2 * 12 / 26;
+      weekly2 = monthly2 * 12 / 52;
       total2 = monthly2 * selectedTerm;
       
       // Comparer les totaux
@@ -402,9 +408,13 @@ export default function HomeScreen() {
     
     setLocalResult({
       option1Monthly: monthly1,
+      option1Biweekly: biweekly1,
+      option1Weekly: weekly1,
       option1Total: total1,
       option1Rate: rate1,
       option2Monthly: monthly2,
+      option2Biweekly: biweekly2,
+      option2Weekly: weekly2,
       option2Total: total2,
       option2Rate: rate2,
       bestOption,
