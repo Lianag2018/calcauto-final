@@ -1602,6 +1602,57 @@ const styles = StyleSheet.create({
   termButtonTextActive: {
     color: '#1a1a2e',
   },
+  // Option selection buttons
+  optionButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  optionButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'transparent',
+  },
+  optionButton1: {
+    backgroundColor: 'rgba(255, 107, 107, 0.2)',
+    borderColor: 'rgba(255, 107, 107, 0.3)',
+  },
+  optionButton2: {
+    backgroundColor: 'rgba(78, 205, 196, 0.2)',
+    borderColor: 'rgba(78, 205, 196, 0.3)',
+  },
+  optionButtonActive1: {
+    backgroundColor: '#FF6B6B',
+    borderColor: '#FF6B6B',
+  },
+  optionButtonActive2: {
+    backgroundColor: '#4ECDC4',
+    borderColor: '#4ECDC4',
+  },
+  optionButtonDisabled: {
+    backgroundColor: 'rgba(100, 100, 100, 0.2)',
+    opacity: 0.5,
+  },
+  optionButtonText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  optionButtonTextActive: {
+    color: '#1a1a2e',
+  },
+  optionButtonTextDisabled: {
+    fontSize: 14,
+    color: '#666',
+  },
+  optionButtonSubtext: {
+    fontSize: 12,
+    color: '#aaa',
+    marginTop: 4,
+  },
   // Best option banner
   bestOptionBanner: {
     flexDirection: 'row',
