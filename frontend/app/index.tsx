@@ -182,6 +182,10 @@ export default function HomeScreen() {
   
   // Current program period
   const [currentPeriod, setCurrentPeriod] = useState<{month: number, year: number} | null>(null);
+  
+  // Selected term for calculation
+  const [selectedTerm, setSelectedTerm] = useState<number>(72);
+  const availableTerms = [36, 48, 60, 72, 84, 96];
 
   const loadPrograms = useCallback(async () => {
     try {
