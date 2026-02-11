@@ -865,29 +865,38 @@ async def extract_pdf(
             # Use OpenAI to extract structured data
             client = OpenAI(api_key=OPENAI_API_KEY)
             
-            extraction_prompt = f"""Tu es un expert en extraction de données de programmes de financement automobile Chrysler/Dodge/Jeep/Ram/Fiat/Alfa Romeo.
+            extraction_prompt = f"""Tu es un expert en extraction de données FCA Canada (Chrysler/Dodge/Jeep/Ram).
 
 TEXTE DU PDF:
-{pdf_text[:20000]}
+{pdf_text[:25000]}
 
-INSTRUCTIONS CRITIQUES:
-1. Extrais CHAQUE véhicule avec TOUS ses trims/versions listés
-2. IMPORTANT: Un même modèle peut avoir plusieurs lignes avec différents trims - crée une entrée SÉPARÉE pour chaque trim
-3. Cherche les années 2025 ET 2026 - crée des entrées séparées pour chaque année si les deux sont mentionnées
-4. Les trims sont souvent entre parenthèses ou après le nom du modèle (ex: "Tradesman, Express, Warlock" ou "SXT, GT, GT Plus")
-5. Option 1 = Plan avec Consumer Cash + taux standard (souvent 4.99%)
-6. Option 2 = Plan sans Consumer Cash mais avec taux réduits (0%, 1.49%, 1.99%, etc.)
-7. Si "N/A" ou pas de taux réduits mentionnés pour Option 2, mets option2_rates à null
+FORMAT DU PDF EXPLIQUÉ:
+- Chaque ligne contient: NOM DU VÉHICULE | CONSUMER CASH ($) | 6 TAUX OPTION 1 | 6 TAUX OPTION 2 | BONUS CASH
+- Les 6 taux sont pour: 36 mois, 48 mois, 60 mois, 72 mois, 84 mois, 96 mois
+- "- - - - - -" (6 tirets) signifie PAS DISPONIBLE = option2_rates doit être null
+- Des taux comme "0.00% 0.00% 0.00% 1.49% 1.99% 3.49%" = Option 2 disponible avec ces taux exacts
 
-STRUCTURE JSON REQUISE:
+COLONNES:
+1. Consumer Cash* = Option 1 avec Consumer Cash + taux (souvent 4.99%)
+2. Alternative Consumer Cash^ = Option 2 SANS Consumer Cash mais taux réduits
+3. Les taux 0.00% ou 0% signifient ZÉRO, PAS null!
+
+RÈGLES CRITIQUES:
+1. Si tu vois "- - - - - -" après les 6 premiers taux = option2_rates: null
+2. Si tu vois 6 taux numériques (même 0.00%) après les 6 premiers = option2_rates avec ces valeurs exactes
+3. Cherche "2025 MODELS" et "2026 MODELS" pour l'année
+4. consumer_cash = le montant en $ avant les 6 premiers taux (ex: $6,500)
+5. CHAQUE ligne du PDF = UNE entrée dans le JSON
+
+STRUCTURE JSON:
 {{
     "programs": [
         {{
-            "brand": "Marque exacte",
-            "model": "Nom du modèle", 
-            "trim": "Version/Trim spécifique ou null si aucun",
+            "brand": "Chrysler/Dodge/Jeep/Ram",
+            "model": "Nom du modèle",
+            "trim": "Version exacte ou null",
             "year": 2026,
-            "consumer_cash": 0,
+            "consumer_cash": 6500,
             "bonus_cash": 0,
             "option1_rates": {{
                 "rate_36": 4.99,
@@ -898,29 +907,30 @@ STRUCTURE JSON REQUISE:
                 "rate_96": 4.99
             }},
             "option2_rates": {{
-                "rate_36": 0,
-                "rate_48": 0,
-                "rate_60": 0,
-                "rate_72": 1.49,
-                "rate_84": 1.99,
-                "rate_96": 3.49
+                "rate_36": 0.00,
+                "rate_48": 0.00,
+                "rate_60": 0.00,
+                "rate_72": 1.99,
+                "rate_84": 2.99,
+                "rate_96": 3.99
             }}
         }}
     ]
 }}
 
-RÈGLES IMPORTANTES:
-- consumer_cash = rabais en argent comptant (Consumer Cash) - montant AVANT taxes
-- bonus_cash = Bonus Cash additionnel - montant APRÈS taxes  
-- Si un véhicule a plusieurs trims avec le même prix/taux, crée quand même des entrées séparées
-- Si tu vois "2025" ou "2026" ou "25" ou "26" dans le texte près d'un véhicule, utilise cette année
-- Les taux 0% signifient vraiment 0, pas null
-- Retourne UNIQUEMENT le JSON valide"""
+EXEMPLES DU PDF:
+"Ram 1500 Tradesman, Express, Warlock  $6,500  4.99% 4.99% 4.99% 4.99% 4.99% 4.99%    0.00% 0.00% 0.00% 1.99% 2.99% 3.99%"
+= option1_rates: tous 4.99%, option2_rates: 0, 0, 0, 1.99, 2.99, 3.99, consumer_cash: 6500
+
+"Cherokee Base (KMJL74)    4.99% 4.99% 4.99% 4.99% 4.99% 4.99%    - - - - - -"
+= option1_rates: tous 4.99%, option2_rates: null (les tirets = pas disponible)
+
+RETOURNE UNIQUEMENT LE JSON VALIDE."""
 
             response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
-                    {"role": "system", "content": "Tu es un expert en extraction de données de financement automobile. Retourne uniquement du JSON valide. Assure-toi que le JSON est bien formaté."},
+                    {"role": "system", "content": "Tu es un expert en extraction de données FCA Canada. Retourne UNIQUEMENT du JSON valide. Les tirets '- - - - - -' signifient null pour option2_rates. Les taux 0.00% sont des vrais zéros, pas null."},
                     {"role": "user", "content": extraction_prompt}
                 ],
                 temperature=0.1,
