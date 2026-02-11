@@ -465,6 +465,9 @@ export default function HomeScreen() {
   } | null>(null);
 
   const loadPrograms = useCallback(async () => {
+    const startTime = Date.now();
+    const MIN_LOADING_TIME = 1500; // Minimum 1.5 seconds for animation
+    
     try {
       await axios.post(`${API_URL}/api/seed`);
       const response = await axios.get(`${API_URL}/api/programs`);
@@ -477,6 +480,12 @@ export default function HomeScreen() {
           month: response.data[0].program_month,
           year: response.data[0].program_year
         });
+      }
+      
+      // Ensure minimum loading time for animation effect
+      const elapsed = Date.now() - startTime;
+      if (elapsed < MIN_LOADING_TIME) {
+        await new Promise(resolve => setTimeout(resolve, MIN_LOADING_TIME - elapsed));
       }
     } catch (error) {
       console.error('Error loading programs:', error);
