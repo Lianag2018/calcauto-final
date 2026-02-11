@@ -27,8 +27,9 @@ app = FastAPI()
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
-# Admin password for import
-ADMIN_PASSWORD = "Admin"
+# Admin password for import (from .env)
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Liana2018')
+EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
 
 # ============ Models ============
 
