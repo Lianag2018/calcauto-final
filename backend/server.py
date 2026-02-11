@@ -913,20 +913,20 @@ RÈGLES:
             response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
-                    {"role": "system", "content": "Tu es un expert en extraction de données de financement automobile. Retourne uniquement du JSON valide."},
+                    {"role": "system", "content": "Tu es un expert en extraction de données de financement automobile. Retourne uniquement du JSON valide. Assure-toi que le JSON est bien formaté."},
                     {"role": "user", "content": extraction_prompt}
                 ],
                 temperature=0.1,
-                max_tokens=4000
+                max_tokens=8000,
+                response_format={"type": "json_object"}
             )
             
             response_text = response.choices[0].message.content.strip()
             
             # Clean up response (remove markdown code blocks if present)
             if response_text.startswith("```"):
-                response_text = response_text.split("```")[1]
-                if response_text.startswith("json"):
-                    response_text = response_text[4:]
+                lines = response_text.split("\n")
+                response_text = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
                 response_text = response_text.strip()
             if response_text.endswith("```"):
                 response_text = response_text[:-3].strip()
