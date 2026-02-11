@@ -1056,10 +1056,22 @@ async def save_programs(request: SaveProgramsRequest):
     
     # Insert new programs
     inserted = 0
+    skipped = 0
+    default_rates = {"rate_36": 4.99, "rate_48": 4.99, "rate_60": 4.99, "rate_72": 4.99, "rate_84": 4.99, "rate_96": 4.99}
+    
     for prog_data in request.programs:
-        # Ensure rates are in correct format
-        if prog_data.get("option1_rates") and isinstance(prog_data["option1_rates"], dict):
+        # Skip invalid entries (missing brand/model)
+        if not prog_data.get("brand") or not prog_data.get("model"):
+            skipped += 1
+            continue
+            
+        # Ensure option1_rates has a default value if missing
+        if not prog_data.get("option1_rates"):
+            prog_data["option1_rates"] = default_rates.copy()
+        elif isinstance(prog_data["option1_rates"], dict):
             prog_data["option1_rates"] = FinancingRates(**prog_data["option1_rates"]).dict()
+            
+        # Process option2_rates if present
         if prog_data.get("option2_rates") and isinstance(prog_data["option2_rates"], dict):
             prog_data["option2_rates"] = FinancingRates(**prog_data["option2_rates"]).dict()
         
@@ -1068,7 +1080,8 @@ async def save_programs(request: SaveProgramsRequest):
         prog_data["bonus_cash"] = prog_data.get("bonus_cash", 0)
         prog_data["consumer_cash"] = prog_data.get("consumer_cash", 0)
         
-        prog = VehicleProgram(**prog_data)
+        try:
+            prog = VehicleProgram(**prog_data)
         await db.programs.insert_one(prog.dict())
         inserted += 1
     
