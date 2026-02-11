@@ -865,38 +865,53 @@ async def extract_pdf(
             # Use OpenAI to extract structured data
             client = OpenAI(api_key=OPENAI_API_KEY)
             
-            extraction_prompt = f"""Tu es un expert en extraction de données FCA Canada (Chrysler/Dodge/Jeep/Ram).
+            extraction_prompt = f"""Tu es un expert en extraction de données FCA Canada.
 
 TEXTE DU PDF:
-{pdf_text[:25000]}
+{pdf_text[:30000]}
 
-FORMAT DU PDF EXPLIQUÉ:
-- Chaque ligne contient: NOM DU VÉHICULE | CONSUMER CASH ($) | 6 TAUX OPTION 1 | 6 TAUX OPTION 2 | BONUS CASH
-- Les 6 taux sont pour: 36 mois, 48 mois, 60 mois, 72 mois, 84 mois, 96 mois
-- "- - - - - -" (6 tirets) signifie PAS DISPONIBLE = option2_rates doit être null
-- Des taux comme "0.00% 0.00% 0.00% 1.49% 1.99% 3.49%" = Option 2 disponible avec ces taux exacts
+STRUCTURE DU PDF (TRÈS IMPORTANT):
+Le PDF a 2 colonnes principales séparées par "OR":
 
-COLONNES:
-1. Consumer Cash* = Option 1 avec Consumer Cash + taux (souvent 4.99%)
-2. Alternative Consumer Cash^ = Option 2 SANS Consumer Cash mais taux réduits
-3. Les taux 0.00% ou 0% signifient ZÉRO, PAS null!
+COLONNE GAUCHE (BLEUE) = OPTION 1:
+- "Consumer Cash*" = Montant du rabais en $ (ex: $1,000, $6,500)
+- "Consumer Cash Finance Rates" = Les 6 taux d'intérêt (36M, 48M, 60M, 72M, 84M, 96M)
+- Souvent 4.99% pour tous les termes
 
-RÈGLES CRITIQUES:
-1. Si tu vois "- - - - - -" après les 6 premiers taux = option2_rates: null
-2. Si tu vois 6 taux numériques (même 0.00%) après les 6 premiers = option2_rates avec ces valeurs exactes
-3. Cherche "2025 MODELS" et "2026 MODELS" pour l'année
-4. consumer_cash = le montant en $ avant les 6 premiers taux (ex: $6,500)
-5. CHAQUE ligne du PDF = UNE entrée dans le JSON
+COLONNE DROITE (ROUGE) = OPTION 2:
+- "Alternative Consumer Cash^" = PAS de rabais, mais taux réduits
+- "Alternative Consumer Cash Finance Rates^" = Les 6 taux réduits
+- Souvent 0.00%, 0.00%, 0.00%, 1.49%, 1.99%, 3.49% etc.
 
-STRUCTURE JSON:
+RÈGLES DE LECTURE:
+1. Si tu vois des POINTS (• ou .) = Option NON DISPONIBLE = null
+2. Si tu vois 6 pourcentages = Option DISPONIBLE avec ces taux exacts
+3. "2025 MODELS" ou "2026 MODELS" = l'année du véhicule
+4. Le Consumer Cash (rabais $) est SEULEMENT pour Option 1
+5. Option 2 n'a JAMAIS de rabais cash, seulement des taux réduits
+
+EXEMPLES DU PDF:
+"Grand Caravan SXT  $1,000  4.99% 4.99% 4.99% 4.99% 4.99% 4.99%    0.00% 0.00% 1.99% 2.99% 3.98% 4.99%"
+= Option 1: consumer_cash=$1000, rates=4.99% partout
+= Option 2: rates=0.00%, 0.00%, 1.99%, 2.99%, 3.98%, 4.99%
+
+"Pacifica Hybrid    4.99% 4.99% 4.99% 4.99% 4.99% 4.99%    • • • • • •"
+= Option 1: consumer_cash=0, rates=4.99% partout  
+= Option 2: null (les points = pas disponible)
+
+"Pacifica Select Models    • • • • • •    0.00% 0.00% 0.00% 0.00% 1.49% 2.99%"
+= Option 1: null (les points = pas disponible)
+= Option 2: rates=0.00%, 0.00%, 0.00%, 0.00%, 1.49%, 2.99%
+
+STRUCTURE JSON REQUISE:
 {{
     "programs": [
         {{
-            "brand": "Chrysler/Dodge/Jeep/Ram",
-            "model": "Nom du modèle",
-            "trim": "Version exacte ou null",
-            "year": 2026,
-            "consumer_cash": 6500,
+            "brand": "Chrysler",
+            "model": "Grand Caravan",
+            "trim": "SXT",
+            "year": 2025,
+            "consumer_cash": 1000,
             "bonus_cash": 0,
             "option1_rates": {{
                 "rate_36": 4.99,
@@ -909,21 +924,21 @@ STRUCTURE JSON:
             "option2_rates": {{
                 "rate_36": 0.00,
                 "rate_48": 0.00,
-                "rate_60": 0.00,
-                "rate_72": 1.99,
-                "rate_84": 2.99,
-                "rate_96": 3.99
+                "rate_60": 1.99,
+                "rate_72": 2.99,
+                "rate_84": 3.98,
+                "rate_96": 4.99
             }}
         }}
     ]
 }}
 
-EXEMPLES DU PDF:
-"Ram 1500 Tradesman, Express, Warlock  $6,500  4.99% 4.99% 4.99% 4.99% 4.99% 4.99%    0.00% 0.00% 0.00% 1.99% 2.99% 3.99%"
-= option1_rates: tous 4.99%, option2_rates: 0, 0, 0, 1.99, 2.99, 3.99, consumer_cash: 6500
-
-"Cherokee Base (KMJL74)    4.99% 4.99% 4.99% 4.99% 4.99% 4.99%    - - - - - -"
-= option1_rates: tous 4.99%, option2_rates: null (les tirets = pas disponible)
+IMPORTANT:
+- Si Option 1 a des points (•) = option1_rates: null, consumer_cash: 0
+- Si Option 2 a des points (•) = option2_rates: null
+- Les taux 0.00% sont des VRAIS zéros, pas null!
+- Extrais CHAQUE ligne du tableau comme une entrée séparée
+- Inclus les véhicules 2025 ET 2026
 
 RETOURNE UNIQUEMENT LE JSON VALIDE."""
 
