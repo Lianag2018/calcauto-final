@@ -731,7 +731,7 @@ export default function HomeScreen() {
           <View>
             <Text style={styles.headerTitle}>{t.title}</Text>
             <Text style={styles.headerSubtitle}>
-              {currentPeriod && `${monthNames[lang][currentPeriod.month]} ${currentPeriod.year}`}
+              {currentPeriod ? `${monthNames[lang][currentPeriod.month]} ${currentPeriod.year}` : ''}
             </Text>
           </View>
           <View style={styles.headerActions}>
