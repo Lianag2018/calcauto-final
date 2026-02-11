@@ -70,6 +70,10 @@ export default function ImportScreen() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   
+  // Page selection for PDF extraction
+  const [pageStart, setPageStart] = useState('20');
+  const [pageEnd, setPageEnd] = useState('21');
+  
   // Loading states
   const [loading, setLoading] = useState(false);
   const [extracting, setExtracting] = useState(false);
