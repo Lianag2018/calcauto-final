@@ -251,6 +251,8 @@ const loadingStyles = StyleSheet.create({
 });
 
 // ============ Interfaces ============
+
+interface FinancingRates {
   rate_36: number;
   rate_48: number;
   rate_60: number;
