@@ -568,17 +568,18 @@ export default function ImportScreen() {
               </View>
               
               <Text style={styles.ratesTitle}>Taux Option 1 (%)</Text>
+              {editProgram.option1_rates ? (
               <View style={styles.ratesGrid}>
                 {['36', '48', '60', '72', '84', '96'].map((term) => (
                   <View key={`o1-${term}`} style={styles.rateField}>
                     <Text style={styles.rateLabel}>{term}m</Text>
                     <TextInput
                       style={styles.rateInput}
-                      value={String(editProgram.option1_rates[`rate_${term}` as keyof RatesData])}
+                      value={String(editProgram.option1_rates![`rate_${term}` as keyof RatesData])}
                       onChangeText={(v) => setEditProgram({
                         ...editProgram,
                         option1_rates: {
-                          ...editProgram.option1_rates,
+                          ...editProgram.option1_rates!,
                           [`rate_${term}`]: parseFloat(v) || 0
                         }
                       })}
@@ -587,6 +588,9 @@ export default function ImportScreen() {
                   </View>
                 ))}
               </View>
+              ) : (
+                <Text style={styles.programDetailNA}>Option 1 non disponible</Text>
+              )}
               
               <View style={styles.option2Toggle}>
                 <TouchableOpacity
