@@ -343,6 +343,36 @@ export default function ImportScreen() {
         </View>
       </View>
       
+      {/* Page Selection */}
+      <View style={styles.periodSection}>
+        <Text style={styles.periodLabel}>Pages du PDF à extraire</Text>
+        <Text style={styles.pageHint}>Ex: Pages 20-21 pour les programmes Retail</Text>
+        <View style={styles.pageRow}>
+          <View style={styles.pageField}>
+            <Text style={styles.pageLabel}>De la page:</Text>
+            <TextInput
+              style={styles.pageInput}
+              value={pageStart}
+              onChangeText={setPageStart}
+              keyboardType="numeric"
+              placeholder="20"
+              placeholderTextColor="#666"
+            />
+          </View>
+          <View style={styles.pageField}>
+            <Text style={styles.pageLabel}>À la page:</Text>
+            <TextInput
+              style={styles.pageInput}
+              value={pageEnd}
+              onChangeText={setPageEnd}
+              keyboardType="numeric"
+              placeholder="21"
+              placeholderTextColor="#666"
+            />
+          </View>
+        </View>
+      </View>
+      
       <TouchableOpacity
         style={[styles.uploadButton, extracting && styles.buttonDisabled]}
         onPress={handlePickPDF}
