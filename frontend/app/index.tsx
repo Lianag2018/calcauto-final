@@ -67,7 +67,7 @@ const LoadingBorderAnimation = ({ loading }: { loading: boolean }) => {
   });
 
   return (
-    <View style={loadingStyles.container} pointerEvents="none">
+    <View style={loadingStyles.container}>
       {/* Border glow effect */}
       <View style={loadingStyles.borderContainer}>
         {/* Top border */}
