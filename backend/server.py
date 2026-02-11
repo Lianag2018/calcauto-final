@@ -865,53 +865,59 @@ async def extract_pdf(
             # Use OpenAI to extract structured data
             client = OpenAI(api_key=OPENAI_API_KEY)
             
-            extraction_prompt = f"""Tu es un expert en extraction de données FCA Canada.
+            extraction_prompt = f"""Tu es un expert en extraction de données de programmes de financement FCA Canada.
 
 TEXTE DU PDF:
-{pdf_text[:30000]}
+{pdf_text[:35000]}
 
-STRUCTURE DU PDF (TRÈS IMPORTANT):
-Le PDF a 2 colonnes principales séparées par "OR":
+=== STRUCTURE DU PDF ===
 
-COLONNE GAUCHE (BLEUE) = OPTION 1:
-- "Consumer Cash*" = Montant du rabais en $ (ex: $1,000, $6,500)
-- "Consumer Cash Finance Rates" = Les 6 taux d'intérêt (36M, 48M, 60M, 72M, 84M, 96M)
-- Souvent 4.99% pour tous les termes
+Le PDF contient un tableau avec ces colonnes:
+1. NOM DU VÉHICULE (avec TRIM entre parenthèses ou après le modèle)
+2. Consumer Cash* (montant en $) - OPTION 1
+3. 6 taux Option 1 (Consumer Cash Finance Rates): 36M, 48M, 60M, 72M, 84M, 96M
+4. 6 taux Option 2 (Alternative Consumer Cash Finance Rates^): 36M, 48M, 60M, 72M, 84M, 96M
+5. Bonus Cash (optionnel)
 
-COLONNE DROITE (ROUGE) = OPTION 2:
-- "Alternative Consumer Cash^" = PAS de rabais, mais taux réduits
-- "Alternative Consumer Cash Finance Rates^" = Les 6 taux réduits
-- Souvent 0.00%, 0.00%, 0.00%, 1.49%, 1.99%, 3.49% etc.
+=== EXEMPLES DE TRIMS À EXTRAIRE ===
 
-RÈGLES DE LECTURE:
-1. Si tu vois des POINTS (• ou .) = Option NON DISPONIBLE = null
-2. Si tu vois 6 pourcentages = Option DISPONIBLE avec ces taux exacts
-3. "2025 MODELS" ou "2026 MODELS" = l'année du véhicule
-4. Le Consumer Cash (rabais $) est SEULEMENT pour Option 1
-5. Option 2 n'a JAMAIS de rabais cash, seulement des taux réduits
+"Ram 1500 Tradesman, Express, Warlock (DT)  $6,500  4.99% 4.99% 4.99% 4.99% 4.99% 4.99%  0.00% 0.00% 0.00% 1.99% 2.99% 3.99%"
+→ brand: "Ram", model: "1500", trim: "Tradesman, Express, Warlock (DT)", consumer_cash: 6500
+→ option1_rates: 4.99/4.99/4.99/4.99/4.99/4.99
+→ option2_rates: 0/0/0/1.99/2.99/3.99
 
-EXEMPLES DU PDF:
-"Grand Caravan SXT  $1,000  4.99% 4.99% 4.99% 4.99% 4.99% 4.99%    0.00% 0.00% 1.99% 2.99% 3.98% 4.99%"
-= Option 1: consumer_cash=$1000, rates=4.99% partout
-= Option 2: rates=0.00%, 0.00%, 1.99%, 2.99%, 3.98%, 4.99%
+"Ram 1500 Big Horn (DT6L91)  $6,500  4.99% 4.99% 4.99% 4.99% 4.99% 4.99%  0.00% 0.00% 0.00% 1.99% 2.99% 3.99%"
+→ brand: "Ram", model: "1500", trim: "Big Horn (DT6L91)", consumer_cash: 6500
 
-"Pacifica Hybrid    4.99% 4.99% 4.99% 4.99% 4.99% 4.99%    • • • • • •"
-= Option 1: consumer_cash=0, rates=4.99% partout  
-= Option 2: null (les points = pas disponible)
+"Ram 1500 Sport, Rebel (DS6L98/DX)  $8,500  4.99% ..."
+→ brand: "Ram", model: "1500", trim: "Sport, Rebel (DS6L98/DX)", consumer_cash: 8500
 
-"Pacifica Select Models    • • • • • •    0.00% 0.00% 0.00% 0.00% 1.49% 2.99%"
-= Option 1: null (les points = pas disponible)
-= Option 2: rates=0.00%, 0.00%, 0.00%, 0.00%, 1.49%, 2.99%
+"Ram 1500 Laramie (DT)  $9,250  ..."
+→ brand: "Ram", model: "1500", trim: "Laramie (DT)", consumer_cash: 9250
 
-STRUCTURE JSON REQUISE:
+"Ram 1500 Long Horn, Limited (DT)  $11,500  ..."
+→ brand: "Ram", model: "1500", trim: "Long Horn, Limited (DT)", consumer_cash: 11500
+
+=== RÈGLES CRITIQUES ===
+
+1. TRIM = TOUT le texte après le numéro du modèle, INCLUANT les codes entre parenthèses
+2. Chaque LIGNE du PDF = UNE entrée séparée dans le JSON
+3. Option 1: Consumer Cash ($) + taux (généralement 4.99%)
+4. Option 2: PAS de Consumer Cash, mais taux réduits (0%, 1.49%, etc.)
+5. Points (• • • • • •) = null pour cette option
+6. 0.00% = vrai zéro, PAS null
+7. "2025 MODELS" ou "2026 MODELS" indique l'année
+
+=== STRUCTURE JSON ===
+
 {{
     "programs": [
         {{
-            "brand": "Chrysler",
-            "model": "Grand Caravan",
-            "trim": "SXT",
-            "year": 2025,
-            "consumer_cash": 1000,
+            "brand": "Ram",
+            "model": "1500",
+            "trim": "Tradesman, Express, Warlock (DT)",
+            "year": 2026,
+            "consumer_cash": 6500,
             "bonus_cash": 0,
             "option1_rates": {{
                 "rate_36": 4.99,
@@ -922,30 +928,31 @@ STRUCTURE JSON REQUISE:
                 "rate_96": 4.99
             }},
             "option2_rates": {{
-                "rate_36": 0.00,
-                "rate_48": 0.00,
-                "rate_60": 1.99,
-                "rate_72": 2.99,
-                "rate_84": 3.98,
-                "rate_96": 4.99
+                "rate_36": 0,
+                "rate_48": 0,
+                "rate_60": 0,
+                "rate_72": 1.99,
+                "rate_84": 2.99,
+                "rate_96": 3.99
             }}
+        }},
+        {{
+            "brand": "Ram",
+            "model": "1500",
+            "trim": "Big Horn (DT6L91)",
+            "year": 2026,
+            "consumer_cash": 6500,
+            ...
         }}
     ]
 }}
 
-IMPORTANT:
-- Si Option 1 a des points (•) = option1_rates: null, consumer_cash: 0
-- Si Option 2 a des points (•) = option2_rates: null
-- Les taux 0.00% sont des VRAIS zéros, pas null!
-- Extrais CHAQUE ligne du tableau comme une entrée séparée
-- Inclus les véhicules 2025 ET 2026
-
-RETOURNE UNIQUEMENT LE JSON VALIDE."""
+EXTRAIS CHAQUE TRIM COMME UNE ENTRÉE SÉPARÉE. Retourne UNIQUEMENT le JSON valide."""
 
             response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
-                    {"role": "system", "content": "Tu es un expert en extraction de données FCA Canada. Retourne UNIQUEMENT du JSON valide et complet. Les points (•) ou tirets signifient null pour option2_rates. Les taux 0.00% sont des vrais zéros."},
+                    {"role": "system", "content": "Tu extrais des données de financement automobile FCA Canada. CHAQUE ligne du PDF avec un trim différent doit être une entrée SÉPARÉE. Inclus le trim COMPLET avec les codes entre parenthèses. Option 1 a toujours 4.99% sauf si points. Retourne du JSON valide uniquement."},
                     {"role": "user", "content": extraction_prompt}
                 ],
                 temperature=0.1,
