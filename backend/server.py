@@ -832,52 +832,43 @@ async def extract_pdf(
     program_year: int = Form(...)
 ):
     """
-    Extrait les données de financement d'un PDF via IA (Gemini)
+    Extrait les données de financement d'un PDF via OpenAI GPT-4
     Retourne les programmes pour prévisualisation/modification avant sauvegarde
     """
     if password != ADMIN_PASSWORD:
         raise HTTPException(status_code=401, detail="Mot de passe incorrect")
     
-    if not EMERGENT_LLM_KEY:
-        raise HTTPException(status_code=500, detail="Clé LLM non configurée")
+    if not OPENAI_API_KEY:
+        raise HTTPException(status_code=500, detail="Clé OpenAI non configurée")
     
     try:
-        # Save uploaded PDF temporarily
         import tempfile
         import os as os_module
+        import base64
+        from openai import OpenAI
+        import PyPDF2
         
+        # Save uploaded PDF temporarily
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
             content = await file.read()
             tmp_file.write(content)
             tmp_path = tmp_file.name
         
         try:
-            # Use Gemini to extract data from PDF
-            from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContentWithMimeType
+            # Extract text from PDF using PyPDF2
+            pdf_text = ""
+            with open(tmp_path, 'rb') as pdf_file:
+                reader = PyPDF2.PdfReader(pdf_file)
+                for page in reader.pages:
+                    pdf_text += page.extract_text() + "\n"
             
-            chat = LlmChat(
-                api_key=EMERGENT_LLM_KEY,
-                session_id=f"pdf-extract-{uuid.uuid4()}",
-                system_message="""Tu es un expert en extraction de données de financement automobile.
-                Tu dois extraire les programmes de financement à partir du PDF et retourner un JSON valide.
-                
-                RÈGLES IMPORTANTES:
-                - Extrais TOUS les véhicules avec leurs options de financement
-                - consumer_cash = rabais en argent comptant (Consumer Cash, avant taxes)
-                - bonus_cash = bonus additionnel après taxes
-                - option1_rates = taux avec Consumer Cash (souvent 4.99% standard ou variables)
-                - option2_rates = taux réduits sans Consumer Cash (peut être null si non disponible)
-                - Les taux sont pour les termes: 36, 48, 60, 72, 84, 96 mois
-                - Si un taux n'est pas spécifié, utilise 4.99 par défaut
-                - Retourne UNIQUEMENT le JSON, sans texte avant ou après"""
-            ).with_model("gemini", "gemini-2.5-flash")
+            # Use OpenAI to extract structured data
+            client = OpenAI(api_key=OPENAI_API_KEY)
             
-            pdf_file = FileContentWithMimeType(
-                file_path=tmp_path,
-                mime_type="application/pdf"
-            )
-            
-            extraction_prompt = f"""Analyse ce PDF de programmes de financement automobile pour {program_month}/{program_year}.
+            extraction_prompt = f"""Analyse ce texte extrait d'un PDF de programmes de financement automobile pour {program_month}/{program_year}.
+
+TEXTE DU PDF:
+{pdf_text[:15000]}
 
 Extrait TOUS les véhicules et leurs programmes de financement.
 
@@ -885,7 +876,7 @@ Retourne un JSON avec cette structure exacte:
 {{
     "programs": [
         {{
-            "brand": "Marque",
+            "brand": "Marque (Chrysler, Dodge, Jeep, Ram, Fiat, Alfa Romeo)",
             "model": "Modèle", 
             "trim": "Version ou null",
             "year": 2026,
@@ -906,24 +897,30 @@ Retourne un JSON avec cette structure exacte:
                 "rate_72": 1.49,
                 "rate_84": 1.99,
                 "rate_96": 3.49
-            }} ou null si pas d'option 2
+            }}
         }}
     ]
 }}
 
-IMPORTANT: 
-- Retourne UNIQUEMENT le JSON valide
-- Pas de texte avant ou après le JSON
-- Vérifie que tous les taux sont des nombres
-- Si option2 n'existe pas pour un véhicule, mets null"""
+RÈGLES:
+- consumer_cash = rabais en argent comptant (Consumer Cash, avant taxes)
+- bonus_cash = bonus additionnel après taxes
+- option1_rates = taux avec Consumer Cash (souvent 4.99% standard)
+- option2_rates = taux réduits sans Consumer Cash (null si non disponible)
+- Si un taux n'est pas spécifié, utilise 4.99 par défaut
+- Retourne UNIQUEMENT le JSON valide, pas de texte avant ou après"""
 
-            response = await chat.send_message(UserMessage(
-                text=extraction_prompt,
-                file_contents=[pdf_file]
-            ))
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "Tu es un expert en extraction de données de financement automobile. Retourne uniquement du JSON valide."},
+                    {"role": "user", "content": extraction_prompt}
+                ],
+                temperature=0.1,
+                max_tokens=4000
+            )
             
-            # Parse the JSON response
-            response_text = response.strip()
+            response_text = response.choices[0].message.content.strip()
             
             # Clean up response (remove markdown code blocks if present)
             if response_text.startswith("```"):
@@ -931,6 +928,8 @@ IMPORTANT:
                 if response_text.startswith("json"):
                     response_text = response_text[4:]
                 response_text = response_text.strip()
+            if response_text.endswith("```"):
+                response_text = response_text[:-3].strip()
             
             try:
                 data = json.loads(response_text)
