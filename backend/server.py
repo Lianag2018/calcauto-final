@@ -963,27 +963,64 @@ RETOURNE UNIQUEMENT LE JSON VALIDE."""
             if response_text.endswith("```"):
                 response_text = response_text[:-3].strip()
             
+            # Clean common JSON issues
+            response_text = response_text.replace('\n', ' ').replace('\r', '')
+            response_text = re.sub(r',\s*}', '}', response_text)  # Remove trailing commas
+            response_text = re.sub(r',\s*]', ']', response_text)  # Remove trailing commas in arrays
+            
             try:
                 data = json.loads(response_text)
                 programs = data.get("programs", [])
-            except json.JSONDecodeError:
-                # Try to find JSON in the response
-                json_match = re.search(r'\{[\s\S]*\}', response_text)
-                if json_match:
-                    data = json.loads(json_match.group())
-                    programs = data.get("programs", [])
-                else:
+            except json.JSONDecodeError as e:
+                # Try to fix common issues and retry
+                try:
+                    # Find the programs array and try to parse it
+                    programs_match = re.search(r'"programs"\s*:\s*\[(.*)\]', response_text, re.DOTALL)
+                    if programs_match:
+                        programs_str = programs_match.group(1)
+                        # Try to parse individual objects
+                        programs = []
+                        obj_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
+                        for obj_match in re.finditer(obj_pattern, programs_str):
+                            try:
+                                obj = json.loads(obj_match.group())
+                                programs.append(obj)
+                            except:
+                                continue
+                        if programs:
+                            data = {"programs": programs}
+                        else:
+                            raise e
+                    else:
+                        raise e
+                except:
                     return ExtractedDataResponse(
                         success=False,
-                        message="Impossible de parser la réponse de l'IA",
+                        message=f"Erreur de parsing JSON: {str(e)}",
                         programs=[],
-                        raw_text=response_text[:2000]
+                        raw_text=response_text[:3000]
                     )
+            
+            # Validate and clean programs
+            valid_programs = []
+            for p in programs:
+                # Ensure required fields exist
+                if 'brand' in p and 'model' in p:
+                    # Clean up rates
+                    if p.get('option1_rates') and isinstance(p['option1_rates'], dict):
+                        for key in ['rate_36', 'rate_48', 'rate_60', 'rate_72', 'rate_84', 'rate_96']:
+                            if key not in p['option1_rates']:
+                                p['option1_rates'][key] = 4.99
+                    if p.get('option2_rates') and isinstance(p['option2_rates'], dict):
+                        for key in ['rate_36', 'rate_48', 'rate_60', 'rate_72', 'rate_84', 'rate_96']:
+                            if key not in p['option2_rates']:
+                                p['option2_rates'][key] = 0
+                    valid_programs.append(p)
             
             return ExtractedDataResponse(
                 success=True,
-                message=f"Extrait {len(programs)} programmes du PDF",
-                programs=programs,
+                message=f"Extrait {len(valid_programs)} programmes du PDF",
+                programs=valid_programs,
                 raw_text=""
             )
             
