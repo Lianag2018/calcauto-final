@@ -865,94 +865,75 @@ async def extract_pdf(
             # Use OpenAI to extract structured data
             client = OpenAI(api_key=OPENAI_API_KEY)
             
-            extraction_prompt = f"""Tu es un expert en extraction de données de programmes de financement FCA Canada.
+            extraction_prompt = f"""EXTRAIS TOUS LES VÉHICULES de ce PDF de programmes de financement FCA Canada.
 
-TEXTE DU PDF:
-{pdf_text[:35000]}
+TEXTE COMPLET DU PDF:
+{pdf_text}
 
-=== STRUCTURE DU PDF ===
+=== FORMAT DES LIGNES DU PDF ===
+Chaque ligne suit ce format:
+VÉHICULE [Consumer Cash $X,XXX] [6 taux Option1] [6 taux Option2] [Bonus Cash]
 
-Le PDF contient un tableau avec ces colonnes:
-1. NOM DU VÉHICULE (avec TRIM entre parenthèses ou après le modèle)
-2. Consumer Cash* (montant en $) - OPTION 1
-3. 6 taux Option 1 (Consumer Cash Finance Rates): 36M, 48M, 60M, 72M, 84M, 96M
-4. 6 taux Option 2 (Alternative Consumer Cash Finance Rates^): 36M, 48M, 60M, 72M, 84M, 96M
-5. Bonus Cash (optionnel)
+- Si tu vois "- - - - - -" = option non disponible (null)
+- Si tu vois "P" avant un montant = c'est quand même le montant
+- 6 taux = 36M, 48M, 60M, 72M, 84M, 96M
 
-=== EXEMPLES DE TRIMS À EXTRAIRE ===
+=== EXEMPLES CONCRETS DU PDF ===
 
-"Ram 1500 Tradesman, Express, Warlock (DT)  $6,500  4.99% 4.99% 4.99% 4.99% 4.99% 4.99%  0.00% 0.00% 0.00% 1.99% 2.99% 3.99%"
-→ brand: "Ram", model: "1500", trim: "Tradesman, Express, Warlock (DT)", consumer_cash: 6500
-→ option1_rates: 4.99/4.99/4.99/4.99/4.99/4.99
-→ option2_rates: 0/0/0/1.99/2.99/3.99
+"Grand Caravan SXT    4.99% 4.99% 4.99% 4.99% 4.99% 4.99%    - - - - - -"
+→ brand: "Chrysler", model: "Grand Caravan", trim: "SXT", consumer_cash: 0
+→ option1: 4.99 partout, option2: null
 
-"Ram 1500 Big Horn (DT6L91)  $6,500  4.99% 4.99% 4.99% 4.99% 4.99% 4.99%  0.00% 0.00% 0.00% 1.99% 2.99% 3.99%"
-→ brand: "Ram", model: "1500", trim: "Big Horn (DT6L91)", consumer_cash: 6500
+"Compass North  $3,500  4.99% 4.99% 4.99% 4.99% 4.99% 4.99%   P 0.00% 0.00% 0.00% 1.49% 1.99% 3.49%"
+→ brand: "Jeep", model: "Compass", trim: "North", consumer_cash: 3500
+→ option1: 4.99 partout, option2: 0/0/0/1.49/1.99/3.49
 
-"Ram 1500 Sport, Rebel (DS6L98/DX)  $8,500  4.99% ..."
-→ brand: "Ram", model: "1500", trim: "Sport, Rebel (DS6L98/DX)", consumer_cash: 8500
+"Durango SXT, GT, GT Plus P $7,500  4.99% 4.99% 4.99% 4.99% 4.99% 4.99%    0.00% 0.00% 0.00% 1.49% 2.49% 3.49%"
+→ brand: "Dodge", model: "Durango", trim: "SXT, GT, GT Plus", consumer_cash: 7500
+→ option1: 4.99 partout, option2: 0/0/0/1.49/2.49/3.49
 
-"Ram 1500 Laramie (DT)  $9,250  ..."
-→ brand: "Ram", model: "1500", trim: "Laramie (DT)", consumer_cash: 9250
+"Ram 1500 Tradesman, Express, Warlock  $6,500  4.99% 4.99% 4.99% 4.99% 4.99% 4.99%    0.00% 0.00% 0.00% 1.99% 2.99% 3.99%"
+→ brand: "Ram", model: "1500", trim: "Tradesman, Express, Warlock", consumer_cash: 6500
+→ option1: 4.99 partout, option2: 0/0/0/1.99/2.99/3.99
 
-"Ram 1500 Long Horn, Limited (DT)  $11,500  ..."
-→ brand: "Ram", model: "1500", trim: "Long Horn, Limited (DT)", consumer_cash: 11500
+"Ram 1500 Laramie (DT6P98)    - - - - - -    0.00% 0.00% 0.00% 1.99% 2.99% 3.99%"
+→ brand: "Ram", model: "1500", trim: "Laramie (DT6P98)", consumer_cash: 0
+→ option1: null (tirets), option2: 0/0/0/1.99/2.99/3.99
 
-=== RÈGLES CRITIQUES ===
+=== MARQUES À EXTRAIRE ===
+- CHRYSLER: Grand Caravan, Pacifica
+- JEEP: Compass, Cherokee, Wrangler, Gladiator, Grand Cherokee, Grand Wagoneer
+- DODGE: Durango, Charger
+- RAM: ProMaster, 1500, 2500, 3500, Chassis Cab
 
-1. TRIM = TOUT le texte après le numéro du modèle, INCLUANT les codes entre parenthèses
-2. Chaque LIGNE du PDF = UNE entrée séparée dans le JSON
-3. Option 1: Consumer Cash ($) + taux (généralement 4.99%)
-4. Option 2: PAS de Consumer Cash, mais taux réduits (0%, 1.49%, etc.)
-5. Points (• • • • • •) = null pour cette option
-6. 0.00% = vrai zéro, PAS null
-7. "2025 MODELS" ou "2026 MODELS" indique l'année
+=== ANNÉES ===
+- "2026 MODELS" → year: 2026
+- "2025 MODELS" → year: 2025
+Extrais les véhicules des DEUX sections!
 
-=== STRUCTURE JSON ===
-
+=== JSON REQUIS ===
 {{
     "programs": [
         {{
-            "brand": "Ram",
-            "model": "1500",
-            "trim": "Tradesman, Express, Warlock (DT)",
+            "brand": "Chrysler",
+            "model": "Grand Caravan", 
+            "trim": "SXT",
             "year": 2026,
-            "consumer_cash": 6500,
+            "consumer_cash": 0,
             "bonus_cash": 0,
-            "option1_rates": {{
-                "rate_36": 4.99,
-                "rate_48": 4.99,
-                "rate_60": 4.99,
-                "rate_72": 4.99,
-                "rate_84": 4.99,
-                "rate_96": 4.99
-            }},
-            "option2_rates": {{
-                "rate_36": 0,
-                "rate_48": 0,
-                "rate_60": 0,
-                "rate_72": 1.99,
-                "rate_84": 2.99,
-                "rate_96": 3.99
-            }}
+            "option1_rates": {{"rate_36": 4.99, "rate_48": 4.99, "rate_60": 4.99, "rate_72": 4.99, "rate_84": 4.99, "rate_96": 4.99}},
+            "option2_rates": null
         }},
-        {{
-            "brand": "Ram",
-            "model": "1500",
-            "trim": "Big Horn (DT6L91)",
-            "year": 2026,
-            "consumer_cash": 6500,
-            ...
-        }}
+        ... TOUS les autres véhicules ...
     ]
 }}
 
-EXTRAIS CHAQUE TRIM COMME UNE ENTRÉE SÉPARÉE. Retourne UNIQUEMENT le JSON valide."""
+EXTRAIS ABSOLUMENT TOUS LES VÉHICULES DES SECTIONS 2026 ET 2025. Ne manque aucune ligne!"""
 
             response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
-                    {"role": "system", "content": "Tu extrais des données de financement automobile FCA Canada. CHAQUE ligne du PDF avec un trim différent doit être une entrée SÉPARÉE. Inclus le trim COMPLET avec les codes entre parenthèses. Option 1 a toujours 4.99% sauf si points. Retourne du JSON valide uniquement."},
+                    {"role": "system", "content": "Tu extrais TOUS les véhicules d'un PDF FCA Canada. CHAQUE ligne = 1 entrée. N'oublie AUCUN véhicule. Sections 2026 ET 2025. JSON valide uniquement."},
                     {"role": "user", "content": extraction_prompt}
                 ],
                 temperature=0.1,
