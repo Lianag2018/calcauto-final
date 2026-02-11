@@ -101,3 +101,35 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Test the PDF extraction endpoint `/api/extract-pdf` to verify it accepts page range parameters."
+
+backend:
+  - task: "PDF extraction endpoint with page range parameters"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ TESTED SUCCESSFULLY: PDF extraction endpoint `/api/extract-pdf` accepts and processes page range parameters correctly. Tested with start_page=20, end_page=21, password=Liana2018, program_month=2, program_year=2026. Backend logs confirm page range processing: 'PDF has 25 pages. Extracting pages 20 to 21 (indices 19 to 21)' and 'Extracted 2 pages'. Both Python requests and curl tests returned HTTP 200 OK. Endpoint correctly handles multipart/form-data with all required parameters."
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "PDF extraction endpoint with page range parameters"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "testing"
+      message: "PDF extraction endpoint testing completed successfully. The endpoint `/api/extract-pdf` correctly accepts and processes page range parameters (start_page, end_page) along with other required parameters (password, program_month, program_year, file). Backend logs confirm proper page range extraction. Both automated tests and manual curl verification passed with HTTP 200 responses."
