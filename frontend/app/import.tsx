@@ -418,8 +418,10 @@ export default function ImportScreen() {
               </View>
               <View style={styles.programDetailRow}>
                 <Text style={styles.programDetailLabel}>Option 1:</Text>
-                <Text style={styles.programDetailValue}>
-                  {prog.option1_rates.rate_36}% - {prog.option1_rates.rate_96}%
+                <Text style={prog.option1_rates ? styles.programDetailValue : styles.programDetailNA}>
+                  {prog.option1_rates 
+                    ? `${prog.option1_rates.rate_36}% - ${prog.option1_rates.rate_96}%`
+                    : 'N/A'}
                 </Text>
               </View>
               <View style={styles.programDetailRow}>
