@@ -829,11 +829,16 @@ async def extract_pdf(
     file: UploadFile = File(...),
     password: str = Form(...),
     program_month: int = Form(...),
-    program_year: int = Form(...)
+    program_year: int = Form(...),
+    start_page: int = Form(1),
+    end_page: int = Form(9999)
 ):
     """
     Extrait les données de financement d'un PDF via OpenAI GPT-4
     Retourne les programmes pour prévisualisation/modification avant sauvegarde
+    
+    start_page et end_page permettent de limiter l'extraction à certaines pages
+    (indexation commence à 1)
     """
     if password != ADMIN_PASSWORD:
         raise HTTPException(status_code=401, detail="Mot de passe incorrect")
@@ -855,12 +860,25 @@ async def extract_pdf(
             tmp_path = tmp_file.name
         
         try:
-            # Extract text from PDF using PyPDF2
+            # Extract text ONLY from specified pages using PyPDF2
             pdf_text = ""
             with open(tmp_path, 'rb') as pdf_file:
                 reader = PyPDF2.PdfReader(pdf_file)
-                for page in reader.pages:
-                    pdf_text += page.extract_text() + "\n"
+                total_pages = len(reader.pages)
+                
+                # Convert to 0-based index and validate range
+                start_idx = max(0, start_page - 1)  # Convert 1-based to 0-based
+                end_idx = min(total_pages, end_page)  # Keep as-is (exclusive end)
+                
+                logger.info(f"PDF has {total_pages} pages. Extracting pages {start_page} to {end_page} (indices {start_idx} to {end_idx})")
+                
+                # Only extract the specified pages
+                for page_num in range(start_idx, end_idx):
+                    page = reader.pages[page_num]
+                    page_text = page.extract_text()
+                    pdf_text += f"\n--- PAGE {page_num + 1} ---\n{page_text}\n"
+                
+                logger.info(f"Extracted {end_idx - start_idx} pages, total text length: {len(pdf_text)} characters")
             
             # Use OpenAI to extract structured data
             client = OpenAI(api_key=OPENAI_API_KEY)
