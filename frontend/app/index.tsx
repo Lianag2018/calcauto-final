@@ -706,6 +706,9 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Loading Animation */}
+      <LoadingBorderAnimation loading={programsLoading} />
+      
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
