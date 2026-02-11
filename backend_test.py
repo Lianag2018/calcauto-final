@@ -8,8 +8,6 @@ import requests
 import json
 import os
 from io import BytesIO
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
 
 # Get backend URL from frontend .env
 def get_backend_url():
