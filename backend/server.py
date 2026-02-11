@@ -945,11 +945,11 @@ RETOURNE UNIQUEMENT LE JSON VALIDE."""
             response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
-                    {"role": "system", "content": "Tu es un expert en extraction de données FCA Canada. Retourne UNIQUEMENT du JSON valide. Les tirets '- - - - - -' signifient null pour option2_rates. Les taux 0.00% sont des vrais zéros, pas null."},
+                    {"role": "system", "content": "Tu es un expert en extraction de données FCA Canada. Retourne UNIQUEMENT du JSON valide et complet. Les points (•) ou tirets signifient null pour option2_rates. Les taux 0.00% sont des vrais zéros."},
                     {"role": "user", "content": extraction_prompt}
                 ],
                 temperature=0.1,
-                max_tokens=8000,
+                max_tokens=16000,
                 response_format={"type": "json_object"}
             )
             
