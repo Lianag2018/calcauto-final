@@ -466,11 +466,13 @@ export default function HomeScreen() {
 
   const loadPrograms = useCallback(async () => {
     const startTime = Date.now();
-    const MIN_LOADING_TIME = 1500; // Minimum 1.5 seconds for animation
+    const MIN_LOADING_TIME = 2000; // Minimum 2 seconds for animation
     
     try {
       await axios.post(`${API_URL}/api/seed`);
-      const response = await axios.get(`${API_URL}/api/programs`);
+      const response = await axios.get(`${API_URL}/api/programs`, {
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       setPrograms(response.data);
       setFilteredPrograms(response.data);
       
