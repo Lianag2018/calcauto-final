@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,37 +10,34 @@ import {
   Platform,
   KeyboardAvoidingView,
   Alert,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
+import * as DocumentPicker from 'expo-document-picker';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+
+interface RatesData {
+  rate_36: number;
+  rate_48: number;
+  rate_60: number;
+  rate_72: number;
+  rate_84: number;
+  rate_96: number;
+}
 
 interface ProgramEntry {
   brand: string;
   model: string;
-  trim: string;
+  trim: string | null;
   year: number;
   consumer_cash: number;
   bonus_cash: number;
-  option1_rates: {
-    rate_36: number;
-    rate_48: number;
-    rate_60: number;
-    rate_72: number;
-    rate_84: number;
-    rate_96: number;
-  };
-  option2_rates: {
-    rate_36: number;
-    rate_48: number;
-    rate_60: number;
-    rate_72: number;
-    rate_84: number;
-    rate_96: number;
-  } | null;
+  option1_rates: RatesData;
+  option2_rates: RatesData | null;
 }
 
 const months = [
@@ -58,102 +55,33 @@ const months = [
   { value: 12, label: 'Décembre' },
 ];
 
+// Steps for the import wizard
+type Step = 'login' | 'upload' | 'preview' | 'success';
+
 export default function ImportScreen() {
   const router = useRouter();
+  
+  // Wizard state
+  const [currentStep, setCurrentStep] = useState<Step>('login');
+  const [password, setPassword] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  // Period selection
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  
+  // Loading states
   const [loading, setLoading] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  
+  // Programs data
   const [programs, setPrograms] = useState<ProgramEntry[]>([]);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   
-  // Form state for adding new program
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [formBrand, setFormBrand] = useState('');
-  const [formModel, setFormModel] = useState('');
-  const [formTrim, setFormTrim] = useState('');
-  const [formYear, setFormYear] = useState('2026');
-  const [formConsumerCash, setFormConsumerCash] = useState('0');
-  const [formBonusCash, setFormBonusCash] = useState('0');
-  
-  // Option 1 rates
-  const [formO1R36, setFormO1R36] = useState('4.99');
-  const [formO1R48, setFormO1R48] = useState('4.99');
-  const [formO1R60, setFormO1R60] = useState('4.99');
-  const [formO1R72, setFormO1R72] = useState('4.99');
-  const [formO1R84, setFormO1R84] = useState('4.99');
-  const [formO1R96, setFormO1R96] = useState('4.99');
-  
-  // Option 2 rates
-  const [formHasOption2, setFormHasOption2] = useState(false);
-  const [formO2R36, setFormO2R36] = useState('0');
-  const [formO2R48, setFormO2R48] = useState('0');
-  const [formO2R60, setFormO2R60] = useState('0');
-  const [formO2R72, setFormO2R72] = useState('0');
-  const [formO2R84, setFormO2R84] = useState('0');
-  const [formO2R96, setFormO2R96] = useState('0');
-
-  const addProgram = () => {
-    if (!formBrand || !formModel) {
-      showAlert('Erreur', 'Marque et modèle sont requis');
-      return;
-    }
-
-    const newProgram: ProgramEntry = {
-      brand: formBrand,
-      model: formModel,
-      trim: formTrim,
-      year: parseInt(formYear) || 2026,
-      consumer_cash: parseFloat(formConsumerCash) || 0,
-      bonus_cash: parseFloat(formBonusCash) || 0,
-      option1_rates: {
-        rate_36: parseFloat(formO1R36) || 4.99,
-        rate_48: parseFloat(formO1R48) || 4.99,
-        rate_60: parseFloat(formO1R60) || 4.99,
-        rate_72: parseFloat(formO1R72) || 4.99,
-        rate_84: parseFloat(formO1R84) || 4.99,
-        rate_96: parseFloat(formO1R96) || 4.99,
-      },
-      option2_rates: formHasOption2 ? {
-        rate_36: parseFloat(formO2R36) || 0,
-        rate_48: parseFloat(formO2R48) || 0,
-        rate_60: parseFloat(formO2R60) || 0,
-        rate_72: parseFloat(formO2R72) || 0,
-        rate_84: parseFloat(formO2R84) || 0,
-        rate_96: parseFloat(formO2R96) || 0,
-      } : null,
-    };
-
-    setPrograms([...programs, newProgram]);
-    resetForm();
-    setShowAddForm(false);
-  };
-
-  const resetForm = () => {
-    setFormBrand('');
-    setFormModel('');
-    setFormTrim('');
-    setFormYear('2026');
-    setFormConsumerCash('0');
-    setFormBonusCash('0');
-    setFormO1R36('4.99');
-    setFormO1R48('4.99');
-    setFormO1R60('4.99');
-    setFormO1R72('4.99');
-    setFormO1R84('4.99');
-    setFormO1R96('4.99');
-    setFormHasOption2(false);
-    setFormO2R36('0');
-    setFormO2R48('0');
-    setFormO2R60('0');
-    setFormO2R72('0');
-    setFormO2R84('0');
-    setFormO2R96('0');
-  };
-
-  const removeProgram = (index: number) => {
-    const updated = [...programs];
-    updated.splice(index, 1);
-    setPrograms(updated);
-  };
+  // Edit modal state
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editProgram, setEditProgram] = useState<ProgramEntry | null>(null);
 
   const showAlert = (title: string, message: string) => {
     if (Platform.OS === 'web') {
@@ -163,27 +91,152 @@ export default function ImportScreen() {
     }
   };
 
-  const handleImport = async () => {
-    if (programs.length === 0) {
-      showAlert('Erreur', 'Ajoutez au moins un programme');
+  // Step 1: Login
+  const handleLogin = async () => {
+    if (!password) {
+      showAlert('Erreur', 'Entrez le mot de passe');
       return;
     }
-
+    
     setLoading(true);
     try {
-      const response = await axios.post(`${API_URL}/api/import`, {
-        password: 'Admin',
+      const formData = new FormData();
+      formData.append('password', password);
+      
+      await axios.post(`${API_URL}/api/verify-password`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      setIsAuthenticated(true);
+      setCurrentStep('upload');
+    } catch (error: any) {
+      showAlert('Erreur', error.response?.data?.detail || 'Mot de passe incorrect');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 2: Upload PDF
+  const handlePickPDF = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+      });
+      
+      if (result.canceled) {
+        return;
+      }
+      
+      const file = result.assets[0];
+      if (!file) return;
+      
+      setExtracting(true);
+      
+      // Create FormData for upload
+      const formData = new FormData();
+      
+      // Handle file for different platforms
+      if (Platform.OS === 'web') {
+        // For web, fetch the file and create a blob
+        const response = await fetch(file.uri);
+        const blob = await response.blob();
+        formData.append('file', blob, file.name);
+      } else {
+        // For native platforms
+        formData.append('file', {
+          uri: file.uri,
+          type: 'application/pdf',
+          name: file.name,
+        } as any);
+      }
+      
+      formData.append('password', password);
+      formData.append('program_month', String(selectedMonth));
+      formData.append('program_year', String(selectedYear));
+      
+      const response = await axios.post(`${API_URL}/api/extract-pdf`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 120000, // 2 minutes timeout for AI processing
+      });
+      
+      if (response.data.success) {
+        setPrograms(response.data.programs);
+        setCurrentStep('preview');
+        showAlert('Succès', `${response.data.programs.length} programmes extraits du PDF`);
+      } else {
+        showAlert('Erreur', response.data.message);
+      }
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      showAlert('Erreur', error.response?.data?.detail || 'Erreur lors de l\'extraction');
+    } finally {
+      setExtracting(false);
+    }
+  };
+
+  // Edit a program
+  const openEditModal = (index: number) => {
+    setEditingIndex(index);
+    setEditProgram({ ...programs[index] });
+    setEditModalVisible(true);
+  };
+
+  const saveEditedProgram = () => {
+    if (editingIndex !== null && editProgram) {
+      const updated = [...programs];
+      updated[editingIndex] = editProgram;
+      setPrograms(updated);
+      setEditModalVisible(false);
+      setEditProgram(null);
+      setEditingIndex(null);
+    }
+  };
+
+  const deleteProgram = (index: number) => {
+    Alert.alert(
+      'Supprimer',
+      'Voulez-vous supprimer ce programme?',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { 
+          text: 'Supprimer', 
+          style: 'destructive',
+          onPress: () => {
+            const updated = [...programs];
+            updated.splice(index, 1);
+            setPrograms(updated);
+          }
+        },
+      ]
+    );
+  };
+
+  // Step 3: Save programs
+  const handleSavePrograms = async () => {
+    if (programs.length === 0) {
+      showAlert('Erreur', 'Aucun programme à sauvegarder');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      const response = await axios.post(`${API_URL}/api/save-programs`, {
+        password: password,
         programs: programs,
         program_month: selectedMonth,
         program_year: selectedYear,
       });
       
-      showAlert('Succès', response.data.message);
-      router.back();
+      if (response.data.success) {
+        setCurrentStep('success');
+      } else {
+        showAlert('Erreur', response.data.message);
+      }
     } catch (error: any) {
-      showAlert('Erreur', error.response?.data?.detail || 'Erreur lors de l\'import');
+      showAlert('Erreur', error.response?.data?.detail || 'Erreur lors de la sauvegarde');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -195,6 +248,402 @@ export default function ImportScreen() {
     }).format(value);
   };
 
+  const getMonthLabel = (month: number) => {
+    return months.find(m => m.value === month)?.label || '';
+  };
+
+  // Render login step
+  const renderLoginStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={styles.iconContainer}>
+        <Ionicons name="lock-closed" size={60} color="#4ECDC4" />
+      </View>
+      <Text style={styles.stepTitle}>Accès Administrateur</Text>
+      <Text style={styles.stepDescription}>
+        Entrez le mot de passe pour accéder à l'import des programmes
+      </Text>
+      
+      <TextInput
+        style={styles.passwordInput}
+        placeholder="Mot de passe"
+        placeholderTextColor="#666"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+        autoCapitalize="none"
+      />
+      
+      <TouchableOpacity
+        style={[styles.primaryButton, loading && styles.buttonDisabled]}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator size="small" color="#1a1a2e" />
+        ) : (
+          <>
+            <Ionicons name="log-in" size={20} color="#1a1a2e" />
+            <Text style={styles.primaryButtonText}>Se connecter</Text>
+          </>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Render upload step
+  const renderUploadStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={styles.iconContainer}>
+        <Ionicons name="document-text" size={60} color="#4ECDC4" />
+      </View>
+      <Text style={styles.stepTitle}>Importer le PDF</Text>
+      <Text style={styles.stepDescription}>
+        Sélectionnez la période et uploadez le PDF des programmes de financement
+      </Text>
+      
+      {/* Period Selection */}
+      <View style={styles.periodSection}>
+        <Text style={styles.periodLabel}>Période du programme</Text>
+        <View style={styles.periodRow}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.monthScroll}>
+            <View style={styles.monthButtons}>
+              {months.map(m => (
+                <TouchableOpacity
+                  key={m.value}
+                  style={[
+                    styles.monthButton,
+                    selectedMonth === m.value && styles.monthButtonActive
+                  ]}
+                  onPress={() => setSelectedMonth(m.value)}
+                >
+                  <Text style={[
+                    styles.monthButtonText,
+                    selectedMonth === m.value && styles.monthButtonTextActive
+                  ]}>
+                    {m.label.substring(0, 3)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+        
+        <View style={styles.yearRow}>
+          <Text style={styles.yearLabel}>Année:</Text>
+          <TextInput
+            style={styles.yearInput}
+            value={String(selectedYear)}
+            onChangeText={(v) => setSelectedYear(parseInt(v) || new Date().getFullYear())}
+            keyboardType="numeric"
+          />
+        </View>
+      </View>
+      
+      <TouchableOpacity
+        style={[styles.uploadButton, extracting && styles.buttonDisabled]}
+        onPress={handlePickPDF}
+        disabled={extracting}
+      >
+        {extracting ? (
+          <View style={styles.extractingContainer}>
+            <ActivityIndicator size="small" color="#1a1a2e" />
+            <Text style={styles.extractingText}>Extraction en cours...</Text>
+            <Text style={styles.extractingSubtext}>L'IA analyse le PDF</Text>
+          </View>
+        ) : (
+          <>
+            <Ionicons name="cloud-upload" size={40} color="#1a1a2e" />
+            <Text style={styles.uploadButtonText}>Sélectionner le PDF</Text>
+            <Text style={styles.uploadButtonSubtext}>Cliquez pour choisir un fichier</Text>
+          </>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Render preview step
+  const renderPreviewStep = () => (
+    <View style={styles.previewContainer}>
+      <View style={styles.previewHeader}>
+        <Text style={styles.previewTitle}>
+          Programmes extraits ({programs.length})
+        </Text>
+        <Text style={styles.previewPeriod}>
+          {getMonthLabel(selectedMonth)} {selectedYear}
+        </Text>
+      </View>
+      
+      <Text style={styles.previewInstructions}>
+        Vérifiez et modifiez les données ci-dessous avant de sauvegarder
+      </Text>
+      
+      <ScrollView style={styles.programsList}>
+        {programs.map((prog, index) => (
+          <View key={index} style={styles.programCard}>
+            <View style={styles.programCardHeader}>
+              <View style={styles.programCardInfo}>
+                <Text style={styles.programBrand}>{prog.brand}</Text>
+                <Text style={styles.programModel}>
+                  {prog.model} {prog.trim || ''} {prog.year}
+                </Text>
+              </View>
+              <View style={styles.programCardActions}>
+                <TouchableOpacity 
+                  style={styles.editButton}
+                  onPress={() => openEditModal(index)}
+                >
+                  <Ionicons name="pencil" size={18} color="#4ECDC4" />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.deleteButton}
+                  onPress={() => deleteProgram(index)}
+                >
+                  <Ionicons name="trash" size={18} color="#FF6B6B" />
+                </TouchableOpacity>
+              </View>
+            </View>
+            
+            <View style={styles.programCardDetails}>
+              <View style={styles.programDetailRow}>
+                <Text style={styles.programDetailLabel}>Consumer Cash:</Text>
+                <Text style={styles.programDetailValue}>
+                  {formatCurrency(prog.consumer_cash)}
+                </Text>
+              </View>
+              <View style={styles.programDetailRow}>
+                <Text style={styles.programDetailLabel}>Bonus Cash:</Text>
+                <Text style={styles.programDetailValue}>
+                  {formatCurrency(prog.bonus_cash)}
+                </Text>
+              </View>
+              <View style={styles.programDetailRow}>
+                <Text style={styles.programDetailLabel}>Option 1:</Text>
+                <Text style={styles.programDetailValue}>
+                  {prog.option1_rates.rate_36}% - {prog.option1_rates.rate_96}%
+                </Text>
+              </View>
+              <View style={styles.programDetailRow}>
+                <Text style={styles.programDetailLabel}>Option 2:</Text>
+                <Text style={prog.option2_rates ? styles.programDetailValue : styles.programDetailNA}>
+                  {prog.option2_rates 
+                    ? `${prog.option2_rates.rate_36}% - ${prog.option2_rates.rate_96}%`
+                    : 'N/A'}
+                </Text>
+              </View>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+      
+      <View style={styles.previewActions}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => setCurrentStep('upload')}
+        >
+          <Ionicons name="arrow-back" size={20} color="#fff" />
+          <Text style={styles.backButtonText}>Retour</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.saveButton, saving && styles.buttonDisabled]}
+          onPress={handleSavePrograms}
+          disabled={saving}
+        >
+          {saving ? (
+            <ActivityIndicator size="small" color="#1a1a2e" />
+          ) : (
+            <>
+              <Ionicons name="checkmark-circle" size={20} color="#1a1a2e" />
+              <Text style={styles.saveButtonText}>Approuver et Sauvegarder</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  // Render success step
+  const renderSuccessStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={[styles.iconContainer, styles.successIcon]}>
+        <Ionicons name="checkmark-circle" size={80} color="#4ECDC4" />
+      </View>
+      <Text style={styles.stepTitle}>Programmes sauvegardés!</Text>
+      <Text style={styles.stepDescription}>
+        {programs.length} programmes ont été ajoutés pour {getMonthLabel(selectedMonth)} {selectedYear}
+      </Text>
+      <Text style={styles.successNote}>
+        Les utilisateurs de l'application verront automatiquement les nouveaux programmes.
+      </Text>
+      
+      <TouchableOpacity
+        style={styles.primaryButton}
+        onPress={() => router.back()}
+      >
+        <Ionicons name="home" size={20} color="#1a1a2e" />
+        <Text style={styles.primaryButtonText}>Retour à l'accueil</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Edit modal
+  const renderEditModal = () => (
+    <Modal
+      visible={editModalVisible}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setEditModalVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Modifier le programme</Text>
+            <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+              <Ionicons name="close" size={24} color="#aaa" />
+            </TouchableOpacity>
+          </View>
+          
+          {editProgram && (
+            <ScrollView style={styles.modalBody}>
+              <View style={styles.formRow}>
+                <View style={styles.formField}>
+                  <Text style={styles.formLabel}>Marque</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={editProgram.brand}
+                    onChangeText={(v) => setEditProgram({...editProgram, brand: v})}
+                  />
+                </View>
+                <View style={styles.formField}>
+                  <Text style={styles.formLabel}>Modèle</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={editProgram.model}
+                    onChangeText={(v) => setEditProgram({...editProgram, model: v})}
+                  />
+                </View>
+              </View>
+              
+              <View style={styles.formRow}>
+                <View style={styles.formField}>
+                  <Text style={styles.formLabel}>Trim</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={editProgram.trim || ''}
+                    onChangeText={(v) => setEditProgram({...editProgram, trim: v || null})}
+                  />
+                </View>
+                <View style={styles.formFieldSmall}>
+                  <Text style={styles.formLabel}>Année</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={String(editProgram.year)}
+                    onChangeText={(v) => setEditProgram({...editProgram, year: parseInt(v) || 2026})}
+                    keyboardType="numeric"
+                  />
+                </View>
+              </View>
+              
+              <View style={styles.formRow}>
+                <View style={styles.formField}>
+                  <Text style={styles.formLabel}>Consumer Cash ($)</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={String(editProgram.consumer_cash)}
+                    onChangeText={(v) => setEditProgram({...editProgram, consumer_cash: parseFloat(v) || 0})}
+                    keyboardType="numeric"
+                  />
+                </View>
+                <View style={styles.formField}>
+                  <Text style={styles.formLabel}>Bonus Cash ($)</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={String(editProgram.bonus_cash)}
+                    onChangeText={(v) => setEditProgram({...editProgram, bonus_cash: parseFloat(v) || 0})}
+                    keyboardType="numeric"
+                  />
+                </View>
+              </View>
+              
+              <Text style={styles.ratesTitle}>Taux Option 1 (%)</Text>
+              <View style={styles.ratesGrid}>
+                {['36', '48', '60', '72', '84', '96'].map((term) => (
+                  <View key={`o1-${term}`} style={styles.rateField}>
+                    <Text style={styles.rateLabel}>{term}m</Text>
+                    <TextInput
+                      style={styles.rateInput}
+                      value={String(editProgram.option1_rates[`rate_${term}` as keyof RatesData])}
+                      onChangeText={(v) => setEditProgram({
+                        ...editProgram,
+                        option1_rates: {
+                          ...editProgram.option1_rates,
+                          [`rate_${term}`]: parseFloat(v) || 0
+                        }
+                      })}
+                      keyboardType="decimal-pad"
+                    />
+                  </View>
+                ))}
+              </View>
+              
+              <View style={styles.option2Toggle}>
+                <TouchableOpacity
+                  style={styles.option2ToggleBtn}
+                  onPress={() => setEditProgram({
+                    ...editProgram,
+                    option2_rates: editProgram.option2_rates 
+                      ? null 
+                      : { rate_36: 0, rate_48: 0, rate_60: 0, rate_72: 1.49, rate_84: 1.99, rate_96: 3.49 }
+                  })}
+                >
+                  <Ionicons
+                    name={editProgram.option2_rates ? 'checkbox' : 'square-outline'}
+                    size={24}
+                    color="#4ECDC4"
+                  />
+                  <Text style={styles.option2ToggleText}>Option 2 disponible</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {editProgram.option2_rates && (
+                <>
+                  <Text style={styles.ratesTitle}>Taux Option 2 (%)</Text>
+                  <View style={styles.ratesGrid}>
+                    {['36', '48', '60', '72', '84', '96'].map((term) => (
+                      <View key={`o2-${term}`} style={styles.rateField}>
+                        <Text style={styles.rateLabel}>{term}m</Text>
+                        <TextInput
+                          style={styles.rateInput}
+                          value={String(editProgram.option2_rates![`rate_${term}` as keyof RatesData])}
+                          onChangeText={(v) => setEditProgram({
+                            ...editProgram,
+                            option2_rates: {
+                              ...editProgram.option2_rates!,
+                              [`rate_${term}`]: parseFloat(v) || 0
+                            }
+                          })}
+                          keyboardType="decimal-pad"
+                        />
+                      </View>
+                    ))}
+                  </View>
+                </>
+              )}
+            </ScrollView>
+          )}
+          
+          <TouchableOpacity
+            style={styles.modalSaveButton}
+            onPress={saveEditedProgram}
+          >
+            <Ionicons name="checkmark" size={20} color="#1a1a2e" />
+            <Text style={styles.modalSaveButtonText}>Sauvegarder les modifications</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -203,13 +652,35 @@ export default function ImportScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.headerBackButton}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <View>
-            <Text style={styles.headerTitle}>Importer un programme</Text>
-            <Text style={styles.headerSubtitle}>Ajouter des véhicules manuellement</Text>
+            <Text style={styles.headerTitle}>Import PDF</Text>
+            <Text style={styles.headerSubtitle}>
+              {currentStep === 'login' && 'Authentification'}
+              {currentStep === 'upload' && 'Sélection du fichier'}
+              {currentStep === 'preview' && 'Vérification des données'}
+              {currentStep === 'success' && 'Terminé'}
+            </Text>
           </View>
+        </View>
+
+        {/* Progress Steps */}
+        <View style={styles.progressContainer}>
+          {['login', 'upload', 'preview', 'success'].map((step, index) => (
+            <View key={step} style={styles.progressStep}>
+              <View style={[
+                styles.progressDot,
+                currentStep === step && styles.progressDotActive,
+                ['upload', 'preview', 'success'].indexOf(currentStep) >= index && styles.progressDotCompleted
+              ]} />
+              {index < 3 && <View style={[
+                styles.progressLine,
+                ['upload', 'preview', 'success'].indexOf(currentStep) > index && styles.progressLineCompleted
+              ]} />}
+            </View>
+          ))}
         </View>
 
         <ScrollView
@@ -217,344 +688,13 @@ export default function ImportScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Period Selection */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Période du programme</Text>
-            <View style={styles.periodRow}>
-              <View style={styles.periodPicker}>
-                <Text style={styles.periodLabel}>Mois</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  <View style={styles.periodOptions}>
-                    {months.map(m => (
-                      <TouchableOpacity
-                        key={m.value}
-                        style={[
-                          styles.periodOption,
-                          selectedMonth === m.value && styles.periodOptionActive
-                        ]}
-                        onPress={() => setSelectedMonth(m.value)}
-                      >
-                        <Text style={[
-                          styles.periodOptionText,
-                          selectedMonth === m.value && styles.periodOptionTextActive
-                        ]}>
-                          {m.label.substring(0, 3)}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </ScrollView>
-              </View>
-              <View style={styles.yearInput}>
-                <Text style={styles.periodLabel}>Année</Text>
-                <TextInput
-                  style={styles.yearTextInput}
-                  value={String(selectedYear)}
-                  onChangeText={(v) => setSelectedYear(parseInt(v) || 2026)}
-                  keyboardType="numeric"
-                />
-              </View>
-            </View>
-          </View>
-
-          {/* Programs List */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Programmes ({programs.length})</Text>
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => setShowAddForm(true)}
-              >
-                <Ionicons name="add" size={20} color="#1a1a2e" />
-                <Text style={styles.addButtonText}>Ajouter</Text>
-              </TouchableOpacity>
-            </View>
-
-            {programs.length === 0 ? (
-              <Text style={styles.emptyText}>
-                Aucun programme ajouté. Cliquez sur "Ajouter" pour commencer.
-              </Text>
-            ) : (
-              programs.map((prog, index) => (
-                <View key={index} style={styles.programCard}>
-                  <View style={styles.programCardHeader}>
-                    <View>
-                      <Text style={styles.programBrand}>{prog.brand}</Text>
-                      <Text style={styles.programModel}>
-                        {prog.model} {prog.trim} {prog.year}
-                      </Text>
-                    </View>
-                    <TouchableOpacity onPress={() => removeProgram(index)}>
-                      <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
-                    </TouchableOpacity>
-                  </View>
-                  <View style={styles.programDetails}>
-                    <Text style={styles.programDetail}>
-                      Consumer Cash: {formatCurrency(prog.consumer_cash)}
-                    </Text>
-                    <Text style={styles.programDetail}>
-                      Bonus Cash: {formatCurrency(prog.bonus_cash)}
-                    </Text>
-                    <Text style={styles.programDetail}>
-                      Option 1: {prog.option1_rates.rate_36}% - {prog.option1_rates.rate_96}%
-                    </Text>
-                    {prog.option2_rates ? (
-                      <Text style={styles.programDetail}>
-                        Option 2: {prog.option2_rates.rate_36}% - {prog.option2_rates.rate_96}%
-                      </Text>
-                    ) : (
-                      <Text style={styles.programDetailNA}>Option 2: N/A</Text>
-                    )}
-                  </View>
-                </View>
-              ))
-            )}
-          </View>
-
-          {/* Add Form */}
-          {showAddForm && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Nouveau véhicule</Text>
-                <TouchableOpacity onPress={() => setShowAddForm(false)}>
-                  <Ionicons name="close" size={24} color="#aaa" />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.formRow}>
-                <View style={styles.formField}>
-                  <Text style={styles.formLabel}>Marque *</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    value={formBrand}
-                    onChangeText={setFormBrand}
-                    placeholder="Jeep"
-                    placeholderTextColor="#666"
-                  />
-                </View>
-                <View style={styles.formField}>
-                  <Text style={styles.formLabel}>Modèle *</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    value={formModel}
-                    onChangeText={setFormModel}
-                    placeholder="Grand Cherokee"
-                    placeholderTextColor="#666"
-                  />
-                </View>
-              </View>
-
-              <View style={styles.formRow}>
-                <View style={styles.formField}>
-                  <Text style={styles.formLabel}>Trim</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    value={formTrim}
-                    onChangeText={setFormTrim}
-                    placeholder="Laredo"
-                    placeholderTextColor="#666"
-                  />
-                </View>
-                <View style={styles.formFieldSmall}>
-                  <Text style={styles.formLabel}>Année</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    value={formYear}
-                    onChangeText={setFormYear}
-                    keyboardType="numeric"
-                    placeholderTextColor="#666"
-                  />
-                </View>
-              </View>
-
-              <View style={styles.formRow}>
-                <View style={styles.formField}>
-                  <Text style={styles.formLabel}>Consumer Cash ($)</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    value={formConsumerCash}
-                    onChangeText={setFormConsumerCash}
-                    keyboardType="numeric"
-                    placeholderTextColor="#666"
-                  />
-                </View>
-                <View style={styles.formField}>
-                  <Text style={styles.formLabel}>Bonus Cash ($)</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    value={formBonusCash}
-                    onChangeText={setFormBonusCash}
-                    keyboardType="numeric"
-                    placeholderTextColor="#666"
-                  />
-                </View>
-              </View>
-
-              {/* Option 1 Rates */}
-              <Text style={styles.ratesTitle}>Taux Option 1 (%)</Text>
-              <View style={styles.ratesGrid}>
-                <View style={styles.rateField}>
-                  <Text style={styles.rateLabel}>36m</Text>
-                  <TextInput
-                    style={styles.rateInput}
-                    value={formO1R36}
-                    onChangeText={setFormO1R36}
-                    keyboardType="decimal-pad"
-                  />
-                </View>
-                <View style={styles.rateField}>
-                  <Text style={styles.rateLabel}>48m</Text>
-                  <TextInput
-                    style={styles.rateInput}
-                    value={formO1R48}
-                    onChangeText={setFormO1R48}
-                    keyboardType="decimal-pad"
-                  />
-                </View>
-                <View style={styles.rateField}>
-                  <Text style={styles.rateLabel}>60m</Text>
-                  <TextInput
-                    style={styles.rateInput}
-                    value={formO1R60}
-                    onChangeText={setFormO1R60}
-                    keyboardType="decimal-pad"
-                  />
-                </View>
-                <View style={styles.rateField}>
-                  <Text style={styles.rateLabel}>72m</Text>
-                  <TextInput
-                    style={styles.rateInput}
-                    value={formO1R72}
-                    onChangeText={setFormO1R72}
-                    keyboardType="decimal-pad"
-                  />
-                </View>
-                <View style={styles.rateField}>
-                  <Text style={styles.rateLabel}>84m</Text>
-                  <TextInput
-                    style={styles.rateInput}
-                    value={formO1R84}
-                    onChangeText={setFormO1R84}
-                    keyboardType="decimal-pad"
-                  />
-                </View>
-                <View style={styles.rateField}>
-                  <Text style={styles.rateLabel}>96m</Text>
-                  <TextInput
-                    style={styles.rateInput}
-                    value={formO1R96}
-                    onChangeText={setFormO1R96}
-                    keyboardType="decimal-pad"
-                  />
-                </View>
-              </View>
-
-              {/* Option 2 Toggle */}
-              <TouchableOpacity
-                style={styles.option2Toggle}
-                onPress={() => setFormHasOption2(!formHasOption2)}
-              >
-                <Ionicons
-                  name={formHasOption2 ? 'checkbox' : 'square-outline'}
-                  size={24}
-                  color="#4ECDC4"
-                />
-                <Text style={styles.option2ToggleText}>Option 2 disponible</Text>
-              </TouchableOpacity>
-
-              {/* Option 2 Rates */}
-              {formHasOption2 && (
-                <>
-                  <Text style={styles.ratesTitle}>Taux Option 2 (%)</Text>
-                  <View style={styles.ratesGrid}>
-                    <View style={styles.rateField}>
-                      <Text style={styles.rateLabel}>36m</Text>
-                      <TextInput
-                        style={styles.rateInput}
-                        value={formO2R36}
-                        onChangeText={setFormO2R36}
-                        keyboardType="decimal-pad"
-                      />
-                    </View>
-                    <View style={styles.rateField}>
-                      <Text style={styles.rateLabel}>48m</Text>
-                      <TextInput
-                        style={styles.rateInput}
-                        value={formO2R48}
-                        onChangeText={setFormO2R48}
-                        keyboardType="decimal-pad"
-                      />
-                    </View>
-                    <View style={styles.rateField}>
-                      <Text style={styles.rateLabel}>60m</Text>
-                      <TextInput
-                        style={styles.rateInput}
-                        value={formO2R60}
-                        onChangeText={setFormO2R60}
-                        keyboardType="decimal-pad"
-                      />
-                    </View>
-                    <View style={styles.rateField}>
-                      <Text style={styles.rateLabel}>72m</Text>
-                      <TextInput
-                        style={styles.rateInput}
-                        value={formO2R72}
-                        onChangeText={setFormO2R72}
-                        keyboardType="decimal-pad"
-                      />
-                    </View>
-                    <View style={styles.rateField}>
-                      <Text style={styles.rateLabel}>84m</Text>
-                      <TextInput
-                        style={styles.rateInput}
-                        value={formO2R84}
-                        onChangeText={setFormO2R84}
-                        keyboardType="decimal-pad"
-                      />
-                    </View>
-                    <View style={styles.rateField}>
-                      <Text style={styles.rateLabel}>96m</Text>
-                      <TextInput
-                        style={styles.rateInput}
-                        value={formO2R96}
-                        onChangeText={setFormO2R96}
-                        keyboardType="decimal-pad"
-                      />
-                    </View>
-                  </View>
-                </>
-              )}
-
-              <TouchableOpacity
-                style={styles.saveButton}
-                onPress={addProgram}
-              >
-                <Ionicons name="checkmark" size={20} color="#1a1a2e" />
-                <Text style={styles.saveButtonText}>Ajouter ce véhicule</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Import Button */}
-          {programs.length > 0 && (
-            <TouchableOpacity
-              style={[styles.importButton, loading && styles.importButtonDisabled]}
-              onPress={handleImport}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#1a1a2e" />
-              ) : (
-                <>
-                  <Ionicons name="cloud-upload" size={20} color="#1a1a2e" />
-                  <Text style={styles.importButtonText}>
-                    Importer {programs.length} programme(s)
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-          )}
+          {currentStep === 'login' && renderLoginStep()}
+          {currentStep === 'upload' && renderUploadStep()}
+          {currentStep === 'preview' && renderPreviewStep()}
+          {currentStep === 'success' && renderSuccessStep()}
         </ScrollView>
+        
+        {renderEditModal()}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -577,7 +717,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#2d2d44',
     gap: 12,
   },
-  backButton: {
+  headerBackButton: {
     padding: 4,
   },
   headerTitle: {
@@ -587,8 +727,40 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 12,
-    color: '#888',
+    color: '#4ECDC4',
     marginTop: 2,
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 40,
+  },
+  progressStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  progressDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#2d2d44',
+  },
+  progressDotActive: {
+    backgroundColor: '#4ECDC4',
+    transform: [{ scale: 1.3 }],
+  },
+  progressDotCompleted: {
+    backgroundColor: '#4ECDC4',
+  },
+  progressLine: {
+    width: 60,
+    height: 2,
+    backgroundColor: '#2d2d44',
+  },
+  progressLineCompleted: {
+    backgroundColor: '#4ECDC4',
   },
   scrollView: {
     flex: 1,
@@ -597,83 +769,180 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 40,
   },
-  section: {
+  stepContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  iconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#2d2d44',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 24,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+  successIcon: {
+    backgroundColor: 'rgba(78, 205, 196, 0.2)',
   },
-  sectionTitle: {
+  stepTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  stepDescription: {
+    fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
+    marginBottom: 24,
+    paddingHorizontal: 20,
+  },
+  passwordInput: {
+    backgroundColor: '#2d2d44',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: '#fff',
+    width: '100%',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  primaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4ECDC4',
+    borderRadius: 12,
+    padding: 16,
+    width: '100%',
+    gap: 8,
+  },
+  primaryButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: '#1a1a2e',
   },
-  periodRow: {
-    flexDirection: 'row',
-    gap: 12,
+  buttonDisabled: {
+    opacity: 0.6,
   },
-  periodPicker: {
-    flex: 1,
+  periodSection: {
+    width: '100%',
+    marginBottom: 24,
   },
   periodLabel: {
-    fontSize: 12,
-    color: '#888',
-    marginBottom: 8,
+    fontSize: 14,
+    color: '#fff',
+    marginBottom: 12,
+    fontWeight: '600',
   },
-  periodOptions: {
+  periodRow: {
+    marginBottom: 12,
+  },
+  monthScroll: {
+    flexGrow: 0,
+  },
+  monthButtons: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 8,
   },
-  periodOption: {
+  monthButton: {
     backgroundColor: '#2d2d44',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderRadius: 8,
   },
-  periodOptionActive: {
+  monthButtonActive: {
     backgroundColor: '#4ECDC4',
   },
-  periodOptionText: {
+  monthButtonText: {
     fontSize: 12,
     color: '#aaa',
     fontWeight: '500',
   },
-  periodOptionTextActive: {
+  monthButtonTextActive: {
     color: '#1a1a2e',
   },
-  yearInput: {
-    width: 100,
+  yearRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  yearTextInput: {
+  yearLabel: {
+    fontSize: 14,
+    color: '#888',
+  },
+  yearInput: {
     backgroundColor: '#2d2d44',
     borderRadius: 8,
     padding: 10,
     fontSize: 14,
     color: '#fff',
+    width: 100,
     textAlign: 'center',
   },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  uploadButton: {
     backgroundColor: '#4ECDC4',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 4,
+    borderRadius: 16,
+    padding: 30,
+    width: '100%',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#4ECDC4',
+    borderStyle: 'dashed',
   },
-  addButtonText: {
-    fontSize: 14,
+  uploadButtonText: {
+    fontSize: 18,
     fontWeight: '600',
     color: '#1a1a2e',
+    marginTop: 12,
   },
-  emptyText: {
-    color: '#666',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    padding: 20,
+  uploadButtonSubtext: {
+    fontSize: 12,
+    color: '#1a1a2e',
+    opacity: 0.7,
+    marginTop: 4,
+  },
+  extractingContainer: {
+    alignItems: 'center',
+  },
+  extractingText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a2e',
+    marginTop: 12,
+  },
+  extractingSubtext: {
+    fontSize: 12,
+    color: '#1a1a2e',
+    opacity: 0.7,
+    marginTop: 4,
+  },
+  previewContainer: {
+    flex: 1,
+  },
+  previewHeader: {
+    marginBottom: 8,
+  },
+  previewTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  previewPeriod: {
+    fontSize: 14,
+    color: '#4ECDC4',
+    marginTop: 4,
+  },
+  previewInstructions: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 16,
+  },
+  programsList: {
+    flex: 1,
+    marginBottom: 16,
   },
   programCard: {
     backgroundColor: '#2d2d44',
@@ -686,6 +955,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
+  programCardInfo: {
+    flex: 1,
+  },
   programBrand: {
     fontSize: 11,
     color: '#4ECDC4',
@@ -697,21 +969,113 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 2,
   },
-  programDetails: {
+  programCardActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  editButton: {
+    padding: 6,
+    backgroundColor: 'rgba(78, 205, 196, 0.2)',
+    borderRadius: 6,
+  },
+  deleteButton: {
+    padding: 6,
+    backgroundColor: 'rgba(255, 107, 107, 0.2)',
+    borderRadius: 6,
+  },
+  programCardDetails: {
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: '#3d3d54',
   },
-  programDetail: {
+  programDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  programDetailLabel: {
     fontSize: 11,
-    color: '#aaa',
-    marginBottom: 2,
+    color: '#888',
+  },
+  programDetailValue: {
+    fontSize: 11,
+    color: '#fff',
+    fontWeight: '500',
   },
   programDetailNA: {
     fontSize: 11,
     color: '#666',
     fontStyle: 'italic',
+  },
+  previewActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2d2d44',
+    borderRadius: 12,
+    padding: 14,
+    gap: 8,
+    flex: 0.4,
+  },
+  backButtonText: {
+    fontSize: 14,
+    color: '#fff',
+  },
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4ECDC4',
+    borderRadius: 12,
+    padding: 14,
+    gap: 8,
+    flex: 0.6,
+  },
+  saveButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1a1a2e',
+  },
+  successNote: {
+    fontSize: 12,
+    color: '#4ECDC4',
+    textAlign: 'center',
+    marginBottom: 24,
+    paddingHorizontal: 20,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#1a1a2e',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2d2d44',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  modalBody: {
+    padding: 16,
+    maxHeight: 500,
   },
   formRow: {
     flexDirection: 'row',
@@ -767,45 +1131,30 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   option2Toggle: {
+    marginVertical: 12,
+  },
+  option2ToggleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingVertical: 12,
   },
   option2ToggleText: {
     fontSize: 14,
     color: '#fff',
   },
-  saveButton: {
+  modalSaveButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#4ECDC4',
     borderRadius: 12,
-    padding: 14,
-    marginTop: 12,
+    padding: 16,
+    margin: 16,
     gap: 8,
   },
-  saveButtonText: {
+  modalSaveButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a2e',
-  },
-  importButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FF6B6B',
-    borderRadius: 12,
-    padding: 16,
-    gap: 8,
-  },
-  importButtonDisabled: {
-    opacity: 0.5,
-  },
-  importButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
     color: '#1a1a2e',
   },
 });
