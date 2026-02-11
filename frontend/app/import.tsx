@@ -658,10 +658,10 @@ export default function ImportScreen() {
           <View>
             <Text style={styles.headerTitle}>Import PDF</Text>
             <Text style={styles.headerSubtitle}>
-              {currentStep === 'login' && 'Authentification'}
-              {currentStep === 'upload' && 'Sélection du fichier'}
-              {currentStep === 'preview' && 'Vérification des données'}
-              {currentStep === 'success' && 'Terminé'}
+              {currentStep === 'login' ? 'Authentification' : 
+               currentStep === 'upload' ? 'Sélection du fichier' :
+               currentStep === 'preview' ? 'Vérification des données' :
+               currentStep === 'success' ? 'Terminé' : ''}
             </Text>
           </View>
         </View>
@@ -675,10 +675,10 @@ export default function ImportScreen() {
                 currentStep === step && styles.progressDotActive,
                 ['upload', 'preview', 'success'].indexOf(currentStep) >= index && styles.progressDotCompleted
               ]} />
-              {index < 3 && <View style={[
+              {index < 3 ? <View style={[
                 styles.progressLine,
                 ['upload', 'preview', 'success'].indexOf(currentStep) > index && styles.progressLineCompleted
-              ]} />}
+              ]} /> : null}
             </View>
           ))}
         </View>
@@ -688,10 +688,10 @@ export default function ImportScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {currentStep === 'login' && renderLoginStep()}
-          {currentStep === 'upload' && renderUploadStep()}
-          {currentStep === 'preview' && renderPreviewStep()}
-          {currentStep === 'success' && renderSuccessStep()}
+          {currentStep === 'login' ? renderLoginStep() : null}
+          {currentStep === 'upload' ? renderUploadStep() : null}
+          {currentStep === 'preview' ? renderPreviewStep() : null}
+          {currentStep === 'success' ? renderSuccessStep() : null}
         </ScrollView>
         
         {renderEditModal()}
