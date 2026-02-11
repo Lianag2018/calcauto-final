@@ -787,6 +787,246 @@ async def seed_data():
     
     return {"message": f"Seeded {len(programs_data)} programs for {prog_month}/{prog_year}"}
 
+# ============ PDF Import with AI ============
+
+class PDFExtractRequest(BaseModel):
+    password: str
+    program_month: int
+    program_year: int
+
+class ProgramPreview(BaseModel):
+    """Preview of extracted program for validation"""
+    brand: str
+    model: str
+    trim: Optional[str] = None
+    year: int
+    consumer_cash: float = 0
+    bonus_cash: float = 0
+    option1_rates: Dict[str, float]
+    option2_rates: Optional[Dict[str, float]] = None
+    
+class ExtractedDataResponse(BaseModel):
+    success: bool
+    message: str
+    programs: List[Dict[str, Any]] = []
+    raw_text: str = ""
+
+class SaveProgramsRequest(BaseModel):
+    password: str
+    programs: List[Dict[str, Any]]
+    program_month: int
+    program_year: int
+
+@api_router.post("/verify-password")
+async def verify_password(password: str = Form(...)):
+    """Vérifie le mot de passe admin"""
+    if password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Mot de passe incorrect")
+    return {"success": True, "message": "Mot de passe vérifié"}
+
+@api_router.post("/extract-pdf", response_model=ExtractedDataResponse)
+async def extract_pdf(
+    file: UploadFile = File(...),
+    password: str = Form(...),
+    program_month: int = Form(...),
+    program_year: int = Form(...)
+):
+    """
+    Extrait les données de financement d'un PDF via IA (Gemini)
+    Retourne les programmes pour prévisualisation/modification avant sauvegarde
+    """
+    if password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Mot de passe incorrect")
+    
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(status_code=500, detail="Clé LLM non configurée")
+    
+    try:
+        # Save uploaded PDF temporarily
+        import tempfile
+        import os as os_module
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+            content = await file.read()
+            tmp_file.write(content)
+            tmp_path = tmp_file.name
+        
+        try:
+            # Use Gemini to extract data from PDF
+            from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContentWithMimeType
+            
+            chat = LlmChat(
+                api_key=EMERGENT_LLM_KEY,
+                session_id=f"pdf-extract-{uuid.uuid4()}",
+                system_message="""Tu es un expert en extraction de données de financement automobile.
+                Tu dois extraire les programmes de financement à partir du PDF et retourner un JSON valide.
+                
+                RÈGLES IMPORTANTES:
+                - Extrais TOUS les véhicules avec leurs options de financement
+                - consumer_cash = rabais en argent comptant (Consumer Cash, avant taxes)
+                - bonus_cash = bonus additionnel après taxes
+                - option1_rates = taux avec Consumer Cash (souvent 4.99% standard ou variables)
+                - option2_rates = taux réduits sans Consumer Cash (peut être null si non disponible)
+                - Les taux sont pour les termes: 36, 48, 60, 72, 84, 96 mois
+                - Si un taux n'est pas spécifié, utilise 4.99 par défaut
+                - Retourne UNIQUEMENT le JSON, sans texte avant ou après"""
+            ).with_model("gemini", "gemini-2.5-flash")
+            
+            pdf_file = FileContentWithMimeType(
+                file_path=tmp_path,
+                mime_type="application/pdf"
+            )
+            
+            extraction_prompt = f"""Analyse ce PDF de programmes de financement automobile pour {program_month}/{program_year}.
+
+Extrait TOUS les véhicules et leurs programmes de financement.
+
+Retourne un JSON avec cette structure exacte:
+{{
+    "programs": [
+        {{
+            "brand": "Marque",
+            "model": "Modèle", 
+            "trim": "Version ou null",
+            "year": 2026,
+            "consumer_cash": 0,
+            "bonus_cash": 0,
+            "option1_rates": {{
+                "rate_36": 4.99,
+                "rate_48": 4.99,
+                "rate_60": 4.99,
+                "rate_72": 4.99,
+                "rate_84": 4.99,
+                "rate_96": 4.99
+            }},
+            "option2_rates": {{
+                "rate_36": 0,
+                "rate_48": 0,
+                "rate_60": 0,
+                "rate_72": 1.49,
+                "rate_84": 1.99,
+                "rate_96": 3.49
+            }} ou null si pas d'option 2
+        }}
+    ]
+}}
+
+IMPORTANT: 
+- Retourne UNIQUEMENT le JSON valide
+- Pas de texte avant ou après le JSON
+- Vérifie que tous les taux sont des nombres
+- Si option2 n'existe pas pour un véhicule, mets null"""
+
+            response = await chat.send_message(UserMessage(
+                text=extraction_prompt,
+                file_contents=[pdf_file]
+            ))
+            
+            # Parse the JSON response
+            response_text = response.strip()
+            
+            # Clean up response (remove markdown code blocks if present)
+            if response_text.startswith("```"):
+                response_text = response_text.split("```")[1]
+                if response_text.startswith("json"):
+                    response_text = response_text[4:]
+                response_text = response_text.strip()
+            
+            try:
+                data = json.loads(response_text)
+                programs = data.get("programs", [])
+            except json.JSONDecodeError:
+                # Try to find JSON in the response
+                json_match = re.search(r'\{[\s\S]*\}', response_text)
+                if json_match:
+                    data = json.loads(json_match.group())
+                    programs = data.get("programs", [])
+                else:
+                    return ExtractedDataResponse(
+                        success=False,
+                        message="Impossible de parser la réponse de l'IA",
+                        programs=[],
+                        raw_text=response_text[:2000]
+                    )
+            
+            return ExtractedDataResponse(
+                success=True,
+                message=f"Extrait {len(programs)} programmes du PDF",
+                programs=programs,
+                raw_text=""
+            )
+            
+        finally:
+            # Clean up temp file
+            os_module.unlink(tmp_path)
+            
+    except Exception as e:
+        logger.error(f"Error extracting PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur d'extraction: {str(e)}")
+
+@api_router.post("/save-programs")
+async def save_programs(request: SaveProgramsRequest):
+    """
+    Sauvegarde les programmes validés dans la base de données
+    Remplace les programmes existants pour le mois/année spécifié
+    Garde seulement les 6 derniers mois d'historique
+    """
+    if request.password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Mot de passe incorrect")
+    
+    # Delete existing programs for this period
+    await db.programs.delete_many({
+        "program_month": request.program_month,
+        "program_year": request.program_year
+    })
+    
+    # Insert new programs
+    inserted = 0
+    for prog_data in request.programs:
+        # Ensure rates are in correct format
+        if prog_data.get("option1_rates") and isinstance(prog_data["option1_rates"], dict):
+            prog_data["option1_rates"] = FinancingRates(**prog_data["option1_rates"]).dict()
+        if prog_data.get("option2_rates") and isinstance(prog_data["option2_rates"], dict):
+            prog_data["option2_rates"] = FinancingRates(**prog_data["option2_rates"]).dict()
+        
+        prog_data["program_month"] = request.program_month
+        prog_data["program_year"] = request.program_year
+        prog_data["bonus_cash"] = prog_data.get("bonus_cash", 0)
+        prog_data["consumer_cash"] = prog_data.get("consumer_cash", 0)
+        
+        prog = VehicleProgram(**prog_data)
+        await db.programs.insert_one(prog.dict())
+        inserted += 1
+    
+    # Clean up old programs (keep only 6 months)
+    await cleanup_old_programs()
+    
+    return {
+        "success": True,
+        "message": f"Sauvegardé {inserted} programmes pour {request.program_month}/{request.program_year}"
+    }
+
+async def cleanup_old_programs():
+    """Supprime les programmes de plus de 6 mois"""
+    # Get all unique periods
+    pipeline = [
+        {"$group": {
+            "_id": {"month": "$program_month", "year": "$program_year"}
+        }},
+        {"$sort": {"_id.year": -1, "_id.month": -1}}
+    ]
+    periods = await db.programs.aggregate(pipeline).to_list(100)
+    
+    # Keep only the 6 most recent periods
+    if len(periods) > 6:
+        periods_to_delete = periods[6:]
+        for p in periods_to_delete:
+            await db.programs.delete_many({
+                "program_month": p["_id"]["month"],
+                "program_year": p["_id"]["year"]
+            })
+            logger.info(f"Deleted old programs for {p['_id']['month']}/{p['_id']['year']}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
