@@ -865,20 +865,27 @@ async def extract_pdf(
             # Use OpenAI to extract structured data
             client = OpenAI(api_key=OPENAI_API_KEY)
             
-            extraction_prompt = f"""Analyse ce texte extrait d'un PDF de programmes de financement automobile pour {program_month}/{program_year}.
+            extraction_prompt = f"""Tu es un expert en extraction de données de programmes de financement automobile Chrysler/Dodge/Jeep/Ram/Fiat/Alfa Romeo.
 
 TEXTE DU PDF:
-{pdf_text[:15000]}
+{pdf_text[:20000]}
 
-Extrait TOUS les véhicules et leurs programmes de financement.
+INSTRUCTIONS CRITIQUES:
+1. Extrais CHAQUE véhicule avec TOUS ses trims/versions listés
+2. IMPORTANT: Un même modèle peut avoir plusieurs lignes avec différents trims - crée une entrée SÉPARÉE pour chaque trim
+3. Cherche les années 2025 ET 2026 - crée des entrées séparées pour chaque année si les deux sont mentionnées
+4. Les trims sont souvent entre parenthèses ou après le nom du modèle (ex: "Tradesman, Express, Warlock" ou "SXT, GT, GT Plus")
+5. Option 1 = Plan avec Consumer Cash + taux standard (souvent 4.99%)
+6. Option 2 = Plan sans Consumer Cash mais avec taux réduits (0%, 1.49%, 1.99%, etc.)
+7. Si "N/A" ou pas de taux réduits mentionnés pour Option 2, mets option2_rates à null
 
-Retourne un JSON avec cette structure exacte:
+STRUCTURE JSON REQUISE:
 {{
     "programs": [
         {{
-            "brand": "Marque (Chrysler, Dodge, Jeep, Ram, Fiat, Alfa Romeo)",
-            "model": "Modèle", 
-            "trim": "Version ou null",
+            "brand": "Marque exacte",
+            "model": "Nom du modèle", 
+            "trim": "Version/Trim spécifique ou null si aucun",
             "year": 2026,
             "consumer_cash": 0,
             "bonus_cash": 0,
@@ -902,13 +909,13 @@ Retourne un JSON avec cette structure exacte:
     ]
 }}
 
-RÈGLES:
-- consumer_cash = rabais en argent comptant (Consumer Cash, avant taxes)
-- bonus_cash = bonus additionnel après taxes
-- option1_rates = taux avec Consumer Cash (souvent 4.99% standard)
-- option2_rates = taux réduits sans Consumer Cash (null si non disponible)
-- Si un taux n'est pas spécifié, utilise 4.99 par défaut
-- Retourne UNIQUEMENT le JSON valide, pas de texte avant ou après"""
+RÈGLES IMPORTANTES:
+- consumer_cash = rabais en argent comptant (Consumer Cash) - montant AVANT taxes
+- bonus_cash = Bonus Cash additionnel - montant APRÈS taxes  
+- Si un véhicule a plusieurs trims avec le même prix/taux, crée quand même des entrées séparées
+- Si tu vois "2025" ou "2026" ou "25" ou "26" dans le texte près d'un véhicule, utilise cette année
+- Les taux 0% signifient vraiment 0, pas null
+- Retourne UNIQUEMENT le JSON valide"""
 
             response = client.chat.completions.create(
                 model="gpt-4o",
