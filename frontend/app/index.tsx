@@ -76,8 +76,8 @@ interface ProgramPeriod {
 // Language translations
 const translations = {
   fr: {
-    title: 'Calculateur de Financement',
-    subtitle: 'Comparez vos options',
+    title: 'CalcAuto AiPro',
+    subtitle: 'Calculateur de financement automobile',
     selectVehicle: 'Sélectionner un véhicule',
     enterPrice: 'Prix du véhicule ($)',
     calculate: 'Calculer',
