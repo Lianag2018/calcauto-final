@@ -1088,15 +1088,13 @@ async def save_programs(request: SaveProgramsRequest):
             logger.warning(f"Skipped invalid program: {prog_data.get('brand')} {prog_data.get('model')} - {str(e)}")
             skipped += 1
             continue
-        await db.programs.insert_one(prog.dict())
-        inserted += 1
     
     # Clean up old programs (keep only 6 months)
     await cleanup_old_programs()
     
     return {
         "success": True,
-        "message": f"Sauvegardé {inserted} programmes pour {request.program_month}/{request.program_year}"
+        "message": f"Sauvegardé {inserted} programmes pour {request.program_month}/{request.program_year}" + (f" ({skipped} ignorés)" if skipped > 0 else "")
     }
 
 async def cleanup_old_programs():
