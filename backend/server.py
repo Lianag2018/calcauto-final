@@ -1082,6 +1082,12 @@ async def save_programs(request: SaveProgramsRequest):
         
         try:
             prog = VehicleProgram(**prog_data)
+            await db.programs.insert_one(prog.dict())
+            inserted += 1
+        except Exception as e:
+            logger.warning(f"Skipped invalid program: {prog_data.get('brand')} {prog_data.get('model')} - {str(e)}")
+            skipped += 1
+            continue
         await db.programs.insert_one(prog.dict())
         inserted += 1
     
