@@ -29,7 +29,7 @@ api_router = APIRouter(prefix="/api")
 
 # Admin password for import (from .env)
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Liana2018')
-EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 
 # ============ Models ============
 
