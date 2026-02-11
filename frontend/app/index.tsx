@@ -114,8 +114,8 @@ const translations = {
     afterTax: 'après taxes',
   },
   en: {
-    title: 'Financing Calculator',
-    subtitle: 'Compare your options',
+    title: 'CalcAuto AiPro',
+    subtitle: 'Vehicle financing calculator',
     selectVehicle: 'Select a vehicle',
     enterPrice: 'Vehicle Price ($)',
     calculate: 'Calculate',
