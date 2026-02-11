@@ -158,6 +158,8 @@ export default function ImportScreen() {
       formData.append('password', password);
       formData.append('program_month', String(selectedMonth));
       formData.append('program_year', String(selectedYear));
+      formData.append('start_page', pageStart || '1');
+      formData.append('end_page', pageEnd || '9999');
       
       const response = await axios.post(`${API_URL}/api/extract-pdf`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
