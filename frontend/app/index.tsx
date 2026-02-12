@@ -1259,7 +1259,7 @@ export default function HomeScreen() {
                       </View>
                       <View style={styles.optionMainResult}>
                         <Text style={styles.optionMonthlyLabel}>
-                          {paymentFrequency === 'monthly' ? 'Mensuel' : paymentFrequency === 'biweekly' ? 'Aux 2 sem.' : 'Hebdo'}
+                          {paymentFrequency === 'monthly' ? t.frequency.monthly : paymentFrequency === 'biweekly' ? t.frequency.biweekly : t.frequency.weekly}
                         </Text>
                         <Text style={styles.optionMonthlyValue}>
                           {formatCurrencyDecimal(
