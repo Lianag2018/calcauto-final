@@ -961,7 +961,7 @@ export default function HomeScreen() {
                     </View>
                   </View>
                   <View style={styles.feeField}>
-                    <Text style={styles.feeLabel}>Frais RDPRM</Text>
+                    <Text style={styles.feeLabel}>{t.fees.rdprm}</Text>
                     <View style={styles.feeInputContainer}>
                       <Text style={styles.feeSymbol}>$</Text>
                       <TextInput
