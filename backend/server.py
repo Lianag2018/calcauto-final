@@ -1098,10 +1098,131 @@ async def save_programs(request: SaveProgramsRequest):
     # Clean up old programs (keep only 6 months)
     await cleanup_old_programs()
     
+    # Calculate brands summary for report
+    brands_summary = {}
+    for prog_data in request.programs:
+        brand = prog_data.get("brand", "Inconnu")
+        if brand not in brands_summary:
+            brands_summary[brand] = 0
+        brands_summary[brand] += 1
+    
+    # Send automatic email report
+    try:
+        await send_import_report_email(
+            programs_count=inserted,
+            program_month=request.program_month,
+            program_year=request.program_year,
+            brands_summary=brands_summary,
+            skipped_count=skipped
+        )
+        logger.info(f"Import report email sent to {SMTP_EMAIL}")
+    except Exception as e:
+        logger.warning(f"Failed to send import report email: {str(e)}")
+    
     return {
         "success": True,
-        "message": f"Sauvegardé {inserted} programmes pour {request.program_month}/{request.program_year}" + (f" ({skipped} ignorés)" if skipped > 0 else "")
+        "message": f"Sauvegardé {inserted} programmes pour {request.program_month}/{request.program_year}" + (f" ({skipped} ignorés)" if skipped > 0 else "") + " - Rapport envoyé par email"
     }
+
+async def send_import_report_email(programs_count: int, program_month: int, program_year: int, brands_summary: dict, skipped_count: int = 0):
+    """Envoie automatiquement un rapport par email après l'import des programmes"""
+    months_fr = {
+        1: "Janvier", 2: "Février", 3: "Mars", 4: "Avril",
+        5: "Mai", 6: "Juin", 7: "Juillet", 8: "Août",
+        9: "Septembre", 10: "Octobre", 11: "Novembre", 12: "Décembre"
+    }
+    month_name = months_fr.get(program_month, str(program_month))
+    
+    # Generate brands table
+    brands_rows = ""
+    total_programs = 0
+    for brand in ['Chrysler', 'Jeep', 'Dodge', 'Ram', 'Fiat']:
+        count = brands_summary.get(brand, 0)
+        if count > 0:
+            brands_rows += f"<tr><td style='padding: 10px; border-bottom: 1px solid #eee;'>{brand}</td><td style='padding: 10px; border-bottom: 1px solid #eee; text-align: center; font-weight: bold;'>{count}</td></tr>"
+            total_programs += count
+    
+    # Add any other brands
+    for brand, count in brands_summary.items():
+        if brand not in ['Chrysler', 'Jeep', 'Dodge', 'Ram', 'Fiat'] and count > 0:
+            brands_rows += f"<tr><td style='padding: 10px; border-bottom: 1px solid #eee;'>{brand}</td><td style='padding: 10px; border-bottom: 1px solid #eee; text-align: center; font-weight: bold;'>{count}</td></tr>"
+    
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body {{ font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }}
+            .header {{ background: linear-gradient(135deg, #1a5f4a 0%, #2d8f6f 100%); color: #fff; padding: 25px; text-align: center; }}
+            .header h1 {{ margin: 0; font-size: 24px; }}
+            .header .subtitle {{ margin-top: 8px; opacity: 0.9; }}
+            .content {{ padding: 25px; }}
+            .success-badge {{ background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; font-size: 16px; }}
+            .success-badge strong {{ font-size: 18px; }}
+            .stats-box {{ background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center; }}
+            .big-number {{ font-size: 56px; font-weight: bold; color: #1a5f4a; }}
+            .big-label {{ color: #666; font-size: 14px; margin-top: 5px; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
+            th {{ background: #1a5f4a; color: #fff; padding: 12px; text-align: left; }}
+            .footer {{ background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #eee; }}
+            .warning-box {{ background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-top: 15px; color: #856404; font-size: 13px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>✅ Import Réussi!</h1>
+                <div class="subtitle">CalcAuto AiPro - Rapport d'import automatique</div>
+            </div>
+            <div class="content">
+                <div class="success-badge">
+                    <strong>🎉 Programmes {month_name} {program_year}</strong><br>
+                    importés avec succès!
+                </div>
+                
+                <div class="stats-box">
+                    <div class="big-number">{programs_count}</div>
+                    <div class="big-label">programmes de financement</div>
+                </div>
+                
+                <h3 style="color: #1a5f4a; border-bottom: 2px solid #1a5f4a; padding-bottom: 8px;">📊 Répartition par marque</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Marque</th>
+                            <th style="text-align: center;">Nombre</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {brands_rows}
+                        <tr style="background: #f8f9fa; font-weight: bold;">
+                            <td style="padding: 12px;">TOTAL</td>
+                            <td style="padding: 12px; text-align: center;">{programs_count}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                {f'<div class="warning-box">⚠️ {skipped_count} programme(s) ignoré(s) en raison de données invalides.</div>' if skipped_count > 0 else ''}
+                
+                <p style="margin-top: 25px; color: #666; font-size: 14px;">
+                    Les nouveaux programmes sont maintenant disponibles dans l'application CalcAuto AiPro. 
+                    Vos clients peuvent commencer à utiliser les nouveaux taux immédiatement.
+                </p>
+            </div>
+            <div class="footer">
+                <p style="margin: 0;"><strong>CalcAuto AiPro</strong></p>
+                <p style="margin: 8px 0 0;">Rapport généré automatiquement le {datetime.now().strftime('%d/%m/%Y à %H:%M')}</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    subject = f"✅ Import {month_name} {program_year} - {programs_count} programmes"
+    
+    send_email(SMTP_EMAIL, subject, html_body)
 
 async def cleanup_old_programs():
     """Supprime les programmes de plus de 6 mois"""
