@@ -1188,7 +1188,7 @@ class SendReportEmailRequest(BaseModel):
 
 @api_router.post("/send-calculation-email")
 async def send_calculation_email(request: SendCalculationEmailRequest):
-    """Envoie un calcul de financement par email - COMPLET comme sur l'écran"""
+    """Envoie un calcul de financement par email - STYLE PDF CLAIR"""
     try:
         vehicle = request.vehicle_info
         calc = request.calculation_results
@@ -1223,11 +1223,11 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
         if freq == 'weekly':
             option1_payment = comparison.get('option1_weekly', 0)
             option2_payment = comparison.get('option2_weekly', 0)
-            freq_label = "Hebdo"
+            freq_label = "Hebdomadaire"
         elif freq == 'biweekly':
             option1_payment = comparison.get('option1_biweekly', 0)
             option2_payment = comparison.get('option2_biweekly', 0)
-            freq_label = "Aux 2 sem."
+            freq_label = "Aux 2 semaines"
         else:
             option1_payment = comparison.get('option1_monthly', 0)
             option2_payment = comparison.get('option2_monthly', 0)
@@ -1243,25 +1243,14 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
         def fmt2(val):
             return f"{val:,.2f}".replace(",", " ").replace(".", ",")
         
-        # Build rates table HTML
-        rates_html = ""
-        if rates:
-            terms = [36, 48, 60, 72, 84, 96]
-            for t in terms:
-                r1 = rates.get(f'option1_{t}', rates.get('option1', {}).get(f'rate_{t}', 4.99))
-                r2 = rates.get(f'option2_{t}', rates.get('option2', {}).get(f'rate_{t}', 0))
-                highlight = ' class="selected-term"' if t == term else ''
-                rates_html += f"<tr{highlight}><td class='term-cell'>{t} mois</td><td class='rate1'>{r1}%</td><td class='rate2'>{r2}%</td></tr>"
-        
-        # Build fees HTML
+        # Build fees info
         frais_dossier = fees.get('frais_dossier', 0)
         taxe_pneus = fees.get('taxe_pneus', 0)
         frais_rdprm = fees.get('frais_rdprm', 0)
-        
-        # Build trade-in HTML
         valeur_echange = trade.get('valeur_echange', 0)
         montant_du = trade.get('montant_du', 0)
         
+        # LIGHT THEME EMAIL - PDF STYLE
         html_body = f"""
         <!DOCTYPE html>
         <html>
@@ -1269,256 +1258,163 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-                body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #1a1a2e; margin: 0; padding: 12px; color: #fff; font-size: 14px; }}
-                .container {{ max-width: 560px; margin: 0 auto; }}
+                body {{ font-family: Arial, Helvetica, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; color: #333; font-size: 14px; line-height: 1.5; }}
+                .container {{ max-width: 600px; margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }}
                 
-                .header {{ text-align: center; padding: 14px 0 18px; border-bottom: 1px solid #3d3d5c; margin-bottom: 16px; }}
-                .header h1 {{ color: #4ECDC4; margin: 0; font-size: 24px; font-weight: bold; font-style: italic; }}
-                .header .period {{ color: #4ECDC4; font-size: 13px; margin-top: 4px; }}
+                .header {{ background: #1a5f4a; color: #fff; padding: 20px; text-align: center; }}
+                .header h1 {{ margin: 0; font-size: 24px; }}
+                .header p {{ margin: 5px 0 0; opacity: 0.9; font-size: 13px; }}
                 
-                .greeting {{ margin-bottom: 16px; font-size: 14px; }}
+                .content {{ padding: 25px; }}
                 
-                /* SECTION 1: Vehicle Selection */
-                .section-title {{ color: #aaa; font-size: 12px; margin-bottom: 8px; text-transform: uppercase; }}
+                .greeting {{ font-size: 15px; margin-bottom: 20px; }}
                 
-                .vehicle-card {{ background: #2d2d44; border: 2px solid #4ECDC4; border-radius: 12px; padding: 14px; margin-bottom: 16px; }}
-                .vehicle-brand {{ color: #4ECDC4; font-size: 13px; }}
-                .vehicle-model {{ font-size: 18px; font-weight: bold; margin: 4px 0; }}
-                .vehicle-trim {{ color: #aaa; font-size: 13px; }}
-                .vehicle-badges {{ display: flex; gap: 8px; margin-top: 8px; }}
-                .badge {{ background: #4ECDC4; color: #1a1a2e; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; }}
-                .badge-red {{ background: #FF6B6B; }}
+                .section {{ margin-bottom: 20px; }}
+                .section-title {{ font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }}
                 
-                /* SECTION 2: Rates Table */
-                .rates-table {{ width: 100%; background: #2d2d44; border-radius: 10px; border-collapse: collapse; margin-bottom: 16px; overflow: hidden; }}
-                .rates-table th {{ background: #3d3d5c; padding: 10px 8px; font-size: 12px; color: #aaa; font-weight: 600; }}
-                .rates-table td {{ padding: 8px; text-align: center; border-bottom: 1px solid #3d3d5c; }}
-                .rates-table .term-cell {{ text-align: left; padding-left: 12px; }}
-                .rates-table .rate1 {{ color: #FF6B6B; font-weight: 600; }}
-                .rates-table .rate2 {{ color: #4ECDC4; font-weight: 600; }}
-                .rates-table .selected-term {{ background: #4ECDC4; }}
-                .rates-table .selected-term td {{ color: #1a1a2e; font-weight: bold; }}
-                .rates-table .selected-term .rate1, .rates-table .selected-term .rate2 {{ color: #1a1a2e; }}
+                .vehicle-box {{ background: #f8f9fa; border: 2px solid #1a5f4a; border-radius: 8px; padding: 15px; text-align: center; }}
+                .vehicle-brand {{ color: #1a5f4a; font-size: 14px; font-weight: bold; }}
+                .vehicle-model {{ font-size: 20px; font-weight: bold; color: #333; margin: 5px 0; }}
+                .vehicle-price {{ font-size: 28px; font-weight: bold; color: #1a5f4a; }}
                 
-                .cash-banner {{ background: #2d2d44; border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }}
-                .cash-label {{ color: #aaa; font-size: 13px; }}
-                .cash-value {{ color: #4ECDC4; font-size: 18px; font-weight: bold; }}
+                .info-table {{ width: 100%; border-collapse: collapse; }}
+                .info-table td {{ padding: 8px 0; border-bottom: 1px solid #eee; }}
+                .info-table td:first-child {{ color: #666; }}
+                .info-table td:last-child {{ text-align: right; font-weight: 600; }}
                 
-                /* SECTION 3: Price & Fees */
-                .price-section {{ background: #2d2d44; border-radius: 10px; padding: 14px; margin-bottom: 16px; }}
-                .price-row {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }}
-                .price-row:last-child {{ margin-bottom: 0; }}
-                .price-label {{ color: #aaa; font-size: 13px; }}
-                .price-value {{ color: #4ECDC4; font-size: 16px; font-weight: bold; }}
+                .rates-table {{ width: 100%; border-collapse: collapse; background: #f8f9fa; border-radius: 6px; overflow: hidden; }}
+                .rates-table th {{ background: #1a5f4a; color: #fff; padding: 10px; font-size: 12px; }}
+                .rates-table td {{ padding: 8px 10px; text-align: center; border-bottom: 1px solid #e0e0e0; }}
+                .rates-table tr:last-child td {{ border-bottom: none; }}
+                .rates-table .selected {{ background: #d4edda; font-weight: bold; }}
+                .rate-opt1 {{ color: #c0392b; font-weight: 600; }}
+                .rate-opt2 {{ color: #1a5f4a; font-weight: 600; }}
                 
-                .fees-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }}
-                .fee-box {{ background: #2d2d44; border-radius: 8px; padding: 10px; }}
-                .fee-label {{ color: #aaa; font-size: 11px; margin-bottom: 4px; }}
-                .fee-value {{ font-size: 14px; font-weight: 600; }}
+                .best-choice {{ background: #d4edda; border: 2px solid #1a5f4a; border-radius: 8px; padding: 15px; margin: 20px 0; }}
+                .best-choice-title {{ font-size: 18px; font-weight: bold; color: #155724; }}
+                .best-choice-savings {{ font-size: 14px; color: #155724; margin-top: 5px; }}
                 
-                /* SECTION 4: Term & Frequency */
-                .selection-row {{ display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }}
-                .selection-btn {{ background: #2d2d44; border-radius: 20px; padding: 8px 14px; font-size: 12px; }}
-                .selection-btn.selected {{ background: #4ECDC4; color: #1a1a2e; font-weight: bold; }}
+                .options-container {{ display: table; width: 100%; border-spacing: 10px 0; }}
+                .option-box {{ display: table-cell; width: 50%; vertical-align: top; border: 2px solid #ddd; border-radius: 8px; padding: 15px; background: #fafafa; }}
+                .option-box.winner {{ border-color: #1a5f4a; background: #f0fff4; }}
+                .option-title {{ font-size: 16px; font-weight: bold; margin-bottom: 10px; }}
+                .option-title.opt1 {{ color: #c0392b; }}
+                .option-title.opt2 {{ color: #1a5f4a; }}
                 
-                .options-row {{ display: flex; gap: 10px; margin-bottom: 16px; }}
-                .option-btn {{ flex: 1; border-radius: 10px; padding: 12px; text-align: center; }}
-                .option-btn.opt1 {{ background: linear-gradient(180deg, #5a3a3a 0%, #4a2a2a 100%); border: 2px solid #8a5a5a; }}
-                .option-btn.opt2 {{ background: linear-gradient(180deg, #2a4a4a 0%, #1a3a3a 100%); border: 2px solid #4ECDC4; }}
-                .option-btn .title {{ font-size: 14px; font-weight: bold; }}
-                .option-btn .sub {{ color: #aaa; font-size: 11px; margin-top: 2px; }}
+                .option-detail {{ display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; }}
+                .option-detail span:first-child {{ color: #666; }}
                 
-                /* SECTION 5: Results */
-                .results-header {{ font-size: 18px; margin-bottom: 12px; }}
-                .results-header span {{ color: #4ECDC4; }}
+                .payment-highlight {{ background: #f0f0f0; border-radius: 6px; padding: 12px; text-align: center; margin-top: 10px; }}
+                .payment-highlight.opt1 {{ background: #fdf2f2; }}
+                .payment-highlight.opt2 {{ background: #f0fff4; }}
+                .payment-label {{ font-size: 12px; color: #666; }}
+                .payment-amount {{ font-size: 24px; font-weight: bold; margin: 5px 0; }}
+                .payment-amount.opt1 {{ color: #c0392b; }}
+                .payment-amount.opt2 {{ color: #1a5f4a; }}
+                .payment-total {{ font-size: 12px; color: #666; }}
+                .payment-total strong {{ color: #333; }}
                 
-                .result-vehicle {{ background: #3d3d5c; border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 14px; }}
-                .result-vehicle .name {{ font-size: 16px; }}
-                .result-vehicle .price {{ color: #4ECDC4; font-size: 26px; font-weight: bold; margin-top: 4px; }}
+                .winner-badge {{ display: inline-block; background: #1a5f4a; color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 10px; margin-left: 5px; }}
                 
-                .best-banner {{ background: #4ECDC4; color: #1a1a2e; padding: 12px 14px; border-radius: 10px; margin-bottom: 14px; }}
-                .best-table {{ width: 100%; }}
-                .best-table td {{ vertical-align: middle; }}
-                .trophy {{ font-size: 22px; }}
-                .best-text {{ font-size: 15px; font-weight: bold; }}
-                .savings-value {{ font-size: 16px; font-weight: bold; text-align: right; }}
-                
-                .opts-table {{ width: 100%; border-collapse: separate; border-spacing: 8px 0; }}
-                .opt-card {{ background: #2d3a50; border-radius: 12px; padding: 12px; vertical-align: top; width: 50%; }}
-                .opt-card.opt1 {{ border: 2px solid #5a6a80; }}
-                .opt-card.opt2 {{ border: 2px solid #4ECDC4; }}
-                .opt-card.best {{ box-shadow: 0 0 15px rgba(78, 205, 196, 0.4); }}
-                
-                .opt-header {{ margin-bottom: 8px; }}
-                .opt-title {{ font-size: 15px; font-weight: bold; }}
-                .opt-subtitle {{ color: #aaa; font-size: 10px; }}
-                .checkmark {{ display: inline-block; width: 20px; height: 20px; background: #4ECDC4; border-radius: 50%; text-align: center; line-height: 20px; color: #1a1a2e; font-weight: bold; font-size: 12px; float: right; }}
-                
-                .detail-tbl {{ width: 100%; }}
-                .detail-tbl td {{ padding: 2px 0; font-size: 12px; }}
-                .lbl {{ color: #aaa; }}
-                .val {{ text-align: right; font-weight: 600; }}
-                .val-orange {{ color: #FF9800; }}
-                .val-cyan {{ color: #4ECDC4; }}
-                
-                .pay-box {{ background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; text-align: center; margin-top: 8px; }}
-                .pay-label {{ color: #aaa; font-size: 11px; margin-bottom: 3px; }}
-                .pay-amount {{ font-size: 22px; font-weight: bold; }}
-                .pay-orange {{ color: #FF9800; }}
-                .pay-cyan {{ color: #4ECDC4; }}
-                
-                .total-row {{ margin-top: 8px; text-align: center; }}
-                .total-label {{ color: #aaa; font-size: 10px; }}
-                .total-value {{ font-size: 13px; font-weight: bold; }}
-                
-                .footer {{ text-align: center; padding: 16px 0; margin-top: 16px; border-top: 1px solid #3d3d5c; }}
-                .dealer {{ color: #4ECDC4; font-weight: bold; font-size: 14px; }}
-                .disclaimer {{ color: #666; font-size: 10px; margin-top: 10px; line-height: 1.4; }}
+                .footer {{ background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #eee; }}
+                .footer .dealer {{ font-size: 16px; font-weight: bold; color: #1a5f4a; }}
+                .footer .disclaimer {{ font-size: 11px; color: #999; margin-top: 10px; }}
             </style>
         </head>
         <body>
             <div class="container">
-                <!-- HEADER -->
                 <div class="header">
                     <h1>CalcAuto AiPro</h1>
-                    <div class="period">Soumission de financement</div>
+                    <p>Soumission de financement</p>
                 </div>
                 
-                <p class="greeting">Bonjour{' ' + request.client_name if request.client_name else ''},</p>
-                
-                <!-- SECTION 1: Selected Vehicle -->
-                <div class="section-title">Véhicule sélectionné</div>
-                <div class="vehicle-card">
-                    <div class="vehicle-brand">{vehicle.get('brand', '')}</div>
-                    <div class="vehicle-model">{vehicle.get('model', '')} {vehicle.get('year', '')}</div>
-                    <div class="vehicle-trim">{vehicle.get('trim', '') or ''}</div>
-                    <div class="vehicle-badges">
-                        {f"<span class='badge'>{fmt(consumer_cash)} $</span>" if consumer_cash > 0 else ""}
-                        <span class="badge badge-red">{option2_rate}%</span>
+                <div class="content">
+                    <p class="greeting">Bonjour{' ' + request.client_name if request.client_name else ''},</p>
+                    <p style="color: #666; margin-top: -10px;">Voici le détail de votre soumission de financement:</p>
+                    
+                    <!-- VEHICLE -->
+                    <div class="section">
+                        <div class="section-title">Véhicule sélectionné</div>
+                        <div class="vehicle-box">
+                            <div class="vehicle-brand">{vehicle.get('brand', '')}</div>
+                            <div class="vehicle-model">{vehicle.get('model', '')} {vehicle.get('trim', '') or ''} {vehicle.get('year', '')}</div>
+                            <div class="vehicle-price">{fmt(request.vehicle_price)} $</div>
+                        </div>
                     </div>
-                </div>
-                
-                <!-- SECTION 2: Rates Table -->
-                <div class="section-title">Tableau des taux</div>
-                <table class="rates-table">
-                    <thead>
-                        <tr>
-                            <th style="text-align: left; padding-left: 12px;">Terme</th>
-                            <th>Option 1</th>
-                            <th>Option 2</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rates_html if rates_html else f'''
-                        <tr{"" if term != 36 else ' class="selected-term"'}><td class="term-cell">36 mois</td><td class="rate1">4.99%</td><td class="rate2">0%</td></tr>
-                        <tr{"" if term != 48 else ' class="selected-term"'}><td class="term-cell">48 mois</td><td class="rate1">4.99%</td><td class="rate2">0%</td></tr>
-                        <tr{"" if term != 60 else ' class="selected-term"'}><td class="term-cell">60 mois</td><td class="rate1">4.99%</td><td class="rate2">0%</td></tr>
-                        <tr{"" if term != 72 else ' class="selected-term"'}><td class="term-cell">72 mois</td><td class="rate1">4.99%</td><td class="rate2">1.49%</td></tr>
-                        <tr{"" if term != 84 else ' class="selected-term"'}><td class="term-cell">84 mois</td><td class="rate1">4.99%</td><td class="rate2">1.99%</td></tr>
-                        <tr{"" if term != 96 else ' class="selected-term"'}><td class="term-cell">96 mois</td><td class="rate1">4.99%</td><td class="rate2">3.49%</td></tr>
-                        '''}
-                    </tbody>
-                </table>
-                
-                {f'<div class="cash-banner"><span class="cash-label">Rabais (avant taxes):</span><span class="cash-value">{fmt(consumer_cash)} $</span></div>' if consumer_cash > 0 else ''}
-                
-                <!-- SECTION 3: Price & Fees -->
-                <div class="section-title">Prix du véhicule ($)</div>
-                <div class="price-section">
-                    <div class="price-row">
-                        <span class="price-label">Prix du véhicule</span>
-                        <span class="price-value">{fmt(request.vehicle_price)} $</span>
+                    
+                    <!-- RATES TABLE -->
+                    <div class="section">
+                        <div class="section-title">Tableau des taux</div>
+                        <table class="rates-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: left;">Terme</th>
+                                    <th>Option 1</th>
+                                    <th>Option 2</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="{'selected' if term == 36 else ''}"><td style="text-align: left;">36 mois</td><td class="rate-opt1">4,99%</td><td class="rate-opt2">0%</td></tr>
+                                <tr class="{'selected' if term == 48 else ''}"><td style="text-align: left;">48 mois</td><td class="rate-opt1">4,99%</td><td class="rate-opt2">0%</td></tr>
+                                <tr class="{'selected' if term == 60 else ''}"><td style="text-align: left;">60 mois</td><td class="rate-opt1">4,99%</td><td class="rate-opt2">0%</td></tr>
+                                <tr class="{'selected' if term == 72 else ''}"><td style="text-align: left;">72 mois</td><td class="rate-opt1">4,99%</td><td class="rate-opt2">1,49%</td></tr>
+                                <tr class="{'selected' if term == 84 else ''}"><td style="text-align: left;">84 mois</td><td class="rate-opt1">4,99%</td><td class="rate-opt2">1,99%</td></tr>
+                                <tr class="{'selected' if term == 96 else ''}"><td style="text-align: left;">96 mois</td><td class="rate-opt1">4,99%</td><td class="rate-opt2">3,49%</td></tr>
+                            </tbody>
+                        </table>
                     </div>
-                    {f'<div class="price-row"><span class="price-label">Bonus (après taxes)</span><span class="price-value">{fmt(bonus_cash)} $</span></div>' if bonus_cash > 0 else ''}
-                </div>
-                
-                {f'''
-                <div class="section-title">Frais additionnels (taxables)</div>
-                <div class="fees-grid">
-                    <div class="fee-box"><div class="fee-label">Frais dossier</div><div class="fee-value">{fmt2(frais_dossier)} $</div></div>
-                    <div class="fee-box"><div class="fee-label">Taxe pneus</div><div class="fee-value">{fmt(taxe_pneus)} $</div></div>
-                    <div class="fee-box"><div class="fee-label">Frais RDPRM</div><div class="fee-value">{fmt(frais_rdprm)} $</div></div>
-                </div>
-                ''' if frais_dossier > 0 or taxe_pneus > 0 or frais_rdprm > 0 else ''}
-                
-                {f'''
-                <div class="section-title">Échange (optionnel)</div>
-                <div class="fees-grid">
-                    <div class="fee-box"><div class="fee-label">Valeur de l'échange</div><div class="fee-value">{fmt(valeur_echange)} $</div></div>
-                    <div class="fee-box"><div class="fee-label">Montant dû</div><div class="fee-value">{fmt(montant_du)} $</div></div>
-                </div>
-                ''' if valeur_echange > 0 or montant_du > 0 else ''}
-                
-                <!-- SECTION 4: Term & Frequency Selection -->
-                <div class="section-title">Terme sélectionné</div>
-                <div class="selection-row">
-                    {"".join([f'<span class="selection-btn{" selected" if t == term else ""}">{t} mois</span>' for t in [36, 48, 60, 72, 84, 96]])}
-                </div>
-                
-                <div class="section-title">Fréquence de paiement</div>
-                <div class="selection-row">
-                    <span class="selection-btn{' selected' if freq == 'monthly' else ''}">Mensuel</span>
-                    <span class="selection-btn{' selected' if freq == 'biweekly' else ''}">Aux 2 sem.</span>
-                    <span class="selection-btn{' selected' if freq == 'weekly' else ''}">Hebdo</span>
-                </div>
-                
-                <div class="section-title">Option de financement</div>
-                <div class="options-row">
-                    <div class="option-btn opt1">
-                        <div class="title">Option 1</div>
-                        <div class="sub">{fmt(consumer_cash)} $ + {option1_rate}%</div>
+                    
+                    <!-- DETAILS -->
+                    <div class="section">
+                        <div class="section-title">Détails du financement</div>
+                        <table class="info-table">
+                            <tr><td>Prix du véhicule</td><td>{fmt(request.vehicle_price)} $</td></tr>
+                            {f"<tr><td>Rabais (avant taxes)</td><td style='color: #1a5f4a;'>-{fmt(consumer_cash)} $</td></tr>" if consumer_cash > 0 else ""}
+                            {f"<tr><td>Bonus Cash (après taxes)</td><td style='color: #1a5f4a;'>-{fmt(bonus_cash)} $</td></tr>" if bonus_cash > 0 else ""}
+                            {f"<tr><td>Frais dossier</td><td>{fmt2(frais_dossier)} $</td></tr>" if frais_dossier > 0 else ""}
+                            {f"<tr><td>Taxe pneus</td><td>{fmt(taxe_pneus)} $</td></tr>" if taxe_pneus > 0 else ""}
+                            {f"<tr><td>Frais RDPRM</td><td>{fmt(frais_rdprm)} $</td></tr>" if frais_rdprm > 0 else ""}
+                            {f"<tr><td>Valeur échange</td><td>-{fmt(valeur_echange)} $</td></tr>" if valeur_echange > 0 else ""}
+                            <tr><td>Terme sélectionné</td><td><strong>{term} mois</strong></td></tr>
+                            <tr><td>Fréquence de paiement</td><td><strong>{freq_label}</strong></td></tr>
+                        </table>
                     </div>
-                    <div class="option-btn opt2">
-                        <div class="title">Option 2</div>
-                        <div class="sub">$0 + {option2_rate}%</div>
+                    
+                    <!-- BEST CHOICE BANNER -->
+                    {"<div class='best-choice'><div class='best-choice-title'>🏆 Option " + best_option + " = Meilleur choix!</div><div class='best-choice-savings'>Économies de <strong>" + fmt(savings) + " $</strong> sur le coût total</div></div>" if has_option2 and savings > 0 else ""}
+                    
+                    <!-- OPTIONS COMPARISON -->
+                    <div class="section">
+                        <div class="section-title">Comparaison des options</div>
+                        <table style="width: 100%; border-spacing: 10px; border-collapse: separate;">
+                            <tr>
+                                <td style="width: 50%; vertical-align: top; border: 2px solid {'#1a5f4a' if best_option == '1' else '#ddd'}; border-radius: 8px; padding: 15px; background: {'#f0fff4' if best_option == '1' else '#fafafa'};">
+                                    <div class="option-title opt1">Option 1 {"<span class='winner-badge'>✓ MEILLEUR</span>" if best_option == '1' else ""}</div>
+                                    <div style="font-size: 12px; color: #666; margin-bottom: 10px;">Rabais + Taux standard</div>
+                                    <div class="option-detail"><span>Rabais:</span><span style="color: #1a5f4a; font-weight: 600;">{'-' + fmt(consumer_cash) + ' $' if consumer_cash > 0 else '$0'}</span></div>
+                                    <div class="option-detail"><span>Capital financé:</span><span>{fmt(principal_option1)} $</span></div>
+                                    <div class="option-detail"><span>Taux:</span><span class="rate-opt1">{option1_rate}%</span></div>
+                                    <div class="payment-highlight opt1">
+                                        <div class="payment-label">{freq_label}</div>
+                                        <div class="payment-amount opt1">{fmt2(option1_payment)} $</div>
+                                        <div class="payment-total">Total ({term} mois): <strong>{fmt(total_option1)} $</strong></div>
+                                    </div>
+                                </td>
+                                
+                                {"<td style='width: 50%; vertical-align: top; border: 2px solid " + ("#1a5f4a" if best_option == "2" else "#ddd") + "; border-radius: 8px; padding: 15px; background: " + ("#f0fff4" if best_option == "2" else "#fafafa") + ";'><div class='option-title opt2'>Option 2 " + ("<span class='winner-badge'>✓ MEILLEUR</span>" if best_option == "2" else "") + "</div><div style='font-size: 12px; color: #666; margin-bottom: 10px;'>$0 rabais + Taux réduit</div><div class='option-detail'><span>Rabais:</span><span>$0</span></div><div class='option-detail'><span>Capital financé:</span><span>" + fmt(principal_option2) + " $</span></div><div class='option-detail'><span>Taux:</span><span class='rate-opt2'>" + str(option2_rate) + "%</span></div><div class='payment-highlight opt2'><div class='payment-label'>" + freq_label + "</div><div class='payment-amount opt2'>" + fmt2(option2_payment) + " $</div><div class='payment-total'>Total (" + str(term) + " mois): <strong>" + fmt(total_option2) + " $</strong></div></div></td>" if has_option2 else "<td style='width: 50%; vertical-align: top; border: 2px solid #ddd; border-radius: 8px; padding: 15px; background: #f5f5f5; text-align: center; color: #999;'><div class='option-title' style='color: #999;'>Option 2</div><div style='padding: 30px 0;'>Non disponible<br>pour ce véhicule</div></td>"}
+                            </tr>
+                        </table>
                     </div>
+                    
+                    {f"<div style='background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-top: 15px;'><span style='color: #856404;'>ℹ️ Bonus Cash de {fmt(bonus_cash)} $ sera déduit après taxes (au comptant)</span></div>" if bonus_cash > 0 else ""}
                 </div>
-                
-                <!-- SECTION 5: Results -->
-                <div class="results-header">Résultats – <span>{term} mois</span></div>
-                
-                <div class="result-vehicle">
-                    <div class="name">{vehicle.get('brand', '')} {vehicle.get('model', '')} {vehicle.get('trim', '') or ''} {vehicle.get('year', '')}</div>
-                    <div class="price">{fmt(request.vehicle_price)} $</div>
-                </div>
-                
-                {"<div class='best-banner'><table class='best-table' cellpadding='0' cellspacing='0'><tr><td width='30'><span class='trophy'>🏆</span></td><td><span class='best-text'>Option " + best_option + " = Meilleur choix!</span></td><td width='90'><div style='font-size: 11px;'>Économies:</div><div class='savings-value'>" + fmt(savings) + " $</div></td></tr></table></div>" if has_option2 and savings > 0 else ""}
-                
-                <table class="opts-table">
-                    <tr>
-                        <td class="opt-card opt1 {'best' if best_option == '1' else ''}">
-                            <div class="opt-header">
-                                <span class="opt-title">Option 1</span>
-                                {"<span class='checkmark'>✓</span>" if best_option == '1' else ""}
-                                <div class="opt-subtitle">Rabais + Taux</div>
-                            </div>
-                            <table class="detail-tbl">
-                                <tr><td class="lbl">Rabais:</td><td class="val val-cyan">{"-" + fmt(consumer_cash) + " $" if consumer_cash > 0 else "$0"}</td></tr>
-                                <tr><td class="lbl">Capital financé:</td><td class="val">{fmt(principal_option1)} $</td></tr>
-                                <tr><td class="lbl">Taux:</td><td class="val val-orange">{option1_rate}%</td></tr>
-                            </table>
-                            <div class="pay-box">
-                                <div class="pay-label">{freq_label}</div>
-                                <div class="pay-amount pay-orange">{fmt2(option1_payment)} $</div>
-                            </div>
-                            <div class="total-row">
-                                <div class="total-label">Total ({term} mois)</div>
-                                <div class="total-value val-orange">{fmt(total_option1)} $</div>
-                            </div>
-                        </td>
-                        
-                        {"<td class='opt-card opt2 " + ("best" if best_option == "2" else "") + "'><div class='opt-header'><span class='opt-title'>Option 2</span>" + ("<span class='checkmark'>✓</span>" if best_option == "2" else "") + "<div class='opt-subtitle'>Taux réduits</div></div><table class='detail-tbl'><tr><td class='lbl'>Rabais:</td><td class='val'>$0</td></tr><tr><td class='lbl'>Capital financé:</td><td class='val'>" + fmt(principal_option2) + " $</td></tr><tr><td class='lbl'>Taux:</td><td class='val val-cyan'>" + str(option2_rate) + "%</td></tr></table><div class='pay-box'><div class='pay-label'>" + freq_label + "</div><div class='pay-amount pay-cyan'>" + fmt2(option2_payment) + " $</div></div><div class='total-row'><div class='total-label'>Total (" + str(term) + " mois)</div><div class='total-value val-cyan'>" + fmt(total_option2) + " $</div></div></td>" if has_option2 else "<td class='opt-card opt2' style='opacity: 0.5;'><div class='opt-header'><span class='opt-title'>Option 2</span><div class='opt-subtitle'>Non disponible</div></div></td>"}
-                    </tr>
-                </table>
-                
-                {"<div style='background: rgba(255, 215, 0, 0.15); border-radius: 8px; padding: 10px; margin-top: 14px;'><span style='color: #FFD700; font-size: 12px;'>ℹ️ Bonus Cash de " + fmt(bonus_cash) + " $ sera déduit après taxes (au comptant)</span></div>" if bonus_cash > 0 else ""}
                 
                 <div class="footer">
                     <div class="dealer">{request.dealer_name}</div>
-                    {f"<div style='color: #888; margin-top: 6px;'>{request.dealer_phone}</div>" if request.dealer_phone else ""}
+                    {f"<div style='color: #666; margin-top: 5px;'>{request.dealer_phone}</div>" if request.dealer_phone else ""}
                     <div class="disclaimer">
-                        Ce calcul est une estimation.<br>
-                        Les taux peuvent varier selon votre dossier de crédit.
+                        Ce calcul est une estimation et ne constitue pas une offre de financement officielle.<br>
+                        Les taux et conditions peuvent varier selon votre dossier de crédit.
                     </div>
                 </div>
             </div>
@@ -1526,7 +1422,7 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
         </html>
         """
         
-        subject = f"Votre soumission - {vehicle.get('brand', '')} {vehicle.get('model', '')} {vehicle.get('year', '')}"
+        subject = f"Soumission - {vehicle.get('brand', '')} {vehicle.get('model', '')} {vehicle.get('year', '')}"
         
         send_email(request.client_email, subject, html_body)
         
