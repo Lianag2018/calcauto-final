@@ -857,7 +857,7 @@ export default function HomeScreen() {
                       onPress={() => setSelectedTerm(term)}
                     >
                       <Text style={[styles.ratesCell, selectedTerm === term && styles.ratesCellSelected]}>
-                        {term} {t.months}
+                        {term} {t.term.months}
                       </Text>
                       <Text style={[styles.ratesCell, styles.ratesCellOption1, selectedTerm === term && styles.ratesCellSelected]}>
                         {getRateForTerm(selectedProgram.option1_rates, term)}%
@@ -1031,7 +1031,7 @@ export default function HomeScreen() {
                         styles.termButtonText,
                         selectedTerm === term && styles.termButtonTextActive
                       ]}>
-                        {term} {t.months}
+                        {term} {t.term.months}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -1150,7 +1150,7 @@ export default function HomeScreen() {
           {selectedProgram && localResult && vehiclePrice && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>
-                {t.results} - {selectedTerm} {t.months}
+                {t.results} - {selectedTerm} {t.term.months}
               </Text>
               
               {/* Summary */}
@@ -1224,7 +1224,7 @@ export default function HomeScreen() {
                     </Text>
                   </View>
                   <View style={styles.optionDetail}>
-                    <Text style={styles.optionDetailLabel}>{t.total} ({selectedTerm} {t.months}):</Text>
+                    <Text style={styles.optionDetailLabel}>{t.total} ({selectedTerm} {t.term.months}):</Text>
                     <Text style={styles.optionTotalValue}>{formatCurrency(localResult.option1Total)}</Text>
                   </View>
                 </View>
@@ -1270,7 +1270,7 @@ export default function HomeScreen() {
                         </Text>
                       </View>
                       <View style={styles.optionDetail}>
-                        <Text style={styles.optionDetailLabel}>{t.total} ({selectedTerm} {t.months}):</Text>
+                        <Text style={styles.optionDetailLabel}>{t.total} ({selectedTerm} {t.term.months}):</Text>
                         <Text style={styles.optionTotalValue}>{formatCurrency(localResult.option2Total!)}</Text>
                       </View>
                     </>
