@@ -1,0 +1,97 @@
+{
+  "title": "CalcAuto AiPro",
+  "subtitle": "Calculateur de financement automobile",
+  "loading": "Chargement...",
+  "loadingPrograms": "Chargement des programmes...",
+  
+  "filters": {
+    "year": "Année modèle",
+    "brand": "Marque",
+    "all": "Tous"
+  },
+  
+  "vehicle": {
+    "selectVehicle": "Sélectionner un véhicule",
+    "noPrograms": "Aucun programme disponible",
+    "vehiclePrice": "Prix du véhicule",
+    "selected": "Sélectionné"
+  },
+  
+  "fees": {
+    "title": "Frais additionnels (taxables)",
+    "dossier": "Frais dossier",
+    "tires": "Taxe pneus",
+    "rdprm": "Frais RDPRM"
+  },
+  
+  "exchange": {
+    "title": "Échange (optionnel)",
+    "value": "Valeur de l'échange",
+    "owed": "Montant dû",
+    "reducesAmount": "Réduit le montant",
+    "addedToFinancing": "Ajouté au financement"
+  },
+  
+  "term": {
+    "selectTerm": "Sélectionner le terme",
+    "months": "mois"
+  },
+  
+  "frequency": {
+    "title": "Fréquence de paiement",
+    "monthly": "Mensuel",
+    "biweekly": "Aux 2 sem.",
+    "weekly": "Hebdo"
+  },
+  
+  "options": {
+    "chooseOption": "Choisir l'option de financement",
+    "option1": "Option 1",
+    "option1Desc": "Rabais + Taux",
+    "option2": "Option 2",
+    "option2Desc": "Taux réduits",
+    "notAvailable": "N/A"
+  },
+  
+  "results": {
+    "title": "Résultats",
+    "bestChoice": "Meilleur choix!",
+    "savings": "Économies",
+    "rebate": "Rabais",
+    "financedCapital": "Capital financé",
+    "rate": "Taux",
+    "monthly": "Mensuel",
+    "biweekly": "Aux 2 sem.",
+    "weekly": "Hebdo",
+    "total": "Total",
+    "beforeTax": "avant taxes",
+    "afterTax": "après taxes",
+    "bonusCash": "Bonus",
+    "bonusCashNote": "sera déduit après taxes (au comptant)",
+    "notAvailableForVehicle": "Non disponible pour ce véhicule"
+  },
+  
+  "email": {
+    "sendByEmail": "Envoyer par email",
+    "clientName": "Nom du client (optionnel)",
+    "clientEmail": "Email du client",
+    "summaryToSend": "Résumé à envoyer:",
+    "cancel": "Annuler",
+    "send": "Envoyer",
+    "sending": "Envoi en cours...",
+    "successMessage": "Email envoyé avec succès!",
+    "invalidEmail": "Veuillez entrer un email valide",
+    "error": "Erreur lors de l'envoi"
+  },
+  
+  "import": {
+    "title": "Importer un programme",
+    "enterAdminPassword": "Entrez le mot de passe administrateur",
+    "password": "Mot de passe",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "incorrectPassword": "Mot de passe incorrect"
+  },
+  
+  "months": ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+}
