@@ -997,7 +997,7 @@ export default function HomeScreen() {
                     <Text style={styles.feeNote}>{t.exchange.reducesAmount}</Text>
                   </View>
                   <View style={styles.exchangeField}>
-                    <Text style={styles.feeLabel}>Montant dû</Text>
+                    <Text style={styles.feeLabel}>{t.exchange.owed}</Text>
                     <View style={styles.feeInputContainer}>
                       <Text style={styles.feeSymbol}>$</Text>
                       <TextInput
