@@ -1471,7 +1471,11 @@ export default function HomeScreen() {
                       {formatCurrency(parseFloat(vehiclePrice) || 0)} • {selectedTerm} mois
                     </Text>
                     <Text style={styles.emailPreviewPayment}>
-                      {localResult ? formatCurrency(localResult.option1Monthly || 0) : formatCurrency(0)}/mois
+                      {localResult ? formatCurrency(
+                        paymentFrequency === 'weekly' ? localResult.option1Weekly :
+                        paymentFrequency === 'biweekly' ? localResult.option1Biweekly :
+                        localResult.option1Monthly || 0
+                      ) : formatCurrency(0)}{paymentFrequency === 'weekly' ? '/sem.' : paymentFrequency === 'biweekly' ? '/2 sem.' : '/mois'}
                     </Text>
                   </View>
                 )}
