@@ -1009,7 +1009,7 @@ export default function HomeScreen() {
                         onChangeText={setMontantDuEchange}
                       />
                     </View>
-                    <Text style={styles.feeNote}>Ajouté au financement</Text>
+                    <Text style={styles.feeNote}>{t.exchange.addedToFinancing}</Text>
                   </View>
                 </View>
               </View>
