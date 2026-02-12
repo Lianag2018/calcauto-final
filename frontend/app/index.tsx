@@ -844,7 +844,7 @@ export default function HomeScreen() {
                     <Text style={styles.ratesHeaderCell}>{t.term}</Text>
                     <Text style={styles.ratesHeaderCell}>{t.options.option1}</Text>
                     {selectedProgram.option2_rates && (
-                      <Text style={styles.ratesHeaderCell}>{t.option2}</Text>
+                      <Text style={styles.ratesHeaderCell}>{t.options.option2}</Text>
                     )}
                   </View>
                   {availableTerms.map(term => (
@@ -1126,7 +1126,7 @@ export default function HomeScreen() {
                         styles.optionButtonText,
                         selectedOption === '2' && styles.optionButtonTextActive
                       ]}>
-                        {t.option2}
+                        {t.options.option2}
                       </Text>
                       <Text style={[
                         styles.optionButtonSubtext,
@@ -1137,7 +1137,7 @@ export default function HomeScreen() {
                     </TouchableOpacity>
                   ) : (
                     <View style={[styles.optionButton, styles.optionButtonDisabled]}>
-                      <Text style={styles.optionButtonTextDisabled}>{t.option2}</Text>
+                      <Text style={styles.optionButtonTextDisabled}>{t.options.option2}</Text>
                       <Text style={styles.optionButtonTextDisabled}>{t.noOption2}</Text>
                     </View>
                   )}
@@ -1236,7 +1236,7 @@ export default function HomeScreen() {
                   localResult.bestOption === '2' && styles.optionCardBest
                 ]}>
                   <View style={styles.optionHeader}>
-                    <Text style={styles.optionCardTitle}>{t.option2}</Text>
+                    <Text style={styles.optionCardTitle}>{t.options.option2}</Text>
                     {localResult.bestOption === '2' && (
                       <Ionicons name="checkmark-circle" size={18} color="#4ECDC4" />
                     )}
