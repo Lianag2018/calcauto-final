@@ -1171,6 +1171,7 @@ class SendCalculationEmailRequest(BaseModel):
     selected_term: int = 60
     selected_option: str = "1"
     vehicle_price: float
+    payment_frequency: str = "monthly"  # monthly, biweekly, weekly
     dealer_name: str = "CalcAuto AiPro"
     dealer_phone: str = ""
 
