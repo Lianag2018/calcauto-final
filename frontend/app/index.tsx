@@ -1389,11 +1389,11 @@ export default function HomeScreen() {
               
               <View style={styles.emailModalBody}>
                 <Text style={styles.emailModalLabel}>
-                  {lang === 'fr' ? 'Nom du client (optionnel)' : 'Client name (optional)'}
+                  {t.email.clientName}
                 </Text>
                 <TextInput
                   style={styles.emailModalInput}
-                  placeholder={lang === 'fr' ? 'Ex: Jean Dupont' : 'Ex: John Doe'}
+                  placeholder="Ex: Jean Dupont"
                   placeholderTextColor="#666"
                   value={clientName}
                   onChangeText={setClientName}
