@@ -1483,6 +1483,16 @@ export default function HomeScreen() {
                   style={[styles.emailModalSendButton, sendingEmail && styles.emailModalSendButtonDisabled]}
                   disabled={sendingEmail}
                   onPress={async () => {
+                    // Validate phone (required)
+                    if (!clientPhone || clientPhone.trim().length < 7) {
+                      if (Platform.OS === 'web') {
+                        alert(t.email.invalidPhone);
+                      } else {
+                        Alert.alert('Erreur', t.email.invalidPhone);
+                      }
+                      return;
+                    }
+                    
                     if (!clientEmail || !clientEmail.includes('@')) {
                       if (Platform.OS === 'web') {
                         alert(t.email.invalidEmail);
@@ -1540,9 +1550,36 @@ export default function HomeScreen() {
                       const data = await response.json();
                       
                       if (data.success) {
+                        // Save submission to history
+                        try {
+                          const submission = {
+                            id: Date.now().toString(),
+                            clientName: clientName || 'Client',
+                            clientEmail: clientEmail,
+                            clientPhone: clientPhone,
+                            vehicle: `${selectedProgram.brand} ${selectedProgram.model} ${selectedProgram.year}`,
+                            price: parseFloat(vehiclePrice) || 0,
+                            term: selectedTerm,
+                            payment: paymentFrequency === 'monthly' ? localResult.option1Monthly :
+                                     paymentFrequency === 'biweekly' ? localResult.option1Biweekly :
+                                     localResult.option1Weekly,
+                            date: new Date().toISOString(),
+                            contactId: params.contactId,
+                          };
+                          
+                          const storedSubmissions = await AsyncStorage.getItem(SUBMISSIONS_KEY);
+                          const existingSubmissions = storedSubmissions ? JSON.parse(storedSubmissions) : [];
+                          existingSubmissions.unshift(submission);
+                          // Keep only last 100 submissions
+                          await AsyncStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(existingSubmissions.slice(0, 100)));
+                        } catch (e) {
+                          console.log('Error saving submission:', e);
+                        }
+                        
                         setShowEmailModal(false);
                         setClientEmail('');
                         setClientName('');
+                        setClientPhone('');
                         if (Platform.OS === 'web') {
                           alert(lang === 'fr' ? '✅ Email envoyé avec succès!' : '✅ Email sent successfully!');
                         } else {
