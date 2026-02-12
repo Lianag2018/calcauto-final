@@ -1150,7 +1150,7 @@ export default function HomeScreen() {
           {selectedProgram && localResult && vehiclePrice && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>
-                {t.results} - {selectedTerm} {t.term.months}
+                {t.results.title} - {selectedTerm} {t.term.months}
               </Text>
               
               {/* Summary */}
