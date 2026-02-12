@@ -1241,7 +1241,7 @@ export default function HomeScreen() {
                       <Ionicons name="checkmark-circle" size={18} color="#4ECDC4" />
                     )}
                   </View>
-                  <Text style={styles.optionSubtitle}>{t.option2Desc}</Text>
+                  <Text style={styles.optionSubtitle}>{t.options.option2Desc}</Text>
                   
                   {localResult.option2Rate !== null ? (
                     <>
