@@ -898,7 +898,7 @@ export default function HomeScreen() {
               
               {/* Prix du véhicule */}
               <View style={styles.inputRow}>
-                <Text style={styles.inputLabel}>Prix du véhicule</Text>
+                <Text style={styles.inputLabel}>{t.vehicle.vehiclePrice}</Text>
                 <View style={styles.inputContainer}>
                   <Text style={styles.currencySymbol}>$</Text>
                   <TextInput
