@@ -1184,7 +1184,7 @@ class SendReportEmailRequest(BaseModel):
 
 @api_router.post("/send-calculation-email")
 async def send_calculation_email(request: SendCalculationEmailRequest):
-    """Envoie un calcul de financement par email au client - Réplique de l'écran"""
+    """Envoie un calcul de financement par email au client - Réplique exacte de l'écran"""
     try:
         vehicle = request.vehicle_info
         calc = request.calculation_results
@@ -1208,22 +1208,23 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
         option1_rate = comparison.get('option1_rate', 0)
         option2_rate = comparison.get('option2_rate', 0)
         
+        # Get capital financé (principal)
+        principal_option1 = comparison.get('principal_option1', request.vehicle_price - consumer_cash)
+        principal_option2 = comparison.get('principal_option2', request.vehicle_price)
+        
         # Get payments based on frequency
         if freq == 'weekly':
             option1_payment = comparison.get('option1_weekly', 0)
             option2_payment = comparison.get('option2_weekly', 0)
-            freq_label = "/ semaine"
-            freq_label_en = "/ week"
+            freq_label = "Hebdo"
         elif freq == 'biweekly':
             option1_payment = comparison.get('option1_biweekly', 0)
             option2_payment = comparison.get('option2_biweekly', 0)
-            freq_label = "/ 2 sem."
-            freq_label_en = "/ 2 weeks"
+            freq_label = "Aux 2 sem."
         else:
             option1_payment = comparison.get('option1_monthly', 0)
             option2_payment = comparison.get('option2_monthly', 0)
-            freq_label = "/ mois"
-            freq_label_en = "/ month"
+            freq_label = "Mensuel"
         
         best_option = comparison.get('best_option', '1')
         savings = comparison.get('savings', 0)
@@ -1231,7 +1232,11 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
         # Check if option2 is available
         has_option2 = option2_rate is not None and option2_rate > 0 and option2_payment > 0
         
-        # Build HTML email - Replica of screen
+        # Format currency helper
+        def fmt(val):
+            return f"{val:,.2f}".replace(",", " ").replace(".", ",")
+        
+        # Build HTML email - Exact replica of screen
         html_body = f"""
         <!DOCTYPE html>
         <html>
@@ -1239,98 +1244,106 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-                body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #1a1a2e; margin: 0; padding: 20px; }}
+                body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #1a1a2e; margin: 0; padding: 16px; }}
                 .container {{ max-width: 500px; margin: 0 auto; }}
-                .header {{ text-align: center; padding: 20px 0; }}
-                .header h1 {{ color: #4ECDC4; margin: 0; font-size: 28px; }}
-                .header p {{ color: #888; margin: 8px 0 0; }}
+                .header {{ text-align: center; padding: 16px 0; }}
+                .header h1 {{ color: #4ECDC4; margin: 0; font-size: 24px; font-weight: bold; font-style: italic; }}
+                .header p {{ color: #4ECDC4; margin: 4px 0 0; font-size: 14px; }}
                 
-                .vehicle-card {{ background: linear-gradient(135deg, #2d2d44 0%, #1a1a2e 100%); border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #3d3d5c; }}
-                .vehicle-name {{ color: #fff; font-size: 22px; font-weight: bold; }}
-                .vehicle-year {{ color: #4ECDC4; }}
-                .vehicle-trim {{ color: #888; font-size: 14px; margin-top: 4px; }}
-                .vehicle-price {{ color: #4ECDC4; font-size: 18px; margin-top: 8px; }}
+                .greeting {{ color: #fff; margin-bottom: 16px; font-size: 15px; }}
                 
-                .best-banner {{ background: linear-gradient(135deg, #4ECDC4 0%, #44a08d 100%); color: #1a1a2e; padding: 12px 20px; border-radius: 12px; text-align: center; margin-bottom: 16px; font-weight: bold; }}
-                .best-banner .savings {{ font-size: 14px; opacity: 0.9; margin-top: 4px; }}
+                .results-header {{ color: #fff; font-size: 18px; margin-bottom: 12px; }}
+                .results-header span {{ color: #4ECDC4; }}
                 
-                .options-container {{ display: flex; gap: 12px; margin-bottom: 20px; }}
-                .option-card {{ flex: 1; background: #2d2d44; border-radius: 16px; padding: 16px; text-align: center; }}
-                .option-card.best {{ border: 2px solid #4ECDC4; box-shadow: 0 0 20px rgba(78, 205, 196, 0.3); }}
-                .option-card.not-best {{ opacity: 0.7; }}
-                .option-title {{ color: #888; font-size: 14px; margin-bottom: 8px; }}
-                .option-payment {{ color: #fff; font-size: 28px; font-weight: bold; }}
-                .option-freq {{ color: #888; font-size: 14px; }}
+                .vehicle-banner {{ background: #2d2d44; border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 16px; }}
+                .vehicle-name {{ color: #1a1a2e; font-size: 16px; font-weight: 600; }}
+                .vehicle-banner-inner {{ background: #3d3d5c; border-radius: 8px; padding: 12px; }}
+                .vehicle-banner-inner .name {{ color: #fff; font-size: 16px; font-weight: 600; }}
+                .vehicle-banner-inner .price {{ color: #4ECDC4; font-size: 28px; font-weight: bold; margin-top: 4px; }}
                 
-                .details-box {{ background: #2d2d44; border-radius: 12px; padding: 16px; margin-bottom: 16px; }}
-                .detail-row {{ display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #3d3d5c; }}
-                .detail-row:last-child {{ border-bottom: none; }}
-                .detail-label {{ color: #888; }}
-                .detail-value {{ color: #fff; font-weight: 600; }}
-                .detail-value.highlight {{ color: #4ECDC4; }}
+                .best-banner {{ background: #4ECDC4; color: #1a1a2e; padding: 14px 20px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }}
+                .best-banner .trophy {{ font-size: 24px; margin-right: 12px; }}
+                .best-banner .text {{ font-size: 16px; font-weight: bold; }}
+                .best-banner .savings {{ text-align: right; }}
+                .best-banner .savings-label {{ font-size: 12px; }}
+                .best-banner .savings-value {{ font-size: 18px; font-weight: bold; }}
                 
-                .term-badge {{ display: inline-block; background: #4ECDC4; color: #1a1a2e; padding: 8px 16px; border-radius: 20px; font-weight: bold; margin-bottom: 16px; }}
+                .options-row {{ display: flex; gap: 12px; margin-bottom: 16px; }}
+                .option-card {{ flex: 1; border-radius: 16px; padding: 16px; }}
+                .option-card.option1 {{ background: linear-gradient(135deg, #5c3d3d 0%, #4a2d2d 100%); border: 2px solid #8b5a5a; }}
+                .option-card.option2 {{ background: linear-gradient(135deg, #2d4a4a 0%, #1d3a3a 100%); border: 2px solid #4ECDC4; }}
+                .option-card.best {{ box-shadow: 0 0 20px rgba(78, 205, 196, 0.4); }}
+                .option-card.not-best {{ opacity: 0.75; }}
                 
-                .footer {{ text-align: center; padding: 20px; color: #666; font-size: 12px; }}
+                .option-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }}
+                .option-title {{ color: #fff; font-size: 16px; font-weight: bold; }}
+                .option-subtitle {{ color: #aaa; font-size: 11px; }}
+                .option-checkmark {{ width: 24px; height: 24px; background: #4ECDC4; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1a1a2e; font-weight: bold; }}
+                
+                .option-detail {{ display: flex; justify-content: space-between; margin-bottom: 6px; }}
+                .option-detail .label {{ color: #aaa; font-size: 13px; }}
+                .option-detail .value {{ color: #fff; font-size: 13px; font-weight: 600; }}
+                
+                .payment-box {{ background: rgba(0,0,0,0.2); border-radius: 8px; padding: 12px; text-align: center; margin-top: 12px; }}
+                .payment-label {{ color: #aaa; font-size: 12px; margin-bottom: 4px; }}
+                .payment-amount {{ color: #4ECDC4; font-size: 26px; font-weight: bold; }}
+                .payment-amount.option1-color {{ color: #e88; }}
+                
+                .footer {{ text-align: center; padding: 20px 0; color: #666; font-size: 11px; }}
                 .footer p {{ margin: 4px 0; }}
-                
-                .client-greeting {{ color: #fff; margin-bottom: 20px; }}
+                .dealer-name {{ color: #4ECDC4; font-weight: bold; font-size: 14px; }}
             </style>
         </head>
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>🚗 CalcAuto AiPro</h1>
-                    <p>Votre soumission de financement</p>
+                    <h1>CalcAuto AiPro</h1>
                 </div>
                 
-                <p class="client-greeting">Bonjour{' ' + request.client_name if request.client_name else ''},</p>
+                <p class="greeting">Bonjour{' ' + request.client_name if request.client_name else ''},</p>
                 
-                <div class="vehicle-card">
-                    <div class="vehicle-name">
-                        {vehicle.get('brand', '')} {vehicle.get('model', '')} 
-                        <span class="vehicle-year">{vehicle.get('year', '')}</span>
+                <div class="results-header">Résultats – <span>{term} mois</span></div>
+                
+                <div class="vehicle-banner">
+                    <div class="vehicle-banner-inner">
+                        <div class="name">{vehicle.get('brand', '')} {vehicle.get('model', '')} {vehicle.get('trim', '') or ''} {vehicle.get('year', '')}</div>
+                        <div class="price">{fmt(request.vehicle_price)} $</div>
                     </div>
-                    <div class="vehicle-trim">{vehicle.get('trim', '') or ''}</div>
-                    <div class="vehicle-price">${request.vehicle_price:,.2f}</div>
                 </div>
                 
-                <div style="text-align: center;">
-                    <span class="term-badge">{term} mois</span>
-                </div>
+                {"<div class='best-banner'><span class='trophy'>🏆</span><span class='text'>Option " + best_option + " = Meilleur choix!</span><div class='savings'><div class='savings-label'>Économies:</div><div class='savings-value'>" + fmt(savings) + " $</div></div></div>" if has_option2 and savings > 0 else ""}
                 
-                {"<div class='best-banner'>✓ Option " + best_option + " = Meilleur choix!" + (f"<div class='savings'>Économies: ${savings:,.2f}</div>" if savings > 0 else "") + "</div>" if has_option2 else ""}
-                
-                <div class="options-container">
-                    <div class="option-card {'best' if best_option == '1' else 'not-best'}">
-                        <div class="option-title">Option 1</div>
-                        <div style="color: #4ECDC4; font-size: 12px; margin-bottom: 8px;">
-                            {"Rabais $" + f"{consumer_cash:,.0f}" if consumer_cash > 0 else "Aucun rabais"} + {option1_rate}%
+                <div class="options-row">
+                    <div class="option-card option1 {'best' if best_option == '1' else 'not-best'}">
+                        <div class="option-header">
+                            <div>
+                                <div class="option-title">Option 1</div>
+                                <div class="option-subtitle">Rabais + Taux</div>
+                            </div>
+                            {"<div class='option-checkmark'>✓</div>" if best_option == '1' else ""}
                         </div>
-                        <div class="option-payment">${option1_payment:,.2f}</div>
-                        <div class="option-freq">{freq_label}</div>
+                        {"<div class='option-detail'><span class='label'>Rabais:</span><span class='value'>-" + fmt(consumer_cash) + " $</span></div>" if consumer_cash > 0 else ""}
+                        <div class="option-detail">
+                            <span class="label">Capital financé:</span>
+                            <span class="value">{fmt(principal_option1)} $</span>
+                        </div>
+                        <div class="option-detail">
+                            <span class="label">Taux:</span>
+                            <span class="value" style="color: #e88;">{option1_rate}%</span>
+                        </div>
+                        <div class="payment-box">
+                            <div class="payment-label">{freq_label}</div>
+                            <div class="payment-amount option1-color">{fmt(option1_payment)} $</div>
+                        </div>
                     </div>
                     
-                    {"<div class='option-card " + ("best" if best_option == "2" else "not-best") + "'><div class='option-title'>Option 2</div><div style='color: #4ECDC4; font-size: 12px; margin-bottom: 8px;'>$0 + " + str(option2_rate) + "%</div><div class='option-payment'>$" + f"{option2_payment:,.2f}" + "</div><div class='option-freq'>" + freq_label + "</div></div>" if has_option2 else "<div class='option-card not-best'><div class='option-title'>Option 2</div><div style='color: #888; font-size: 12px;'>Non disponible</div></div>"}
+                    {"<div class='option-card option2 " + ("best" if best_option == "2" else "not-best") + "'><div class='option-header'><div><div class='option-title'>Option 2</div><div class='option-subtitle'>Taux réduits</div></div>" + ("<div class='option-checkmark'>✓</div>" if best_option == "2" else "") + "</div><div class='option-detail'><span class='label'>Rabais:</span><span class='value'>$0</span></div><div class='option-detail'><span class='label'>Capital financé:</span><span class='value'>" + fmt(principal_option2) + " $</span></div><div class='option-detail'><span class='label'>Taux:</span><span class='value' style='color: #4ECDC4;'>" + str(option2_rate) + "%</span></div><div class='payment-box'><div class='payment-label'>" + freq_label + "</div><div class='payment-amount'>" + fmt(option2_payment) + " $</div></div></div>" if has_option2 else "<div class='option-card option2 not-best' style='opacity: 0.5;'><div class='option-header'><div><div class='option-title'>Option 2</div><div class='option-subtitle'>Non disponible</div></div></div></div>"}
                 </div>
                 
-                <div class="details-box">
-                    <div class="detail-row">
-                        <span class="detail-label">Prix du véhicule</span>
-                        <span class="detail-value">${request.vehicle_price:,.2f}</span>
-                    </div>
-                    {"<div class='detail-row'><span class='detail-label'>Consumer Cash</span><span class='detail-value highlight'>-$" + f"{consumer_cash:,.2f}" + "</span></div>" if consumer_cash > 0 else ""}
-                    {"<div class='detail-row'><span class='detail-label'>Bonus Cash</span><span class='detail-value highlight'>-$" + f"{bonus_cash:,.2f}" + "</span></div>" if bonus_cash > 0 else ""}
-                    <div class="detail-row">
-                        <span class="detail-label">Terme</span>
-                        <span class="detail-value">{term} mois</span>
-                    </div>
-                </div>
-                
-                {"<div style='background: rgba(255, 215, 0, 0.1); border-radius: 8px; padding: 12px; margin-bottom: 16px;'><span style='color: #FFD700;'>ℹ️ Bonus Cash de $" + f"{bonus_cash:,.0f}" + " sera déduit après taxes (au comptant)</span></div>" if bonus_cash > 0 else ""}
+                {"<div style='background: rgba(255, 215, 0, 0.15); border-radius: 8px; padding: 12px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;'><span style='color: #FFD700;'>ℹ️</span><span style='color: #FFD700; font-size: 13px;'>Bonus Cash de " + fmt(bonus_cash) + " $ sera déduit après taxes (au comptant)</span></div>" if bonus_cash > 0 else ""}
                 
                 <div class="footer">
-                    <p><strong>{request.dealer_name}</strong></p>
+                    <p class="dealer-name">{request.dealer_name}</p>
                     {f"<p>{request.dealer_phone}</p>" if request.dealer_phone else ""}
                     <p style="margin-top: 12px;">Ce calcul est une estimation.</p>
                     <p>Les taux peuvent varier selon votre dossier de crédit.</p>
