@@ -1459,7 +1459,7 @@ export default function HomeScreen() {
                   autoCapitalize="none"
                 />
                 
-                {selectedProgram && localResult && (
+                {selectedProgram && (
                   <View style={styles.emailPreviewBox}>
                     <Text style={styles.emailPreviewTitle}>
                       {lang === 'fr' ? 'Résumé à envoyer:' : 'Summary to send:'}
@@ -1468,10 +1468,10 @@ export default function HomeScreen() {
                       {selectedProgram.brand} {selectedProgram.model} {selectedProgram.year}
                     </Text>
                     <Text style={styles.emailPreviewText}>
-                      {formatCurrency(parseFloat(vehiclePrice))} • {selectedTerm} mois
+                      {formatCurrency(parseFloat(vehiclePrice) || 0)} • {selectedTerm} mois
                     </Text>
                     <Text style={styles.emailPreviewPayment}>
-                      {formatCurrency(localResult.monthly1 || 0)}/mois
+                      {localResult ? formatCurrency(localResult.monthly1 || 0) : formatCurrency(0)}/mois
                     </Text>
                   </View>
                 )}
