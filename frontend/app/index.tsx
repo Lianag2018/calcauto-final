@@ -1340,6 +1340,17 @@ export default function HomeScreen() {
                   </Text>
                 </View>
               )}
+              
+              {/* Send by Email Button */}
+              <TouchableOpacity
+                style={styles.sendEmailButton}
+                onPress={() => setShowEmailModal(true)}
+              >
+                <Ionicons name="mail-outline" size={20} color="#fff" />
+                <Text style={styles.sendEmailButtonText}>
+                  {language === 'fr' ? 'Envoyer par email' : 'Send by email'}
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
         </ScrollView>
