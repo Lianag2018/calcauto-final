@@ -1224,7 +1224,7 @@ export default function HomeScreen() {
                     </Text>
                   </View>
                   <View style={styles.optionDetail}>
-                    <Text style={styles.optionDetailLabel}>{t.total} ({selectedTerm} {t.term.months}):</Text>
+                    <Text style={styles.optionDetailLabel}>{t.results.total} ({selectedTerm} {t.term.months}):</Text>
                     <Text style={styles.optionTotalValue}>{formatCurrency(localResult.option1Total)}</Text>
                   </View>
                 </View>
@@ -1270,7 +1270,7 @@ export default function HomeScreen() {
                         </Text>
                       </View>
                       <View style={styles.optionDetail}>
-                        <Text style={styles.optionDetailLabel}>{t.total} ({selectedTerm} {t.term.months}):</Text>
+                        <Text style={styles.optionDetailLabel}>{t.results.total} ({selectedTerm} {t.term.months}):</Text>
                         <Text style={styles.optionTotalValue}>{formatCurrency(localResult.option2Total!)}</Text>
                       </View>
                     </>
