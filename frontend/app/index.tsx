@@ -764,7 +764,7 @@ export default function HomeScreen() {
           {/* Vehicle Selection */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              {t.selectVehicle} ({filteredPrograms.length})
+              {t.vehicle.selectVehicle} ({filteredPrograms.length})
             </Text>
             {programsLoading ? (
               <View style={styles.loadingContainer}>
@@ -772,7 +772,7 @@ export default function HomeScreen() {
                 <Text style={styles.loadingText}>{t.loadingPrograms}</Text>
               </View>
             ) : filteredPrograms.length === 0 ? (
-              <Text style={styles.noDataText}>{t.noPrograms}</Text>
+              <Text style={styles.noDataText}>{t.vehicle.noPrograms}</Text>
             ) : (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.programsScroll}>
                 {filteredPrograms.map((program) => (
