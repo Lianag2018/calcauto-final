@@ -1377,7 +1377,7 @@ export default function HomeScreen() {
                   <Ionicons name="mail" size={32} color="#4ECDC4" />
                 </View>
                 <Text style={styles.emailModalTitle}>
-                  {lang === 'fr' ? 'Envoyer par email' : 'Send by email'}
+                  {t.email.sendByEmail}
                 </Text>
                 <TouchableOpacity
                   style={styles.emailModalClose}
