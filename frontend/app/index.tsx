@@ -1400,7 +1400,7 @@ export default function HomeScreen() {
                 />
                 
                 <Text style={styles.emailModalLabel}>
-                  {lang === 'fr' ? 'Email du client' : 'Client email'} *
+                  {t.email.clientEmail} *
                 </Text>
                 <TextInput
                   style={styles.emailModalInput}
