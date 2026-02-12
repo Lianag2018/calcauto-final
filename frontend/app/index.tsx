@@ -544,6 +544,9 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [programsLoading, setProgramsLoading] = useState(true);
   
+  // Splash screen state
+  const [showSplash, setShowSplash] = useState(true);
+  
   // Filters
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
