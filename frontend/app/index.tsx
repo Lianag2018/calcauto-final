@@ -875,7 +875,7 @@ export default function HomeScreen() {
                 <View style={styles.rebatesSummary}>
                   {selectedProgram.consumer_cash > 0 && (
                     <View style={styles.rebateItem}>
-                      <Text style={styles.rebateLabel}>{t.rebate} ({t.beforeTax}):</Text>
+                      <Text style={styles.rebateLabel}>{t.results.rebate} ({t.beforeTax}):</Text>
                       <Text style={styles.rebateValue}>{formatCurrency(selectedProgram.consumer_cash)}</Text>
                     </View>
                   )}
@@ -1199,7 +1199,7 @@ export default function HomeScreen() {
                   
                   {selectedProgram.consumer_cash > 0 && (
                     <View style={styles.optionDetail}>
-                      <Text style={styles.optionDetailLabel}>{t.rebate}:</Text>
+                      <Text style={styles.optionDetailLabel}>{t.results.rebate}:</Text>
                       <Text style={styles.optionDetailValue}>{formatCurrency(selectedProgram.consumer_cash)}</Text>
                     </View>
                   )}
@@ -1246,7 +1246,7 @@ export default function HomeScreen() {
                   {localResult.option2Rate !== null ? (
                     <>
                       <View style={styles.optionDetail}>
-                        <Text style={styles.optionDetailLabel}>{t.rebate}:</Text>
+                        <Text style={styles.optionDetailLabel}>{t.results.rebate}:</Text>
                         <Text style={styles.optionDetailValue}>$0</Text>
                       </View>
                       <View style={styles.optionDetail}>
