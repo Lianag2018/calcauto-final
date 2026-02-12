@@ -947,7 +947,7 @@ export default function HomeScreen() {
                     </View>
                   </View>
                   <View style={styles.feeField}>
-                    <Text style={styles.feeLabel}>Taxe pneus</Text>
+                    <Text style={styles.feeLabel}>{t.fees.tires}</Text>
                     <View style={styles.feeInputContainer}>
                       <Text style={styles.feeSymbol}>$</Text>
                       <TextInput
