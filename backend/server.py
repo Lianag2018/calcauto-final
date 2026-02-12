@@ -1174,6 +1174,10 @@ class SendCalculationEmailRequest(BaseModel):
     payment_frequency: str = "monthly"  # monthly, biweekly, weekly
     dealer_name: str = "CalcAuto AiPro"
     dealer_phone: str = ""
+    # New fields for complete email
+    rates_table: Dict[str, Any] = {}  # Option 1 & 2 rates for all terms
+    fees: Dict[str, float] = {}  # frais_dossier, taxe_pneus, frais_rdprm
+    trade_in: Dict[str, float] = {}  # valeur_echange, montant_du
 
 class SendReportEmailRequest(BaseModel):
     """Requête pour envoyer un rapport après import"""
