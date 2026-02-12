@@ -1124,6 +1124,302 @@ async def cleanup_old_programs():
             })
             logger.info(f"Deleted old programs for {p['_id']['month']}/{p['_id']['year']}")
 
+# ============ Email Functions ============
+
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
+import io
+
+def send_email(to_email: str, subject: str, html_body: str, attachment_data: bytes = None, attachment_name: str = None):
+    """Envoie un email via Gmail SMTP"""
+    if not SMTP_EMAIL or not SMTP_PASSWORD:
+        raise Exception("Configuration SMTP manquante")
+    
+    msg = MIMEMultipart('alternative')
+    msg['From'] = f"CalcAuto AiPro <{SMTP_EMAIL}>"
+    msg['To'] = to_email
+    msg['Subject'] = subject
+    
+    # Corps HTML
+    msg.attach(MIMEText(html_body, 'html', 'utf-8'))
+    
+    # Pièce jointe si fournie
+    if attachment_data and attachment_name:
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload(attachment_data)
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', f'attachment; filename="{attachment_name}"')
+        msg.attach(part)
+    
+    # Connexion SMTP
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+        server.starttls()
+        server.login(SMTP_EMAIL, SMTP_PASSWORD)
+        server.send_message(msg)
+    
+    return True
+
+class SendCalculationEmailRequest(BaseModel):
+    """Requête pour envoyer un calcul par email"""
+    client_email: str
+    client_name: str = ""
+    vehicle_info: Dict[str, Any]
+    calculation_results: Dict[str, Any]
+    selected_term: int = 60
+    selected_option: str = "1"
+    vehicle_price: float
+    dealer_name: str = "CalcAuto AiPro"
+    dealer_phone: str = ""
+
+class SendReportEmailRequest(BaseModel):
+    """Requête pour envoyer un rapport après import"""
+    programs_count: int
+    program_month: int
+    program_year: int
+    brands_summary: Dict[str, int]
+
+@api_router.post("/send-calculation-email")
+async def send_calculation_email(request: SendCalculationEmailRequest):
+    """Envoie un calcul de financement par email au client"""
+    try:
+        vehicle = request.vehicle_info
+        calc = request.calculation_results
+        term = request.selected_term
+        option = request.selected_option
+        
+        # Trouver les détails du terme sélectionné
+        comparison = None
+        for c in calc.get('comparisons', []):
+            if c.get('term_months') == term:
+                comparison = c
+                break
+        
+        if not comparison:
+            raise HTTPException(status_code=400, detail="Terme non trouvé")
+        
+        # Déterminer les valeurs selon l'option choisie
+        if option == "1":
+            rate = comparison.get('option1_rate', 0)
+            monthly = comparison.get('option1_monthly', 0)
+            total = comparison.get('option1_total', 0)
+            rebate = calc.get('consumer_cash', 0)
+        else:
+            rate = comparison.get('option2_rate', 0)
+            monthly = comparison.get('option2_monthly', 0)
+            total = comparison.get('option2_total', 0)
+            rebate = 0
+        
+        bonus_cash = calc.get('bonus_cash', 0)
+        
+        # Créer le HTML de l'email
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{ font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; }}
+                .container {{ max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                .header {{ background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 30px; text-align: center; }}
+                .header h1 {{ margin: 0; font-size: 24px; }}
+                .header p {{ margin: 10px 0 0; opacity: 0.8; }}
+                .content {{ padding: 30px; }}
+                .vehicle-box {{ background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px; }}
+                .vehicle-name {{ font-size: 20px; font-weight: bold; color: #1a1a2e; margin-bottom: 10px; }}
+                .vehicle-year {{ color: #4ECDC4; font-weight: 600; }}
+                .price-row {{ display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }}
+                .price-label {{ color: #666; }}
+                .price-value {{ font-weight: bold; color: #1a1a2e; }}
+                .highlight-box {{ background: linear-gradient(135deg, #4ECDC4 0%, #44a08d 100%); color: white; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; }}
+                .monthly-payment {{ font-size: 36px; font-weight: bold; }}
+                .monthly-label {{ opacity: 0.9; margin-top: 5px; }}
+                .details {{ margin-top: 20px; }}
+                .detail-row {{ display: flex; justify-content: space-between; padding: 8px 0; }}
+                .footer {{ background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 12px; }}
+                .dealer-info {{ margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🚗 CalcAuto AiPro</h1>
+                    <p>Votre soumission de financement</p>
+                </div>
+                <div class="content">
+                    <p>Bonjour{' ' + request.client_name if request.client_name else ''},</p>
+                    <p>Voici les détails de votre financement automobile:</p>
+                    
+                    <div class="vehicle-box">
+                        <div class="vehicle-name">
+                            {vehicle.get('brand', '')} {vehicle.get('model', '')} 
+                            <span class="vehicle-year">{vehicle.get('year', '')}</span>
+                        </div>
+                        <div style="color: #666;">{vehicle.get('trim', '') or ''}</div>
+                    </div>
+                    
+                    <div class="price-row">
+                        <span class="price-label">Prix du véhicule</span>
+                        <span class="price-value">${request.vehicle_price:,.2f}</span>
+                    </div>
+                    {"<div class='price-row'><span class='price-label'>Rabais (Consumer Cash)</span><span class='price-value' style='color:#4ECDC4;'>-$" + f"{rebate:,.2f}" + "</span></div>" if rebate > 0 else ""}
+                    {"<div class='price-row'><span class='price-label'>Bonus Cash</span><span class='price-value' style='color:#4ECDC4;'>-$" + f"{bonus_cash:,.2f}" + "</span></div>" if bonus_cash > 0 else ""}
+                    
+                    <div class="highlight-box">
+                        <div class="monthly-payment">${monthly:,.2f}</div>
+                        <div class="monthly-label">par mois × {term} mois</div>
+                    </div>
+                    
+                    <div class="details">
+                        <div class="detail-row">
+                            <span>Taux d'intérêt</span>
+                            <span><strong>{rate}%</strong></span>
+                        </div>
+                        <div class="detail-row">
+                            <span>Terme</span>
+                            <span><strong>{term} mois</strong></span>
+                        </div>
+                        <div class="detail-row">
+                            <span>Option choisie</span>
+                            <span><strong>Option {option}</strong></span>
+                        </div>
+                        <div class="detail-row">
+                            <span>Coût total du financement</span>
+                            <span><strong>${total:,.2f}</strong></span>
+                        </div>
+                    </div>
+                    
+                    <div class="dealer-info">
+                        <p style="margin: 0; color: #666;">Pour plus d'informations, contactez-nous:</p>
+                        <p style="margin: 10px 0 0; font-weight: bold; color: #1a1a2e;">
+                            {request.dealer_name}
+                            {' • ' + request.dealer_phone if request.dealer_phone else ''}
+                        </p>
+                    </div>
+                </div>
+                <div class="footer">
+                    <p>Ce calcul est une estimation et ne constitue pas une offre de financement officielle.</p>
+                    <p>Les taux et conditions peuvent varier selon votre dossier de crédit.</p>
+                    <p style="margin-top: 15px;">Généré par CalcAuto AiPro</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        subject = f"Votre soumission - {vehicle.get('brand', '')} {vehicle.get('model', '')} {vehicle.get('year', '')}"
+        
+        send_email(request.client_email, subject, html_body)
+        
+        return {"success": True, "message": f"Email envoyé à {request.client_email}"}
+        
+    except Exception as e:
+        logger.error(f"Erreur envoi email: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur d'envoi: {str(e)}")
+
+@api_router.post("/send-import-report")
+async def send_import_report(request: SendReportEmailRequest):
+    """Envoie un rapport par email après l'import des programmes"""
+    try:
+        months_fr = {
+            1: "Janvier", 2: "Février", 3: "Mars", 4: "Avril",
+            5: "Mai", 6: "Juin", 7: "Juillet", 8: "Août",
+            9: "Septembre", 10: "Octobre", 11: "Novembre", 12: "Décembre"
+        }
+        month_name = months_fr.get(request.program_month, str(request.program_month))
+        
+        # Générer le résumé par marque
+        brands_html = ""
+        for brand, count in request.brands_summary.items():
+            brands_html += f"<tr><td style='padding: 8px; border-bottom: 1px solid #eee;'>{brand}</td><td style='padding: 8px; border-bottom: 1px solid #eee; text-align: center; font-weight: bold;'>{count}</td></tr>"
+        
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{ font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; }}
+                .container {{ max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                .header {{ background: linear-gradient(135deg, #4ECDC4 0%, #44a08d 100%); color: white; padding: 30px; text-align: center; }}
+                .header h1 {{ margin: 0; font-size: 24px; }}
+                .content {{ padding: 30px; }}
+                .success-badge {{ background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; }}
+                .stats-box {{ background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; }}
+                .big-number {{ font-size: 48px; font-weight: bold; color: #1a1a2e; text-align: center; }}
+                .big-label {{ text-align: center; color: #666; }}
+                table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
+                th {{ background: #1a1a2e; color: white; padding: 10px; text-align: left; }}
+                .footer {{ background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 12px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>✅ Import Réussi</h1>
+                    <p>CalcAuto AiPro - Rapport d'import</p>
+                </div>
+                <div class="content">
+                    <div class="success-badge">
+                        <strong>🎉 Programmes {month_name} {request.program_year} importés avec succès!</strong>
+                    </div>
+                    
+                    <div class="stats-box">
+                        <div class="big-number">{request.programs_count}</div>
+                        <div class="big-label">programmes de financement</div>
+                    </div>
+                    
+                    <h3>Répartition par marque:</h3>
+                    <table>
+                        <tr>
+                            <th>Marque</th>
+                            <th style="text-align: center;">Nombre</th>
+                        </tr>
+                        {brands_html}
+                    </table>
+                    
+                    <p style="margin-top: 20px; color: #666;">
+                        Les nouveaux programmes sont maintenant disponibles dans l'application CalcAuto AiPro.
+                    </p>
+                </div>
+                <div class="footer">
+                    <p>Ce rapport a été généré automatiquement après l'import.</p>
+                    <p>Date: {datetime.now().strftime('%d/%m/%Y à %H:%M')}</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        subject = f"✅ Import {month_name} {request.program_year} - {request.programs_count} programmes"
+        
+        send_email(SMTP_EMAIL, subject, html_body)
+        
+        return {"success": True, "message": "Rapport envoyé par email"}
+        
+    except Exception as e:
+        logger.error(f"Erreur envoi rapport: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur d'envoi: {str(e)}")
+
+@api_router.post("/test-email")
+async def test_email():
+    """Teste la configuration email"""
+    try:
+        html_body = """
+        <div style="font-family: Arial; padding: 20px; text-align: center;">
+            <h1 style="color: #4ECDC4;">✅ Test Email Réussi!</h1>
+            <p>Votre configuration Gmail SMTP fonctionne correctement.</p>
+            <p style="color: #666;">CalcAuto AiPro</p>
+        </div>
+        """
+        send_email(SMTP_EMAIL, "🧪 Test CalcAuto AiPro - Email OK", html_body)
+        return {"success": True, "message": f"Email de test envoyé à {SMTP_EMAIL}"}
+    except Exception as e:
+        logger.error(f"Erreur test email: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
