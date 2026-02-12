@@ -696,12 +696,10 @@ export default function HomeScreen() {
             </Text>
           </View>
           <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.langButton}
-              onPress={() => setLang(lang === 'fr' ? 'en' : 'fr')}
-            >
-              <Text style={styles.langButtonText}>{lang === 'fr' ? 'EN' : 'FR'}</Text>
-            </TouchableOpacity>
+            <LanguageSelector
+              currentLanguage={lang}
+              onLanguageChange={handleLanguageChange}
+            />
             <TouchableOpacity
               style={styles.importButton}
               onPress={() => setShowImportModal(true)}
