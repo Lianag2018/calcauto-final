@@ -930,10 +930,10 @@ export default function HomeScreen() {
 
               {/* Frais additionnels (taxables) */}
               <View style={styles.feesSection}>
-                <Text style={styles.feesSectionTitle}>Frais additionnels (taxables)</Text>
+                <Text style={styles.feesSectionTitle}>{t.fees.title}</Text>
                 <View style={styles.feesRow}>
                   <View style={styles.feeField}>
-                    <Text style={styles.feeLabel}>Frais dossier</Text>
+                    <Text style={styles.feeLabel}>{t.fees.dossier}</Text>
                     <View style={styles.feeInputContainer}>
                       <Text style={styles.feeSymbol}>$</Text>
                       <TextInput
