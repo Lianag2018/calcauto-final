@@ -146,12 +146,26 @@ export default function ClientsScreen() {
     const init = async () => {
       setLoading(true);
       
-      // Check permission
+      // Check if running on web (contacts not available)
+      if (Platform.OS === 'web') {
+        setHasPermission(false);
+        await loadSubmissions();
+        setLoading(false);
+        return;
+      }
+      
+      // Check permission status (persisted by OS)
       const { status } = await Contacts.getPermissionsAsync();
-      setHasPermission(status === 'granted');
+      console.log('Contact permission status:', status);
       
       if (status === 'granted') {
+        setHasPermission(true);
         await loadContacts();
+      } else if (status === 'denied') {
+        setHasPermission(false);
+      } else {
+        // undetermined - will need to request
+        setHasPermission(false);
       }
       
       await loadSubmissions();
@@ -160,6 +174,22 @@ export default function ClientsScreen() {
     
     init();
   }, []);
+
+  // Re-check permission when screen is focused (in case user changed in settings)
+  useEffect(() => {
+    const checkPermissionOnFocus = async () => {
+      if (Platform.OS === 'web') return;
+      
+      const { status } = await Contacts.getPermissionsAsync();
+      if (status === 'granted' && !hasPermission) {
+        setHasPermission(true);
+        await loadContacts();
+      }
+    };
+    
+    // Check every time the component mounts/updates
+    checkPermissionOnFocus();
+  }, [hasPermission]);
 
   // Filter contacts based on search
   useEffect(() => {
