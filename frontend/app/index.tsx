@@ -868,8 +868,14 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Animated Splash Screen */}
+      <AnimatedSplashScreen 
+        visible={showSplash} 
+        onFinish={() => setShowSplash(false)} 
+      />
+      
       {/* Loading Animation */}
-      <LoadingBorderAnimation loading={programsLoading} />
+      <LoadingBorderAnimation loading={programsLoading && !showSplash} />
       
       <KeyboardAvoidingView
         style={styles.flex}
