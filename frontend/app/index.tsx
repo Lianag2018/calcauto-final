@@ -994,7 +994,7 @@ export default function HomeScreen() {
                         onChangeText={setPrixEchange}
                       />
                     </View>
-                    <Text style={styles.feeNote}>Réduit le montant</Text>
+                    <Text style={styles.feeNote}>{t.exchange.reducesAmount}</Text>
                   </View>
                   <View style={styles.exchangeField}>
                     <Text style={styles.feeLabel}>Montant dû</Text>
