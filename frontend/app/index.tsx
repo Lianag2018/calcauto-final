@@ -312,95 +312,34 @@ interface ProgramPeriod {
   count: number;
 }
 
-// Language translations
+// Translations are now loaded from locales/*.json files
 const translations = {
-  fr: {
-    title: 'CalcAuto AiPro',
-    subtitle: 'Calculateur de financement automobile',
-    selectVehicle: 'Sélectionner un véhicule',
-    enterPrice: 'Prix du véhicule ($)',
-    calculate: 'Calculer',
-    results: 'Résultats',
-    term: 'Terme',
-    months: 'mois',
-    option1: 'Option 1',
-    option1Desc: 'Rabais + Taux',
-    option2: 'Option 2',
-    option2Desc: 'Taux réduits',
-    monthly: 'Mensuel',
-    total: 'Total',
-    rate: 'Taux',
-    rebate: 'Rabais',
-    bonusCash: 'Bonus',
-    bestOption: 'Meilleure',
-    savings: 'Économies',
-    managePrograms: 'Gérer',
-    noPrograms: 'Aucun programme',
-    loadingPrograms: 'Chargement...',
-    enterValidPrice: 'Entrez un prix valide',
-    noOption2: 'N/A',
-    filterByYear: 'Année modèle',
-    filterByBrand: 'Marque',
-    all: 'Tous',
-    selected: 'Sélectionné',
-    importProgram: 'Importer',
-    password: 'Mot de passe',
-    cancel: 'Annuler',
-    confirm: 'Confirmer',
-    importTitle: 'Importer un programme',
-    periodLabel: 'Période du programme',
-    beforeTax: 'avant taxes',
-    afterTax: 'après taxes',
-  },
-  en: {
-    title: 'CalcAuto AiPro',
-    subtitle: 'Vehicle financing calculator',
-    selectVehicle: 'Select a vehicle',
-    enterPrice: 'Vehicle Price ($)',
-    calculate: 'Calculate',
-    results: 'Results',
-    term: 'Term',
-    months: 'months',
-    option1: 'Option 1',
-    option1Desc: 'Rebate + Rate',
-    option2: 'Option 2',
-    option2Desc: 'Reduced rates',
-    monthly: 'Monthly',
-    total: 'Total',
-    rate: 'Rate',
-    rebate: 'Rebate',
-    bonusCash: 'Bonus',
-    bestOption: 'Best',
-    savings: 'Savings',
-    managePrograms: 'Manage',
-    noPrograms: 'No programs',
-    loadingPrograms: 'Loading...',
-    enterValidPrice: 'Enter a valid price',
-    noOption2: 'N/A',
-    filterByYear: 'Model year',
-    filterByBrand: 'Brand',
-    all: 'All',
-    selected: 'Selected',
-    importProgram: 'Import',
-    password: 'Password',
-    cancel: 'Cancel',
-    confirm: 'Confirm',
-    importTitle: 'Import program',
-    periodLabel: 'Program period',
-    beforeTax: 'before tax',
-    afterTax: 'after tax',
-  },
+  fr: frTranslations,
+  en: enTranslations,
 };
 
 const monthNames = {
-  fr: ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'],
-  en: ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+  fr: frTranslations.months,
+  en: enTranslations.months,
 };
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [lang, setLang] = useState<'fr' | 'en'>('fr');
+  const [lang, setLang] = useState<Language>('fr');
   const t = translations[lang];
+
+  // Load saved language preference on mount
+  useEffect(() => {
+    loadLanguage().then((savedLang) => {
+      setLang(savedLang);
+    });
+  }, []);
+
+  // Save language when changed
+  const handleLanguageChange = useCallback((newLang: Language) => {
+    setLang(newLang);
+    saveLanguage(newLang);
+  }, []);
 
   const [programs, setPrograms] = useState<VehicleProgram[]>([]);
   const [filteredPrograms, setFilteredPrograms] = useState<VehicleProgram[]>([]);
