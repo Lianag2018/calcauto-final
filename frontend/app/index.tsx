@@ -1348,7 +1348,7 @@ export default function HomeScreen() {
               >
                 <Ionicons name="mail-outline" size={20} color="#fff" />
                 <Text style={styles.sendEmailButtonText}>
-                  {language === 'fr' ? 'Envoyer par email' : 'Send by email'}
+                  {lang === 'fr' ? 'Envoyer par email' : 'Send by email'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1424,7 +1424,7 @@ export default function HomeScreen() {
                   <Ionicons name="mail" size={32} color="#4ECDC4" />
                 </View>
                 <Text style={styles.emailModalTitle}>
-                  {language === 'fr' ? 'Envoyer par email' : 'Send by email'}
+                  {lang === 'fr' ? 'Envoyer par email' : 'Send by email'}
                 </Text>
                 <TouchableOpacity
                   style={styles.emailModalClose}
@@ -1436,18 +1436,18 @@ export default function HomeScreen() {
               
               <View style={styles.emailModalBody}>
                 <Text style={styles.emailModalLabel}>
-                  {language === 'fr' ? 'Nom du client (optionnel)' : 'Client name (optional)'}
+                  {lang === 'fr' ? 'Nom du client (optionnel)' : 'Client name (optional)'}
                 </Text>
                 <TextInput
                   style={styles.emailModalInput}
-                  placeholder={language === 'fr' ? 'Ex: Jean Dupont' : 'Ex: John Doe'}
+                  placeholder={lang === 'fr' ? 'Ex: Jean Dupont' : 'Ex: John Doe'}
                   placeholderTextColor="#666"
                   value={clientName}
                   onChangeText={setClientName}
                 />
                 
                 <Text style={styles.emailModalLabel}>
-                  {language === 'fr' ? 'Email du client' : 'Client email'} *
+                  {lang === 'fr' ? 'Email du client' : 'Client email'} *
                 </Text>
                 <TextInput
                   style={styles.emailModalInput}
@@ -1462,7 +1462,7 @@ export default function HomeScreen() {
                 {selectedProgram && localResult && (
                   <View style={styles.emailPreviewBox}>
                     <Text style={styles.emailPreviewTitle}>
-                      {language === 'fr' ? 'Résumé à envoyer:' : 'Summary to send:'}
+                      {lang === 'fr' ? 'Résumé à envoyer:' : 'Summary to send:'}
                     </Text>
                     <Text style={styles.emailPreviewText}>
                       {selectedProgram.brand} {selectedProgram.model} {selectedProgram.year}
@@ -1487,7 +1487,7 @@ export default function HomeScreen() {
                   }}
                 >
                   <Text style={styles.emailModalCancelText}>
-                    {language === 'fr' ? 'Annuler' : 'Cancel'}
+                    {lang === 'fr' ? 'Annuler' : 'Cancel'}
                   </Text>
                 </TouchableOpacity>
                 
@@ -1497,9 +1497,9 @@ export default function HomeScreen() {
                   onPress={async () => {
                     if (!clientEmail || !clientEmail.includes('@')) {
                       if (Platform.OS === 'web') {
-                        alert(language === 'fr' ? 'Veuillez entrer un email valide' : 'Please enter a valid email');
+                        alert(lang === 'fr' ? 'Veuillez entrer un email valide' : 'Please enter a valid email');
                       } else {
-                        Alert.alert('Erreur', language === 'fr' ? 'Veuillez entrer un email valide' : 'Please enter a valid email');
+                        Alert.alert('Erreur', lang === 'fr' ? 'Veuillez entrer un email valide' : 'Please enter a valid email');
                       }
                       return;
                     }
@@ -1547,18 +1547,18 @@ export default function HomeScreen() {
                         setClientEmail('');
                         setClientName('');
                         if (Platform.OS === 'web') {
-                          alert(language === 'fr' ? '✅ Email envoyé avec succès!' : '✅ Email sent successfully!');
+                          alert(lang === 'fr' ? '✅ Email envoyé avec succès!' : '✅ Email sent successfully!');
                         } else {
-                          Alert.alert('Succès', language === 'fr' ? 'Email envoyé avec succès!' : 'Email sent successfully!');
+                          Alert.alert('Succès', lang === 'fr' ? 'Email envoyé avec succès!' : 'Email sent successfully!');
                         }
                       } else {
                         throw new Error(data.detail || 'Erreur');
                       }
                     } catch (error: any) {
                       if (Platform.OS === 'web') {
-                        alert(language === 'fr' ? 'Erreur lors de l\'envoi' : 'Error sending email');
+                        alert(lang === 'fr' ? 'Erreur lors de l\'envoi' : 'Error sending email');
                       } else {
-                        Alert.alert('Erreur', language === 'fr' ? 'Erreur lors de l\'envoi' : 'Error sending email');
+                        Alert.alert('Erreur', lang === 'fr' ? 'Erreur lors de l\'envoi' : 'Error sending email');
                       }
                     } finally {
                       setSendingEmail(false);
@@ -1571,7 +1571,7 @@ export default function HomeScreen() {
                     <>
                       <Ionicons name="send" size={18} color="#1a1a2e" />
                       <Text style={styles.emailModalSendText}>
-                        {language === 'fr' ? 'Envoyer' : 'Send'}
+                        {lang === 'fr' ? 'Envoyer' : 'Send'}
                       </Text>
                     </>
                   )}
