@@ -21,6 +21,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 
+// Import components and i18n
+import { AnimatedSplashScreen } from '../components/AnimatedSplashScreen';
+import { LanguageSelector } from '../components/LanguageSelector';
+import { Language, saveLanguage, loadLanguage, getTranslation, TranslationKeys } from '../utils/i18n';
+import frTranslations from '../locales/fr.json';
+import enTranslations from '../locales/en.json';
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
