@@ -979,10 +979,10 @@ export default function HomeScreen() {
 
               {/* Échange */}
               <View style={styles.feesSection}>
-                <Text style={styles.feesSectionTitle}>Échange (optionnel)</Text>
+                <Text style={styles.feesSectionTitle}>{t.exchange.title}</Text>
                 <View style={styles.exchangeRow}>
                   <View style={styles.exchangeField}>
-                    <Text style={styles.feeLabel}>Valeur de l'échange</Text>
+                    <Text style={styles.feeLabel}>{t.exchange.value}</Text>
                     <View style={styles.feeInputContainer}>
                       <Text style={styles.feeSymbol}>$</Text>
                       <TextInput
