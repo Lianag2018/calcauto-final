@@ -1523,14 +1523,14 @@ export default function HomeScreen() {
                           calculation_results: {
                             consumer_cash: selectedProgram.consumer_cash,
                             bonus_cash: parseFloat(customBonusCash) || selectedProgram.bonus_cash,
-                            comparisons: localResult.comparisons || [{
+                            comparisons: [{
                               term_months: selectedTerm,
                               option1_rate: localResult.option1Rate,
-                              option1_monthly: localResult.monthly1,
-                              option1_total: localResult.total1,
+                              option1_monthly: localResult.option1Monthly,
+                              option1_total: localResult.option1Total,
                               option2_rate: localResult.option2Rate,
-                              option2_monthly: localResult.monthly2,
-                              option2_total: localResult.total2,
+                              option2_monthly: localResult.option2Monthly,
+                              option2_total: localResult.option2Total,
                             }],
                           },
                           selected_term: selectedTerm,
