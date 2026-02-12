@@ -1208,7 +1208,7 @@ export default function HomeScreen() {
                     <Text style={styles.optionDetailValue}>{formatCurrency(localResult.principalOption1)}</Text>
                   </View>
                   <View style={styles.optionDetail}>
-                    <Text style={styles.optionDetailLabel}>{t.rate}:</Text>
+                    <Text style={styles.optionDetailLabel}>{t.results.rate}:</Text>
                     <Text style={styles.optionRateValue}>{localResult.option1Rate}%</Text>
                   </View>
                   <View style={styles.optionMainResult}>
@@ -1254,7 +1254,7 @@ export default function HomeScreen() {
                         <Text style={styles.optionDetailValue}>{formatCurrency(localResult.principalOption2)}</Text>
                       </View>
                       <View style={styles.optionDetail}>
-                        <Text style={styles.optionDetailLabel}>{t.rate}:</Text>
+                        <Text style={styles.optionDetailLabel}>{t.results.rate}:</Text>
                         <Text style={styles.optionRateValue}>{localResult.option2Rate}%</Text>
                       </View>
                       <View style={styles.optionMainResult}>
