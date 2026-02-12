@@ -1212,15 +1212,19 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
         principal_option1 = comparison.get('principal_option1', request.vehicle_price - consumer_cash)
         principal_option2 = comparison.get('principal_option2', request.vehicle_price)
         
+        # Get totals
+        total_option1 = comparison.get('option1_total', 0)
+        total_option2 = comparison.get('option2_total', 0)
+        
         # Get payments based on frequency
         if freq == 'weekly':
             option1_payment = comparison.get('option1_weekly', 0)
             option2_payment = comparison.get('option2_weekly', 0)
-            freq_label = "Hebdomadaire"
+            freq_label = "Hebdo"
         elif freq == 'biweekly':
             option1_payment = comparison.get('option1_biweekly', 0)
             option2_payment = comparison.get('option2_biweekly', 0)
-            freq_label = "Aux 2 semaines"
+            freq_label = "Aux 2 sem."
         else:
             option1_payment = comparison.get('option1_monthly', 0)
             option2_payment = comparison.get('option2_monthly', 0)
@@ -1232,14 +1236,14 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
         # Check if option2 is available
         has_option2 = option2_rate is not None and option2_rate > 0 and option2_payment > 0
         
-        # Format currency helper - Canadian format
+        # Format currency helper - Canadian format with spaces
         def fmt(val):
-            return f"{val:,.2f}".replace(",", " ").replace(".", ",")
-        
-        def fmt_int(val):
             return f"{val:,.0f}".replace(",", " ")
         
-        # Build HTML email - Exact replica of screen with better readability
+        def fmt2(val):
+            return f"{val:,.2f}".replace(",", " ").replace(".", ",")
+        
+        # Build HTML email - Exact replica of screen
         html_body = f"""
         <!DOCTYPE html>
         <html>
@@ -1247,62 +1251,67 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-                body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #1a1a2e; margin: 0; padding: 16px; }}
-                .container {{ max-width: 520px; margin: 0 auto; }}
+                body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #1a1a2e; margin: 0; padding: 16px; color: #fff; }}
+                .container {{ max-width: 540px; margin: 0 auto; }}
                 
-                .header {{ text-align: center; padding: 20px 0; }}
-                .header h1 {{ color: #4ECDC4; margin: 0; font-size: 28px; font-weight: bold; font-style: italic; }}
+                .header {{ text-align: center; padding: 16px 0 20px; }}
+                .header h1 {{ color: #4ECDC4; margin: 0; font-size: 26px; font-weight: bold; font-style: italic; }}
                 
-                .greeting {{ color: #fff; margin-bottom: 20px; font-size: 16px; }}
+                .greeting {{ margin-bottom: 20px; font-size: 15px; }}
                 
-                .results-title {{ color: #fff; font-size: 20px; margin-bottom: 16px; text-align: center; }}
+                .results-title {{ font-size: 18px; margin-bottom: 16px; text-align: center; }}
                 .results-title span {{ color: #4ECDC4; font-weight: bold; }}
                 
-                .vehicle-card {{ background: #2d2d44; border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 20px; }}
-                .vehicle-inner {{ background: #3d3d5c; border-radius: 12px; padding: 16px; }}
-                .vehicle-name {{ color: #fff; font-size: 18px; font-weight: 600; }}
-                .vehicle-price {{ color: #4ECDC4; font-size: 32px; font-weight: bold; margin-top: 8px; }}
+                .vehicle-card {{ background: #2d2d44; border-radius: 14px; padding: 16px; text-align: center; margin-bottom: 16px; }}
+                .vehicle-inner {{ background: #3d3d5c; border-radius: 10px; padding: 14px; }}
+                .vehicle-name {{ font-size: 17px; font-weight: 600; }}
+                .vehicle-price {{ color: #4ECDC4; font-size: 28px; font-weight: bold; margin-top: 6px; }}
                 
-                .best-banner {{ background: #4ECDC4; color: #1a1a2e; padding: 16px 20px; border-radius: 12px; margin-bottom: 20px; }}
-                .best-banner-content {{ display: flex; align-items: center; justify-content: space-between; }}
-                .best-banner .trophy {{ font-size: 28px; margin-right: 12px; }}
-                .best-banner .text {{ font-size: 18px; font-weight: bold; }}
-                .best-banner .savings-box {{ text-align: right; }}
-                .best-banner .savings-label {{ font-size: 13px; }}
-                .best-banner .savings-value {{ font-size: 20px; font-weight: bold; }}
+                .best-banner {{ background: #4ECDC4; color: #1a1a2e; padding: 14px 16px; border-radius: 10px; margin-bottom: 16px; }}
+                .best-table {{ width: 100%; }}
+                .best-table td {{ vertical-align: middle; }}
+                .trophy {{ font-size: 24px; }}
+                .best-text {{ font-size: 16px; font-weight: bold; }}
+                .savings-label {{ font-size: 12px; text-align: right; }}
+                .savings-value {{ font-size: 18px; font-weight: bold; text-align: right; }}
                 
-                .options-row {{ margin-bottom: 20px; }}
-                .options-table {{ width: 100%; border-collapse: separate; border-spacing: 12px 0; }}
-                .option-card {{ background: #2d3a50; border-radius: 16px; padding: 16px; vertical-align: top; width: 50%; }}
-                .option-card.option1 {{ background: linear-gradient(180deg, #3a4a60 0%, #2d3a50 100%); border: 2px solid #5a6a80; }}
-                .option-card.option2 {{ background: linear-gradient(180deg, #1d3a3a 0%, #0d2a2a 100%); border: 2px solid #4ECDC4; }}
-                .option-card.best {{ box-shadow: 0 0 25px rgba(78, 205, 196, 0.4); }}
+                .options-table {{ width: 100%; border-collapse: separate; border-spacing: 10px 0; margin-bottom: 16px; }}
+                .opt-card {{ background: #2d3a50; border-radius: 14px; padding: 14px; vertical-align: top; width: 50%; }}
+                .opt-card.opt1 {{ border: 2px solid #5a6a80; }}
+                .opt-card.opt2 {{ border: 2px solid #4ECDC4; }}
+                .opt-card.best {{ box-shadow: 0 0 20px rgba(78, 205, 196, 0.4); }}
                 
-                .option-header {{ margin-bottom: 12px; }}
-                .option-title {{ color: #fff; font-size: 18px; font-weight: bold; display: inline; }}
-                .option-subtitle {{ color: #aaa; font-size: 12px; display: block; margin-top: 2px; }}
-                .option-checkmark {{ display: inline-block; width: 24px; height: 24px; background: #4ECDC4; border-radius: 50%; text-align: center; line-height: 24px; color: #1a1a2e; font-weight: bold; float: right; }}
+                .opt-header {{ margin-bottom: 10px; }}
+                .opt-title {{ font-size: 16px; font-weight: bold; }}
+                .opt-subtitle {{ color: #aaa; font-size: 11px; }}
+                .checkmark {{ display: inline-block; width: 22px; height: 22px; background: #4ECDC4; border-radius: 50%; text-align: center; line-height: 22px; color: #1a1a2e; font-weight: bold; font-size: 14px; float: right; }}
                 
-                .option-details {{ margin-bottom: 12px; }}
-                .detail-line {{ display: flex; justify-content: space-between; margin-bottom: 6px; }}
-                .detail-label {{ color: #aaa; font-size: 13px; }}
-                .detail-value {{ color: #fff; font-size: 14px; font-weight: 600; }}
-                .detail-value.taux1 {{ color: #FF9800; font-weight: bold; }}
-                .detail-value.taux2 {{ color: #4ECDC4; font-weight: bold; }}
-                .detail-value.rabais {{ color: #4ECDC4; }}
+                .detail-row {{ margin-bottom: 5px; }}
+                .detail-row td {{ padding: 2px 0; }}
+                .lbl {{ color: #aaa; font-size: 12px; }}
+                .val {{ font-size: 13px; font-weight: 600; text-align: right; }}
+                .val-taux1 {{ color: #FF9800; font-weight: bold; }}
+                .val-taux2 {{ color: #4ECDC4; font-weight: bold; }}
+                .val-rabais {{ color: #4ECDC4; }}
                 
-                .payment-box {{ background: rgba(0,0,0,0.3); border-radius: 10px; padding: 14px; text-align: center; }}
-                .payment-label {{ color: #aaa; font-size: 13px; margin-bottom: 6px; }}
-                .payment-amount {{ font-size: 28px; font-weight: bold; }}
-                .payment-amount.opt1 {{ color: #FF9800; }}
-                .payment-amount.opt2 {{ color: #4ECDC4; }}
+                .payment-box {{ background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; text-align: center; margin-top: 10px; }}
+                .pay-label {{ color: #aaa; font-size: 12px; margin-bottom: 4px; }}
+                .pay-amount {{ font-size: 24px; font-weight: bold; }}
+                .pay-amount.opt1 {{ color: #FF9800; }}
+                .pay-amount.opt2 {{ color: #4ECDC4; }}
                 
-                .info-box {{ background: rgba(255, 215, 0, 0.15); border-radius: 10px; padding: 14px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }}
-                .info-box span {{ color: #FFD700; font-size: 14px; }}
+                .total-row {{ margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); }}
+                .total-label {{ color: #aaa; font-size: 11px; }}
+                .total-value {{ font-size: 14px; font-weight: bold; }}
+                .total-value.opt1 {{ color: #FF9800; }}
+                .total-value.opt2 {{ color: #4ECDC4; }}
                 
-                .footer {{ text-align: center; padding: 24px 0; }}
-                .footer .dealer {{ color: #4ECDC4; font-weight: bold; font-size: 16px; margin-bottom: 12px; }}
-                .footer .disclaimer {{ color: #666; font-size: 11px; line-height: 1.5; }}
+                .info-box {{ background: rgba(255, 215, 0, 0.15); border-radius: 8px; padding: 12px; margin-bottom: 16px; }}
+                .info-box span {{ color: #FFD700; font-size: 13px; }}
+                
+                .footer {{ text-align: center; padding: 20px 0; }}
+                .dealer {{ color: #4ECDC4; font-weight: bold; font-size: 15px; margin-bottom: 10px; }}
+                .disclaimer {{ color: #666; font-size: 11px; line-height: 1.4; }}
             </style>
         </head>
         <body>
@@ -1312,9 +1321,8 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
                 </div>
                 
                 <p class="greeting">Bonjour{' ' + request.client_name if request.client_name else ''},</p>
-                <p style="color: #aaa; margin-top: -10px; margin-bottom: 20px; font-size: 14px;">Voici votre soumission de financement:</p>
                 
-                <div class="results-title">Résultats – <span>{term} mois</span> ({freq_label})</div>
+                <div class="results-title">Résultats – <span>{term} mois</span></div>
                 
                 <div class="vehicle-card">
                     <div class="vehicle-inner">
@@ -1323,47 +1331,43 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
                     </div>
                 </div>
                 
-                {"<div class='best-banner'><table width='100%' cellpadding='0' cellspacing='0'><tr><td width='36'><span class='trophy'>🏆</span></td><td><span class='text'>Option " + best_option + " = Meilleur choix!</span></td><td align='right'><div class='savings-label'>Économies:</div><div class='savings-value'>" + fmt(savings) + " $</div></td></tr></table></div>" if has_option2 and savings > 0 else ""}
+                {"<div class='best-banner'><table class='best-table' cellpadding='0' cellspacing='0'><tr><td width='32'><span class='trophy'>🏆</span></td><td><span class='best-text'>Option " + best_option + " = Meilleur choix!</span></td><td width='100'><div class='savings-label'>Économies:</div><div class='savings-value'>" + fmt(savings) + " $</div></td></tr></table></div>" if has_option2 and savings > 0 else ""}
                 
-                <div class="options-row">
-                    <table class="options-table">
-                        <tr>
-                            <td class="option-card option1 {'best' if best_option == '1' else ''}">
-                                <div class="option-header">
-                                    <span class="option-title">Option 1</span>
-                                    {"<span class='option-checkmark'>✓</span>" if best_option == '1' else ""}
-                                    <span class="option-subtitle">Rabais + Taux</span>
-                                </div>
-                                <div class="option-details">
-                                    {"<div class='detail-line'><span class='detail-label'>Rabais:</span><span class='detail-value rabais'>-" + fmt(consumer_cash) + " $</span></div>" if consumer_cash > 0 else "<div class='detail-line'><span class='detail-label'>Rabais:</span><span class='detail-value'>$0</span></div>"}
-                                    <div class="detail-line">
-                                        <span class="detail-label">Capital financé:</span>
-                                        <span class="detail-value">{fmt(principal_option1)} $</span>
-                                    </div>
-                                    <div class="detail-line">
-                                        <span class="detail-label">Taux:</span>
-                                        <span class="detail-value taux1">{option1_rate}%</span>
-                                    </div>
-                                </div>
-                                <div class="payment-box">
-                                    <div class="payment-label">{freq_label}</div>
-                                    <div class="payment-amount opt1">{fmt(option1_payment)} $</div>
-                                </div>
-                            </td>
-                            
-                            {"<td class='option-card option2 " + ("best" if best_option == "2" else "") + "'><div class='option-header'><span class='option-title'>Option 2</span>" + ("<span class='option-checkmark'>✓</span>" if best_option == "2" else "") + "<span class='option-subtitle'>Taux réduits</span></div><div class='option-details'><div class='detail-line'><span class='detail-label'>Rabais:</span><span class='detail-value'>$0</span></div><div class='detail-line'><span class='detail-label'>Capital financé:</span><span class='detail-value'>" + fmt(principal_option2) + " $</span></div><div class='detail-line'><span class='detail-label'>Taux:</span><span class='detail-value taux2'>" + str(option2_rate) + "%</span></div></div><div class='payment-box'><div class='payment-label'>" + freq_label + "</div><div class='payment-amount opt2'>" + fmt(option2_payment) + " $</div></div></td>" if has_option2 else "<td class='option-card option2' style='opacity: 0.5;'><div class='option-header'><span class='option-title'>Option 2</span><span class='option-subtitle'>Non disponible</span></div><div style='color: #888; padding: 20px; text-align: center;'>Ce véhicule n'a pas d'option 2</div></td>"}
-                        </tr>
-                    </table>
-                </div>
+                <table class="options-table">
+                    <tr>
+                        <td class="opt-card opt1 {'best' if best_option == '1' else ''}">
+                            <div class="opt-header">
+                                <span class="opt-title">Option 1</span>
+                                {"<span class='checkmark'>✓</span>" if best_option == '1' else ""}
+                                <div class="opt-subtitle">Rabais + Taux</div>
+                            </div>
+                            <table width="100%" class="detail-row">
+                                <tr><td class="lbl">Rabais:</td><td class="val val-rabais">{"-" + fmt(consumer_cash) + " $" if consumer_cash > 0 else "$0"}</td></tr>
+                                <tr><td class="lbl">Capital financé:</td><td class="val">{fmt(principal_option1)} $</td></tr>
+                                <tr><td class="lbl">Taux:</td><td class="val val-taux1">{option1_rate}%</td></tr>
+                            </table>
+                            <div class="payment-box">
+                                <div class="pay-label">{freq_label}</div>
+                                <div class="pay-amount opt1">{fmt2(option1_payment)} $</div>
+                            </div>
+                            <div class="total-row" style="text-align: center;">
+                                <div class="total-label">Total ({term} mois)</div>
+                                <div class="total-value opt1">{fmt(total_option1)} $</div>
+                            </div>
+                        </td>
+                        
+                        {"<td class='opt-card opt2 " + ("best" if best_option == "2" else "") + "'><div class='opt-header'><span class='opt-title'>Option 2</span>" + ("<span class='checkmark'>✓</span>" if best_option == "2" else "") + "<div class='opt-subtitle'>Taux réduits</div></div><table width='100%' class='detail-row'><tr><td class='lbl'>Rabais:</td><td class='val'>$0</td></tr><tr><td class='lbl'>Capital financé:</td><td class='val'>" + fmt(principal_option2) + " $</td></tr><tr><td class='lbl'>Taux:</td><td class='val val-taux2'>" + str(option2_rate) + "%</td></tr></table><div class='payment-box'><div class='pay-label'>" + freq_label + "</div><div class='pay-amount opt2'>" + fmt2(option2_payment) + " $</div></div><div class='total-row' style='text-align: center;'><div class='total-label'>Total (" + str(term) + " mois)</div><div class='total-value opt2'>" + fmt(total_option2) + " $</div></div></td>" if has_option2 else "<td class='opt-card opt2' style='opacity: 0.5;'><div class='opt-header'><span class='opt-title'>Option 2</span><div class='opt-subtitle'>Non disponible</div></div><div style='color: #888; padding: 20px; text-align: center;'>Non disponible</div></td>"}
+                    </tr>
+                </table>
                 
-                {"<div class='info-box'><span>ℹ️</span><span>Bonus Cash de " + fmt(bonus_cash) + " $ sera déduit après taxes (au comptant)</span></div>" if bonus_cash > 0 else ""}
+                {"<div class='info-box'><span>ℹ️ Bonus Cash de " + fmt(bonus_cash) + " $ sera déduit après taxes (au comptant)</span></div>" if bonus_cash > 0 else ""}
                 
                 <div class="footer">
                     <div class="dealer">{request.dealer_name}</div>
-                    {f"<div style='color: #888; margin-bottom: 12px;'>{request.dealer_phone}</div>" if request.dealer_phone else ""}
+                    {f"<div style='color: #888; margin-bottom: 10px;'>{request.dealer_phone}</div>" if request.dealer_phone else ""}
                     <div class="disclaimer">
-                        Ce calcul est une estimation et ne constitue pas une offre de financement officielle.<br>
-                        Les taux et conditions peuvent varier selon votre dossier de crédit.
+                        Ce calcul est une estimation.<br>
+                        Les taux peuvent varier selon votre dossier de crédit.
                     </div>
                 </div>
             </div>
