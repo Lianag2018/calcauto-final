@@ -1415,7 +1415,7 @@ export default function HomeScreen() {
                 {selectedProgram && (
                   <View style={styles.emailPreviewBox}>
                     <Text style={styles.emailPreviewTitle}>
-                      {lang === 'fr' ? 'Résumé à envoyer:' : 'Summary to send:'}
+                      {t.email.summaryToSend}
                     </Text>
                     <Text style={styles.emailPreviewText}>
                       {selectedProgram.brand} {selectedProgram.model} {selectedProgram.year}
