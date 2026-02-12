@@ -13,7 +13,8 @@
       "bundleIdentifier": "com.calcauto.aipro",
       "infoPlist": {
         "NSCameraUsageDescription": "Scanner les documents PDF",
-        "NSPhotoLibraryUsageDescription": "Importer des fichiers PDF"
+        "NSPhotoLibraryUsageDescription": "Importer des fichiers PDF",
+        "NSContactsUsageDescription": "Accéder aux contacts pour envoyer des soumissions"
       }
     },
     "android": {
@@ -23,7 +24,7 @@
         "backgroundColor": "#1a1a2e"
       },
       "edgeToEdgeEnabled": true,
-      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"]
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "READ_CONTACTS", "WRITE_CONTACTS"]
     },
     "web": {
       "bundler": "metro",
