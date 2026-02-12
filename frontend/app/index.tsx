@@ -1471,7 +1471,7 @@ export default function HomeScreen() {
                       {formatCurrency(parseFloat(vehiclePrice) || 0)} • {selectedTerm} mois
                     </Text>
                     <Text style={styles.emailPreviewPayment}>
-                      {localResult ? formatCurrency(localResult.monthly1 || 0) : formatCurrency(0)}/mois
+                      {localResult ? formatCurrency(localResult.option1Monthly || 0) : formatCurrency(0)}/mois
                     </Text>
                   </View>
                 )}
