@@ -882,7 +882,7 @@ export default function HomeScreen() {
                   {selectedProgram.bonus_cash > 0 && (
                     <View style={styles.rebateItem}>
                       <Ionicons name="gift-outline" size={14} color="#FFD700" />
-                      <Text style={styles.rebateLabelBonus}>{t.bonusCash} ({t.afterTax}):</Text>
+                      <Text style={styles.rebateLabelBonus}>{t.results.bonusCash} ({t.afterTax}):</Text>
                       <Text style={styles.rebateValueBonus}>{formatCurrency(selectedProgram.bonus_cash)}</Text>
                     </View>
                   )}
@@ -914,7 +914,7 @@ export default function HomeScreen() {
               
               {/* Bonus Cash optionnel */}
               <View style={styles.inputRow}>
-                <Text style={styles.inputLabel}>{t.bonusCash} ({t.afterTax})</Text>
+                <Text style={styles.inputLabel}>{t.results.bonusCash} ({t.afterTax})</Text>
                 <View style={styles.inputContainer}>
                   <Text style={styles.currencySymbol}>$</Text>
                   <TextInput
@@ -1289,7 +1289,7 @@ export default function HomeScreen() {
                 <View style={styles.bonusCashNote}>
                   <Ionicons name="information-circle" size={16} color="#FFD700" />
                   <Text style={styles.bonusCashNoteText}>
-                    {t.bonusCash} de {formatCurrency(parseFloat(customBonusCash) || selectedProgram.bonus_cash)} sera déduit après taxes (au comptant)
+                    {t.results.bonusCash} de {formatCurrency(parseFloat(customBonusCash) || selectedProgram.bonus_cash)} sera déduit après taxes (au comptant)
                   </Text>
                 </View>
               )}
