@@ -1444,7 +1444,7 @@ export default function HomeScreen() {
                   }}
                 >
                   <Text style={styles.emailModalCancelText}>
-                    {lang === 'fr' ? 'Annuler' : 'Cancel'}
+                    {t.email.cancel}
                   </Text>
                 </TouchableOpacity>
                 
