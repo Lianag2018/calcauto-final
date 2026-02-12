@@ -842,7 +842,7 @@ export default function HomeScreen() {
                 <View style={styles.ratesTable}>
                   <View style={styles.ratesHeader}>
                     <Text style={styles.ratesHeaderCell}>{t.term}</Text>
-                    <Text style={styles.ratesHeaderCell}>{t.option1}</Text>
+                    <Text style={styles.ratesHeaderCell}>{t.options.option1}</Text>
                     {selectedProgram.option2_rates && (
                       <Text style={styles.ratesHeaderCell}>{t.option2}</Text>
                     )}
@@ -1103,7 +1103,7 @@ export default function HomeScreen() {
                       styles.optionButtonText,
                       selectedOption === '1' && styles.optionButtonTextActive
                     ]}>
-                      {t.option1}
+                      {t.options.option1}
                     </Text>
                     <Text style={[
                       styles.optionButtonSubtext,
@@ -1190,7 +1190,7 @@ export default function HomeScreen() {
                   localResult.bestOption === '1' && styles.optionCardBest
                 ]}>
                   <View style={styles.optionHeader}>
-                    <Text style={styles.optionCardTitle}>{t.option1}</Text>
+                    <Text style={styles.optionCardTitle}>{t.options.option1}</Text>
                     {localResult.bestOption === '1' && (
                       <Ionicons name="checkmark-circle" size={18} color="#4ECDC4" />
                     )}
