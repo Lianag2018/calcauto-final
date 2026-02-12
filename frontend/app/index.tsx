@@ -1409,6 +1409,177 @@ export default function HomeScreen() {
             </View>
           </View>
         </Modal>
+
+        {/* Email Modal */}
+        <Modal
+          visible={showEmailModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowEmailModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.emailModalContent}>
+              <View style={styles.emailModalHeader}>
+                <View style={styles.emailModalIconContainer}>
+                  <Ionicons name="mail" size={32} color="#4ECDC4" />
+                </View>
+                <Text style={styles.emailModalTitle}>
+                  {language === 'fr' ? 'Envoyer par email' : 'Send by email'}
+                </Text>
+                <TouchableOpacity
+                  style={styles.emailModalClose}
+                  onPress={() => setShowEmailModal(false)}
+                >
+                  <Ionicons name="close" size={24} color="#888" />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.emailModalBody}>
+                <Text style={styles.emailModalLabel}>
+                  {language === 'fr' ? 'Nom du client (optionnel)' : 'Client name (optional)'}
+                </Text>
+                <TextInput
+                  style={styles.emailModalInput}
+                  placeholder={language === 'fr' ? 'Ex: Jean Dupont' : 'Ex: John Doe'}
+                  placeholderTextColor="#666"
+                  value={clientName}
+                  onChangeText={setClientName}
+                />
+                
+                <Text style={styles.emailModalLabel}>
+                  {language === 'fr' ? 'Email du client' : 'Client email'} *
+                </Text>
+                <TextInput
+                  style={styles.emailModalInput}
+                  placeholder="client@email.com"
+                  placeholderTextColor="#666"
+                  value={clientEmail}
+                  onChangeText={setClientEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+                
+                {selectedProgram && localResult && (
+                  <View style={styles.emailPreviewBox}>
+                    <Text style={styles.emailPreviewTitle}>
+                      {language === 'fr' ? 'Résumé à envoyer:' : 'Summary to send:'}
+                    </Text>
+                    <Text style={styles.emailPreviewText}>
+                      {selectedProgram.brand} {selectedProgram.model} {selectedProgram.year}
+                    </Text>
+                    <Text style={styles.emailPreviewText}>
+                      {formatCurrency(parseFloat(vehiclePrice))} • {selectedTerm} mois
+                    </Text>
+                    <Text style={styles.emailPreviewPayment}>
+                      {formatCurrency(localResult.monthly1 || 0)}/mois
+                    </Text>
+                  </View>
+                )}
+              </View>
+              
+              <View style={styles.emailModalButtons}>
+                <TouchableOpacity
+                  style={styles.emailModalCancelButton}
+                  onPress={() => {
+                    setShowEmailModal(false);
+                    setClientEmail('');
+                    setClientName('');
+                  }}
+                >
+                  <Text style={styles.emailModalCancelText}>
+                    {language === 'fr' ? 'Annuler' : 'Cancel'}
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.emailModalSendButton, sendingEmail && styles.emailModalSendButtonDisabled]}
+                  disabled={sendingEmail}
+                  onPress={async () => {
+                    if (!clientEmail || !clientEmail.includes('@')) {
+                      if (Platform.OS === 'web') {
+                        alert(language === 'fr' ? 'Veuillez entrer un email valide' : 'Please enter a valid email');
+                      } else {
+                        Alert.alert('Erreur', language === 'fr' ? 'Veuillez entrer un email valide' : 'Please enter a valid email');
+                      }
+                      return;
+                    }
+                    
+                    if (!selectedProgram || !localResult) return;
+                    
+                    setSendingEmail(true);
+                    try {
+                      const response = await fetch(`${API_URL}/api/send-calculation-email`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          client_email: clientEmail,
+                          client_name: clientName,
+                          vehicle_info: {
+                            brand: selectedProgram.brand,
+                            model: selectedProgram.model,
+                            trim: selectedProgram.trim,
+                            year: selectedProgram.year,
+                          },
+                          calculation_results: {
+                            consumer_cash: selectedProgram.consumer_cash,
+                            bonus_cash: parseFloat(customBonusCash) || selectedProgram.bonus_cash,
+                            comparisons: localResult.comparisons || [{
+                              term_months: selectedTerm,
+                              option1_rate: localResult.option1Rate,
+                              option1_monthly: localResult.monthly1,
+                              option1_total: localResult.total1,
+                              option2_rate: localResult.option2Rate,
+                              option2_monthly: localResult.monthly2,
+                              option2_total: localResult.total2,
+                            }],
+                          },
+                          selected_term: selectedTerm,
+                          selected_option: selectedOption || '1',
+                          vehicle_price: parseFloat(vehiclePrice),
+                          dealer_name: 'CalcAuto AiPro',
+                        }),
+                      });
+                      
+                      const data = await response.json();
+                      
+                      if (data.success) {
+                        setShowEmailModal(false);
+                        setClientEmail('');
+                        setClientName('');
+                        if (Platform.OS === 'web') {
+                          alert(language === 'fr' ? '✅ Email envoyé avec succès!' : '✅ Email sent successfully!');
+                        } else {
+                          Alert.alert('Succès', language === 'fr' ? 'Email envoyé avec succès!' : 'Email sent successfully!');
+                        }
+                      } else {
+                        throw new Error(data.detail || 'Erreur');
+                      }
+                    } catch (error: any) {
+                      if (Platform.OS === 'web') {
+                        alert(language === 'fr' ? 'Erreur lors de l\'envoi' : 'Error sending email');
+                      } else {
+                        Alert.alert('Erreur', language === 'fr' ? 'Erreur lors de l\'envoi' : 'Error sending email');
+                      }
+                    } finally {
+                      setSendingEmail(false);
+                    }
+                  }}
+                >
+                  {sendingEmail ? (
+                    <ActivityIndicator size="small" color="#1a1a2e" />
+                  ) : (
+                    <>
+                      <Ionicons name="send" size={18} color="#1a1a2e" />
+                      <Text style={styles.emailModalSendText}>
+                        {language === 'fr' ? 'Envoyer' : 'Send'}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
