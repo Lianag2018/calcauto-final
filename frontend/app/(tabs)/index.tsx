@@ -1418,6 +1418,18 @@ export default function HomeScreen() {
                 />
                 
                 <Text style={styles.emailModalLabel}>
+                  {t.email.clientPhone} *
+                </Text>
+                <TextInput
+                  style={styles.emailModalInput}
+                  placeholder="514-555-1234"
+                  placeholderTextColor="#666"
+                  value={clientPhone}
+                  onChangeText={setClientPhone}
+                  keyboardType="phone-pad"
+                />
+                
+                <Text style={styles.emailModalLabel}>
                   {t.email.clientEmail} *
                 </Text>
                 <TextInput
@@ -1459,6 +1471,7 @@ export default function HomeScreen() {
                     setShowEmailModal(false);
                     setClientEmail('');
                     setClientName('');
+                    setClientPhone('');
                   }}
                 >
                   <Text style={styles.emailModalCancelText}>
