@@ -1016,7 +1016,7 @@ export default function HomeScreen() {
 
               {/* Sélection du terme */}
               <View style={styles.termSection}>
-                <Text style={styles.inputLabel}>Sélectionner le terme</Text>
+                <Text style={styles.inputLabel}>{t.term.selectTerm}</Text>
                 <View style={styles.termButtons}>
                   {availableTerms.map(term => (
                     <TouchableOpacity
