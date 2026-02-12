@@ -412,6 +412,12 @@ export default function HomeScreen() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [importPassword, setImportPassword] = useState('');
   
+  // Email modal
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [clientEmail, setClientEmail] = useState('');
+  const [clientName, setClientName] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  
   // Current program period
   const [currentPeriod, setCurrentPeriod] = useState<{month: number, year: number} | null>(null);
   
