@@ -1040,7 +1040,7 @@ export default function HomeScreen() {
 
               {/* Fréquence de paiement */}
               <View style={styles.termSection}>
-                <Text style={styles.inputLabel}>Fréquence de paiement</Text>
+                <Text style={styles.inputLabel}>{t.frequency.title}</Text>
                 <View style={styles.frequencyButtons}>
                   <TouchableOpacity
                     style={[
