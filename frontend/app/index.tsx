@@ -719,13 +719,13 @@ export default function HomeScreen() {
         >
           {/* Year Filter */}
           <View style={styles.filterSection}>
-            <Text style={styles.filterLabel}>{t.filterByYear}</Text>
+            <Text style={styles.filterLabel}>{t.filters.year}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
               <View style={styles.filterRow}>
                 <FilterButton 
                   active={selectedYear === null} 
                   onPress={() => handleYearPress(null)} 
-                  label={t.all} 
+                  label={t.filters.all} 
                 />
                 {years.map(year => (
                   <FilterButton 
@@ -741,13 +741,13 @@ export default function HomeScreen() {
 
           {/* Brand Filter */}
           <View style={styles.filterSection}>
-            <Text style={styles.filterLabel}>{t.filterByBrand}</Text>
+            <Text style={styles.filterLabel}>{t.filters.brand}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
               <View style={styles.filterRow}>
                 <FilterButton 
                   active={selectedBrand === null} 
                   onPress={() => handleBrandPress(null)} 
-                  label={t.all} 
+                  label={t.filters.all} 
                 />
                 {brands.map(brand => (
                   <FilterButton 
