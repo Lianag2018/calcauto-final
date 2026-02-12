@@ -1216,11 +1216,11 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
         if freq == 'weekly':
             option1_payment = comparison.get('option1_weekly', 0)
             option2_payment = comparison.get('option2_weekly', 0)
-            freq_label = "Hebdo"
+            freq_label = "Hebdomadaire"
         elif freq == 'biweekly':
             option1_payment = comparison.get('option1_biweekly', 0)
             option2_payment = comparison.get('option2_biweekly', 0)
-            freq_label = "Aux 2 sem."
+            freq_label = "Aux 2 semaines"
         else:
             option1_payment = comparison.get('option1_monthly', 0)
             option2_payment = comparison.get('option2_monthly', 0)
@@ -1232,11 +1232,14 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
         # Check if option2 is available
         has_option2 = option2_rate is not None and option2_rate > 0 and option2_payment > 0
         
-        # Format currency helper
+        # Format currency helper - Canadian format
         def fmt(val):
             return f"{val:,.2f}".replace(",", " ").replace(".", ",")
         
-        # Build HTML email - Exact replica of screen
+        def fmt_int(val):
+            return f"{val:,.0f}".replace(",", " ")
+        
+        # Build HTML email - Exact replica of screen with better readability
         html_body = f"""
         <!DOCTYPE html>
         <html>
@@ -1245,53 +1248,61 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
                 body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #1a1a2e; margin: 0; padding: 16px; }}
-                .container {{ max-width: 500px; margin: 0 auto; }}
-                .header {{ text-align: center; padding: 16px 0; }}
-                .header h1 {{ color: #4ECDC4; margin: 0; font-size: 24px; font-weight: bold; font-style: italic; }}
-                .header p {{ color: #4ECDC4; margin: 4px 0 0; font-size: 14px; }}
+                .container {{ max-width: 520px; margin: 0 auto; }}
                 
-                .greeting {{ color: #fff; margin-bottom: 16px; font-size: 15px; }}
+                .header {{ text-align: center; padding: 20px 0; }}
+                .header h1 {{ color: #4ECDC4; margin: 0; font-size: 28px; font-weight: bold; font-style: italic; }}
                 
-                .results-header {{ color: #fff; font-size: 18px; margin-bottom: 12px; }}
-                .results-header span {{ color: #4ECDC4; }}
+                .greeting {{ color: #fff; margin-bottom: 20px; font-size: 16px; }}
                 
-                .vehicle-banner {{ background: #2d2d44; border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 16px; }}
-                .vehicle-name {{ color: #1a1a2e; font-size: 16px; font-weight: 600; }}
-                .vehicle-banner-inner {{ background: #3d3d5c; border-radius: 8px; padding: 12px; }}
-                .vehicle-banner-inner .name {{ color: #fff; font-size: 16px; font-weight: 600; }}
-                .vehicle-banner-inner .price {{ color: #4ECDC4; font-size: 28px; font-weight: bold; margin-top: 4px; }}
+                .results-title {{ color: #fff; font-size: 20px; margin-bottom: 16px; text-align: center; }}
+                .results-title span {{ color: #4ECDC4; font-weight: bold; }}
                 
-                .best-banner {{ background: #4ECDC4; color: #1a1a2e; padding: 14px 20px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }}
-                .best-banner .trophy {{ font-size: 24px; margin-right: 12px; }}
-                .best-banner .text {{ font-size: 16px; font-weight: bold; }}
-                .best-banner .savings {{ text-align: right; }}
-                .best-banner .savings-label {{ font-size: 12px; }}
-                .best-banner .savings-value {{ font-size: 18px; font-weight: bold; }}
+                .vehicle-card {{ background: #2d2d44; border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 20px; }}
+                .vehicle-inner {{ background: #3d3d5c; border-radius: 12px; padding: 16px; }}
+                .vehicle-name {{ color: #fff; font-size: 18px; font-weight: 600; }}
+                .vehicle-price {{ color: #4ECDC4; font-size: 32px; font-weight: bold; margin-top: 8px; }}
                 
-                .options-row {{ display: flex; gap: 12px; margin-bottom: 16px; }}
-                .option-card {{ flex: 1; border-radius: 16px; padding: 16px; }}
-                .option-card.option1 {{ background: linear-gradient(135deg, #5c3d3d 0%, #4a2d2d 100%); border: 2px solid #8b5a5a; }}
-                .option-card.option2 {{ background: linear-gradient(135deg, #2d4a4a 0%, #1d3a3a 100%); border: 2px solid #4ECDC4; }}
-                .option-card.best {{ box-shadow: 0 0 20px rgba(78, 205, 196, 0.4); }}
-                .option-card.not-best {{ opacity: 0.75; }}
+                .best-banner {{ background: #4ECDC4; color: #1a1a2e; padding: 16px 20px; border-radius: 12px; margin-bottom: 20px; }}
+                .best-banner-content {{ display: flex; align-items: center; justify-content: space-between; }}
+                .best-banner .trophy {{ font-size: 28px; margin-right: 12px; }}
+                .best-banner .text {{ font-size: 18px; font-weight: bold; }}
+                .best-banner .savings-box {{ text-align: right; }}
+                .best-banner .savings-label {{ font-size: 13px; }}
+                .best-banner .savings-value {{ font-size: 20px; font-weight: bold; }}
                 
-                .option-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }}
-                .option-title {{ color: #fff; font-size: 16px; font-weight: bold; }}
-                .option-subtitle {{ color: #aaa; font-size: 11px; }}
-                .option-checkmark {{ width: 24px; height: 24px; background: #4ECDC4; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1a1a2e; font-weight: bold; }}
+                .options-row {{ margin-bottom: 20px; }}
+                .options-table {{ width: 100%; border-collapse: separate; border-spacing: 12px 0; }}
+                .option-card {{ background: #2d3a50; border-radius: 16px; padding: 16px; vertical-align: top; width: 50%; }}
+                .option-card.option1 {{ background: linear-gradient(180deg, #3a4a60 0%, #2d3a50 100%); border: 2px solid #5a6a80; }}
+                .option-card.option2 {{ background: linear-gradient(180deg, #1d3a3a 0%, #0d2a2a 100%); border: 2px solid #4ECDC4; }}
+                .option-card.best {{ box-shadow: 0 0 25px rgba(78, 205, 196, 0.4); }}
                 
-                .option-detail {{ display: flex; justify-content: space-between; margin-bottom: 6px; }}
-                .option-detail .label {{ color: #aaa; font-size: 13px; }}
-                .option-detail .value {{ color: #fff; font-size: 13px; font-weight: 600; }}
+                .option-header {{ margin-bottom: 12px; }}
+                .option-title {{ color: #fff; font-size: 18px; font-weight: bold; display: inline; }}
+                .option-subtitle {{ color: #aaa; font-size: 12px; display: block; margin-top: 2px; }}
+                .option-checkmark {{ display: inline-block; width: 24px; height: 24px; background: #4ECDC4; border-radius: 50%; text-align: center; line-height: 24px; color: #1a1a2e; font-weight: bold; float: right; }}
                 
-                .payment-box {{ background: rgba(0,0,0,0.2); border-radius: 8px; padding: 12px; text-align: center; margin-top: 12px; }}
-                .payment-label {{ color: #aaa; font-size: 12px; margin-bottom: 4px; }}
-                .payment-amount {{ color: #4ECDC4; font-size: 26px; font-weight: bold; }}
-                .payment-amount.option1-color {{ color: #e88; }}
+                .option-details {{ margin-bottom: 12px; }}
+                .detail-line {{ display: flex; justify-content: space-between; margin-bottom: 6px; }}
+                .detail-label {{ color: #aaa; font-size: 13px; }}
+                .detail-value {{ color: #fff; font-size: 14px; font-weight: 600; }}
+                .detail-value.taux1 {{ color: #FF9800; font-weight: bold; }}
+                .detail-value.taux2 {{ color: #4ECDC4; font-weight: bold; }}
+                .detail-value.rabais {{ color: #4ECDC4; }}
                 
-                .footer {{ text-align: center; padding: 20px 0; color: #666; font-size: 11px; }}
-                .footer p {{ margin: 4px 0; }}
-                .dealer-name {{ color: #4ECDC4; font-weight: bold; font-size: 14px; }}
+                .payment-box {{ background: rgba(0,0,0,0.3); border-radius: 10px; padding: 14px; text-align: center; }}
+                .payment-label {{ color: #aaa; font-size: 13px; margin-bottom: 6px; }}
+                .payment-amount {{ font-size: 28px; font-weight: bold; }}
+                .payment-amount.opt1 {{ color: #FF9800; }}
+                .payment-amount.opt2 {{ color: #4ECDC4; }}
+                
+                .info-box {{ background: rgba(255, 215, 0, 0.15); border-radius: 10px; padding: 14px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }}
+                .info-box span {{ color: #FFD700; font-size: 14px; }}
+                
+                .footer {{ text-align: center; padding: 24px 0; }}
+                .footer .dealer {{ color: #4ECDC4; font-weight: bold; font-size: 16px; margin-bottom: 12px; }}
+                .footer .disclaimer {{ color: #666; font-size: 11px; line-height: 1.5; }}
             </style>
         </head>
         <body>
@@ -1301,52 +1312,59 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
                 </div>
                 
                 <p class="greeting">Bonjour{' ' + request.client_name if request.client_name else ''},</p>
+                <p style="color: #aaa; margin-top: -10px; margin-bottom: 20px; font-size: 14px;">Voici votre soumission de financement:</p>
                 
-                <div class="results-header">Résultats – <span>{term} mois</span></div>
+                <div class="results-title">Résultats – <span>{term} mois</span> ({freq_label})</div>
                 
-                <div class="vehicle-banner">
-                    <div class="vehicle-banner-inner">
-                        <div class="name">{vehicle.get('brand', '')} {vehicle.get('model', '')} {vehicle.get('trim', '') or ''} {vehicle.get('year', '')}</div>
-                        <div class="price">{fmt(request.vehicle_price)} $</div>
+                <div class="vehicle-card">
+                    <div class="vehicle-inner">
+                        <div class="vehicle-name">{vehicle.get('brand', '')} {vehicle.get('model', '')} {vehicle.get('trim', '') or ''} {vehicle.get('year', '')}</div>
+                        <div class="vehicle-price">{fmt(request.vehicle_price)} $</div>
                     </div>
                 </div>
                 
-                {"<div class='best-banner'><span class='trophy'>🏆</span><span class='text'>Option " + best_option + " = Meilleur choix!</span><div class='savings'><div class='savings-label'>Économies:</div><div class='savings-value'>" + fmt(savings) + " $</div></div></div>" if has_option2 and savings > 0 else ""}
+                {"<div class='best-banner'><table width='100%' cellpadding='0' cellspacing='0'><tr><td width='36'><span class='trophy'>🏆</span></td><td><span class='text'>Option " + best_option + " = Meilleur choix!</span></td><td align='right'><div class='savings-label'>Économies:</div><div class='savings-value'>" + fmt(savings) + " $</div></td></tr></table></div>" if has_option2 and savings > 0 else ""}
                 
                 <div class="options-row">
-                    <div class="option-card option1 {'best' if best_option == '1' else 'not-best'}">
-                        <div class="option-header">
-                            <div>
-                                <div class="option-title">Option 1</div>
-                                <div class="option-subtitle">Rabais + Taux</div>
-                            </div>
-                            {"<div class='option-checkmark'>✓</div>" if best_option == '1' else ""}
-                        </div>
-                        {"<div class='option-detail'><span class='label'>Rabais:</span><span class='value'>-" + fmt(consumer_cash) + " $</span></div>" if consumer_cash > 0 else ""}
-                        <div class="option-detail">
-                            <span class="label">Capital financé:</span>
-                            <span class="value">{fmt(principal_option1)} $</span>
-                        </div>
-                        <div class="option-detail">
-                            <span class="label">Taux:</span>
-                            <span class="value" style="color: #e88;">{option1_rate}%</span>
-                        </div>
-                        <div class="payment-box">
-                            <div class="payment-label">{freq_label}</div>
-                            <div class="payment-amount option1-color">{fmt(option1_payment)} $</div>
-                        </div>
-                    </div>
-                    
-                    {"<div class='option-card option2 " + ("best" if best_option == "2" else "not-best") + "'><div class='option-header'><div><div class='option-title'>Option 2</div><div class='option-subtitle'>Taux réduits</div></div>" + ("<div class='option-checkmark'>✓</div>" if best_option == "2" else "") + "</div><div class='option-detail'><span class='label'>Rabais:</span><span class='value'>$0</span></div><div class='option-detail'><span class='label'>Capital financé:</span><span class='value'>" + fmt(principal_option2) + " $</span></div><div class='option-detail'><span class='label'>Taux:</span><span class='value' style='color: #4ECDC4;'>" + str(option2_rate) + "%</span></div><div class='payment-box'><div class='payment-label'>" + freq_label + "</div><div class='payment-amount'>" + fmt(option2_payment) + " $</div></div></div>" if has_option2 else "<div class='option-card option2 not-best' style='opacity: 0.5;'><div class='option-header'><div><div class='option-title'>Option 2</div><div class='option-subtitle'>Non disponible</div></div></div></div>"}
+                    <table class="options-table">
+                        <tr>
+                            <td class="option-card option1 {'best' if best_option == '1' else ''}">
+                                <div class="option-header">
+                                    <span class="option-title">Option 1</span>
+                                    {"<span class='option-checkmark'>✓</span>" if best_option == '1' else ""}
+                                    <span class="option-subtitle">Rabais + Taux</span>
+                                </div>
+                                <div class="option-details">
+                                    {"<div class='detail-line'><span class='detail-label'>Rabais:</span><span class='detail-value rabais'>-" + fmt(consumer_cash) + " $</span></div>" if consumer_cash > 0 else "<div class='detail-line'><span class='detail-label'>Rabais:</span><span class='detail-value'>$0</span></div>"}
+                                    <div class="detail-line">
+                                        <span class="detail-label">Capital financé:</span>
+                                        <span class="detail-value">{fmt(principal_option1)} $</span>
+                                    </div>
+                                    <div class="detail-line">
+                                        <span class="detail-label">Taux:</span>
+                                        <span class="detail-value taux1">{option1_rate}%</span>
+                                    </div>
+                                </div>
+                                <div class="payment-box">
+                                    <div class="payment-label">{freq_label}</div>
+                                    <div class="payment-amount opt1">{fmt(option1_payment)} $</div>
+                                </div>
+                            </td>
+                            
+                            {"<td class='option-card option2 " + ("best" if best_option == "2" else "") + "'><div class='option-header'><span class='option-title'>Option 2</span>" + ("<span class='option-checkmark'>✓</span>" if best_option == "2" else "") + "<span class='option-subtitle'>Taux réduits</span></div><div class='option-details'><div class='detail-line'><span class='detail-label'>Rabais:</span><span class='detail-value'>$0</span></div><div class='detail-line'><span class='detail-label'>Capital financé:</span><span class='detail-value'>" + fmt(principal_option2) + " $</span></div><div class='detail-line'><span class='detail-label'>Taux:</span><span class='detail-value taux2'>" + str(option2_rate) + "%</span></div></div><div class='payment-box'><div class='payment-label'>" + freq_label + "</div><div class='payment-amount opt2'>" + fmt(option2_payment) + " $</div></div></td>" if has_option2 else "<td class='option-card option2' style='opacity: 0.5;'><div class='option-header'><span class='option-title'>Option 2</span><span class='option-subtitle'>Non disponible</span></div><div style='color: #888; padding: 20px; text-align: center;'>Ce véhicule n'a pas d'option 2</div></td>"}
+                        </tr>
+                    </table>
                 </div>
                 
-                {"<div style='background: rgba(255, 215, 0, 0.15); border-radius: 8px; padding: 12px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;'><span style='color: #FFD700;'>ℹ️</span><span style='color: #FFD700; font-size: 13px;'>Bonus Cash de " + fmt(bonus_cash) + " $ sera déduit après taxes (au comptant)</span></div>" if bonus_cash > 0 else ""}
+                {"<div class='info-box'><span>ℹ️</span><span>Bonus Cash de " + fmt(bonus_cash) + " $ sera déduit après taxes (au comptant)</span></div>" if bonus_cash > 0 else ""}
                 
                 <div class="footer">
-                    <p class="dealer-name">{request.dealer_name}</p>
-                    {f"<p>{request.dealer_phone}</p>" if request.dealer_phone else ""}
-                    <p style="margin-top: 12px;">Ce calcul est une estimation.</p>
-                    <p>Les taux peuvent varier selon votre dossier de crédit.</p>
+                    <div class="dealer">{request.dealer_name}</div>
+                    {f"<div style='color: #888; margin-bottom: 12px;'>{request.dealer_phone}</div>" if request.dealer_phone else ""}
+                    <div class="disclaimer">
+                        Ce calcul est une estimation et ne constitue pas une offre de financement officielle.<br>
+                        Les taux et conditions peuvent varier selon votre dossier de crédit.
+                    </div>
                 </div>
             </div>
         </body>
