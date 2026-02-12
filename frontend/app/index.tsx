@@ -875,7 +875,7 @@ export default function HomeScreen() {
                 <View style={styles.rebatesSummary}>
                   {selectedProgram.consumer_cash > 0 && (
                     <View style={styles.rebateItem}>
-                      <Text style={styles.rebateLabel}>{t.results.rebate} ({t.beforeTax}):</Text>
+                      <Text style={styles.rebateLabel}>{t.results.rebate} ({t.results.beforeTax}):</Text>
                       <Text style={styles.rebateValue}>{formatCurrency(selectedProgram.consumer_cash)}</Text>
                     </View>
                   )}
