@@ -1184,14 +1184,14 @@ class SendReportEmailRequest(BaseModel):
 
 @api_router.post("/send-calculation-email")
 async def send_calculation_email(request: SendCalculationEmailRequest):
-    """Envoie un calcul de financement par email au client"""
+    """Envoie un calcul de financement par email au client - Réplique de l'écran"""
     try:
         vehicle = request.vehicle_info
         calc = request.calculation_results
         term = request.selected_term
-        option = request.selected_option
+        freq = request.payment_frequency  # monthly, biweekly, weekly
         
-        # Trouver les détails du terme sélectionné
+        # Get comparison data
         comparison = None
         for c in calc.get('comparisons', []):
             if c.get('term_months') == term:
@@ -1199,48 +1199,82 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
                 break
         
         if not comparison:
-            raise HTTPException(status_code=400, detail="Terme non trouvé")
+            comparison = calc.get('comparisons', [{}])[0] if calc.get('comparisons') else {}
         
-        # Déterminer les valeurs selon l'option choisie
-        if option == "1":
-            rate = comparison.get('option1_rate', 0)
-            monthly = comparison.get('option1_monthly', 0)
-            total = comparison.get('option1_total', 0)
-            rebate = calc.get('consumer_cash', 0)
-        else:
-            rate = comparison.get('option2_rate', 0)
-            monthly = comparison.get('option2_monthly', 0)
-            total = comparison.get('option2_total', 0)
-            rebate = 0
-        
+        # Get all values
+        consumer_cash = calc.get('consumer_cash', 0)
         bonus_cash = calc.get('bonus_cash', 0)
         
-        # Créer le HTML de l'email
+        option1_rate = comparison.get('option1_rate', 0)
+        option2_rate = comparison.get('option2_rate', 0)
+        
+        # Get payments based on frequency
+        if freq == 'weekly':
+            option1_payment = comparison.get('option1_weekly', 0)
+            option2_payment = comparison.get('option2_weekly', 0)
+            freq_label = "/ semaine"
+            freq_label_en = "/ week"
+        elif freq == 'biweekly':
+            option1_payment = comparison.get('option1_biweekly', 0)
+            option2_payment = comparison.get('option2_biweekly', 0)
+            freq_label = "/ 2 sem."
+            freq_label_en = "/ 2 weeks"
+        else:
+            option1_payment = comparison.get('option1_monthly', 0)
+            option2_payment = comparison.get('option2_monthly', 0)
+            freq_label = "/ mois"
+            freq_label_en = "/ month"
+        
+        best_option = comparison.get('best_option', '1')
+        savings = comparison.get('savings', 0)
+        
+        # Check if option2 is available
+        has_option2 = option2_rate is not None and option2_rate > 0 and option2_payment > 0
+        
+        # Build HTML email - Replica of screen
         html_body = f"""
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-                body {{ font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; }}
-                .container {{ max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
-                .header {{ background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 30px; text-align: center; }}
-                .header h1 {{ margin: 0; font-size: 24px; }}
-                .header p {{ margin: 10px 0 0; opacity: 0.8; }}
-                .content {{ padding: 30px; }}
-                .vehicle-box {{ background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px; }}
-                .vehicle-name {{ font-size: 20px; font-weight: bold; color: #1a1a2e; margin-bottom: 10px; }}
-                .vehicle-year {{ color: #4ECDC4; font-weight: 600; }}
-                .price-row {{ display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }}
-                .price-label {{ color: #666; }}
-                .price-value {{ font-weight: bold; color: #1a1a2e; }}
-                .highlight-box {{ background: linear-gradient(135deg, #4ECDC4 0%, #44a08d 100%); color: white; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; }}
-                .monthly-payment {{ font-size: 36px; font-weight: bold; }}
-                .monthly-label {{ opacity: 0.9; margin-top: 5px; }}
-                .details {{ margin-top: 20px; }}
-                .detail-row {{ display: flex; justify-content: space-between; padding: 8px 0; }}
-                .footer {{ background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 12px; }}
-                .dealer-info {{ margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }}
+                body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #1a1a2e; margin: 0; padding: 20px; }}
+                .container {{ max-width: 500px; margin: 0 auto; }}
+                .header {{ text-align: center; padding: 20px 0; }}
+                .header h1 {{ color: #4ECDC4; margin: 0; font-size: 28px; }}
+                .header p {{ color: #888; margin: 8px 0 0; }}
+                
+                .vehicle-card {{ background: linear-gradient(135deg, #2d2d44 0%, #1a1a2e 100%); border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #3d3d5c; }}
+                .vehicle-name {{ color: #fff; font-size: 22px; font-weight: bold; }}
+                .vehicle-year {{ color: #4ECDC4; }}
+                .vehicle-trim {{ color: #888; font-size: 14px; margin-top: 4px; }}
+                .vehicle-price {{ color: #4ECDC4; font-size: 18px; margin-top: 8px; }}
+                
+                .best-banner {{ background: linear-gradient(135deg, #4ECDC4 0%, #44a08d 100%); color: #1a1a2e; padding: 12px 20px; border-radius: 12px; text-align: center; margin-bottom: 16px; font-weight: bold; }}
+                .best-banner .savings {{ font-size: 14px; opacity: 0.9; margin-top: 4px; }}
+                
+                .options-container {{ display: flex; gap: 12px; margin-bottom: 20px; }}
+                .option-card {{ flex: 1; background: #2d2d44; border-radius: 16px; padding: 16px; text-align: center; }}
+                .option-card.best {{ border: 2px solid #4ECDC4; box-shadow: 0 0 20px rgba(78, 205, 196, 0.3); }}
+                .option-card.not-best {{ opacity: 0.7; }}
+                .option-title {{ color: #888; font-size: 14px; margin-bottom: 8px; }}
+                .option-payment {{ color: #fff; font-size: 28px; font-weight: bold; }}
+                .option-freq {{ color: #888; font-size: 14px; }}
+                
+                .details-box {{ background: #2d2d44; border-radius: 12px; padding: 16px; margin-bottom: 16px; }}
+                .detail-row {{ display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #3d3d5c; }}
+                .detail-row:last-child {{ border-bottom: none; }}
+                .detail-label {{ color: #888; }}
+                .detail-value {{ color: #fff; font-weight: 600; }}
+                .detail-value.highlight {{ color: #4ECDC4; }}
+                
+                .term-badge {{ display: inline-block; background: #4ECDC4; color: #1a1a2e; padding: 8px 16px; border-radius: 20px; font-weight: bold; margin-bottom: 16px; }}
+                
+                .footer {{ text-align: center; padding: 20px; color: #666; font-size: 12px; }}
+                .footer p {{ margin: 4px 0; }}
+                
+                .client-greeting {{ color: #fff; margin-bottom: 20px; }}
             </style>
         </head>
         <body>
@@ -1249,61 +1283,57 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
                     <h1>🚗 CalcAuto AiPro</h1>
                     <p>Votre soumission de financement</p>
                 </div>
-                <div class="content">
-                    <p>Bonjour{' ' + request.client_name if request.client_name else ''},</p>
-                    <p>Voici les détails de votre financement automobile:</p>
-                    
-                    <div class="vehicle-box">
-                        <div class="vehicle-name">
-                            {vehicle.get('brand', '')} {vehicle.get('model', '')} 
-                            <span class="vehicle-year">{vehicle.get('year', '')}</span>
+                
+                <p class="client-greeting">Bonjour{' ' + request.client_name if request.client_name else ''},</p>
+                
+                <div class="vehicle-card">
+                    <div class="vehicle-name">
+                        {vehicle.get('brand', '')} {vehicle.get('model', '')} 
+                        <span class="vehicle-year">{vehicle.get('year', '')}</span>
+                    </div>
+                    <div class="vehicle-trim">{vehicle.get('trim', '') or ''}</div>
+                    <div class="vehicle-price">${request.vehicle_price:,.2f}</div>
+                </div>
+                
+                <div style="text-align: center;">
+                    <span class="term-badge">{term} mois</span>
+                </div>
+                
+                {"<div class='best-banner'>✓ Option " + best_option + " = Meilleur choix!" + (f"<div class='savings'>Économies: ${savings:,.2f}</div>" if savings > 0 else "") + "</div>" if has_option2 else ""}
+                
+                <div class="options-container">
+                    <div class="option-card {'best' if best_option == '1' else 'not-best'}">
+                        <div class="option-title">Option 1</div>
+                        <div style="color: #4ECDC4; font-size: 12px; margin-bottom: 8px;">
+                            {"Rabais $" + f"{consumer_cash:,.0f}" if consumer_cash > 0 else "Aucun rabais"} + {option1_rate}%
                         </div>
-                        <div style="color: #666;">{vehicle.get('trim', '') or ''}</div>
+                        <div class="option-payment">${option1_payment:,.2f}</div>
+                        <div class="option-freq">{freq_label}</div>
                     </div>
                     
-                    <div class="price-row">
-                        <span class="price-label">Prix du véhicule</span>
-                        <span class="price-value">${request.vehicle_price:,.2f}</span>
+                    {"<div class='option-card " + ("best" if best_option == "2" else "not-best") + "'><div class='option-title'>Option 2</div><div style='color: #4ECDC4; font-size: 12px; margin-bottom: 8px;'>$0 + " + str(option2_rate) + "%</div><div class='option-payment'>$" + f"{option2_payment:,.2f}" + "</div><div class='option-freq'>" + freq_label + "</div></div>" if has_option2 else "<div class='option-card not-best'><div class='option-title'>Option 2</div><div style='color: #888; font-size: 12px;'>Non disponible</div></div>"}
+                </div>
+                
+                <div class="details-box">
+                    <div class="detail-row">
+                        <span class="detail-label">Prix du véhicule</span>
+                        <span class="detail-value">${request.vehicle_price:,.2f}</span>
                     </div>
-                    {"<div class='price-row'><span class='price-label'>Rabais (Consumer Cash)</span><span class='price-value' style='color:#4ECDC4;'>-$" + f"{rebate:,.2f}" + "</span></div>" if rebate > 0 else ""}
-                    {"<div class='price-row'><span class='price-label'>Bonus Cash</span><span class='price-value' style='color:#4ECDC4;'>-$" + f"{bonus_cash:,.2f}" + "</span></div>" if bonus_cash > 0 else ""}
-                    
-                    <div class="highlight-box">
-                        <div class="monthly-payment">${monthly:,.2f}</div>
-                        <div class="monthly-label">par mois × {term} mois</div>
-                    </div>
-                    
-                    <div class="details">
-                        <div class="detail-row">
-                            <span>Taux d'intérêt</span>
-                            <span><strong>{rate}%</strong></span>
-                        </div>
-                        <div class="detail-row">
-                            <span>Terme</span>
-                            <span><strong>{term} mois</strong></span>
-                        </div>
-                        <div class="detail-row">
-                            <span>Option choisie</span>
-                            <span><strong>Option {option}</strong></span>
-                        </div>
-                        <div class="detail-row">
-                            <span>Coût total du financement</span>
-                            <span><strong>${total:,.2f}</strong></span>
-                        </div>
-                    </div>
-                    
-                    <div class="dealer-info">
-                        <p style="margin: 0; color: #666;">Pour plus d'informations, contactez-nous:</p>
-                        <p style="margin: 10px 0 0; font-weight: bold; color: #1a1a2e;">
-                            {request.dealer_name}
-                            {' • ' + request.dealer_phone if request.dealer_phone else ''}
-                        </p>
+                    {"<div class='detail-row'><span class='detail-label'>Consumer Cash</span><span class='detail-value highlight'>-$" + f"{consumer_cash:,.2f}" + "</span></div>" if consumer_cash > 0 else ""}
+                    {"<div class='detail-row'><span class='detail-label'>Bonus Cash</span><span class='detail-value highlight'>-$" + f"{bonus_cash:,.2f}" + "</span></div>" if bonus_cash > 0 else ""}
+                    <div class="detail-row">
+                        <span class="detail-label">Terme</span>
+                        <span class="detail-value">{term} mois</span>
                     </div>
                 </div>
+                
+                {"<div style='background: rgba(255, 215, 0, 0.1); border-radius: 8px; padding: 12px; margin-bottom: 16px;'><span style='color: #FFD700;'>ℹ️ Bonus Cash de $" + f"{bonus_cash:,.0f}" + " sera déduit après taxes (au comptant)</span></div>" if bonus_cash > 0 else ""}
+                
                 <div class="footer">
-                    <p>Ce calcul est une estimation et ne constitue pas une offre de financement officielle.</p>
-                    <p>Les taux et conditions peuvent varier selon votre dossier de crédit.</p>
-                    <p style="margin-top: 15px;">Généré par CalcAuto AiPro</p>
+                    <p><strong>{request.dealer_name}</strong></p>
+                    {f"<p>{request.dealer_phone}</p>" if request.dealer_phone else ""}
+                    <p style="margin-top: 12px;">Ce calcul est une estimation.</p>
+                    <p>Les taux peuvent varier selon votre dossier de crédit.</p>
                 </div>
             </div>
         </body>
