@@ -327,6 +327,13 @@ const monthNames = {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{
+    clientName?: string;
+    clientEmail?: string;
+    clientPhone?: string;
+    contactId?: string;
+  }>();
+  
   const [lang, setLang] = useState<Language>('fr');
   const t = translations[lang];
 
@@ -367,6 +374,7 @@ export default function HomeScreen() {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [clientEmail, setClientEmail] = useState('');
   const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
   
   // Current program period
@@ -378,6 +386,14 @@ export default function HomeScreen() {
   
   // Payment frequency
   const [paymentFrequency, setPaymentFrequency] = useState<'monthly' | 'biweekly' | 'weekly'>('monthly');
+  
+  // Pre-fill from contact params
+  useEffect(() => {
+    if (params.clientName) setClientName(params.clientName);
+    if (params.clientEmail) setClientEmail(params.clientEmail);
+    if (params.clientPhone) setClientPhone(params.clientPhone);
+    // If coming from contacts, auto-open email modal when calculation is ready
+  }, [params]);
   const frequencyLabels = {
     monthly: { fr: 'Mensuel', en: 'Monthly', factor: 1 },
     biweekly: { fr: 'Aux 2 sem.', en: 'Bi-weekly', factor: 12/26 },
