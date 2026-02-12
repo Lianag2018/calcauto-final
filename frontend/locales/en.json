@@ -75,12 +75,14 @@
     "sendByEmail": "Send by email",
     "clientName": "Client name (optional)",
     "clientEmail": "Client email",
+    "clientPhone": "Client phone",
     "summaryToSend": "Summary to send:",
     "cancel": "Cancel",
     "send": "Send",
     "sending": "Sending...",
     "successMessage": "Email sent successfully!",
     "invalidEmail": "Please enter a valid email",
+    "invalidPhone": "Please enter a phone number",
     "error": "Error sending email"
   },
   
@@ -91,6 +93,37 @@
     "cancel": "Cancel",
     "confirm": "Confirm",
     "incorrectPassword": "Incorrect password"
+  },
+  
+  "clients": {
+    "title": "Clients",
+    "subtitle": "Contacts & History",
+    "searchPlaceholder": "Search contacts...",
+    "noContacts": "No contacts found",
+    "addContact": "Add contact",
+    "selectFromContacts": "Select from contacts",
+    "recentSubmissions": "Recent submissions",
+    "noSubmissions": "No submissions",
+    "permissionRequired": "Permission required",
+    "permissionMessage": "Allow access to contacts to use this feature",
+    "grantPermission": "Grant access",
+    "createQuote": "Create quote",
+    "call": "Call",
+    "sendEmail": "Email",
+    "viewHistory": "History",
+    "newContact": "New contact",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "phone": "Phone",
+    "email": "Email",
+    "save": "Save",
+    "savedToContacts": "Contact saved!",
+    "submissionSaved": "Submission saved!"
+  },
+  
+  "tabs": {
+    "calculator": "Calculator",
+    "clients": "Clients"
   },
   
   "months": ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]

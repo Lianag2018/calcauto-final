@@ -75,12 +75,14 @@
     "sendByEmail": "Envoyer par email",
     "clientName": "Nom du client (optionnel)",
     "clientEmail": "Email du client",
+    "clientPhone": "Téléphone du client",
     "summaryToSend": "Résumé à envoyer:",
     "cancel": "Annuler",
     "send": "Envoyer",
     "sending": "Envoi en cours...",
     "successMessage": "Email envoyé avec succès!",
     "invalidEmail": "Veuillez entrer un email valide",
+    "invalidPhone": "Veuillez entrer un numéro de téléphone",
     "error": "Erreur lors de l'envoi"
   },
   
@@ -91,6 +93,37 @@
     "cancel": "Annuler",
     "confirm": "Confirmer",
     "incorrectPassword": "Mot de passe incorrect"
+  },
+  
+  "clients": {
+    "title": "Clients",
+    "subtitle": "Contacts & Historique",
+    "searchPlaceholder": "Rechercher un contact...",
+    "noContacts": "Aucun contact trouvé",
+    "addContact": "Ajouter un contact",
+    "selectFromContacts": "Sélectionner depuis contacts",
+    "recentSubmissions": "Soumissions récentes",
+    "noSubmissions": "Aucune soumission",
+    "permissionRequired": "Permission requise",
+    "permissionMessage": "Autorisez l'accès aux contacts pour utiliser cette fonctionnalité",
+    "grantPermission": "Autoriser l'accès",
+    "createQuote": "Créer une soumission",
+    "call": "Appeler",
+    "sendEmail": "Email",
+    "viewHistory": "Historique",
+    "newContact": "Nouveau contact",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "phone": "Téléphone",
+    "email": "Email",
+    "save": "Enregistrer",
+    "savedToContacts": "Contact enregistré!",
+    "submissionSaved": "Soumission sauvegardée!"
+  },
+  
+  "tabs": {
+    "calculator": "Calculateur",
+    "clients": "Clients"
   },
   
   "months": ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
