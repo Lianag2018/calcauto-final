@@ -1539,6 +1539,8 @@ export default function HomeScreen() {
                               option2_weekly: localResult.option2Weekly,
                               best_option: localResult.bestOption,
                               savings: localResult.savings,
+                              principal_option1: localResult.principalOption1,
+                              principal_option2: localResult.principalOption2,
                             }],
                           },
                           selected_term: selectedTerm,
