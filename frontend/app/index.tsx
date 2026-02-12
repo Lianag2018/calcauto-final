@@ -1317,13 +1317,13 @@ export default function HomeScreen() {
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>{t.importTitle}</Text>
+              <Text style={styles.modalTitle}>{t.import.title}</Text>
               <Text style={styles.modalSubtitle}>
-                Entrez le mot de passe administrateur
+                {t.import.enterAdminPassword}
               </Text>
               <TextInput
                 style={styles.passwordInput}
-                placeholder={t.password}
+                placeholder={t.import.password}
                 placeholderTextColor="#666"
                 secureTextEntry
                 value={importPassword}
@@ -1338,7 +1338,7 @@ export default function HomeScreen() {
                     setImportPassword('');
                   }}
                 >
-                  <Text style={styles.modalButtonCancelText}>{t.cancel}</Text>
+                  <Text style={styles.modalButtonCancelText}>{t.import.cancel}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.modalButtonConfirm}
@@ -1349,14 +1349,14 @@ export default function HomeScreen() {
                       router.push('/import');
                     } else {
                       if (Platform.OS === 'web') {
-                        alert('Mot de passe incorrect');
+                        alert(t.import.incorrectPassword);
                       } else {
-                        Alert.alert('Erreur', 'Mot de passe incorrect');
+                        Alert.alert('Erreur', t.import.incorrectPassword);
                       }
                     }
                   }}
                 >
-                  <Text style={styles.modalButtonConfirmText}>{t.confirm}</Text>
+                  <Text style={styles.modalButtonConfirmText}>{t.import.confirm}</Text>
                 </TouchableOpacity>
               </View>
             </View>
