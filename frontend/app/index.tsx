@@ -894,7 +894,7 @@ export default function HomeScreen() {
           {/* Price Input and Calculation */}
           {selectedProgram && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t.enterPrice}</Text>
+              <Text style={styles.sectionTitle}>{t.vehicle.vehiclePrice}</Text>
               
               {/* Prix du véhicule */}
               <View style={styles.inputRow}>
