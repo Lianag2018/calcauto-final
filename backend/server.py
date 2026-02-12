@@ -31,6 +31,12 @@ api_router = APIRouter(prefix="/api")
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Liana2018')
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 
+# Gmail SMTP Configuration
+SMTP_EMAIL = os.environ.get('SMTP_EMAIL', '')
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
+
 # ============ Models ============
 
 class FinancingRates(BaseModel):
