@@ -1204,7 +1204,7 @@ export default function HomeScreen() {
                     </View>
                   )}
                   <View style={styles.optionDetail}>
-                    <Text style={styles.optionDetailLabel}>Capital financé:</Text>
+                    <Text style={styles.optionDetailLabel}>{t.results.financedCapital}:</Text>
                     <Text style={styles.optionDetailValue}>{formatCurrency(localResult.principalOption1)}</Text>
                   </View>
                   <View style={styles.optionDetail}>
@@ -1250,7 +1250,7 @@ export default function HomeScreen() {
                         <Text style={styles.optionDetailValue}>$0</Text>
                       </View>
                       <View style={styles.optionDetail}>
-                        <Text style={styles.optionDetailLabel}>Capital financé:</Text>
+                        <Text style={styles.optionDetailLabel}>{t.results.financedCapital}:</Text>
                         <Text style={styles.optionDetailValue}>{formatCurrency(localResult.principalOption2)}</Text>
                       </View>
                       <View style={styles.optionDetail}>
