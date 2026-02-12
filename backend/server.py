@@ -1224,17 +1224,14 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
             option1_payment = comparison.get('option1_weekly', 0)
             option2_payment = comparison.get('option2_weekly', 0)
             freq_label = "Hebdo"
-            freq_full = "Hebdomadaire"
         elif freq == 'biweekly':
             option1_payment = comparison.get('option1_biweekly', 0)
             option2_payment = comparison.get('option2_biweekly', 0)
             freq_label = "Aux 2 sem."
-            freq_full = "Aux 2 semaines"
         else:
             option1_payment = comparison.get('option1_monthly', 0)
             option2_payment = comparison.get('option2_monthly', 0)
             freq_label = "Mensuel"
-            freq_full = "Mensuel"
         
         best_option = comparison.get('best_option', '1')
         savings = comparison.get('savings', 0)
