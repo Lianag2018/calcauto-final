@@ -1089,7 +1089,7 @@ export default function HomeScreen() {
 
               {/* Sélection de l'option */}
               <View style={styles.termSection}>
-                <Text style={styles.inputLabel}>Choisir l'option de financement</Text>
+                <Text style={styles.inputLabel}>{t.options.chooseOption}</Text>
                 <View style={styles.optionButtons}>
                   <TouchableOpacity
                     style={[
