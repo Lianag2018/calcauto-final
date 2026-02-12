@@ -1138,7 +1138,7 @@ export default function HomeScreen() {
                   ) : (
                     <View style={[styles.optionButton, styles.optionButtonDisabled]}>
                       <Text style={styles.optionButtonTextDisabled}>{t.options.option2}</Text>
-                      <Text style={styles.optionButtonTextDisabled}>{t.noOption2}</Text>
+                      <Text style={styles.optionButtonTextDisabled}>{t.options.notAvailable}</Text>
                     </View>
                   )}
                 </View>
@@ -1277,7 +1277,7 @@ export default function HomeScreen() {
                   ) : (
                     <View style={styles.noOption}>
                       <Ionicons name="close-circle-outline" size={32} color="#666" />
-                      <Text style={styles.noOptionText}>{t.noOption2}</Text>
+                      <Text style={styles.noOptionText}>{t.options.notAvailable}</Text>
                       <Text style={styles.noOptionSubtext}>Non disponible pour ce véhicule</Text>
                     </View>
                   )}
