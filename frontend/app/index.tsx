@@ -841,7 +841,7 @@ export default function HomeScreen() {
                 {/* Rates table by term */}
                 <View style={styles.ratesTable}>
                   <View style={styles.ratesHeader}>
-                    <Text style={styles.ratesHeaderCell}>{t.term}</Text>
+                    <Text style={styles.ratesHeaderCell}>{t.term.selectTerm}</Text>
                     <Text style={styles.ratesHeaderCell}>{t.options.option1}</Text>
                     {selectedProgram.option2_rates && (
                       <Text style={styles.ratesHeaderCell}>{t.options.option2}</Text>
