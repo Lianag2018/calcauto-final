@@ -1454,9 +1454,9 @@ export default function HomeScreen() {
                   onPress={async () => {
                     if (!clientEmail || !clientEmail.includes('@')) {
                       if (Platform.OS === 'web') {
-                        alert(lang === 'fr' ? 'Veuillez entrer un email valide' : 'Please enter a valid email');
+                        alert(t.email.invalidEmail);
                       } else {
-                        Alert.alert('Erreur', lang === 'fr' ? 'Veuillez entrer un email valide' : 'Please enter a valid email');
+                        Alert.alert('Erreur', t.email.invalidEmail);
                       }
                       return;
                     }
