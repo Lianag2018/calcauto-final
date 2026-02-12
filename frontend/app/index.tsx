@@ -1171,11 +1171,11 @@ export default function HomeScreen() {
                 ]}>
                   <Ionicons name="trophy" size={20} color="#1a1a2e" />
                   <Text style={styles.bestOptionText}>
-                    {localResult.bestOption === '1' ? t.option1 : t.option2} = Meilleur choix!
+                    {localResult.bestOption === '1' ? t.options.option1 : t.options.option2} = {t.results.bestChoice}
                   </Text>
                   {localResult.savings > 0 && (
                     <Text style={styles.bestOptionSavings}>
-                      Économies: {formatCurrency(localResult.savings)}
+                      {t.results.savings}: {formatCurrency(localResult.savings)}
                     </Text>
                   )}
                 </View>
