@@ -803,6 +803,143 @@ async def seed_data():
     
     return {"message": f"Seeded {len(programs_data)} programs for {prog_month}/{prog_year}"}
 
+# ============ Excel Generation Function ============
+
+def generate_excel_from_programs(programs: List[Dict[str, Any]], program_month: int, program_year: int) -> bytes:
+    """Génère un fichier Excel à partir des programmes extraits"""
+    if not EXCEL_AVAILABLE:
+        raise HTTPException(status_code=500, detail="openpyxl non disponible")
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Programmes"
+    
+    # Styles
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="1a1a2e", end_color="1a1a2e", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # Month names
+    month_names = ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
+                   "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+    
+    # Title
+    ws.merge_cells('A1:L1')
+    ws['A1'] = f"Programmes de Financement - {month_names[program_month]} {program_year}"
+    ws['A1'].font = Font(bold=True, size=14)
+    ws['A1'].alignment = Alignment(horizontal="center")
+    
+    # Headers
+    headers = [
+        "Marque", "Modèle", "Version", "Année", 
+        "Rabais ($)", "Bonus ($)",
+        "Taux 36m", "Taux 48m", "Taux 60m", "Taux 72m", "Taux 84m", "Taux 96m"
+    ]
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=3, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+        cell.border = thin_border
+    
+    # Data rows
+    for row_idx, prog in enumerate(programs, 4):
+        opt1_rates = prog.get("option1_rates", {})
+        
+        data = [
+            prog.get("brand", ""),
+            prog.get("model", ""),
+            prog.get("trim", ""),
+            prog.get("year", ""),
+            prog.get("consumer_cash", 0),
+            prog.get("bonus_cash", 0),
+            opt1_rates.get("rate_36", 0),
+            opt1_rates.get("rate_48", 0),
+            opt1_rates.get("rate_60", 0),
+            opt1_rates.get("rate_72", 0),
+            opt1_rates.get("rate_84", 0),
+            opt1_rates.get("rate_96", 0),
+        ]
+        
+        for col, value in enumerate(data, 1):
+            cell = ws.cell(row=row_idx, column=col, value=value)
+            cell.border = thin_border
+            if col >= 5:  # Numeric columns
+                cell.alignment = Alignment(horizontal="right")
+    
+    # Adjust column widths
+    column_widths = [12, 18, 15, 8, 12, 12, 10, 10, 10, 10, 10, 10]
+    for col, width in enumerate(column_widths, 1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = width
+    
+    # Save to bytes
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output.getvalue()
+
+def send_excel_email(excel_data: bytes, admin_email: str, program_month: int, program_year: int, program_count: int):
+    """Envoie le fichier Excel par email"""
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from email.mime.base import MIMEBase
+    from email import encoders
+    
+    month_names = ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
+                   "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+    
+    msg = MIMEMultipart()
+    msg['From'] = SMTP_EMAIL
+    msg['To'] = admin_email
+    msg['Subject'] = f"CalcAuto AiPro - Extraction PDF {month_names[program_month]} {program_year}"
+    
+    body = f"""
+Bonjour,
+
+L'extraction du PDF des programmes de financement est terminée.
+
+📊 Résumé:
+• Période: {month_names[program_month]} {program_year}
+• Programmes extraits: {program_count}
+
+Le fichier Excel est joint à cet email pour vérification.
+
+⚠️ IMPORTANT: Veuillez vérifier les données dans le fichier Excel avant de confirmer l'import dans l'application.
+
+---
+CalcAuto AiPro
+    """
+    
+    msg.attach(MIMEText(body, 'plain', 'utf-8'))
+    
+    # Attach Excel file
+    attachment = MIMEBase('application', 'vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    attachment.set_payload(excel_data)
+    encoders.encode_base64(attachment)
+    filename = f"programmes_{month_names[program_month].lower()}_{program_year}.xlsx"
+    attachment.add_header('Content-Disposition', f'attachment; filename={filename}')
+    msg.attach(attachment)
+    
+    # Send email
+    try:
+        server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+        server.starttls()
+        server.login(SMTP_EMAIL, SMTP_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as e:
+        logger.error(f"Error sending Excel email: {str(e)}")
+        return False
+
 # ============ PDF Import with AI ============
 
 class PDFExtractRequest(BaseModel):
