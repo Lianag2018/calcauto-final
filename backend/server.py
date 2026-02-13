@@ -1176,9 +1176,19 @@ EXTRAIS ABSOLUMENT TOUS LES VÉHICULES DES SECTIONS 2026 ET 2025. Ne manque aucu
                                 p['option2_rates'][key] = 0
                     valid_programs.append(p)
             
+            # Generate Excel and send by email
+            excel_sent = False
+            if EXCEL_AVAILABLE and valid_programs and SMTP_EMAIL:
+                try:
+                    excel_data = generate_excel_from_programs(valid_programs, program_month, program_year)
+                    excel_sent = send_excel_email(excel_data, SMTP_EMAIL, program_month, program_year, len(valid_programs))
+                    logger.info(f"Excel generated and sent: {excel_sent}")
+                except Exception as excel_error:
+                    logger.error(f"Error generating/sending Excel: {str(excel_error)}")
+            
             return ExtractedDataResponse(
                 success=True,
-                message=f"Extrait {len(valid_programs)} programmes du PDF",
+                message=f"Extrait {len(valid_programs)} programmes du PDF" + (" - Excel envoyé par email!" if excel_sent else ""),
                 programs=valid_programs,
                 raw_text=""
             )
