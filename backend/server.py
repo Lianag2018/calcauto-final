@@ -153,6 +153,73 @@ class ImportRequest(BaseModel):
     program_month: int
     program_year: int
 
+# ============ CRM Models ============
+
+class Submission(BaseModel):
+    """Soumission client avec suivi"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    # Client info
+    client_name: str
+    client_phone: str
+    client_email: str
+    # Vehicle info
+    vehicle_brand: str
+    vehicle_model: str
+    vehicle_year: int
+    vehicle_price: float
+    # Financing info
+    term: int
+    payment_monthly: float
+    payment_biweekly: float = 0
+    payment_weekly: float = 0
+    selected_option: str = "1"
+    rate: float = 0
+    # Tracking
+    submission_date: datetime = Field(default_factory=datetime.utcnow)
+    reminder_date: Optional[datetime] = None  # Default: 24h after submission
+    reminder_done: bool = False
+    status: str = "pending"  # pending, contacted, converted, lost
+    notes: str = ""
+    # For comparison
+    program_month: int = 0
+    program_year: int = 0
+
+class SubmissionCreate(BaseModel):
+    client_name: str
+    client_phone: str
+    client_email: str
+    vehicle_brand: str
+    vehicle_model: str
+    vehicle_year: int
+    vehicle_price: float
+    term: int
+    payment_monthly: float
+    payment_biweekly: float = 0
+    payment_weekly: float = 0
+    selected_option: str = "1"
+    rate: float = 0
+    program_month: int = 0
+    program_year: int = 0
+
+class ReminderUpdate(BaseModel):
+    reminder_date: datetime
+    notes: Optional[str] = None
+
+class BetterOffer(BaseModel):
+    """Meilleure offre trouvée pour un client"""
+    submission_id: str
+    client_name: str
+    client_phone: str
+    client_email: str
+    vehicle: str
+    old_payment: float
+    new_payment: float
+    savings_monthly: float
+    savings_total: float
+    term: int
+    approved: bool = False
+    email_sent: bool = False
+
 # ============ Utility Functions ============
 
 def calculate_monthly_payment(principal: float, annual_rate: float, months: int) -> float:
