@@ -1878,6 +1878,392 @@ async def test_email():
         logger.error(f"Erreur test email: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
 
+# ============ CRM Endpoints ============
+
+@api_router.post("/submissions")
+async def create_submission(submission: SubmissionCreate):
+    """Créer une nouvelle soumission avec rappel automatique 24h"""
+    from datetime import timedelta
+    
+    # Set default reminder to 24h from now
+    reminder_date = datetime.utcnow() + timedelta(hours=24)
+    
+    new_submission = Submission(
+        client_name=submission.client_name,
+        client_phone=submission.client_phone,
+        client_email=submission.client_email,
+        vehicle_brand=submission.vehicle_brand,
+        vehicle_model=submission.vehicle_model,
+        vehicle_year=submission.vehicle_year,
+        vehicle_price=submission.vehicle_price,
+        term=submission.term,
+        payment_monthly=submission.payment_monthly,
+        payment_biweekly=submission.payment_biweekly,
+        payment_weekly=submission.payment_weekly,
+        selected_option=submission.selected_option,
+        rate=submission.rate,
+        program_month=submission.program_month,
+        program_year=submission.program_year,
+        reminder_date=reminder_date
+    )
+    
+    await db.submissions.insert_one(new_submission.dict())
+    
+    return {"success": True, "submission": new_submission.dict(), "message": "Soumission enregistrée - Rappel dans 24h"}
+
+@api_router.get("/submissions")
+async def get_submissions(search: Optional[str] = None, status: Optional[str] = None):
+    """Récupérer toutes les soumissions avec recherche optionnelle"""
+    query = {}
+    
+    if search:
+        # Search by name or phone
+        query["$or"] = [
+            {"client_name": {"$regex": search, "$options": "i"}},
+            {"client_phone": {"$regex": search, "$options": "i"}}
+        ]
+    
+    if status:
+        query["status"] = status
+    
+    submissions = await db.submissions.find(query).sort("submission_date", -1).to_list(500)
+    
+    # Convert ObjectId to string and datetime to ISO format
+    for sub in submissions:
+        if "_id" in sub:
+            sub["_id"] = str(sub["_id"])
+        if "submission_date" in sub and sub["submission_date"]:
+            sub["submission_date"] = sub["submission_date"].isoformat()
+        if "reminder_date" in sub and sub["reminder_date"]:
+            sub["reminder_date"] = sub["reminder_date"].isoformat()
+    
+    return submissions
+
+@api_router.get("/submissions/reminders")
+async def get_reminders():
+    """Récupérer les soumissions avec rappels dus ou à venir"""
+    now = datetime.utcnow()
+    
+    # Get submissions where reminder is due and not done
+    reminders_due = await db.submissions.find({
+        "reminder_done": False,
+        "reminder_date": {"$lte": now}
+    }).sort("reminder_date", 1).to_list(100)
+    
+    # Get upcoming reminders (next 7 days)
+    from datetime import timedelta
+    next_week = now + timedelta(days=7)
+    
+    reminders_upcoming = await db.submissions.find({
+        "reminder_done": False,
+        "reminder_date": {"$gt": now, "$lte": next_week}
+    }).sort("reminder_date", 1).to_list(100)
+    
+    # Format dates
+    for sub in reminders_due + reminders_upcoming:
+        if "_id" in sub:
+            sub["_id"] = str(sub["_id"])
+        if "submission_date" in sub and sub["submission_date"]:
+            sub["submission_date"] = sub["submission_date"].isoformat()
+        if "reminder_date" in sub and sub["reminder_date"]:
+            sub["reminder_date"] = sub["reminder_date"].isoformat()
+    
+    return {
+        "due": reminders_due,
+        "upcoming": reminders_upcoming,
+        "due_count": len(reminders_due),
+        "upcoming_count": len(reminders_upcoming)
+    }
+
+@api_router.put("/submissions/{submission_id}/reminder")
+async def update_reminder(submission_id: str, reminder: ReminderUpdate):
+    """Mettre à jour la date de rappel"""
+    update_data = {"reminder_date": reminder.reminder_date, "reminder_done": False}
+    
+    if reminder.notes:
+        update_data["notes"] = reminder.notes
+    
+    result = await db.submissions.update_one(
+        {"id": submission_id},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Soumission non trouvée")
+    
+    return {"success": True, "message": "Rappel mis à jour"}
+
+@api_router.put("/submissions/{submission_id}/done")
+async def mark_reminder_done(submission_id: str, new_reminder_date: Optional[str] = None):
+    """Marquer un rappel comme fait, optionnellement planifier un nouveau"""
+    update_data = {"reminder_done": True, "status": "contacted"}
+    
+    if new_reminder_date:
+        update_data["reminder_date"] = datetime.fromisoformat(new_reminder_date.replace('Z', '+00:00'))
+        update_data["reminder_done"] = False
+    
+    result = await db.submissions.update_one(
+        {"id": submission_id},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Soumission non trouvée")
+    
+    return {"success": True, "message": "Rappel marqué comme fait" + (" - Nouveau rappel planifié" if new_reminder_date else "")}
+
+@api_router.put("/submissions/{submission_id}/status")
+async def update_submission_status(submission_id: str, status: str):
+    """Mettre à jour le statut (pending, contacted, converted, lost)"""
+    if status not in ["pending", "contacted", "converted", "lost"]:
+        raise HTTPException(status_code=400, detail="Statut invalide")
+    
+    result = await db.submissions.update_one(
+        {"id": submission_id},
+        {"$set": {"status": status}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Soumission non trouvée")
+    
+    return {"success": True, "message": f"Statut mis à jour: {status}"}
+
+@api_router.post("/compare-programs")
+async def compare_programs_with_submissions():
+    """Compare les programmes actuels avec les soumissions passées pour trouver de meilleures offres"""
+    from datetime import timedelta
+    
+    # Get current programs
+    latest = await db.programs.find_one(sort=[("program_year", -1), ("program_month", -1)])
+    if not latest:
+        return {"better_offers": [], "count": 0}
+    
+    current_month = latest["program_month"]
+    current_year = latest["program_year"]
+    
+    # Get all pending/contacted submissions
+    submissions = await db.submissions.find({
+        "status": {"$in": ["pending", "contacted"]},
+        "$or": [
+            {"program_month": {"$ne": current_month}},
+            {"program_year": {"$ne": current_year}}
+        ]
+    }).to_list(500)
+    
+    better_offers = []
+    
+    for sub in submissions:
+        # Find matching program
+        program = await db.programs.find_one({
+            "brand": sub["vehicle_brand"],
+            "model": sub["vehicle_model"],
+            "year": sub["vehicle_year"],
+            "program_month": current_month,
+            "program_year": current_year
+        })
+        
+        if not program:
+            continue
+        
+        # Calculate new payment
+        term = sub["term"]
+        old_payment = sub["payment_monthly"]
+        
+        # Get rate for this term
+        opt1_rates = program.get("option1_rates", {})
+        rate_key = f"rate_{term}"
+        new_rate = opt1_rates.get(rate_key, 4.99)
+        
+        # Calculate with new program
+        vehicle_price = sub["vehicle_price"]
+        consumer_cash = program.get("consumer_cash", 0)
+        principal = vehicle_price - consumer_cash
+        
+        if new_rate == 0:
+            new_payment = round(principal / term, 2)
+        else:
+            monthly_rate = new_rate / 100 / 12
+            new_payment = round(principal * (monthly_rate * (1 + monthly_rate) ** term) / ((1 + monthly_rate) ** term - 1), 2)
+        
+        # Check if better
+        if new_payment < old_payment:
+            savings_monthly = old_payment - new_payment
+            savings_total = savings_monthly * term
+            
+            better_offer = {
+                "submission_id": sub["id"],
+                "client_name": sub["client_name"],
+                "client_phone": sub["client_phone"],
+                "client_email": sub["client_email"],
+                "vehicle": f"{sub['vehicle_brand']} {sub['vehicle_model']} {sub['vehicle_year']}",
+                "old_payment": old_payment,
+                "new_payment": new_payment,
+                "savings_monthly": round(savings_monthly, 2),
+                "savings_total": round(savings_total, 2),
+                "term": term,
+                "approved": False,
+                "email_sent": False
+            }
+            better_offers.append(better_offer)
+    
+    # Store better offers in DB for approval
+    if better_offers:
+        await db.better_offers.delete_many({})  # Clear old offers
+        await db.better_offers.insert_many(better_offers)
+        
+        # Send notification email to admin
+        try:
+            send_better_offers_notification(better_offers)
+        except Exception as e:
+            logger.error(f"Error sending better offers notification: {e}")
+    
+    return {"better_offers": better_offers, "count": len(better_offers)}
+
+def send_better_offers_notification(offers: List[dict]):
+    """Envoie une notification par email des meilleures offres disponibles"""
+    if not SMTP_EMAIL:
+        return
+    
+    offers_html = ""
+    for offer in offers:
+        offers_html += f"""
+        <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">{offer['client_name']}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">{offer['vehicle']}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">{offer['old_payment']:.2f}$</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; color: #28a745; font-weight: bold;">{offer['new_payment']:.2f}$</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; color: #28a745;">-{offer['savings_monthly']:.2f}$/mois</td>
+        </tr>
+        """
+    
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5;">
+        <div style="max-width: 700px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden;">
+            <div style="background: #1a1a2e; color: white; padding: 20px; text-align: center;">
+                <h1 style="margin: 0;">🔔 Meilleures Offres Disponibles</h1>
+            </div>
+            <div style="padding: 20px;">
+                <p style="font-size: 16px;">{len(offers)} client(s) peuvent bénéficier de meilleurs taux!</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                    <tr style="background: #f8f9fa;">
+                        <th style="padding: 12px; text-align: left;">Client</th>
+                        <th style="padding: 12px; text-align: left;">Véhicule</th>
+                        <th style="padding: 12px; text-align: right;">Ancien</th>
+                        <th style="padding: 12px; text-align: right;">Nouveau</th>
+                        <th style="padding: 12px; text-align: right;">Économie</th>
+                    </tr>
+                    {offers_html}
+                </table>
+                
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
+                    <strong>⚠️ Action requise:</strong><br>
+                    Ouvrez l'application pour approuver l'envoi des emails aux clients.
+                </div>
+                
+                <a href="https://autopro-calc.preview.emergentagent.com" style="display: inline-block; background: #4ECDC4; color: #1a1a2e; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+                    Ouvrir l'application
+                </a>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    send_email(SMTP_EMAIL, f"🔔 CalcAuto - {len(offers)} client(s) à relancer!", html_body)
+
+@api_router.get("/better-offers")
+async def get_better_offers():
+    """Récupérer les meilleures offres en attente d'approbation"""
+    offers = await db.better_offers.find({"approved": False, "email_sent": False}).to_list(100)
+    
+    for offer in offers:
+        if "_id" in offer:
+            offer["_id"] = str(offer["_id"])
+    
+    return offers
+
+@api_router.post("/better-offers/{submission_id}/approve")
+async def approve_better_offer(submission_id: str):
+    """Approuver et envoyer l'email au client pour une meilleure offre"""
+    offer = await db.better_offers.find_one({"submission_id": submission_id})
+    
+    if not offer:
+        raise HTTPException(status_code=404, detail="Offre non trouvée")
+    
+    if offer.get("email_sent"):
+        return {"success": False, "message": "Email déjà envoyé"}
+    
+    # Send email to client
+    try:
+        send_client_better_offer_email(offer)
+        
+        # Mark as sent
+        await db.better_offers.update_one(
+            {"submission_id": submission_id},
+            {"$set": {"approved": True, "email_sent": True}}
+        )
+        
+        return {"success": True, "message": f"Email envoyé à {offer['client_email']}"}
+    except Exception as e:
+        logger.error(f"Error sending client email: {e}")
+        raise HTTPException(status_code=500, detail=f"Erreur d'envoi: {str(e)}")
+
+def send_client_better_offer_email(offer: dict):
+    """Envoie un email au client pour l'informer d'une meilleure offre"""
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden;">
+            <div style="background: #1a1a2e; color: white; padding: 20px; text-align: center;">
+                <h1 style="margin: 0; color: #4ECDC4;">🎉 Bonne Nouvelle!</h1>
+            </div>
+            <div style="padding: 30px;">
+                <p style="font-size: 18px;">Bonjour {offer['client_name']},</p>
+                
+                <p>De nouveaux programmes de financement sont disponibles et vous permettraient d'<strong>économiser</strong> sur votre {offer['vehicle']}!</p>
+                
+                <div style="background: #d4edda; border-radius: 10px; padding: 20px; margin: 20px 0; text-align: center;">
+                    <p style="margin: 0; color: #666;">Votre paiement actuel</p>
+                    <p style="font-size: 24px; margin: 5px 0; text-decoration: line-through; color: #999;">{offer['old_payment']:.2f}$/mois</p>
+                    
+                    <p style="margin: 15px 0 0; color: #666;">Nouveau paiement possible</p>
+                    <p style="font-size: 32px; margin: 5px 0; color: #28a745; font-weight: bold;">{offer['new_payment']:.2f}$/mois</p>
+                    
+                    <p style="font-size: 18px; color: #28a745; margin-top: 15px;">
+                        💰 Économie: {offer['savings_monthly']:.2f}$/mois ({offer['savings_total']:.2f}$ sur {offer['term']} mois)
+                    </p>
+                </div>
+                
+                <p>Contactez-nous pour profiter de cette offre!</p>
+                
+                <p style="color: #666; font-size: 14px; margin-top: 30px;">
+                    Cordialement,<br>
+                    L'équipe CalcAuto AiPro
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    send_email(offer['client_email'], f"🎉 Économisez {offer['savings_monthly']:.2f}$/mois sur votre {offer['vehicle']}!", html_body)
+
+@api_router.post("/better-offers/{submission_id}/ignore")
+async def ignore_better_offer(submission_id: str):
+    """Ignorer une meilleure offre"""
+    result = await db.better_offers.delete_one({"submission_id": submission_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Offre non trouvée")
+    
+    return {"success": True, "message": "Offre ignorée"}
+
 # Include the router in the main app
 app.include_router(api_router)
 
