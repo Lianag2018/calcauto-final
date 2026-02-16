@@ -954,18 +954,24 @@ const styles = StyleSheet.create({
   },
   extractingContainer: {
     alignItems: 'center',
+    paddingVertical: 10,
   },
   extractingText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#1a1a2e',
-    marginTop: 12,
+    marginTop: 16,
   },
   extractingSubtext: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#1a1a2e',
-    opacity: 0.7,
-    marginTop: 4,
+    marginTop: 8,
+  },
+  extractingWait: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 12,
+    fontStyle: 'italic',
   },
   previewContainer: {
     flex: 1,
