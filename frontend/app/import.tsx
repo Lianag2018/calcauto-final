@@ -962,6 +962,7 @@ export default function ImportScreen() {
                currentStep === 'upload' ? 'Sélection du fichier' :
                currentStep === 'select-pages' ? 'Choix des pages' :
                currentStep === 'preview' ? 'Vérification des données' :
+               currentStep === 'email-sent' ? 'Email envoyé' :
                currentStep === 'success' ? 'Terminé' : ''}
             </Text>
           </View>
@@ -969,7 +970,7 @@ export default function ImportScreen() {
 
         {/* Progress Steps */}
         <View style={styles.progressContainer}>
-          {['login', 'upload', 'select-pages', 'preview', 'success'].map((step, index) => (
+          {['login', 'upload', 'select-pages', 'email-sent', 'success'].map((step, index) => (
             <View key={step} style={styles.progressStep}>
               <View style={[
                 styles.progressDot,
