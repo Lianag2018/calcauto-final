@@ -400,6 +400,162 @@ export default function ImportScreen() {
         </View>
       </View>
       
+      <TouchableOpacity
+        style={[styles.uploadButton, uploading && styles.buttonDisabled]}
+        onPress={handlePickPDF}
+        disabled={uploading}
+      >
+        {uploading ? (
+          <View style={styles.extractingContainer}>
+            <ActivityIndicator size="large" color="#4ECDC4" />
+            <Text style={styles.extractingText}>Chargement du PDF...</Text>
+          </View>
+        ) : (
+          <>
+            <Ionicons name="document" size={40} color="#1a1a2e" />
+            <Text style={styles.uploadButtonText}>Sélectionner le PDF</Text>
+            <Text style={styles.uploadButtonSubtext}>Cliquez pour choisir un fichier</Text>
+          </>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Render Step: Select Pages
+  const renderSelectPagesStep = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepTitle}>Sélectionner les pages</Text>
+      <Text style={styles.stepDescription}>
+        Le PDF "{pdfFileName}" contient {totalPages} pages
+      </Text>
+      
+      {/* PDF Info Card */}
+      <View style={styles.pdfInfoCard}>
+        <Ionicons name="document-text" size={50} color="#4ECDC4" />
+        <View style={styles.pdfInfoText}>
+          <Text style={styles.pdfInfoTitle}>{pdfFileName}</Text>
+          <Text style={styles.pdfInfoPages}>{totalPages} pages disponibles</Text>
+        </View>
+      </View>
+      
+      {/* Page Selection */}
+      <View style={styles.periodSection}>
+        <Text style={styles.periodLabel}>Pages à extraire</Text>
+        <Text style={styles.pageHint}>💡 Choisissez les pages contenant les programmes Retail</Text>
+        <View style={styles.pageRow}>
+          <View style={styles.pageField}>
+            <Text style={styles.pageLabel}>De la page:</Text>
+            <TextInput
+              style={styles.pageInput}
+              value={pageStart}
+              onChangeText={setPageStart}
+              keyboardType="numeric"
+              placeholder="1"
+              placeholderTextColor="#666"
+            />
+          </View>
+          <View style={styles.pageField}>
+            <Text style={styles.pageLabel}>À la page:</Text>
+            <TextInput
+              style={styles.pageInput}
+              value={pageEnd}
+              onChangeText={setPageEnd}
+              keyboardType="numeric"
+              placeholder={String(totalPages)}
+              placeholderTextColor="#666"
+            />
+          </View>
+        </View>
+        <Text style={styles.pageValidation}>
+          Pages sélectionnées: {pageStart || '1'} à {pageEnd || totalPages}
+        </Text>
+      </View>
+      
+      <TouchableOpacity
+        style={[styles.extractButton, extracting && styles.buttonDisabled]}
+        onPress={handleExtractPages}
+        disabled={extracting}
+      >
+        {extracting ? (
+          <View style={styles.extractingContainer}>
+            <ActivityIndicator size="large" color="#4ECDC4" />
+            <Text style={styles.extractingText}>Extraction en cours...</Text>
+            <Text style={styles.extractingSubtext}>⏳ L'IA analyse les pages {pageStart || '1'} à {pageEnd || totalPages}</Text>
+            <Text style={styles.extractingSubtext}>📧 Un fichier Excel sera envoyé par email</Text>
+            <Text style={styles.extractingWait}>Veuillez patienter (2-4 minutes)</Text>
+          </View>
+        ) : (
+          <>
+            <Ionicons name="analytics" size={24} color="#fff" />
+            <Text style={styles.extractButtonText}>
+              Extraire les pages {pageStart || '1'} à {pageEnd || totalPages}
+            </Text>
+          </>
+        )}
+      </TouchableOpacity>
+      
+      {/* Change PDF button */}
+      <TouchableOpacity
+        style={styles.changePdfButton}
+        onPress={() => {
+          setPdfFile(null);
+          setPdfFileName('');
+          setTotalPages(0);
+          setCurrentStep('upload');
+        }}
+        disabled={extracting}
+      >
+        <Text style={styles.changePdfButtonText}>← Changer de PDF</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Original upload step render (now simplified)
+  const renderUploadStepOld = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepTitle}>Importer le PDF</Text>
+      <Text style={styles.stepDescription}>
+        Sélectionnez la période et uploadez le PDF des programmes de financement
+      </Text>
+      
+      {/* Period Selection */}
+      <View style={styles.periodSection}>
+        <Text style={styles.periodLabel}>Période du programme</Text>
+        <View style={styles.periodRow}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.monthScroll}>
+            <View style={styles.monthButtons}>
+              {months.map(m => (
+                <TouchableOpacity
+                  key={m.value}
+                  style={[
+                    styles.monthButton,
+                    selectedMonth === m.value && styles.monthButtonActive
+                  ]}
+                  onPress={() => setSelectedMonth(m.value)}
+                >
+                  <Text style={[
+                    styles.monthButtonText,
+                    selectedMonth === m.value && styles.monthButtonTextActive
+                  ]}>
+                    {m.label.substring(0, 3)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+        
+        <View style={styles.yearRow}>
+          <Text style={styles.yearLabel}>Année:</Text>
+          <TextInput
+            style={styles.yearInput}
+            value={String(selectedYear)}
+            onChangeText={(v) => setSelectedYear(parseInt(v) || new Date().getFullYear())}
+            keyboardType="numeric"
+          />
+        </View>
+      </View>
+      
       {/* Page Selection */}
       <View style={styles.periodSection}>
         <Text style={styles.periodLabel}>Pages du PDF à extraire</Text>
