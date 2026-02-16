@@ -873,7 +873,7 @@ async def seed_data():
 # ============ Excel Generation Function ============
 
 def generate_excel_from_programs(programs: List[Dict[str, Any]], program_month: int, program_year: int) -> bytes:
-    """Génère un fichier Excel COMPLET à partir des programmes extraits"""
+    """Génère un fichier Excel selon le format du PDF Stellantis"""
     if not EXCEL_AVAILABLE:
         raise HTTPException(status_code=500, detail="openpyxl non disponible")
     
@@ -884,8 +884,9 @@ def generate_excel_from_programs(programs: List[Dict[str, Any]], program_month: 
     # Styles
     header_font = Font(bold=True, color="FFFFFF")
     header_fill = PatternFill(start_color="1a1a2e", end_color="1a1a2e", fill_type="solid")
-    option1_fill = PatternFill(start_color="2E7D32", end_color="2E7D32", fill_type="solid")  # Vert pour Option 1
+    option1_fill = PatternFill(start_color="C62828", end_color="C62828", fill_type="solid")  # Rouge pour Option 1
     option2_fill = PatternFill(start_color="1565C0", end_color="1565C0", fill_type="solid")  # Bleu pour Option 2
+    bonus_fill = PatternFill(start_color="2E7D32", end_color="2E7D32", fill_type="solid")  # Vert pour Bonus
     header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
     thin_border = Border(
         left=Side(style='thin'),
@@ -899,7 +900,7 @@ def generate_excel_from_programs(programs: List[Dict[str, Any]], program_month: 
                    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
     
     # Title Row 1
-    ws.merge_cells('A1:T1')
+    ws.merge_cells('A1:S1')
     ws['A1'] = f"PROGRAMMES DE FINANCEMENT RETAIL - {month_names[program_month].upper()} {program_year}"
     ws['A1'].font = Font(bold=True, size=16, color="FFFFFF")
     ws['A1'].fill = PatternFill(start_color="333333", end_color="333333", fill_type="solid")
@@ -912,55 +913,48 @@ def generate_excel_from_programs(programs: List[Dict[str, Any]], program_month: 
     ws['A2'].fill = header_fill
     ws['A2'].alignment = header_alignment
     
-    ws.merge_cells('E2:F2')
-    ws['E2'] = "RABAIS"
+    # Option 1 header with rabais
+    ws.merge_cells('E2:K2')
+    ws['E2'] = "OPTION 1 - Consumer Cash + Taux Standard"
     ws['E2'].font = header_font
-    ws['E2'].fill = header_fill
+    ws['E2'].fill = option1_fill
     ws['E2'].alignment = header_alignment
     
-    ws.merge_cells('G2:L2')
-    ws['G2'] = "OPTION 1 - Taux Standard"
-    ws['G2'].font = header_font
-    ws['G2'].fill = option1_fill
-    ws['G2'].alignment = header_alignment
+    # Option 2 header with rabais
+    ws.merge_cells('L2:R2')
+    ws['L2'] = "OPTION 2 - Alternative Consumer Cash + Taux Réduit"
+    ws['L2'].font = header_font
+    ws['L2'].fill = option2_fill
+    ws['L2'].alignment = header_alignment
     
-    ws.merge_cells('M2:R2')
-    ws['M2'] = "OPTION 2 - Taux Réduit (avec Rabais)"
-    ws['M2'].font = header_font
-    ws['M2'].fill = option2_fill
-    ws['M2'].alignment = header_alignment
-    
-    ws.merge_cells('S2:T2')
+    # Bonus header
     ws['S2'] = "BONUS"
     ws['S2'].font = header_font
-    ws['S2'].fill = header_fill
+    ws['S2'].fill = bonus_fill
     ws['S2'].alignment = header_alignment
     
     # Detail Headers Row 3
     headers = [
-        "Marque", "Modèle", "Version", "Année",  # Véhicule
-        "Consumer Cash ($)", "Cash après taxes ($)",  # Rabais
-        "36 mois", "48 mois", "60 mois", "72 mois", "84 mois", "96 mois",  # Option 1
-        "36 mois", "48 mois", "60 mois", "72 mois", "84 mois", "96 mois",  # Option 2
-        "Bonus Cash ($)", "Bonus après taxes ($)"  # Bonus
+        "Marque", "Modèle", "Version", "Année",  # Véhicule (A-D)
+        "Rabais ($)", "36m", "48m", "60m", "72m", "84m", "96m",  # Option 1: Rabais + Taux (E-K)
+        "Rabais ($)", "36m", "48m", "60m", "72m", "84m", "96m",  # Option 2: Rabais + Taux (L-R)
+        "Bonus ($)"  # Bonus (S)
     ]
     
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=3, column=col, value=header)
-        cell.font = Font(bold=True, size=9)
-        if col <= 4:
-            cell.fill = header_fill
-        elif col <= 6:
-            cell.fill = header_fill
-        elif col <= 12:
-            cell.fill = option1_fill
-        elif col <= 18:
-            cell.fill = option2_fill
-        else:
-            cell.fill = header_fill
-        cell.font = header_font
+        cell.font = Font(bold=True, size=9, color="FFFFFF")
         cell.alignment = header_alignment
         cell.border = thin_border
+        
+        if col <= 4:
+            cell.fill = header_fill
+        elif col <= 11:  # Option 1
+            cell.fill = option1_fill
+        elif col <= 18:  # Option 2
+            cell.fill = option2_fill
+        else:  # Bonus
+            cell.fill = bonus_fill
     
     # Data rows
     for row_idx, prog in enumerate(programs, 4):
@@ -968,58 +962,65 @@ def generate_excel_from_programs(programs: List[Dict[str, Any]], program_month: 
         opt2_rates = prog.get("option2_rates") or {}
         
         consumer_cash = prog.get("consumer_cash", 0) or 0
+        alt_consumer_cash = prog.get("alt_consumer_cash", 0) or 0  # Alternative Consumer Cash pour Option 2
         bonus_cash = prog.get("bonus_cash", 0) or 0
         
-        # Calculer les montants après taxes (taxe QC ~14.975%)
-        tax_rate = 1.14975
-        cash_after_tax = round(consumer_cash * tax_rate, 2) if consumer_cash else 0
-        bonus_after_tax = round(bonus_cash * tax_rate, 2) if bonus_cash else 0
+        # Format rate display
+        def format_rate(rate):
+            if rate is None or rate == "-":
+                return "-"
+            try:
+                r = float(rate)
+                return f"{r:.2f}%" if r > 0 else "0%"
+            except:
+                return "-"
         
         data = [
             prog.get("brand", ""),
             prog.get("model", ""),
             prog.get("trim", "") or "",
             prog.get("year", ""),
-            consumer_cash,
-            cash_after_tax,
-            # Option 1 rates
-            opt1_rates.get("rate_36", "-") if opt1_rates else "-",
-            opt1_rates.get("rate_48", "-") if opt1_rates else "-",
-            opt1_rates.get("rate_60", "-") if opt1_rates else "-",
-            opt1_rates.get("rate_72", "-") if opt1_rates else "-",
-            opt1_rates.get("rate_84", "-") if opt1_rates else "-",
-            opt1_rates.get("rate_96", "-") if opt1_rates else "-",
-            # Option 2 rates
-            opt2_rates.get("rate_36", "-") if opt2_rates else "-",
-            opt2_rates.get("rate_48", "-") if opt2_rates else "-",
-            opt2_rates.get("rate_60", "-") if opt2_rates else "-",
-            opt2_rates.get("rate_72", "-") if opt2_rates else "-",
-            opt2_rates.get("rate_84", "-") if opt2_rates else "-",
-            opt2_rates.get("rate_96", "-") if opt2_rates else "-",
+            # Option 1: Rabais + Taux
+            f"${consumer_cash:,.0f}" if consumer_cash else "-",
+            format_rate(opt1_rates.get("rate_36")) if opt1_rates else "-",
+            format_rate(opt1_rates.get("rate_48")) if opt1_rates else "-",
+            format_rate(opt1_rates.get("rate_60")) if opt1_rates else "-",
+            format_rate(opt1_rates.get("rate_72")) if opt1_rates else "-",
+            format_rate(opt1_rates.get("rate_84")) if opt1_rates else "-",
+            format_rate(opt1_rates.get("rate_96")) if opt1_rates else "-",
+            # Option 2: Rabais + Taux
+            f"${alt_consumer_cash:,.0f}" if alt_consumer_cash else "-",
+            format_rate(opt2_rates.get("rate_36")) if opt2_rates else "-",
+            format_rate(opt2_rates.get("rate_48")) if opt2_rates else "-",
+            format_rate(opt2_rates.get("rate_60")) if opt2_rates else "-",
+            format_rate(opt2_rates.get("rate_72")) if opt2_rates else "-",
+            format_rate(opt2_rates.get("rate_84")) if opt2_rates else "-",
+            format_rate(opt2_rates.get("rate_96")) if opt2_rates else "-",
             # Bonus
-            bonus_cash,
-            bonus_after_tax,
+            f"${bonus_cash:,.0f}" if bonus_cash else "-",
         ]
         
         for col, value in enumerate(data, 1):
             cell = ws.cell(row=row_idx, column=col, value=value)
             cell.border = thin_border
-            if col >= 5:  # Numeric columns
-                cell.alignment = Alignment(horizontal="center")
-            # Color coding for rates
-            if col >= 7 and col <= 12:  # Option 1
-                cell.fill = PatternFill(start_color="E8F5E9", end_color="E8F5E9", fill_type="solid")
-            elif col >= 13 and col <= 18:  # Option 2
+            cell.alignment = Alignment(horizontal="center")
+            
+            # Color coding for columns
+            if col >= 5 and col <= 11:  # Option 1
+                cell.fill = PatternFill(start_color="FFEBEE", end_color="FFEBEE", fill_type="solid")
+            elif col >= 12 and col <= 18:  # Option 2
                 cell.fill = PatternFill(start_color="E3F2FD", end_color="E3F2FD", fill_type="solid")
+            elif col == 19:  # Bonus
+                cell.fill = PatternFill(start_color="E8F5E9", end_color="E8F5E9", fill_type="solid")
     
     # Adjust column widths
-    column_widths = [12, 18, 25, 8, 14, 14, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 12, 14]
+    column_widths = [12, 18, 28, 7, 12, 8, 8, 8, 8, 8, 8, 12, 8, 8, 8, 8, 8, 8, 12]
     for col, width in enumerate(column_widths, 1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = width
     
     # Row height for headers
-    ws.row_dimensions[2].height = 25
-    ws.row_dimensions[3].height = 30
+    ws.row_dimensions[2].height = 30
+    ws.row_dimensions[3].height = 25
     
     # Freeze panes
     ws.freeze_panes = 'A4'
