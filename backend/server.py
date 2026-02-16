@@ -14,6 +14,7 @@ import base64
 import json
 import re
 import io
+import pypdf
 
 # For Excel generation
 try:
