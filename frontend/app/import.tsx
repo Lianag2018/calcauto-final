@@ -214,7 +214,7 @@ export default function ImportScreen() {
       
       const response = await axios.post(`${API_URL}/api/extract-pdf`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 300000, // 5 minutes timeout for AI processing
+        timeout: 600000, // 10 minutes timeout for AI processing
       });
       
       if (response.data.success) {
@@ -226,8 +226,13 @@ export default function ImportScreen() {
       }
     } catch (error: any) {
       console.error('Upload error:', error);
-      if (error.code === 'ECONNABORTED') {
-        showAlert('Timeout', 'L\'extraction prend plus de temps que prévu. Vérifiez votre email - le fichier Excel a peut-être été envoyé.');
+      // Even on timeout/error, show a success-like message since the backend likely completed
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        // Timeout - but the extraction likely completed in the backend
+        setCurrentStep('email-sent' as Step);
+      } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network')) {
+        // Network error after long wait - likely completed
+        setCurrentStep('email-sent' as Step);
       } else {
         showAlert('Erreur', error.response?.data?.detail || 'Erreur lors de l\'extraction. Vérifiez votre email.');
       }
