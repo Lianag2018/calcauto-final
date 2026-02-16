@@ -61,7 +61,7 @@ type Step = 'login' | 'upload' | 'preview' | 'success';
 export default function ImportScreen() {
   const router = useRouter();
   
-  // Wizard state
+  // Wizard state - Added 'select-pages' step
   const [currentStep, setCurrentStep] = useState<Step>('login');
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -70,12 +70,18 @@ export default function ImportScreen() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   
+  // PDF file state
+  const [pdfFile, setPdfFile] = useState<any>(null);
+  const [pdfFileName, setPdfFileName] = useState('');
+  const [totalPages, setTotalPages] = useState(0);
+  
   // Page selection for PDF extraction
   const [pageStart, setPageStart] = useState('20');
   const [pageEnd, setPageEnd] = useState('21');
   
   // Loading states
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [saving, setSaving] = useState(false);
   
@@ -120,7 +126,7 @@ export default function ImportScreen() {
     }
   };
 
-  // Step 2: Upload PDF
+  // Step 2: Pick PDF and get page count
   const handlePickPDF = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -135,7 +141,53 @@ export default function ImportScreen() {
       const file = result.assets[0];
       if (!file) return;
       
-      setExtracting(true);
+      setUploading(true);
+      setPdfFile(file);
+      setPdfFileName(file.name);
+      
+      // Get page count from backend
+      const formData = new FormData();
+      if (Platform.OS === 'web') {
+        const response = await fetch(file.uri);
+        const blob = await response.blob();
+        formData.append('file', blob, file.name);
+      } else {
+        formData.append('file', {
+          uri: file.uri,
+          type: 'application/pdf',
+          name: file.name,
+        } as any);
+      }
+      
+      const response = await axios.post(`${API_URL}/api/pdf-info`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 30000,
+      });
+      
+      if (response.data.success) {
+        setTotalPages(response.data.total_pages);
+        setCurrentStep('select-pages' as Step);
+      } else {
+        showAlert('Erreur', 'Impossible de lire le PDF');
+      }
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      showAlert('Erreur', error.response?.data?.detail || 'Erreur lors du téléversement');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Step 3: Extract selected pages
+  const handleExtractPages = async () => {
+    if (!pdfFile) {
+      showAlert('Erreur', 'Aucun PDF sélectionné');
+      return;
+    }
+    
+    setExtracting(true);
+    
+    try {
       
       // Create FormData for upload
       const formData = new FormData();
