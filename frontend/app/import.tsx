@@ -56,7 +56,7 @@ const months = [
 ];
 
 // Steps for the import wizard
-type Step = 'login' | 'upload' | 'preview' | 'success';
+type Step = 'login' | 'upload' | 'select-pages' | 'preview' | 'success';
 
 export default function ImportScreen() {
   const router = useRouter();
