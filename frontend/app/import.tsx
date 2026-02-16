@@ -924,16 +924,16 @@ export default function ImportScreen() {
 
         {/* Progress Steps */}
         <View style={styles.progressContainer}>
-          {['login', 'upload', 'preview', 'success'].map((step, index) => (
+          {['login', 'upload', 'select-pages', 'preview', 'success'].map((step, index) => (
             <View key={step} style={styles.progressStep}>
               <View style={[
                 styles.progressDot,
                 currentStep === step && styles.progressDotActive,
-                ['upload', 'preview', 'success'].indexOf(currentStep) >= index && styles.progressDotCompleted
+                ['upload', 'select-pages', 'preview', 'success'].indexOf(currentStep) >= index && styles.progressDotCompleted
               ]} />
-              {index < 3 ? <View style={[
+              {index < 4 ? <View style={[
                 styles.progressLine,
-                ['upload', 'preview', 'success'].indexOf(currentStep) > index && styles.progressLineCompleted
+                ['upload', 'select-pages', 'preview', 'success'].indexOf(currentStep) > index && styles.progressLineCompleted
               ]} /> : null}
             </View>
           ))}
@@ -946,6 +946,7 @@ export default function ImportScreen() {
         >
           {currentStep === 'login' ? renderLoginStep() : null}
           {currentStep === 'upload' ? renderUploadStep() : null}
+          {currentStep === 'select-pages' ? renderSelectPagesStep() : null}
           {currentStep === 'preview' ? renderPreviewStep() : null}
           {currentStep === 'success' ? renderSuccessStep() : null}
         </ScrollView>
