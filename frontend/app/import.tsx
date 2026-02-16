@@ -386,15 +386,17 @@ export default function ImportScreen() {
       >
         {extracting ? (
           <View style={styles.extractingContainer}>
-            <ActivityIndicator size="small" color="#1a1a2e" />
+            <ActivityIndicator size="large" color="#4ECDC4" />
             <Text style={styles.extractingText}>Extraction en cours...</Text>
-            <Text style={styles.extractingSubtext}>L'IA analyse le PDF</Text>
+            <Text style={styles.extractingSubtext}>⏳ L'IA analyse les pages {pageStart} à {pageEnd}</Text>
+            <Text style={styles.extractingSubtext}>📧 Un fichier Excel sera envoyé par email</Text>
+            <Text style={styles.extractingWait}>Veuillez patienter (2-4 minutes)</Text>
           </View>
         ) : (
           <>
             <Ionicons name="cloud-upload" size={40} color="#1a1a2e" />
             <Text style={styles.uploadButtonText}>Sélectionner le PDF</Text>
-            <Text style={styles.uploadButtonSubtext}>Cliquez pour choisir un fichier</Text>
+            <Text style={styles.uploadButtonSubtext}>Pages {pageStart} à {pageEnd} seront analysées</Text>
           </>
         )}
       </TouchableOpacity>
