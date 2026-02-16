@@ -251,6 +251,27 @@ def get_rate_for_term(rates: FinancingRates, term: int) -> float:
 async def root():
     return {"message": "Vehicle Financing Calculator API - v4 (avec historique et Bonus Cash)"}
 
+# Get PDF info (page count)
+@api_router.post("/pdf-info")
+async def get_pdf_info(file: UploadFile = File(...)):
+    """Récupère les informations du PDF (nombre de pages)"""
+    try:
+        contents = await file.read()
+        pdf_reader = pypdf.PdfReader(io.BytesIO(contents))
+        total_pages = len(pdf_reader.pages)
+        
+        return {
+            "success": True,
+            "total_pages": total_pages,
+            "filename": file.filename
+        }
+    except Exception as e:
+        logger.error(f"Error reading PDF: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Erreur lors de la lecture du PDF: {str(e)}"
+        }
+
 # Get available program periods (for history)
 @api_router.get("/periods", response_model=List[ProgramPeriod])
 async def get_periods():
