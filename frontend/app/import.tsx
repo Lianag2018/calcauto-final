@@ -993,6 +993,7 @@ export default function ImportScreen() {
           {currentStep === 'upload' ? renderUploadStep() : null}
           {currentStep === 'select-pages' ? renderSelectPagesStep() : null}
           {currentStep === 'preview' ? renderPreviewStep() : null}
+          {currentStep === 'email-sent' ? renderEmailSentStep() : null}
           {currentStep === 'success' ? renderSuccessStep() : null}
         </ScrollView>
         
