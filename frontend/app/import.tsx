@@ -1443,6 +1443,14 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     paddingHorizontal: 20,
   },
+  emailSentNote: {
+    fontSize: 13,
+    color: '#888',
+    textAlign: 'center',
+    marginBottom: 32,
+    paddingHorizontal: 20,
+    lineHeight: 20,
+  },
   // Modal styles
   modalOverlay: {
     flex: 1,
