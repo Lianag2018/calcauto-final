@@ -915,6 +915,7 @@ export default function ImportScreen() {
             <Text style={styles.headerSubtitle}>
               {currentStep === 'login' ? 'Authentification' : 
                currentStep === 'upload' ? 'Sélection du fichier' :
+               currentStep === 'select-pages' ? 'Choix des pages' :
                currentStep === 'preview' ? 'Vérification des données' :
                currentStep === 'success' ? 'Terminé' : ''}
             </Text>
