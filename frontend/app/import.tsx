@@ -163,19 +163,23 @@ export default function ImportScreen() {
       
       const response = await axios.post(`${API_URL}/api/extract-pdf`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 120000, // 2 minutes timeout for AI processing
+        timeout: 300000, // 5 minutes timeout for AI processing
       });
       
       if (response.data.success) {
         setPrograms(response.data.programs);
         setCurrentStep('preview');
-        showAlert('Succès', `${response.data.programs.length} programmes extraits du PDF`);
+        showAlert('Succès', `${response.data.programs.length} programmes extraits avec succès!\n\nUn fichier Excel a été envoyé à votre email pour vérification.`);
       } else {
         showAlert('Erreur', response.data.message);
       }
     } catch (error: any) {
       console.error('Upload error:', error);
-      showAlert('Erreur', error.response?.data?.detail || 'Erreur lors de l\'extraction');
+      if (error.code === 'ECONNABORTED') {
+        showAlert('Timeout', 'L\'extraction prend plus de temps que prévu. Vérifiez votre email - le fichier Excel a peut-être été envoyé.');
+      } else {
+        showAlert('Erreur', error.response?.data?.detail || 'Erreur lors de l\'extraction. Vérifiez votre email.');
+      }
     } finally {
       setExtracting(false);
     }
