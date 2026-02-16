@@ -918,21 +918,23 @@ def generate_excel_from_programs(programs: List[Dict[str, Any]], program_month: 
     
     # Data rows
     for row_idx, prog in enumerate(programs, 4):
-        opt1_rates = prog.get("option1_rates", {})
+        opt1_rates = prog.get("option1_rates") or {}
+        if opt1_rates is None:
+            opt1_rates = {}
         
         data = [
             prog.get("brand", ""),
             prog.get("model", ""),
-            prog.get("trim", ""),
+            prog.get("trim", "") or "",
             prog.get("year", ""),
-            prog.get("consumer_cash", 0),
-            prog.get("bonus_cash", 0),
-            opt1_rates.get("rate_36", 0),
-            opt1_rates.get("rate_48", 0),
-            opt1_rates.get("rate_60", 0),
-            opt1_rates.get("rate_72", 0),
-            opt1_rates.get("rate_84", 0),
-            opt1_rates.get("rate_96", 0),
+            prog.get("consumer_cash", 0) or 0,
+            prog.get("bonus_cash", 0) or 0,
+            opt1_rates.get("rate_36", 0) if opt1_rates else 0,
+            opt1_rates.get("rate_48", 0) if opt1_rates else 0,
+            opt1_rates.get("rate_60", 0) if opt1_rates else 0,
+            opt1_rates.get("rate_72", 0) if opt1_rates else 0,
+            opt1_rates.get("rate_84", 0) if opt1_rates else 0,
+            opt1_rates.get("rate_96", 0) if opt1_rates else 0,
         ]
         
         for col, value in enumerate(data, 1):
