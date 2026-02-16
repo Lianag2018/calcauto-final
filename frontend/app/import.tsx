@@ -734,7 +734,7 @@ export default function ImportScreen() {
       
       <TouchableOpacity
         style={styles.primaryButton}
-        onPress={() => router.back()}
+        onPress={() => router.replace('/')}
       >
         <Ionicons name="home" size={20} color="#1a1a2e" />
         <Text style={styles.primaryButtonText}>Retour à l'accueil</Text>
