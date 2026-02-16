@@ -188,22 +188,21 @@ export default function ImportScreen() {
     setExtracting(true);
     
     try {
-      
       // Create FormData for upload
       const formData = new FormData();
       
       // Handle file for different platforms
       if (Platform.OS === 'web') {
         // For web, fetch the file and create a blob
-        const response = await fetch(file.uri);
+        const response = await fetch(pdfFile.uri);
         const blob = await response.blob();
-        formData.append('file', blob, file.name);
+        formData.append('file', blob, pdfFile.name);
       } else {
         // For native platforms
         formData.append('file', {
-          uri: file.uri,
+          uri: pdfFile.uri,
           type: 'application/pdf',
-          name: file.name,
+          name: pdfFile.name,
         } as any);
       }
       
