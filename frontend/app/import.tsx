@@ -1097,6 +1097,37 @@ const styles = StyleSheet.create({
   periodRow: {
     marginBottom: 12,
   },
+  pageRow: {
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: 8,
+  },
+  pageField: {
+    flex: 1,
+  },
+  pageLabel: {
+    fontSize: 14,
+    color: '#4ECDC4',
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  pageInput: {
+    backgroundColor: '#2d2d44',
+    borderRadius: 10,
+    padding: 14,
+    fontSize: 18,
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: '600',
+    borderWidth: 2,
+    borderColor: '#3d3d54',
+  },
+  pageHint: {
+    fontSize: 13,
+    color: '#4ECDC4',
+    marginTop: 4,
+    marginBottom: 8,
+  },
   monthScroll: {
     flexGrow: 0,
   },
