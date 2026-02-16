@@ -742,6 +742,46 @@ export default function ImportScreen() {
     </View>
   );
 
+  // Render email sent step (when timeout but email was likely sent)
+  const renderEmailSentStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={[styles.iconContainer, styles.successIcon]}>
+        <Ionicons name="mail" size={80} color="#4ECDC4" />
+      </View>
+      <Text style={styles.stepTitle}>Email envoyé!</Text>
+      <Text style={styles.stepDescription}>
+        L'extraction des pages {pageStart || '1'} à {pageEnd || totalPages} est terminée.
+      </Text>
+      <Text style={styles.successNote}>
+        📧 Un fichier Excel a été envoyé à votre email pour vérification.
+      </Text>
+      <Text style={styles.emailSentNote}>
+        Vérifiez votre boîte de réception pour le fichier avec les programmes de {getMonthLabel(selectedMonth)} {selectedYear}.
+      </Text>
+      
+      <TouchableOpacity
+        style={styles.primaryButton}
+        onPress={() => {
+          setPdfFile(null);
+          setPdfFileName('');
+          setTotalPages(0);
+          setCurrentStep('upload');
+        }}
+      >
+        <Ionicons name="refresh" size={20} color="#1a1a2e" />
+        <Text style={styles.primaryButtonText}>Importer un autre PDF</Text>
+      </TouchableOpacity>
+      
+      <TouchableOpacity
+        style={[styles.primaryButton, { backgroundColor: '#2d2d44', marginTop: 12 }]}
+        onPress={() => router.back()}
+      >
+        <Ionicons name="home" size={20} color="#fff" />
+        <Text style={[styles.primaryButtonText, { color: '#fff' }]}>Retour à l'accueil</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   // Edit modal
   const renderEditModal = () => (
     <Modal
