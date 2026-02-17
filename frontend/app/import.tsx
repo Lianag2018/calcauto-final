@@ -746,17 +746,20 @@ export default function ImportScreen() {
   const renderEmailSentStep = () => (
     <View style={styles.stepContainer}>
       <View style={[styles.iconContainer, styles.successIcon]}>
-        <Ionicons name="mail" size={80} color="#4ECDC4" />
+        <Ionicons name="checkmark-circle" size={80} color="#4ECDC4" />
       </View>
-      <Text style={styles.stepTitle}>Email envoyé!</Text>
+      <Text style={styles.stepTitle}>Importation réussie!</Text>
       <Text style={styles.stepDescription}>
-        L'extraction des pages {pageStart || '1'} à {pageEnd || totalPages} est terminée.
+        Les pages {pageStart || '1'} à {pageEnd || totalPages} ont été extraites et sauvegardées.
       </Text>
       <Text style={styles.successNote}>
-        📧 Un fichier Excel a été envoyé à votre email pour vérification.
+        ✅ Programmes sauvegardés dans la base de données
+      </Text>
+      <Text style={styles.successNote}>
+        📧 Fichier Excel envoyé à votre email pour vérification
       </Text>
       <Text style={styles.emailSentNote}>
-        Vérifiez votre boîte de réception pour le fichier avec les programmes de {getMonthLabel(selectedMonth)} {selectedYear}.
+        Les nouveaux programmes de {getMonthLabel(selectedMonth)} {selectedYear} sont maintenant disponibles dans l'application.
       </Text>
       
       <TouchableOpacity
