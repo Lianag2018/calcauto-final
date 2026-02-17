@@ -103,6 +103,13 @@ const crmTranslations = {
     loading: 'Chargement...',
     error: 'Erreur de chargement',
     retry: 'Réessayer',
+    status: 'Statut',
+    pending: 'En attente',
+    contacted: 'Contacté',
+    converted: 'Converti',
+    lost: 'Perdu',
+    reminderDue: 'rappels à faire',
+    reminderUpcoming: 'rappels à venir',
   },
   en: {
     title: 'CRM - Clients',
@@ -138,6 +145,13 @@ const crmTranslations = {
     loading: 'Loading...',
     error: 'Loading error',
     retry: 'Retry',
+    status: 'Status',
+    pending: 'Pending',
+    contacted: 'Contacted',
+    converted: 'Converted',
+    lost: 'Lost',
+    reminderDue: 'reminders due',
+    reminderUpcoming: 'upcoming reminders',
   }
 };
 
