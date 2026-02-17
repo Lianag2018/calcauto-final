@@ -32,7 +32,7 @@ const translations = {
 // API URL
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8001';
 
-// Types
+// Types - adaptés au backend
 interface Submission {
   id: string;
   client_name: string;
@@ -43,20 +43,18 @@ interface Submission {
   vehicle_year: number;
   vehicle_price: number;
   term: number;
-  monthly_payment: number;
-  option_type: string;
-  consumer_cash: number;
-  bonus_cash: number;
+  payment_monthly: number;
+  payment_biweekly: number;
+  payment_weekly: number;
+  selected_option: string;
+  rate: number;
   submission_date: string;
-  follow_ups: FollowUp[];
-}
-
-interface FollowUp {
-  id: string;
-  scheduled_date: string;
-  completed: boolean;
-  completed_date?: string;
-  notes?: string;
+  reminder_date: string | null;
+  reminder_done: boolean;
+  status: string; // pending, contacted, converted, lost
+  notes: string;
+  program_month: number;
+  program_year: number;
 }
 
 interface Client {
@@ -65,6 +63,8 @@ interface Client {
   phone: string;
   submissions: Submission[];
   last_submission_date: string;
+  next_reminder: string | null;
+  has_pending_reminder: boolean;
 }
 
 // CRM Translations
