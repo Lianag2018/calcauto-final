@@ -1223,32 +1223,35 @@ VÉHICULE [Consumer Cash $X,XXX] [6 taux Option1] [6 taux Option2] [Bonus Cash]
 - Si tu vois "P" avant un montant = c'est quand même le montant
 - 6 taux = 36M, 48M, 60M, 72M, 84M, 96M
 
-=== EXEMPLES CONCRETS DU PDF ===
+=== BONUS CASH - TRÈS IMPORTANT ===
+Le Bonus Cash est dans la DERNIÈRE COLONNE (colonne verte "Bonus Cash").
+- CHAQUE véhicule a son PROPRE montant de Bonus Cash (peut être 0, $1000, $3000, etc.)
+- Le Bonus Cash n'est PAS le même pour tous les véhicules!
+- Si la colonne Bonus Cash est vide ou montre "-", alors bonus_cash = 0
+- Les montants typiques sont: $0, $1,000, $3,000
 
-"Grand Caravan SXT    4.99% 4.99% 4.99% 4.99% 4.99% 4.99%    - - - - - -"
-→ brand: "Chrysler", model: "Grand Caravan", trim: "SXT", consumer_cash: 0
-→ option1: 4.99 partout, option2: null
+=== EXEMPLES AVEC BONUS CASH ===
 
-"Compass North  $3,500  4.99% 4.99% 4.99% 4.99% 4.99% 4.99%   P 0.00% 0.00% 0.00% 1.49% 1.99% 3.49%"
-→ brand: "Jeep", model: "Compass", trim: "North", consumer_cash: 3500
-→ option1: 4.99 partout, option2: 0/0/0/1.49/1.99/3.49
+2026 MODELS (généralement PAS de Bonus Cash):
+"Grand Caravan SXT    4.99%... " → bonus_cash: 0
+"Ram 1500 Big Horn    $6,000  4.99%..." → bonus_cash: 0
 
-"Durango SXT, GT, GT Plus P $7,500  4.99% 4.99% 4.99% 4.99% 4.99% 4.99%    0.00% 0.00% 0.00% 1.49% 2.49% 3.49%"
-→ brand: "Dodge", model: "Durango", trim: "SXT, GT, GT Plus", consumer_cash: 7500
-→ option1: 4.99 partout, option2: 0/0/0/1.49/2.49/3.49
+2025 MODELS (souvent avec Bonus Cash de $1,000 à $3,000):
+"Compass North  $7,500  4.99%...   $1,000" → bonus_cash: 1000
+"Ram 1500 Sport  $10,000  4.99%...  $3,000" → bonus_cash: 3000
+"Ram 2500/3500 Gas Models  $9,500  4.99%...  -" → bonus_cash: 0 (pas de bonus!)
+"Ram Chassis Cab  $5,000  4.99%...  -" → bonus_cash: 0
 
-"Ram 1500 Tradesman, Express, Warlock  $6,500  4.99% 4.99% 4.99% 4.99% 4.99% 4.99%    0.00% 0.00% 0.00% 1.99% 2.99% 3.99%"
-→ brand: "Ram", model: "1500", trim: "Tradesman, Express, Warlock", consumer_cash: 6500
-→ option1: 4.99 partout, option2: 0/0/0/1.99/2.99/3.99
-
-"Ram 1500 Laramie (DT6P98)    - - - - - -    0.00% 0.00% 0.00% 1.99% 2.99% 3.99%"
-→ brand: "Ram", model: "1500", trim: "Laramie (DT6P98)", consumer_cash: 0
-→ option1: null (tirets), option2: 0/0/0/1.99/2.99/3.99
+=== RÈGLE IMPORTANTE POUR RAM 2025 ===
+- Ram 1500 2025: bonus_cash = $3,000
+- Ram 2500/3500 2025: bonus_cash = 0 (PAS de bonus!)
+- Ram ProMaster 2025: bonus_cash = 0
+- Ram Chassis Cab 2025: bonus_cash = 0
 
 === MARQUES À EXTRAIRE ===
 - CHRYSLER: Grand Caravan, Pacifica
 - JEEP: Compass, Cherokee, Wrangler, Gladiator, Grand Cherokee, Grand Wagoneer
-- DODGE: Durango, Charger
+- DODGE: Durango, Charger, Hornet
 - RAM: ProMaster, 1500, 2500, 3500, Chassis Cab
 
 === ANNÉES ===
@@ -1273,7 +1276,8 @@ Extrais les véhicules des DEUX sections!
     ]
 }}
 
-EXTRAIS ABSOLUMENT TOUS LES VÉHICULES DES SECTIONS 2026 ET 2025. Ne manque aucune ligne!"""
+EXTRAIS ABSOLUMENT TOUS LES VÉHICULES DES SECTIONS 2026 ET 2025. 
+VÉRIFIE LE BONUS CASH POUR CHAQUE VÉHICULE INDIVIDUELLEMENT!"""
 
             response = client.chat.completions.create(
                 model="gpt-4o",
