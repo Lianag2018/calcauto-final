@@ -1364,7 +1364,7 @@ EXTRAIS ABSOLUMENT TOUS LES VÉHICULES DES SECTIONS 2026 ET 2025. Ne manque aucu
             saved_count = 0
             try:
                 # D'abord, supprimer les anciens programmes de la même période
-                delete_result = await programs_collection.delete_many({
+                delete_result = await db.programs.delete_many({
                     "program_month": program_month,
                     "program_year": program_year
                 })
@@ -1387,7 +1387,7 @@ EXTRAIS ABSOLUMENT TOUS LES VÉHICULES DES SECTIONS 2026 ET 2025. Ne manque aucu
                         "program_year": program_year,
                         "created_at": datetime.utcnow().isoformat()
                     }
-                    await programs_collection.insert_one(program_doc)
+                    await db.programs.insert_one(program_doc)
                     saved_count += 1
                 
                 logger.info(f"Auto-saved {saved_count} programs for {program_month}/{program_year}")
