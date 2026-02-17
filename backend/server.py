@@ -1360,9 +1360,43 @@ EXTRAIS ABSOLUMENT TOUS LES VÉHICULES DES SECTIONS 2026 ET 2025. Ne manque aucu
                 except Exception as excel_error:
                     logger.error(f"Error generating/sending Excel: {str(excel_error)}")
             
+            # AUTO-SAVE: Sauvegarder automatiquement les programmes dans la base de données
+            saved_count = 0
+            try:
+                # D'abord, supprimer les anciens programmes de la même période
+                delete_result = await programs_collection.delete_many({
+                    "program_month": program_month,
+                    "program_year": program_year
+                })
+                logger.info(f"Deleted {delete_result.deleted_count} old programs for {program_month}/{program_year}")
+                
+                # Ensuite, ajouter les nouveaux programmes
+                for prog in valid_programs:
+                    program_doc = {
+                        "id": str(uuid.uuid4()),
+                        "brand": prog.get("brand", ""),
+                        "model": prog.get("model", ""),
+                        "trim": prog.get("trim", ""),
+                        "year": prog.get("year", program_year),
+                        "consumer_cash": prog.get("consumer_cash", 0),
+                        "bonus_cash": prog.get("bonus_cash", 0),
+                        "alt_consumer_cash": prog.get("alt_consumer_cash", 0),
+                        "option1_rates": prog.get("option1_rates"),
+                        "option2_rates": prog.get("option2_rates"),
+                        "program_month": program_month,
+                        "program_year": program_year,
+                        "created_at": datetime.utcnow().isoformat()
+                    }
+                    await programs_collection.insert_one(program_doc)
+                    saved_count += 1
+                
+                logger.info(f"Auto-saved {saved_count} programs for {program_month}/{program_year}")
+            except Exception as save_error:
+                logger.error(f"Error auto-saving programs: {str(save_error)}")
+            
             return ExtractedDataResponse(
                 success=True,
-                message=f"Extrait {len(valid_programs)} programmes du PDF" + (" - Excel envoyé par email!" if excel_sent else ""),
+                message=f"Extrait et sauvegardé {len(valid_programs)} programmes" + (" - Excel envoyé par email!" if excel_sent else ""),
                 programs=valid_programs,
                 raw_text=""
             )
