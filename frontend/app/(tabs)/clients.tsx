@@ -654,12 +654,12 @@ export default function ClientsScreen() {
                     <View style={styles.submissionDetail}>
                       <Text style={styles.submissionLabel}>{crm.payment}:</Text>
                       <Text style={styles.submissionValue}>
-                        {formatCurrency(sub.monthly_payment)}/{crm.months.substring(0,2)}
+                        {formatCurrency(sub.payment_monthly)}/{crm.months.substring(0,2)}
                       </Text>
                     </View>
                     <View style={styles.submissionDetail}>
                       <Text style={styles.submissionLabel}>{crm.option}:</Text>
-                      <Text style={styles.submissionValue}>{sub.option_type}</Text>
+                      <Text style={styles.submissionValue}>Option {sub.selected_option}</Text>
                     </View>
                     <View style={styles.submissionDetail}>
                       <Text style={styles.submissionLabel}>Terme:</Text>
@@ -667,23 +667,39 @@ export default function ClientsScreen() {
                     </View>
                   </View>
                   
-                  {/* Follow-ups */}
-                  {sub.follow_ups?.length > 0 && (
+                  {/* Status badge */}
+                  <View style={styles.statusBadgeContainer}>
+                    <View style={[
+                      styles.statusBadge,
+                      sub.status === 'pending' && styles.statusPending,
+                      sub.status === 'contacted' && styles.statusContacted,
+                      sub.status === 'converted' && styles.statusConverted,
+                      sub.status === 'lost' && styles.statusLost,
+                    ]}>
+                      <Text style={styles.statusBadgeText}>
+                        {sub.status === 'pending' ? crm.pending :
+                         sub.status === 'contacted' ? crm.contacted :
+                         sub.status === 'converted' ? crm.converted :
+                         crm.lost}
+                      </Text>
+                    </View>
+                  </View>
+                  
+                  {/* Reminder status */}
+                  {sub.reminder_date && !sub.reminder_done && (
                     <View style={styles.followUpsSection}>
-                      {sub.follow_ups.filter(f => !f.completed).map((followUp, fIdx) => (
-                        <View key={fIdx} style={styles.followUpItem}>
-                          <Ionicons name="time" size={16} color="#FFD93D" />
-                          <Text style={styles.followUpItemText}>
-                            {crm.followUpScheduled}: {formatDate(followUp.scheduled_date)}
-                          </Text>
-                          <TouchableOpacity
-                            style={styles.markDoneButton}
-                            onPress={() => markFollowUpDone(sub.id, followUp.id)}
-                          >
-                            <Ionicons name="checkmark" size={16} color="#4ECDC4" />
-                          </TouchableOpacity>
-                        </View>
-                      ))}
+                      <View style={styles.followUpItem}>
+                        <Ionicons name="time" size={16} color="#FFD93D" />
+                        <Text style={styles.followUpItemText}>
+                          {crm.followUpScheduled}: {formatDate(sub.reminder_date)}
+                        </Text>
+                        <TouchableOpacity
+                          style={styles.markDoneButton}
+                          onPress={() => markReminderDone(sub.id)}
+                        >
+                          <Ionicons name="checkmark" size={16} color="#4ECDC4" />
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   )}
                   
