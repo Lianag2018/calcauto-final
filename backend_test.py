@@ -291,9 +291,10 @@ def test_mark_reminder_done(submission_id: str):
 def test_update_status(submission_id: str, status: str):
     """Test PUT /submissions/{id}/status"""
     try:
-        # Try with query parameter first (as per FastAPI function signature)
+        # The API expects status as a query parameter (required)
         response = requests.put(
-            f"{BACKEND_URL}/submissions/{submission_id}/status?status={status}",
+            f"{BACKEND_URL}/submissions/{submission_id}/status",
+            params={"status": status},
             timeout=10
         )
         
@@ -307,26 +308,8 @@ def test_update_status(submission_id: str, status: str):
                 log_test(f"PUT /submissions/{{id}}/status ({status})", "FAIL", f"Unexpected response: {result}")
                 return False
         else:
-            # If query param fails, try with request body
-            response = requests.put(
-                f"{BACKEND_URL}/submissions/{submission_id}/status",
-                json={"status": status},
-                headers={"Content-Type": "application/json"},
-                timeout=10
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                if result.get("success"):
-                    log_test(f"PUT /submissions/{{id}}/status ({status})", "PASS", 
-                           f"Updated status to {status} for {submission_id} (via body)")
-                    return True
-                else:
-                    log_test(f"PUT /submissions/{{id}}/status ({status})", "FAIL", f"Unexpected response: {result}")
-                    return False
-            else:
-                log_test(f"PUT /submissions/{{id}}/status ({status})", "FAIL", f"Status {response.status_code}: {response.text}")
-                return False
+            log_test(f"PUT /submissions/{{id}}/status ({status})", "FAIL", f"Status {response.status_code}: {response.text}")
+            return False
     except Exception as e:
         log_test(f"PUT /submissions/{{id}}/status ({status})", "FAIL", f"Error: {str(e)}")
         return False
