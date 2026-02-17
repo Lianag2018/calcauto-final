@@ -726,9 +726,17 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.headerTitle}>{t.title}</Text>
-            <Text style={styles.headerSubtitle}>
-              {currentPeriod ? `${monthNames[lang][currentPeriod.month]} ${currentPeriod.year}` : ''}
-            </Text>
+            <TouchableOpacity 
+              style={styles.periodSelector}
+              onPress={() => setShowPeriodSelector(true)}
+            >
+              <Text style={styles.headerSubtitle}>
+                {currentPeriod ? `${monthNames[lang][currentPeriod.month]} ${currentPeriod.year}` : ''}
+              </Text>
+              {availablePeriods.length > 1 && (
+                <Ionicons name="chevron-down" size={16} color="#4ECDC4" style={{marginLeft: 4}} />
+              )}
+            </TouchableOpacity>
           </View>
           <View style={styles.headerActions}>
             <LanguageSelector
@@ -743,6 +751,53 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        
+        {/* Period Selector Modal */}
+        <Modal
+          visible={showPeriodSelector}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowPeriodSelector(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.periodModal}>
+              <View style={styles.periodModalHeader}>
+                <Text style={styles.periodModalTitle}>
+                  {lang === 'fr' ? 'Choisir la période' : 'Select Period'}
+                </Text>
+                <TouchableOpacity onPress={() => setShowPeriodSelector(false)}>
+                  <Ionicons name="close" size={24} color="#fff" />
+                </TouchableOpacity>
+              </View>
+              <ScrollView style={styles.periodList}>
+                {availablePeriods.map((period, index) => (
+                  <TouchableOpacity
+                    key={`${period.month}-${period.year}`}
+                    style={[
+                      styles.periodItem,
+                      currentPeriod?.month === period.month && currentPeriod?.year === period.year && styles.periodItemActive
+                    ]}
+                    onPress={() => {
+                      setProgramsLoading(true);
+                      loadPrograms(period.month, period.year);
+                      setShowPeriodSelector(false);
+                    }}
+                  >
+                    <Text style={[
+                      styles.periodItemText,
+                      currentPeriod?.month === period.month && currentPeriod?.year === period.year && styles.periodItemTextActive
+                    ]}>
+                      {monthNames[lang][period.month]} {period.year}
+                    </Text>
+                    <Text style={styles.periodItemCount}>
+                      {period.count} {lang === 'fr' ? 'véhicules' : 'vehicles'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
 
         <ScrollView
           style={styles.scrollView}
