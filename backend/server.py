@@ -841,7 +841,7 @@ async def seed_data():
         
         # RAM 2025 - Corrigé
         {"brand": "Ram", "model": "ProMaster", "trim": None, "year": 2025,
-         "consumer_cash": 0, "option1_rates": std, "option2_rates": None, "bonus_cash": 3000},
+         "consumer_cash": 0, "option1_rates": std, "option2_rates": None, "bonus_cash": 0},
         
         {"brand": "Ram", "model": "1500", "trim": "Tradesman, Warlock, Express (DT)", "year": 2025,
          "consumer_cash": 9250, "option1_rates": std,
@@ -869,15 +869,15 @@ async def seed_data():
          "bonus_cash": 3000},
         
         {"brand": "Ram", "model": "2500/3500", "trim": "Gas Models (excl. Chassis Cab, Diesel)", "year": 2025,
-         "consumer_cash": 9500, "option1_rates": std, "option2_rates": None, "bonus_cash": 3000},
+         "consumer_cash": 9500, "option1_rates": std, "option2_rates": None, "bonus_cash": 0},
         
         {"brand": "Ram", "model": "2500/3500", "trim": "6.7L High Output Diesel (ETM)", "year": 2025,
          "consumer_cash": 7000, "option1_rates": std,
          "option2_rates": {"rate_36": 0.99, "rate_48": 0.99, "rate_60": 0.99, "rate_72": 0.99, "rate_84": 1.99, "rate_96": 2.99},
-         "bonus_cash": 3000},
+         "bonus_cash": 0},
         
         {"brand": "Ram", "model": "Chassis Cab", "trim": None, "year": 2025,
-         "consumer_cash": 5000, "option1_rates": std, "option2_rates": None, "bonus_cash": 3000},
+         "consumer_cash": 5000, "option1_rates": std, "option2_rates": None, "bonus_cash": 0},
         
         # FIAT 2025
         {"brand": "Fiat", "model": "500e", "trim": "BEV", "year": 2025,
