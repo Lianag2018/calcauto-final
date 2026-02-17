@@ -380,6 +380,10 @@ export default function HomeScreen() {
   // Current program period
   const [currentPeriod, setCurrentPeriod] = useState<{month: number, year: number} | null>(null);
   
+  // Available periods (from API)
+  const [availablePeriods, setAvailablePeriods] = useState<{month: number, year: number, count: number}[]>([]);
+  const [showPeriodSelector, setShowPeriodSelector] = useState(false);
+  
   // Selected term for calculation
   const [selectedTerm, setSelectedTerm] = useState<number>(72);
   const availableTerms = [36, 48, 60, 72, 84, 96];
