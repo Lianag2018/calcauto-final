@@ -1,783 +1,364 @@
 #!/usr/bin/env python3
 """
-Backend API Testing Script
-Tests the PDF extraction endpoint with page range parameters
+CalcAuto AiPro Backend API Testing Suite
+Tests the deployed API on Render: https://calcauto-aipro.onrender.com
 """
 
 import requests
 import json
-import os
-from io import BytesIO
+import sys
+from typing import Dict, List, Any, Optional
 
-# Get backend URL from frontend .env
-def get_backend_url():
-    try:
-        with open('/app/frontend/.env', 'r') as f:
-            for line in f:
-                if line.startswith('EXPO_PUBLIC_BACKEND_URL='):
-                    return line.split('=', 1)[1].strip()
-    except:
-        pass
-    return "http://localhost:8001"
+# Backend URL from the review request
+BACKEND_URL = "https://calcauto-aipro.onrender.com"
 
-BACKEND_URL = get_backend_url()
-API_BASE = f"{BACKEND_URL}/api"
-
-def create_dummy_pdf():
-    """Create a simple dummy PDF using basic PDF structure"""
-    # Create a minimal PDF with multiple pages
-    pdf_content = b"""%PDF-1.4
-1 0 obj
-<<
-/Type /Catalog
-/Pages 2 0 R
->>
-endobj
-
-2 0 obj
-<<
-/Type /Pages
-/Kids [3 0 R 4 0 R 5 0 R 6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R 15 0 R 16 0 R 17 0 R 18 0 R 19 0 R 20 0 R 21 0 R 22 0 R 23 0 R 24 0 R 25 0 R 26 0 R 27 0 R]
-/Count 25
->>
-endobj
-
-3 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 28 0 R
->>
-endobj
-
-4 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 29 0 R
->>
-endobj
-
-5 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 30 0 R
->>
-endobj
-
-6 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 31 0 R
->>
-endobj
-
-7 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 32 0 R
->>
-endobj
-
-8 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 33 0 R
->>
-endobj
-
-9 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 34 0 R
->>
-endobj
-
-10 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 35 0 R
->>
-endobj
-
-11 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 36 0 R
->>
-endobj
-
-12 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 37 0 R
->>
-endobj
-
-13 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 38 0 R
->>
-endobj
-
-14 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 39 0 R
->>
-endobj
-
-15 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 40 0 R
->>
-endobj
-
-16 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 41 0 R
->>
-endobj
-
-17 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 42 0 R
->>
-endobj
-
-18 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 43 0 R
->>
-endobj
-
-19 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 44 0 R
->>
-endobj
-
-20 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 45 0 R
->>
-endobj
-
-21 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 46 0 R
->>
-endobj
-
-22 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 47 0 R
->>
-endobj
-
-23 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 48 0 R
->>
-endobj
-
-24 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 49 0 R
->>
-endobj
-
-25 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 50 0 R
->>
-endobj
-
-26 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 51 0 R
->>
-endobj
-
-27 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 52 0 R
->>
-endobj
-
-28 0 obj
-<<
-/Length 44
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 1 Content) Tj
-ET
-endstream
-endobj
-
-29 0 obj
-<<
-/Length 44
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 2 Content) Tj
-ET
-endstream
-endobj
-
-30 0 obj
-<<
-/Length 44
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 3 Content) Tj
-ET
-endstream
-endobj
-
-31 0 obj
-<<
-/Length 44
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 4 Content) Tj
-ET
-endstream
-endobj
-
-32 0 obj
-<<
-/Length 44
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 5 Content) Tj
-ET
-endstream
-endobj
-
-33 0 obj
-<<
-/Length 44
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 6 Content) Tj
-ET
-endstream
-endobj
-
-34 0 obj
-<<
-/Length 44
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 7 Content) Tj
-ET
-endstream
-endobj
-
-35 0 obj
-<<
-/Length 44
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 8 Content) Tj
-ET
-endstream
-endobj
-
-36 0 obj
-<<
-/Length 44
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 9 Content) Tj
-ET
-endstream
-endobj
-
-37 0 obj
-<<
-/Length 45
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 10 Content) Tj
-ET
-endstream
-endobj
-
-38 0 obj
-<<
-/Length 45
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 11 Content) Tj
-ET
-endstream
-endobj
-
-39 0 obj
-<<
-/Length 45
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 12 Content) Tj
-ET
-endstream
-endobj
-
-40 0 obj
-<<
-/Length 45
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 13 Content) Tj
-ET
-endstream
-endobj
-
-41 0 obj
-<<
-/Length 45
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 14 Content) Tj
-ET
-endstream
-endobj
-
-42 0 obj
-<<
-/Length 45
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 15 Content) Tj
-ET
-endstream
-endobj
-
-43 0 obj
-<<
-/Length 45
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 16 Content) Tj
-ET
-endstream
-endobj
-
-44 0 obj
-<<
-/Length 45
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 17 Content) Tj
-ET
-endstream
-endobj
-
-45 0 obj
-<<
-/Length 45
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 18 Content) Tj
-ET
-endstream
-endobj
-
-46 0 obj
-<<
-/Length 45
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 19 Content) Tj
-ET
-endstream
-endobj
-
-47 0 obj
-<<
-/Length 45
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 20 Content) Tj
-ET
-endstream
-endobj
-
-48 0 obj
-<<
-/Length 45
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 21 Content) Tj
-ET
-endstream
-endobj
-
-49 0 obj
-<<
-/Length 45
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 22 Content) Tj
-ET
-endstream
-endobj
-
-50 0 obj
-<<
-/Length 45
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 23 Content) Tj
-ET
-endstream
-endobj
-
-51 0 obj
-<<
-/Length 45
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 24 Content) Tj
-ET
-endstream
-endobj
-
-52 0 obj
-<<
-/Length 45
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Page 25 Content) Tj
-ET
-endstream
-endobj
-
-xref
-0 53
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000215 00000 n 
-0000000294 00000 n 
-0000000373 00000 n 
-0000000452 00000 n 
-0000000531 00000 n 
-0000000610 00000 n 
-0000000689 00000 n 
-0000000768 00000 n 
-0000000848 00000 n 
-0000000928 00000 n 
-0000001008 00000 n 
-0000001088 00000 n 
-0000001168 00000 n 
-0000001248 00000 n 
-0000001328 00000 n 
-0000001408 00000 n 
-0000001488 00000 n 
-0000001568 00000 n 
-0000001648 00000 n 
-0000001728 00000 n 
-0000001808 00000 n 
-0000001888 00000 n 
-0000001968 00000 n 
-0000002048 00000 n 
-0000002128 00000 n 
-0000002208 00000 n 
-0000002302 00000 n 
-0000002396 00000 n 
-0000002490 00000 n 
-0000002584 00000 n 
-0000002678 00000 n 
-0000002772 00000 n 
-0000002866 00000 n 
-0000002960 00000 n 
-0000003055 00000 n 
-0000003151 00000 n 
-0000003247 00000 n 
-0000003343 00000 n 
-0000003439 00000 n 
-0000003535 00000 n 
-0000003631 00000 n 
-0000003727 00000 n 
-0000003823 00000 n 
-0000003919 00000 n 
-0000004015 00000 n 
-0000004111 00000 n 
-0000004207 00000 n 
-0000004303 00000 n 
-0000004399 00000 n 
-0000004495 00000 n 
-trailer
-<<
-/Size 53
-/Root 1 0 R
->>
-startxref
-4591
-%%EOF"""
-    
-    return pdf_content
-
-def test_pdf_extraction_endpoint():
-    """Test the PDF extraction endpoint with page range parameters"""
-    print("=" * 60)
-    print("TESTING PDF EXTRACTION ENDPOINT")
-    print("=" * 60)
-    
-    # Create dummy PDF
-    print("Creating dummy PDF with 25 pages...")
-    pdf_data = create_dummy_pdf()
-    
-    # Test parameters
-    test_params = {
-        'password': 'Liana2018',
-        'program_month': 2,
-        'program_year': 2026,
-        'start_page': 20,
-        'end_page': 21
-    }
-    
-    print(f"Testing endpoint: {API_BASE}/extract-pdf")
-    print(f"Parameters: {test_params}")
-    
-    try:
-        # Prepare multipart form data
-        files = {
-            'file': ('test_document.pdf', pdf_data, 'application/pdf')
+class APITester:
+    def __init__(self, base_url: str):
+        self.base_url = base_url
+        self.session = requests.Session()
+        self.session.timeout = 30
+        self.test_results = []
+        
+    def log_test(self, test_name: str, success: bool, message: str, details: Optional[Dict] = None):
+        """Log test result"""
+        result = {
+            "test": test_name,
+            "success": success,
+            "message": message,
+            "details": details or {}
         }
-        
-        data = {
-            'password': test_params['password'],
-            'program_month': test_params['program_month'],
-            'program_year': test_params['program_year'],
-            'start_page': test_params['start_page'],
-            'end_page': test_params['end_page']
-        }
-        
-        print("\nSending POST request...")
-        response = requests.post(
-            f"{API_BASE}/extract-pdf",
-            files=files,
-            data=data,
-            timeout=30
-        )
-        
-        print(f"Response Status Code: {response.status_code}")
-        print(f"Response Headers: {dict(response.headers)}")
-        
-        if response.status_code == 200:
-            print("✅ SUCCESS: Endpoint accepts page range parameters")
-            try:
-                response_json = response.json()
-                print(f"Response JSON keys: {list(response_json.keys())}")
-                print(f"Success: {response_json.get('success', 'N/A')}")
-                print(f"Message: {response_json.get('message', 'N/A')}")
-            except:
-                print("Response is not JSON format")
-                print(f"Response text (first 500 chars): {response.text[:500]}")
-        else:
-            print(f"❌ FAILED: HTTP {response.status_code}")
-            print(f"Response: {response.text}")
+        self.test_results.append(result)
+        status = "✅ PASS" if success else "❌ FAIL"
+        print(f"{status} {test_name}: {message}")
+        if details and not success:
+            print(f"   Details: {details}")
+    
+    def test_health_check(self):
+        """Test GET /api/ping"""
+        try:
+            response = self.session.get(f"{self.base_url}/api/ping")
             
-        return response.status_code == 200
-        
-    except requests.exceptions.RequestException as e:
-        print(f"❌ REQUEST ERROR: {str(e)}")
-        return False
-    except Exception as e:
-        print(f"❌ UNEXPECTED ERROR: {str(e)}")
-        return False
-
-def test_basic_api_health():
-    """Test basic API connectivity"""
-    print("=" * 60)
-    print("TESTING BASIC API CONNECTIVITY")
-    print("=" * 60)
+            if response.status_code != 200:
+                self.log_test("Health Check", False, f"Expected 200, got {response.status_code}", 
+                            {"status_code": response.status_code, "response": response.text})
+                return False
+            
+            data = response.json()
+            if data.get("status") != "ok":
+                self.log_test("Health Check", False, f"Expected status 'ok', got {data.get('status')}", 
+                            {"response": data})
+                return False
+            
+            self.log_test("Health Check", True, "API is responding correctly")
+            return True
+            
+        except Exception as e:
+            self.log_test("Health Check", False, f"Request failed: {str(e)}")
+            return False
     
-    try:
-        print(f"Testing: {API_BASE}/")
-        response = requests.get(f"{API_BASE}/", timeout=10)
-        print(f"Status Code: {response.status_code}")
+    def test_get_programs(self):
+        """Test GET /api/programs"""
+        try:
+            response = self.session.get(f"{self.base_url}/api/programs")
+            
+            if response.status_code != 200:
+                self.log_test("Get Programs", False, f"Expected 200, got {response.status_code}", 
+                            {"status_code": response.status_code, "response": response.text})
+                return False
+            
+            data = response.json()
+            if not isinstance(data, list):
+                self.log_test("Get Programs", False, "Expected array response", 
+                            {"response_type": type(data).__name__})
+                return False
+            
+            if len(data) == 0:
+                self.log_test("Get Programs", False, "No programs returned")
+                return False
+            
+            # Validate program structure
+            required_fields = ["brand", "model", "year", "consumer_cash", "bonus_cash", "option1_rates"]
+            sample_program = data[0]
+            
+            missing_fields = [field for field in required_fields if field not in sample_program]
+            if missing_fields:
+                self.log_test("Get Programs", False, f"Missing required fields: {missing_fields}", 
+                            {"sample_program": sample_program})
+                return False
+            
+            self.log_test("Get Programs", True, f"Retrieved {len(data)} programs with correct structure")
+            return data
+            
+        except Exception as e:
+            self.log_test("Get Programs", False, f"Request failed: {str(e)}")
+            return False
+    
+    def test_get_periods(self):
+        """Test GET /api/periods"""
+        try:
+            response = self.session.get(f"{self.base_url}/api/periods")
+            
+            if response.status_code != 200:
+                self.log_test("Get Periods", False, f"Expected 200, got {response.status_code}", 
+                            {"status_code": response.status_code, "response": response.text})
+                return False
+            
+            data = response.json()
+            if not isinstance(data, list):
+                self.log_test("Get Periods", False, "Expected array response", 
+                            {"response_type": type(data).__name__})
+                return False
+            
+            # Check for January and February 2026
+            periods = {(p.get("month"), p.get("year")): p.get("count") for p in data}
+            
+            jan_2026 = periods.get((1, 2026))
+            feb_2026 = periods.get((2, 2026))
+            
+            if jan_2026 is None:
+                self.log_test("Get Periods", False, "January 2026 period not found", 
+                            {"available_periods": list(periods.keys())})
+                return False
+            
+            if feb_2026 is None:
+                self.log_test("Get Periods", False, "February 2026 period not found", 
+                            {"available_periods": list(periods.keys())})
+                return False
+            
+            self.log_test("Get Periods", True, f"Found periods including Jan 2026 ({jan_2026} programs) and Feb 2026 ({feb_2026} programs)")
+            return data
+            
+        except Exception as e:
+            self.log_test("Get Periods", False, f"Request failed: {str(e)}")
+            return False
+    
+    def test_filter_by_period(self):
+        """Test GET /api/programs?month=X&year=2026"""
+        results = {}
         
-        if response.status_code == 200:
-            print("✅ API is accessible")
-            try:
-                data = response.json()
-                print(f"Response: {data}")
-            except:
-                print(f"Response text: {response.text}")
+        # Test January 2026
+        try:
+            response = self.session.get(f"{self.base_url}/api/programs?month=1&year=2026")
+            
+            if response.status_code != 200:
+                self.log_test("Filter January 2026", False, f"Expected 200, got {response.status_code}", 
+                            {"status_code": response.status_code})
+                return False
+            
+            jan_data = response.json()
+            if not isinstance(jan_data, list):
+                self.log_test("Filter January 2026", False, "Expected array response")
+                return False
+            
+            # Verify all programs are from January 2026
+            wrong_period = [p for p in jan_data if p.get("program_month") != 1 or p.get("program_year") != 2026]
+            if wrong_period:
+                self.log_test("Filter January 2026", False, f"Found {len(wrong_period)} programs from wrong period")
+                return False
+            
+            results["january"] = len(jan_data)
+            self.log_test("Filter January 2026", True, f"Retrieved {len(jan_data)} programs for January 2026")
+            
+        except Exception as e:
+            self.log_test("Filter January 2026", False, f"Request failed: {str(e)}")
+            return False
+        
+        # Test February 2026
+        try:
+            response = self.session.get(f"{self.base_url}/api/programs?month=2&year=2026")
+            
+            if response.status_code != 200:
+                self.log_test("Filter February 2026", False, f"Expected 200, got {response.status_code}", 
+                            {"status_code": response.status_code})
+                return False
+            
+            feb_data = response.json()
+            if not isinstance(feb_data, list):
+                self.log_test("Filter February 2026", False, "Expected array response")
+                return False
+            
+            # Verify all programs are from February 2026
+            wrong_period = [p for p in feb_data if p.get("program_month") != 2 or p.get("program_year") != 2026]
+            if wrong_period:
+                self.log_test("Filter February 2026", False, f"Found {len(wrong_period)} programs from wrong period")
+                return False
+            
+            results["february"] = len(feb_data)
+            self.log_test("Filter February 2026", True, f"Retrieved {len(feb_data)} programs for February 2026")
+            
+        except Exception as e:
+            self.log_test("Filter February 2026", False, f"Request failed: {str(e)}")
+            return False
+        
+        # Validate expected counts from review request
+        if results.get("january") == 76:
+            self.log_test("January Count Validation", True, "January 2026 has expected 76 programs")
+        else:
+            self.log_test("January Count Validation", False, f"Expected 76 programs for January 2026, got {results.get('january')}")
+        
+        if results.get("february") == 81:
+            self.log_test("February Count Validation", True, "February 2026 has expected 81 programs")
+        else:
+            self.log_test("February Count Validation", False, f"Expected 81 programs for February 2026, got {results.get('february')}")
+        
+        return results
+    
+    def test_verify_password(self):
+        """Test POST /api/verify-password"""
+        try:
+            # Test with correct password
+            response = self.session.post(f"{self.base_url}/api/verify-password", 
+                                       data={"password": "Liana2018"})
+            
+            if response.status_code != 200:
+                self.log_test("Verify Password", False, f"Expected 200, got {response.status_code}", 
+                            {"status_code": response.status_code, "response": response.text})
+                return False
+            
+            data = response.json()
+            if not data.get("success"):
+                self.log_test("Verify Password", False, "Password verification failed", 
+                            {"response": data})
+                return False
+            
+            self.log_test("Verify Password", True, "Password verification successful")
+            
+            # Test with wrong password
+            response = self.session.post(f"{self.base_url}/api/verify-password", 
+                                       data={"password": "wrongpassword"})
+            
+            if response.status_code == 401:
+                self.log_test("Wrong Password Test", True, "Correctly rejected wrong password")
+            else:
+                self.log_test("Wrong Password Test", False, f"Expected 401 for wrong password, got {response.status_code}")
+            
+            return True
+            
+        except Exception as e:
+            self.log_test("Verify Password", False, f"Request failed: {str(e)}")
+            return False
+    
+    def test_ram_bonus_cash(self):
+        """Test Ram 2500/3500 and Ram 1500 2025 bonus cash values"""
+        try:
+            # Get all programs
+            response = self.session.get(f"{self.base_url}/api/programs")
+            if response.status_code != 200:
+                self.log_test("Ram Bonus Cash Test", False, "Could not retrieve programs for bonus cash test")
+                return False
+            
+            programs = response.json()
+            
+            # Filter Ram 2500/3500 2025 models
+            ram_2500_3500_2025 = [
+                p for p in programs 
+                if p.get("brand", "").lower() == "ram" 
+                and ("2500" in p.get("model", "") or "3500" in p.get("model", ""))
+                and p.get("year") == 2025
+            ]
+            
+            # Filter Ram 1500 2025 models
+            ram_1500_2025 = [
+                p for p in programs 
+                if p.get("brand", "").lower() == "ram" 
+                and "1500" in p.get("model", "")
+                and p.get("year") == 2025
+            ]
+            
+            # Test Ram 2500/3500 2025 bonus cash (should be 0)
+            ram_2500_3500_issues = []
+            for program in ram_2500_3500_2025:
+                bonus_cash = program.get("bonus_cash", 0)
+                if bonus_cash != 0:
+                    ram_2500_3500_issues.append({
+                        "model": program.get("model"),
+                        "trim": program.get("trim"),
+                        "bonus_cash": bonus_cash
+                    })
+            
+            if ram_2500_3500_issues:
+                self.log_test("Ram 2500/3500 2025 Bonus Cash", False, 
+                            f"Found {len(ram_2500_3500_issues)} Ram 2500/3500 2025 models with incorrect bonus cash (should be 0)", 
+                            {"incorrect_programs": ram_2500_3500_issues})
+            else:
+                self.log_test("Ram 2500/3500 2025 Bonus Cash", True, 
+                            f"All {len(ram_2500_3500_2025)} Ram 2500/3500 2025 models have correct bonus cash (0)")
+            
+            # Test Ram 1500 2025 bonus cash (should be 3000)
+            ram_1500_issues = []
+            for program in ram_1500_2025:
+                bonus_cash = program.get("bonus_cash", 0)
+                if bonus_cash != 3000:
+                    ram_1500_issues.append({
+                        "model": program.get("model"),
+                        "trim": program.get("trim"),
+                        "bonus_cash": bonus_cash
+                    })
+            
+            if ram_1500_issues:
+                self.log_test("Ram 1500 2025 Bonus Cash", False, 
+                            f"Found {len(ram_1500_issues)} Ram 1500 2025 models with incorrect bonus cash (should be 3000)", 
+                            {"incorrect_programs": ram_1500_issues})
+            else:
+                self.log_test("Ram 1500 2025 Bonus Cash", True, 
+                            f"All {len(ram_1500_2025)} Ram 1500 2025 models have correct bonus cash (3000)")
+            
+            return len(ram_2500_3500_issues) == 0 and len(ram_1500_issues) == 0
+            
+        except Exception as e:
+            self.log_test("Ram Bonus Cash Test", False, f"Request failed: {str(e)}")
+            return False
+    
+    def run_all_tests(self):
+        """Run all API tests"""
+        print(f"🚀 Starting CalcAuto AiPro API Tests")
+        print(f"📍 Backend URL: {self.base_url}")
+        print("=" * 60)
+        
+        # Test 1: Health Check
+        health_ok = self.test_health_check()
+        
+        # Test 2: Get Programs
+        programs = self.test_get_programs()
+        
+        # Test 3: Get Periods
+        periods = self.test_get_periods()
+        
+        # Test 4: Filter by Period
+        period_results = self.test_filter_by_period()
+        
+        # Test 5: Verify Password
+        password_ok = self.test_verify_password()
+        
+        # Test 6: Ram Bonus Cash Validation
+        ram_bonus_ok = self.test_ram_bonus_cash()
+        
+        print("=" * 60)
+        
+        # Summary
+        passed = sum(1 for result in self.test_results if result["success"])
+        total = len(self.test_results)
+        
+        print(f"📊 Test Summary: {passed}/{total} tests passed")
+        
+        if passed == total:
+            print("🎉 All tests passed! API is working correctly.")
             return True
         else:
-            print(f"❌ API returned {response.status_code}")
+            print("⚠️  Some tests failed. Check the details above.")
+            failed_tests = [result for result in self.test_results if not result["success"]]
+            print("\n❌ Failed Tests:")
+            for test in failed_tests:
+                print(f"   - {test['test']}: {test['message']}")
             return False
-            
-    except requests.exceptions.RequestException as e:
-        print(f"❌ CONNECTION ERROR: {str(e)}")
-        return False
 
 def main():
-    """Run all tests"""
-    print(f"Backend URL: {BACKEND_URL}")
-    print(f"API Base: {API_BASE}")
+    """Main test runner"""
+    tester = APITester(BACKEND_URL)
+    success = tester.run_all_tests()
     
-    # Test basic connectivity first
-    api_healthy = test_basic_api_health()
-    
-    if not api_healthy:
-        print("\n❌ CRITICAL: Cannot connect to API. Stopping tests.")
-        return False
-    
-    # Test PDF extraction endpoint
-    pdf_test_passed = test_pdf_extraction_endpoint()
-    
-    print("\n" + "=" * 60)
-    print("TEST SUMMARY")
-    print("=" * 60)
-    print(f"API Health: {'✅ PASS' if api_healthy else '❌ FAIL'}")
-    print(f"PDF Extraction with Page Range: {'✅ PASS' if pdf_test_passed else '❌ FAIL'}")
-    
-    return api_healthy and pdf_test_passed
+    # Return appropriate exit code
+    sys.exit(0 if success else 1)
 
 if __name__ == "__main__":
-    success = main()
-    exit(0 if success else 1)
+    main()
