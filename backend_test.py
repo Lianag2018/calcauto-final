@@ -436,10 +436,10 @@ def main():
         if test_mark_reminder_done(submission_id2):
             passed_tests += 1
     
-    # Test 10: Update status (use second submission)
-    if submission_id2:
+    # Test 10: Update status (use first submission instead of second)
+    if submission_id1:
         total_tests += 1
-        if test_update_status(submission_id2, "contacted"):
+        if test_update_status(submission_id1, "converted"):
             passed_tests += 1
     
     # Test 11: Get reminders
