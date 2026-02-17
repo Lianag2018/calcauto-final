@@ -1370,18 +1370,29 @@ EXTRAIS ABSOLUMENT TOUS LES VÉHICULES DES SECTIONS 2026 ET 2025. Ne manque aucu
                 })
                 logger.info(f"Deleted {delete_result.deleted_count} old programs for {program_month}/{program_year}")
                 
+                # Taux par défaut (4.99% standard)
+                default_rates = {
+                    "rate_36": 4.99, "rate_48": 4.99, "rate_60": 4.99,
+                    "rate_72": 4.99, "rate_84": 4.99, "rate_96": 4.99
+                }
+                
                 # Ensuite, ajouter les nouveaux programmes
                 for prog in valid_programs:
+                    # S'assurer que option1_rates n'est pas None
+                    opt1 = prog.get("option1_rates")
+                    if opt1 is None or not isinstance(opt1, dict):
+                        opt1 = default_rates.copy()
+                    
                     program_doc = {
                         "id": str(uuid.uuid4()),
                         "brand": prog.get("brand", ""),
                         "model": prog.get("model", ""),
                         "trim": prog.get("trim", ""),
                         "year": prog.get("year", program_year),
-                        "consumer_cash": prog.get("consumer_cash", 0),
-                        "bonus_cash": prog.get("bonus_cash", 0),
-                        "alt_consumer_cash": prog.get("alt_consumer_cash", 0),
-                        "option1_rates": prog.get("option1_rates"),
+                        "consumer_cash": prog.get("consumer_cash", 0) or 0,
+                        "bonus_cash": prog.get("bonus_cash", 0) or 0,
+                        "alt_consumer_cash": prog.get("alt_consumer_cash", 0) or 0,
+                        "option1_rates": opt1,
                         "option2_rates": prog.get("option2_rates"),
                         "program_month": program_month,
                         "program_year": program_year,
