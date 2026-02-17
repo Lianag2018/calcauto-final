@@ -1,8 +1,10 @@
 {
+  "buildCommand": "npx expo export -p web",
+  "outputDirectory": "dist",
+  "framework": null,
   "rewrites": [
-    { "source": "/import", "destination": "/" },
-    { "source": "/manage", "destination": "/" },
-    { "source": "/(.*)", "destination": "/" }
+    { "source": "/api/:path*", "destination": "https://calcauto-aipro.onrender.com/api/:path*" },
+    { "source": "/:path*", "destination": "/index.html" }
   ],
   "headers": [
     {
