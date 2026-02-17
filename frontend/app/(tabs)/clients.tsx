@@ -1237,4 +1237,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  // Status badges
+  statusBadgeContainer: {
+    marginTop: 10,
+  },
+  statusBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: '#2d2d44',
+  },
+  statusPending: {
+    backgroundColor: 'rgba(255, 217, 61, 0.2)',
+  },
+  statusContacted: {
+    backgroundColor: 'rgba(78, 205, 196, 0.2)',
+  },
+  statusConverted: {
+    backgroundColor: 'rgba(46, 125, 50, 0.3)',
+  },
+  statusLost: {
+    backgroundColor: 'rgba(255, 107, 107, 0.2)',
+  },
+  statusBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '500',
+  },
 });
