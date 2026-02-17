@@ -1,364 +1,469 @@
 #!/usr/bin/env python3
 """
-CalcAuto AiPro Backend API Testing Suite
-Tests the deployed API on Render: https://calcauto-aipro.onrender.com
+CalcAuto AiPro CRM Backend API Test Suite
+Tests all submission-related endpoints for the CRM functionality
 """
 
 import requests
 import json
+import uuid
+from datetime import datetime, timedelta
+from typing import Dict, Any, List
 import sys
-from typing import Dict, List, Any, Optional
 
-# Backend URL from the review request
-BACKEND_URL = "https://calcauto-aipro.onrender.com"
+# Backend URL from environment
+BACKEND_URL = "https://financeplus-44.preview.emergentagent.com/api"
 
-class APITester:
-    def __init__(self, base_url: str):
-        self.base_url = base_url
-        self.session = requests.Session()
-        self.session.timeout = 30
-        self.test_results = []
-        
-    def log_test(self, test_name: str, success: bool, message: str, details: Optional[Dict] = None):
-        """Log test result"""
-        result = {
-            "test": test_name,
-            "success": success,
-            "message": message,
-            "details": details or {}
-        }
-        self.test_results.append(result)
-        status = "✅ PASS" if success else "❌ FAIL"
-        print(f"{status} {test_name}: {message}")
-        if details and not success:
-            print(f"   Details: {details}")
-    
-    def test_health_check(self):
-        """Test GET /api/ping"""
-        try:
-            response = self.session.get(f"{self.base_url}/api/ping")
-            
-            if response.status_code != 200:
-                self.log_test("Health Check", False, f"Expected 200, got {response.status_code}", 
-                            {"status_code": response.status_code, "response": response.text})
-                return False
-            
+class Colors:
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    YELLOW = '\033[93m'
+    BLUE = '\033[94m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+
+def log_test(test_name: str, status: str, details: str = ""):
+    """Log test results with colors"""
+    color = Colors.GREEN if status == "PASS" else Colors.RED if status == "FAIL" else Colors.YELLOW
+    print(f"{color}[{status}]{Colors.ENDC} {test_name}")
+    if details:
+        print(f"    {details}")
+
+def test_health_check():
+    """Test basic API health"""
+    try:
+        response = requests.get(f"{BACKEND_URL}/ping", timeout=10)
+        if response.status_code == 200:
             data = response.json()
-            if data.get("status") != "ok":
-                self.log_test("Health Check", False, f"Expected status 'ok', got {data.get('status')}", 
-                            {"response": data})
-                return False
-            
-            self.log_test("Health Check", True, "API is responding correctly")
-            return True
-            
-        except Exception as e:
-            self.log_test("Health Check", False, f"Request failed: {str(e)}")
-            return False
-    
-    def test_get_programs(self):
-        """Test GET /api/programs"""
-        try:
-            response = self.session.get(f"{self.base_url}/api/programs")
-            
-            if response.status_code != 200:
-                self.log_test("Get Programs", False, f"Expected 200, got {response.status_code}", 
-                            {"status_code": response.status_code, "response": response.text})
-                return False
-            
-            data = response.json()
-            if not isinstance(data, list):
-                self.log_test("Get Programs", False, "Expected array response", 
-                            {"response_type": type(data).__name__})
-                return False
-            
-            if len(data) == 0:
-                self.log_test("Get Programs", False, "No programs returned")
-                return False
-            
-            # Validate program structure
-            required_fields = ["brand", "model", "year", "consumer_cash", "bonus_cash", "option1_rates"]
-            sample_program = data[0]
-            
-            missing_fields = [field for field in required_fields if field not in sample_program]
-            if missing_fields:
-                self.log_test("Get Programs", False, f"Missing required fields: {missing_fields}", 
-                            {"sample_program": sample_program})
-                return False
-            
-            self.log_test("Get Programs", True, f"Retrieved {len(data)} programs with correct structure")
-            return data
-            
-        except Exception as e:
-            self.log_test("Get Programs", False, f"Request failed: {str(e)}")
-            return False
-    
-    def test_get_periods(self):
-        """Test GET /api/periods"""
-        try:
-            response = self.session.get(f"{self.base_url}/api/periods")
-            
-            if response.status_code != 200:
-                self.log_test("Get Periods", False, f"Expected 200, got {response.status_code}", 
-                            {"status_code": response.status_code, "response": response.text})
-                return False
-            
-            data = response.json()
-            if not isinstance(data, list):
-                self.log_test("Get Periods", False, "Expected array response", 
-                            {"response_type": type(data).__name__})
-                return False
-            
-            # Check for January and February 2026
-            periods = {(p.get("month"), p.get("year")): p.get("count") for p in data}
-            
-            jan_2026 = periods.get((1, 2026))
-            feb_2026 = periods.get((2, 2026))
-            
-            if jan_2026 is None:
-                self.log_test("Get Periods", False, "January 2026 period not found", 
-                            {"available_periods": list(periods.keys())})
-                return False
-            
-            if feb_2026 is None:
-                self.log_test("Get Periods", False, "February 2026 period not found", 
-                            {"available_periods": list(periods.keys())})
-                return False
-            
-            self.log_test("Get Periods", True, f"Found periods including Jan 2026 ({jan_2026} programs) and Feb 2026 ({feb_2026} programs)")
-            return data
-            
-        except Exception as e:
-            self.log_test("Get Periods", False, f"Request failed: {str(e)}")
-            return False
-    
-    def test_filter_by_period(self):
-        """Test GET /api/programs?month=X&year=2026"""
-        results = {}
-        
-        # Test January 2026
-        try:
-            response = self.session.get(f"{self.base_url}/api/programs?month=1&year=2026")
-            
-            if response.status_code != 200:
-                self.log_test("Filter January 2026", False, f"Expected 200, got {response.status_code}", 
-                            {"status_code": response.status_code})
-                return False
-            
-            jan_data = response.json()
-            if not isinstance(jan_data, list):
-                self.log_test("Filter January 2026", False, "Expected array response")
-                return False
-            
-            # Verify all programs are from January 2026
-            wrong_period = [p for p in jan_data if p.get("program_month") != 1 or p.get("program_year") != 2026]
-            if wrong_period:
-                self.log_test("Filter January 2026", False, f"Found {len(wrong_period)} programs from wrong period")
-                return False
-            
-            results["january"] = len(jan_data)
-            self.log_test("Filter January 2026", True, f"Retrieved {len(jan_data)} programs for January 2026")
-            
-        except Exception as e:
-            self.log_test("Filter January 2026", False, f"Request failed: {str(e)}")
-            return False
-        
-        # Test February 2026
-        try:
-            response = self.session.get(f"{self.base_url}/api/programs?month=2&year=2026")
-            
-            if response.status_code != 200:
-                self.log_test("Filter February 2026", False, f"Expected 200, got {response.status_code}", 
-                            {"status_code": response.status_code})
-                return False
-            
-            feb_data = response.json()
-            if not isinstance(feb_data, list):
-                self.log_test("Filter February 2026", False, "Expected array response")
-                return False
-            
-            # Verify all programs are from February 2026
-            wrong_period = [p for p in feb_data if p.get("program_month") != 2 or p.get("program_year") != 2026]
-            if wrong_period:
-                self.log_test("Filter February 2026", False, f"Found {len(wrong_period)} programs from wrong period")
-                return False
-            
-            results["february"] = len(feb_data)
-            self.log_test("Filter February 2026", True, f"Retrieved {len(feb_data)} programs for February 2026")
-            
-        except Exception as e:
-            self.log_test("Filter February 2026", False, f"Request failed: {str(e)}")
-            return False
-        
-        # Validate expected counts from review request
-        if results.get("january") == 76:
-            self.log_test("January Count Validation", True, "January 2026 has expected 76 programs")
-        else:
-            self.log_test("January Count Validation", False, f"Expected 76 programs for January 2026, got {results.get('january')}")
-        
-        if results.get("february") == 81:
-            self.log_test("February Count Validation", True, "February 2026 has expected 81 programs")
-        else:
-            self.log_test("February Count Validation", False, f"Expected 81 programs for February 2026, got {results.get('february')}")
-        
-        return results
-    
-    def test_verify_password(self):
-        """Test POST /api/verify-password"""
-        try:
-            # Test with correct password
-            response = self.session.post(f"{self.base_url}/api/verify-password", 
-                                       data={"password": "Liana2018"})
-            
-            if response.status_code != 200:
-                self.log_test("Verify Password", False, f"Expected 200, got {response.status_code}", 
-                            {"status_code": response.status_code, "response": response.text})
-                return False
-            
-            data = response.json()
-            if not data.get("success"):
-                self.log_test("Verify Password", False, "Password verification failed", 
-                            {"response": data})
-                return False
-            
-            self.log_test("Verify Password", True, "Password verification successful")
-            
-            # Test with wrong password
-            response = self.session.post(f"{self.base_url}/api/verify-password", 
-                                       data={"password": "wrongpassword"})
-            
-            if response.status_code == 401:
-                self.log_test("Wrong Password Test", True, "Correctly rejected wrong password")
+            if data.get("status") == "ok":
+                log_test("Health Check", "PASS", f"API responding: {data}")
+                return True
             else:
-                self.log_test("Wrong Password Test", False, f"Expected 401 for wrong password, got {response.status_code}")
-            
-            return True
-            
-        except Exception as e:
-            self.log_test("Verify Password", False, f"Request failed: {str(e)}")
-            return False
-    
-    def test_ram_bonus_cash(self):
-        """Test Ram 2500/3500 and Ram 1500 2025 bonus cash values"""
-        try:
-            # Get all programs
-            response = self.session.get(f"{self.base_url}/api/programs")
-            if response.status_code != 200:
-                self.log_test("Ram Bonus Cash Test", False, "Could not retrieve programs for bonus cash test")
+                log_test("Health Check", "FAIL", f"Unexpected response: {data}")
                 return False
-            
+        else:
+            log_test("Health Check", "FAIL", f"Status {response.status_code}: {response.text}")
+            return False
+    except Exception as e:
+        log_test("Health Check", "FAIL", f"Connection error: {str(e)}")
+        return False
+
+def test_get_programs():
+    """Test existing programs endpoint"""
+    try:
+        response = requests.get(f"{BACKEND_URL}/programs", timeout=10)
+        if response.status_code == 200:
             programs = response.json()
-            
-            # Filter Ram 2500/3500 2025 models
-            ram_2500_3500_2025 = [
-                p for p in programs 
-                if p.get("brand", "").lower() == "ram" 
-                and ("2500" in p.get("model", "") or "3500" in p.get("model", ""))
-                and p.get("year") == 2025
-            ]
-            
-            # Filter Ram 1500 2025 models
-            ram_1500_2025 = [
-                p for p in programs 
-                if p.get("brand", "").lower() == "ram" 
-                and "1500" in p.get("model", "")
-                and p.get("year") == 2025
-            ]
-            
-            # Test Ram 2500/3500 2025 bonus cash (should be 0)
-            ram_2500_3500_issues = []
-            for program in ram_2500_3500_2025:
-                bonus_cash = program.get("bonus_cash", 0)
-                if bonus_cash != 0:
-                    ram_2500_3500_issues.append({
-                        "model": program.get("model"),
-                        "trim": program.get("trim"),
-                        "bonus_cash": bonus_cash
-                    })
-            
-            if ram_2500_3500_issues:
-                self.log_test("Ram 2500/3500 2025 Bonus Cash", False, 
-                            f"Found {len(ram_2500_3500_issues)} Ram 2500/3500 2025 models with incorrect bonus cash (should be 0)", 
-                            {"incorrect_programs": ram_2500_3500_issues})
+            if isinstance(programs, list) and len(programs) > 0:
+                log_test("GET /programs", "PASS", f"Retrieved {len(programs)} programs")
+                return True, programs[0] if programs else None
             else:
-                self.log_test("Ram 2500/3500 2025 Bonus Cash", True, 
-                            f"All {len(ram_2500_3500_2025)} Ram 2500/3500 2025 models have correct bonus cash (0)")
-            
-            # Test Ram 1500 2025 bonus cash (should be 3000)
-            ram_1500_issues = []
-            for program in ram_1500_2025:
-                bonus_cash = program.get("bonus_cash", 0)
-                if bonus_cash != 3000:
-                    ram_1500_issues.append({
-                        "model": program.get("model"),
-                        "trim": program.get("trim"),
-                        "bonus_cash": bonus_cash
-                    })
-            
-            if ram_1500_issues:
-                self.log_test("Ram 1500 2025 Bonus Cash", False, 
-                            f"Found {len(ram_1500_issues)} Ram 1500 2025 models with incorrect bonus cash (should be 3000)", 
-                            {"incorrect_programs": ram_1500_issues})
-            else:
-                self.log_test("Ram 1500 2025 Bonus Cash", True, 
-                            f"All {len(ram_1500_2025)} Ram 1500 2025 models have correct bonus cash (3000)")
-            
-            return len(ram_2500_3500_issues) == 0 and len(ram_1500_issues) == 0
-            
-        except Exception as e:
-            self.log_test("Ram Bonus Cash Test", False, f"Request failed: {str(e)}")
-            return False
-    
-    def run_all_tests(self):
-        """Run all API tests"""
-        print(f"🚀 Starting CalcAuto AiPro API Tests")
-        print(f"📍 Backend URL: {self.base_url}")
-        print("=" * 60)
-        
-        # Test 1: Health Check
-        health_ok = self.test_health_check()
-        
-        # Test 2: Get Programs
-        programs = self.test_get_programs()
-        
-        # Test 3: Get Periods
-        periods = self.test_get_periods()
-        
-        # Test 4: Filter by Period
-        period_results = self.test_filter_by_period()
-        
-        # Test 5: Verify Password
-        password_ok = self.test_verify_password()
-        
-        # Test 6: Ram Bonus Cash Validation
-        ram_bonus_ok = self.test_ram_bonus_cash()
-        
-        print("=" * 60)
-        
-        # Summary
-        passed = sum(1 for result in self.test_results if result["success"])
-        total = len(self.test_results)
-        
-        print(f"📊 Test Summary: {passed}/{total} tests passed")
-        
-        if passed == total:
-            print("🎉 All tests passed! API is working correctly.")
-            return True
+                log_test("GET /programs", "FAIL", "No programs found")
+                return False, None
         else:
-            print("⚠️  Some tests failed. Check the details above.")
-            failed_tests = [result for result in self.test_results if not result["success"]]
-            print("\n❌ Failed Tests:")
-            for test in failed_tests:
-                print(f"   - {test['test']}: {test['message']}")
+            log_test("GET /programs", "FAIL", f"Status {response.status_code}: {response.text}")
+            return False, None
+    except Exception as e:
+        log_test("GET /programs", "FAIL", f"Error: {str(e)}")
+        return False, None
+
+def test_get_periods():
+    """Test existing periods endpoint"""
+    try:
+        response = requests.get(f"{BACKEND_URL}/periods", timeout=10)
+        if response.status_code == 200:
+            periods = response.json()
+            if isinstance(periods, list) and len(periods) > 0:
+                log_test("GET /periods", "PASS", f"Retrieved {len(periods)} periods")
+                return True
+            else:
+                log_test("GET /periods", "FAIL", "No periods found")
+                return False
+        else:
+            log_test("GET /periods", "FAIL", f"Status {response.status_code}: {response.text}")
             return False
+    except Exception as e:
+        log_test("GET /periods", "FAIL", f"Error: {str(e)}")
+        return False
+
+def test_get_submissions_empty():
+    """Test GET /submissions when empty"""
+    try:
+        response = requests.get(f"{BACKEND_URL}/submissions", timeout=10)
+        if response.status_code == 200:
+            submissions = response.json()
+            if isinstance(submissions, list):
+                log_test("GET /submissions (initial)", "PASS", f"Retrieved {len(submissions)} submissions")
+                return True, submissions
+            else:
+                log_test("GET /submissions (initial)", "FAIL", f"Expected list, got: {type(submissions)}")
+                return False, []
+        else:
+            log_test("GET /submissions (initial)", "FAIL", f"Status {response.status_code}: {response.text}")
+            return False, []
+    except Exception as e:
+        log_test("GET /submissions (initial)", "FAIL", f"Error: {str(e)}")
+        return False, []
+
+def create_test_submission(client_name: str, vehicle_brand: str = "Ram", vehicle_model: str = "1500") -> Dict[str, Any]:
+    """Create a test submission payload"""
+    return {
+        "client_name": client_name,
+        "client_phone": "514-555-0123",
+        "client_email": f"{client_name.lower().replace(' ', '.')}@example.com",
+        "vehicle_brand": vehicle_brand,
+        "vehicle_model": vehicle_model,
+        "vehicle_year": 2025,
+        "vehicle_price": 45000.0,
+        "term": 72,
+        "payment_monthly": 650.0,
+        "payment_biweekly": 300.0,
+        "payment_weekly": 150.0,
+        "selected_option": "1",
+        "rate": 4.99,
+        "program_month": 2,
+        "program_year": 2026
+    }
+
+def test_create_submission():
+    """Test POST /submissions"""
+    try:
+        # Create first test submission
+        submission_data = create_test_submission("Jean Dupont", "Ram", "1500")
+        
+        response = requests.post(
+            f"{BACKEND_URL}/submissions",
+            json=submission_data,
+            headers={"Content-Type": "application/json"},
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("success") and "submission" in result:
+                submission = result["submission"]
+                submission_id = submission.get("id")
+                reminder_date = submission.get("reminder_date")
+                
+                if submission_id and reminder_date:
+                    log_test("POST /submissions (Jean Dupont)", "PASS", 
+                           f"Created submission ID: {submission_id}, Reminder: {reminder_date}")
+                    return True, submission_id
+                else:
+                    log_test("POST /submissions (Jean Dupont)", "FAIL", "Missing ID or reminder_date")
+                    return False, None
+            else:
+                log_test("POST /submissions (Jean Dupont)", "FAIL", f"Unexpected response: {result}")
+                return False, None
+        else:
+            log_test("POST /submissions (Jean Dupont)", "FAIL", f"Status {response.status_code}: {response.text}")
+            return False, None
+    except Exception as e:
+        log_test("POST /submissions (Jean Dupont)", "FAIL", f"Error: {str(e)}")
+        return False, None
+
+def test_create_second_submission():
+    """Test creating a second submission"""
+    try:
+        # Create second test submission
+        submission_data = create_test_submission("Marie Tremblay", "Jeep", "Grand Cherokee")
+        
+        response = requests.post(
+            f"{BACKEND_URL}/submissions",
+            json=submission_data,
+            headers={"Content-Type": "application/json"},
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("success") and "submission" in result:
+                submission = result["submission"]
+                submission_id = submission.get("id")
+                
+                log_test("POST /submissions (Marie Tremblay)", "PASS", 
+                       f"Created submission ID: {submission_id}")
+                return True, submission_id
+            else:
+                log_test("POST /submissions (Marie Tremblay)", "FAIL", f"Unexpected response: {result}")
+                return False, None
+        else:
+            log_test("POST /submissions (Marie Tremblay)", "FAIL", f"Status {response.status_code}: {response.text}")
+            return False, None
+    except Exception as e:
+        log_test("POST /submissions (Marie Tremblay)", "FAIL", f"Error: {str(e)}")
+        return False, None
+
+def test_get_submissions_with_data():
+    """Test GET /submissions after creating data"""
+    try:
+        response = requests.get(f"{BACKEND_URL}/submissions", timeout=10)
+        if response.status_code == 200:
+            submissions = response.json()
+            if isinstance(submissions, list) and len(submissions) >= 2:
+                # Check required fields
+                first_sub = submissions[0]
+                required_fields = [
+                    "id", "client_name", "client_phone", "client_email",
+                    "vehicle_brand", "vehicle_model", "vehicle_year", "vehicle_price",
+                    "term", "payment_monthly", "submission_date", "reminder_date",
+                    "reminder_done", "status"
+                ]
+                
+                missing_fields = [field for field in required_fields if field not in first_sub]
+                if not missing_fields:
+                    log_test("GET /submissions (with data)", "PASS", 
+                           f"Retrieved {len(submissions)} submissions with all required fields")
+                    return True, submissions
+                else:
+                    log_test("GET /submissions (with data)", "FAIL", 
+                           f"Missing fields: {missing_fields}")
+                    return False, submissions
+            else:
+                log_test("GET /submissions (with data)", "FAIL", 
+                       f"Expected at least 2 submissions, got {len(submissions) if isinstance(submissions, list) else 'non-list'}")
+                return False, []
+        else:
+            log_test("GET /submissions (with data)", "FAIL", f"Status {response.status_code}: {response.text}")
+            return False, []
+    except Exception as e:
+        log_test("GET /submissions (with data)", "FAIL", f"Error: {str(e)}")
+        return False, []
+
+def test_update_reminder(submission_id: str):
+    """Test PUT /submissions/{id}/reminder"""
+    try:
+        # Set reminder for tomorrow
+        future_date = (datetime.utcnow() + timedelta(days=1)).isoformat()
+        
+        reminder_data = {
+            "reminder_date": future_date,
+            "notes": "Follow up on financing options"
+        }
+        
+        response = requests.put(
+            f"{BACKEND_URL}/submissions/{submission_id}/reminder",
+            json=reminder_data,
+            headers={"Content-Type": "application/json"},
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("success"):
+                log_test("PUT /submissions/{id}/reminder", "PASS", 
+                       f"Updated reminder for {submission_id}")
+                return True
+            else:
+                log_test("PUT /submissions/{id}/reminder", "FAIL", f"Unexpected response: {result}")
+                return False
+        else:
+            log_test("PUT /submissions/{id}/reminder", "FAIL", f"Status {response.status_code}: {response.text}")
+            return False
+    except Exception as e:
+        log_test("PUT /submissions/{id}/reminder", "FAIL", f"Error: {str(e)}")
+        return False
+
+def test_mark_reminder_done(submission_id: str):
+    """Test PUT /submissions/{id}/done"""
+    try:
+        response = requests.put(
+            f"{BACKEND_URL}/submissions/{submission_id}/done",
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("success"):
+                log_test("PUT /submissions/{id}/done", "PASS", 
+                       f"Marked reminder done for {submission_id}")
+                return True
+            else:
+                log_test("PUT /submissions/{id}/done", "FAIL", f"Unexpected response: {result}")
+                return False
+        else:
+            log_test("PUT /submissions/{id}/done", "FAIL", f"Status {response.status_code}: {response.text}")
+            return False
+    except Exception as e:
+        log_test("PUT /submissions/{id}/done", "FAIL", f"Error: {str(e)}")
+        return False
+
+def test_update_status(submission_id: str, status: str):
+    """Test PUT /submissions/{id}/status"""
+    try:
+        response = requests.put(
+            f"{BACKEND_URL}/submissions/{submission_id}/status",
+            params={"status": status},
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("success"):
+                log_test(f"PUT /submissions/{{id}}/status ({status})", "PASS", 
+                       f"Updated status to {status} for {submission_id}")
+                return True
+            else:
+                log_test(f"PUT /submissions/{{id}}/status ({status})", "FAIL", f"Unexpected response: {result}")
+                return False
+        else:
+            log_test(f"PUT /submissions/{{id}}/status ({status})", "FAIL", f"Status {response.status_code}: {response.text}")
+            return False
+    except Exception as e:
+        log_test(f"PUT /submissions/{{id}}/status ({status})", "FAIL", f"Error: {str(e)}")
+        return False
+
+def test_get_reminders():
+    """Test GET /submissions/reminders"""
+    try:
+        response = requests.get(f"{BACKEND_URL}/submissions/reminders", timeout=10)
+        if response.status_code == 200:
+            result = response.json()
+            if isinstance(result, dict) and all(key in result for key in ["due", "upcoming", "due_count", "upcoming_count"]):
+                log_test("GET /submissions/reminders", "PASS", 
+                       f"Due: {result['due_count']}, Upcoming: {result['upcoming_count']}")
+                return True, result
+            else:
+                log_test("GET /submissions/reminders", "FAIL", f"Unexpected response format: {result}")
+                return False, {}
+        else:
+            log_test("GET /submissions/reminders", "FAIL", f"Status {response.status_code}: {response.text}")
+            return False, {}
+    except Exception as e:
+        log_test("GET /submissions/reminders", "FAIL", f"Error: {str(e)}")
+        return False, {}
+
+def test_search_submissions():
+    """Test GET /submissions with search parameters"""
+    try:
+        # Test search by name
+        response = requests.get(f"{BACKEND_URL}/submissions", params={"search": "Jean"}, timeout=10)
+        if response.status_code == 200:
+            submissions = response.json()
+            if isinstance(submissions, list):
+                jean_found = any("Jean" in sub.get("client_name", "") for sub in submissions)
+                if jean_found:
+                    log_test("GET /submissions (search by name)", "PASS", 
+                           f"Found {len(submissions)} submissions matching 'Jean'")
+                else:
+                    log_test("GET /submissions (search by name)", "FAIL", "Jean not found in search results")
+                    return False
+            else:
+                log_test("GET /submissions (search by name)", "FAIL", f"Expected list, got: {type(submissions)}")
+                return False
+        else:
+            log_test("GET /submissions (search by name)", "FAIL", f"Status {response.status_code}: {response.text}")
+            return False
+        
+        # Test search by status
+        response = requests.get(f"{BACKEND_URL}/submissions", params={"status": "contacted"}, timeout=10)
+        if response.status_code == 200:
+            submissions = response.json()
+            if isinstance(submissions, list):
+                log_test("GET /submissions (filter by status)", "PASS", 
+                       f"Found {len(submissions)} submissions with status 'contacted'")
+                return True
+            else:
+                log_test("GET /submissions (filter by status)", "FAIL", f"Expected list, got: {type(submissions)}")
+                return False
+        else:
+            log_test("GET /submissions (filter by status)", "FAIL", f"Status {response.status_code}: {response.text}")
+            return False
+    except Exception as e:
+        log_test("GET /submissions (search)", "FAIL", f"Error: {str(e)}")
+        return False
 
 def main():
-    """Main test runner"""
-    tester = APITester(BACKEND_URL)
-    success = tester.run_all_tests()
+    """Run all CRM backend tests"""
+    print(f"{Colors.BOLD}{Colors.BLUE}=== CalcAuto AiPro CRM Backend API Tests ==={Colors.ENDC}")
+    print(f"Testing backend at: {BACKEND_URL}")
+    print()
     
-    # Return appropriate exit code
-    sys.exit(0 if success else 1)
+    # Track test results
+    passed_tests = 0
+    total_tests = 0
+    
+    # Test 1: Health check
+    total_tests += 1
+    if test_health_check():
+        passed_tests += 1
+    
+    # Test 2: Existing endpoints (programs)
+    total_tests += 1
+    programs_ok, sample_program = test_get_programs()
+    if programs_ok:
+        passed_tests += 1
+    
+    # Test 3: Existing endpoints (periods)
+    total_tests += 1
+    if test_get_periods():
+        passed_tests += 1
+    
+    # Test 4: Get submissions (initially empty)
+    total_tests += 1
+    submissions_ok, initial_submissions = test_get_submissions_empty()
+    if submissions_ok:
+        passed_tests += 1
+    
+    # Test 5: Create first submission
+    total_tests += 1
+    create1_ok, submission_id1 = test_create_submission()
+    if create1_ok:
+        passed_tests += 1
+    
+    # Test 6: Create second submission
+    total_tests += 1
+    create2_ok, submission_id2 = test_create_second_submission()
+    if create2_ok:
+        passed_tests += 1
+    
+    # Test 7: Get submissions with data
+    total_tests += 1
+    get_data_ok, submissions_with_data = test_get_submissions_with_data()
+    if get_data_ok:
+        passed_tests += 1
+    
+    # Test 8: Update reminder (use first submission)
+    if submission_id1:
+        total_tests += 1
+        if test_update_reminder(submission_id1):
+            passed_tests += 1
+    
+    # Test 9: Mark reminder done (use second submission)
+    if submission_id2:
+        total_tests += 1
+        if test_mark_reminder_done(submission_id2):
+            passed_tests += 1
+    
+    # Test 10: Update status (use second submission)
+    if submission_id2:
+        total_tests += 1
+        if test_update_status(submission_id2, "contacted"):
+            passed_tests += 1
+    
+    # Test 11: Get reminders
+    total_tests += 1
+    reminders_ok, reminders_data = test_get_reminders()
+    if reminders_ok:
+        passed_tests += 1
+    
+    # Test 12: Search functionality
+    total_tests += 1
+    if test_search_submissions():
+        passed_tests += 1
+    
+    # Summary
+    print()
+    print(f"{Colors.BOLD}=== Test Summary ==={Colors.ENDC}")
+    print(f"Passed: {Colors.GREEN}{passed_tests}{Colors.ENDC}/{total_tests}")
+    print(f"Failed: {Colors.RED}{total_tests - passed_tests}{Colors.ENDC}/{total_tests}")
+    
+    if passed_tests == total_tests:
+        print(f"{Colors.GREEN}{Colors.BOLD}✅ All tests passed!{Colors.ENDC}")
+        return 0
+    else:
+        print(f"{Colors.RED}{Colors.BOLD}❌ Some tests failed{Colors.ENDC}")
+        return 1
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
