@@ -1718,6 +1718,58 @@ const styles = StyleSheet.create({
     color: '#4ECDC4',
     marginTop: 2,
   },
+  periodSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  periodModal: {
+    backgroundColor: '#1a1a2e',
+    borderRadius: 16,
+    width: '85%',
+    maxHeight: '60%',
+    padding: 0,
+    overflow: 'hidden',
+  },
+  periodModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2d2d44',
+  },
+  periodModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  periodList: {
+    maxHeight: 300,
+  },
+  periodItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2d2d44',
+  },
+  periodItemActive: {
+    backgroundColor: '#4ECDC4',
+  },
+  periodItemText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '500',
+  },
+  periodItemTextActive: {
+    color: '#1a1a2e',
+  },
+  periodItemCount: {
+    fontSize: 12,
+    color: '#888',
+  },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
