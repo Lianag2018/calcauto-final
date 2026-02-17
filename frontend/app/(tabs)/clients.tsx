@@ -321,29 +321,12 @@ export default function ClientsScreen() {
 
   // Check if client has pending follow-up
   const hasPendingFollowUp = (client: Client) => {
-    return client.submissions.some(sub => 
-      sub.follow_ups?.some(f => !f.completed)
-    );
+    return client.has_pending_reminder;
   };
 
   // Get next follow-up date for client
-  const getNextFollowUp = (client: Client): FollowUp | null => {
-    let nextFollowUp: FollowUp | null = null;
-    let nextDate: Date | null = null;
-    
-    for (const sub of client.submissions) {
-      for (const followUp of (sub.follow_ups || [])) {
-        if (!followUp.completed) {
-          const date = new Date(followUp.scheduled_date);
-          if (!nextDate || date < nextDate) {
-            nextDate = date;
-            nextFollowUp = followUp;
-          }
-        }
-      }
-    }
-    
-    return nextFollowUp;
+  const getNextReminderDate = (client: Client): string | null => {
+    return client.next_reminder;
   };
 
   // Call contact
@@ -369,18 +352,19 @@ export default function ClientsScreen() {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     setFollowUpDate(tomorrow.toISOString().split('T')[0]);
-    setFollowUpNotes('');
+    setFollowUpNotes(submission.notes || '');
     setShowFollowUpModal(true);
   };
 
-  // Save follow-up
+  // Save follow-up - utilise l'endpoint backend correct
   const saveFollowUp = async () => {
     if (!selectedSubmission || !followUpDate) return;
     
     setSavingFollowUp(true);
     try {
-      await axios.post(`${API_URL}/api/submissions/${selectedSubmission.id}/follow-up`, {
-        scheduled_date: followUpDate,
+      // Utiliser l'endpoint PUT pour mettre à jour le reminder
+      await axios.put(`${API_URL}/api/submissions/${selectedSubmission.id}/reminder`, {
+        reminder_date: new Date(followUpDate).toISOString(),
         notes: followUpNotes,
       });
       
@@ -395,19 +379,21 @@ export default function ClientsScreen() {
       }
     } catch (err) {
       console.error('Error saving follow-up:', err);
-      Alert.alert('Erreur', 'Impossible de sauvegarder le suivi');
+      if (Platform.OS === 'web') {
+        alert('❌ Impossible de sauvegarder le suivi');
+      } else {
+        Alert.alert('Erreur', 'Impossible de sauvegarder le suivi');
+      }
     } finally {
       setSavingFollowUp(false);
     }
   };
 
-  // Mark follow-up as done
-  const markFollowUpDone = async (submissionId: string, followUpId: string) => {
+  // Mark follow-up as done - utilise l'endpoint backend correct
+  const markReminderDone = async (submissionId: string, scheduleNew: boolean = false) => {
     try {
-      await axios.put(`${API_URL}/api/submissions/${submissionId}/follow-up/${followUpId}`, {
-        completed: true,
-        completed_date: new Date().toISOString(),
-      });
+      const params = scheduleNew ? `?new_reminder_date=${new Date(Date.now() + 86400000 * 3).toISOString()}` : '';
+      await axios.put(`${API_URL}/api/submissions/${submissionId}/done${params}`);
       
       // Reload data
       await loadSubmissions();
@@ -418,7 +404,7 @@ export default function ClientsScreen() {
         Alert.alert('✅', 'Suivi complété!');
       }
     } catch (err) {
-      console.error('Error marking follow-up done:', err);
+      console.error('Error marking reminder done:', err);
     }
   };
 
