@@ -211,16 +211,28 @@ export default function ClientsScreen() {
       // Create clients array
       const clientsArray: Client[] = [];
       submissionsMap.forEach((subs, key) => {
-        const latestSub = subs.sort((a, b) => 
+        // Sort submissions by date (newest first)
+        const sortedSubs = subs.sort((a, b) => 
           new Date(b.submission_date).getTime() - new Date(a.submission_date).getTime()
-        )[0];
+        );
+        const latestSub = sortedSubs[0];
+        
+        // Find the next pending reminder
+        const pendingReminders = subs.filter(s => s.reminder_date && !s.reminder_done);
+        const nextReminder = pendingReminders.length > 0 
+          ? pendingReminders.sort((a, b) => 
+              new Date(a.reminder_date!).getTime() - new Date(b.reminder_date!).getTime()
+            )[0].reminder_date
+          : null;
         
         clientsArray.push({
           name: latestSub.client_name,
           email: latestSub.client_email,
           phone: latestSub.client_phone,
-          submissions: subs,
+          submissions: sortedSubs,
           last_submission_date: latestSub.submission_date,
+          next_reminder: nextReminder,
+          has_pending_reminder: pendingReminders.length > 0,
         });
       });
       
