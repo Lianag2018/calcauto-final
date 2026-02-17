@@ -514,8 +514,8 @@ export default function ClientsScreen() {
             </View>
           ) : (
             filteredClients.map((client, index) => {
-              const nextFollowUp = getNextFollowUp(client);
-              const daysUntil = nextFollowUp ? getDaysUntil(nextFollowUp.scheduled_date) : null;
+              const nextReminderDate = getNextReminderDate(client);
+              const daysUntil = nextReminderDate ? getDaysUntil(nextReminderDate) : null;
               
               return (
                 <TouchableOpacity
@@ -536,7 +536,7 @@ export default function ClientsScreen() {
                   </View>
                   
                   {/* Follow-up indicator */}
-                  {nextFollowUp && daysUntil !== null && (
+                  {nextReminderDate && daysUntil !== null && (
                     <View style={[
                       styles.followUpIndicator,
                       daysUntil < 0 && styles.followUpOverdue,
@@ -564,7 +564,7 @@ export default function ClientsScreen() {
                       {client.phone && (
                         <TouchableOpacity 
                           style={styles.actionButton}
-                          onPress={() => callContact(client.phone)}
+                          onPress={(e) => { e.stopPropagation(); callContact(client.phone); }}
                         >
                           <Ionicons name="call" size={18} color="#4ECDC4" />
                         </TouchableOpacity>
@@ -572,7 +572,7 @@ export default function ClientsScreen() {
                       {client.email && (
                         <TouchableOpacity 
                           style={styles.actionButton}
-                          onPress={() => emailContact(client.email)}
+                          onPress={(e) => { e.stopPropagation(); emailContact(client.email); }}
                         >
                           <Ionicons name="mail" size={18} color="#4ECDC4" />
                         </TouchableOpacity>
