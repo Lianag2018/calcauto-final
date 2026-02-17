@@ -16,8 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Contacts from 'expo-contacts';
+import axios from 'axios';
 
 // Import i18n
 import { Language, saveLanguage, loadLanguage } from '../../utils/i18n';
@@ -30,51 +29,141 @@ const translations = {
   en: enTranslations,
 };
 
-// Storage keys
-const SUBMISSIONS_KEY = 'calcauto_submissions';
+// API URL
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8001';
 
+// Types
 interface Submission {
   id: string;
-  clientName: string;
-  clientEmail: string;
-  clientPhone: string;
-  vehicle: string;
-  price: number;
+  client_name: string;
+  client_email: string;
+  client_phone: string;
+  vehicle_brand: string;
+  vehicle_model: string;
+  vehicle_year: number;
+  vehicle_price: number;
   term: number;
-  payment: number;
-  date: string;
-  contactId?: string;
+  monthly_payment: number;
+  option_type: string;
+  consumer_cash: number;
+  bonus_cash: number;
+  submission_date: string;
+  follow_ups: FollowUp[];
 }
 
-interface ContactData {
+interface FollowUp {
   id: string;
-  name: string;
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  phone?: string;
+  scheduled_date: string;
+  completed: boolean;
+  completed_date?: string;
+  notes?: string;
 }
+
+interface Client {
+  name: string;
+  email: string;
+  phone: string;
+  submissions: Submission[];
+  last_submission_date: string;
+}
+
+// CRM Translations
+const crmTranslations = {
+  fr: {
+    title: 'CRM - Clients',
+    subtitle: 'Suivi des soumissions',
+    search: 'Rechercher par nom ou téléphone...',
+    noResults: 'Aucun résultat trouvé',
+    submissions: 'soumissions',
+    lastContact: 'Dernier contact',
+    viewDetails: 'Voir détails',
+    call: 'Appeler',
+    email: 'Email',
+    newQuote: 'Nouvelle soumission',
+    followUp: 'Suivi',
+    followUpDue: 'Suivi à faire',
+    followUpScheduled: 'Suivi planifié',
+    markDone: 'Marquer comme fait',
+    scheduleNew: 'Planifier un suivi',
+    scheduleDate: 'Date du suivi',
+    addNotes: 'Ajouter des notes...',
+    save: 'Sauvegarder',
+    cancel: 'Annuler',
+    today: 'Aujourd\'hui',
+    tomorrow: 'Demain',
+    inDays: 'Dans {n} jours',
+    overdue: 'En retard',
+    vehicle: 'Véhicule',
+    payment: 'Paiement',
+    months: 'mois',
+    option: 'Option',
+    sentOn: 'Envoyé le',
+    noSubmissions: 'Aucune soumission enregistrée',
+    startByCalculator: 'Commencez par créer une soumission dans le calculateur',
+    loading: 'Chargement...',
+    error: 'Erreur de chargement',
+    retry: 'Réessayer',
+  },
+  en: {
+    title: 'CRM - Clients',
+    subtitle: 'Submissions tracking',
+    search: 'Search by name or phone...',
+    noResults: 'No results found',
+    submissions: 'submissions',
+    lastContact: 'Last contact',
+    viewDetails: 'View details',
+    call: 'Call',
+    email: 'Email',
+    newQuote: 'New submission',
+    followUp: 'Follow-up',
+    followUpDue: 'Follow-up due',
+    followUpScheduled: 'Follow-up scheduled',
+    markDone: 'Mark as done',
+    scheduleNew: 'Schedule follow-up',
+    scheduleDate: 'Follow-up date',
+    addNotes: 'Add notes...',
+    save: 'Save',
+    cancel: 'Cancel',
+    today: 'Today',
+    tomorrow: 'Tomorrow',
+    inDays: 'In {n} days',
+    overdue: 'Overdue',
+    vehicle: 'Vehicle',
+    payment: 'Payment',
+    months: 'months',
+    option: 'Option',
+    sentOn: 'Sent on',
+    noSubmissions: 'No submissions recorded',
+    startByCalculator: 'Start by creating a submission in the calculator',
+    loading: 'Loading...',
+    error: 'Loading error',
+    retry: 'Retry',
+  }
+};
 
 export default function ClientsScreen() {
   const router = useRouter();
   const [lang, setLang] = useState<Language>('fr');
   const t = translations[lang];
+  const crm = crmTranslations[lang];
   
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [contacts, setContacts] = useState<ContactData[]>([]);
-  const [filteredContacts, setFilteredContacts] = useState<ContactData[]>([]);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  // New contact modal
-  const [showNewContactModal, setShowNewContactModal] = useState(false);
-  const [newFirstName, setNewFirstName] = useState('');
-  const [newLastName, setNewLastName] = useState('');
-  const [newPhone, setNewPhone] = useState('');
-  const [newEmail, setNewEmail] = useState('');
-  const [savingContact, setSavingContact] = useState(false);
+  // Selected client for details view
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [showClientModal, setShowClientModal] = useState(false);
+  
+  // Follow-up modal
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [followUpDate, setFollowUpDate] = useState('');
+  const [followUpNotes, setFollowUpNotes] = useState('');
+  const [savingFollowUp, setSavingFollowUp] = useState(false);
 
   // Load language preference
   useEffect(() => {
@@ -88,211 +177,82 @@ export default function ClientsScreen() {
     saveLanguage(newLang);
   }, []);
 
-  // Request contacts permission
-  const requestPermission = async () => {
-    const { status } = await Contacts.requestPermissionsAsync();
-    setHasPermission(status === 'granted');
-    if (status === 'granted') {
-      loadContacts();
-    }
-  };
-
-  // Load contacts from device
-  const loadContacts = async () => {
-    try {
-      const { data } = await Contacts.getContactsAsync({
-        fields: [
-          Contacts.Fields.Name,
-          Contacts.Fields.FirstName,
-          Contacts.Fields.LastName,
-          Contacts.Fields.Emails,
-          Contacts.Fields.PhoneNumbers,
-        ],
-        sort: Contacts.SortTypes.FirstName,
-      });
-
-      const formattedContacts: ContactData[] = data
-        .filter(c => c.name || c.firstName || c.lastName)
-        .map(contact => ({
-          id: contact.id || String(Math.random()),
-          name: contact.name || `${contact.firstName || ''} ${contact.lastName || ''}`.trim(),
-          firstName: contact.firstName,
-          lastName: contact.lastName,
-          email: contact.emails?.[0]?.email,
-          phone: contact.phoneNumbers?.[0]?.number,
-        }));
-
-      setContacts(formattedContacts);
-      setFilteredContacts(formattedContacts);
-    } catch (error) {
-      console.error('Error loading contacts:', error);
-    }
-  };
-
-  // Load submissions from storage
+  // Load submissions from API
   const loadSubmissions = async () => {
     try {
-      const stored = await AsyncStorage.getItem(SUBMISSIONS_KEY);
-      if (stored) {
-        setSubmissions(JSON.parse(stored));
+      setError(null);
+      const response = await axios.get(`${API_URL}/api/submissions`);
+      
+      // Group submissions by client
+      const submissionsMap = new Map<string, Submission[]>();
+      
+      for (const sub of response.data) {
+        const key = sub.client_phone || sub.client_email || sub.client_name;
+        if (!submissionsMap.has(key)) {
+          submissionsMap.set(key, []);
+        }
+        submissionsMap.get(key)!.push(sub);
       }
-    } catch (error) {
-      console.error('Error loading submissions:', error);
+      
+      // Create clients array
+      const clientsArray: Client[] = [];
+      submissionsMap.forEach((subs, key) => {
+        const latestSub = subs.sort((a, b) => 
+          new Date(b.submission_date).getTime() - new Date(a.submission_date).getTime()
+        )[0];
+        
+        clientsArray.push({
+          name: latestSub.client_name,
+          email: latestSub.client_email,
+          phone: latestSub.client_phone,
+          submissions: subs,
+          last_submission_date: latestSub.submission_date,
+        });
+      });
+      
+      // Sort by most recent
+      clientsArray.sort((a, b) => 
+        new Date(b.last_submission_date).getTime() - new Date(a.last_submission_date).getTime()
+      );
+      
+      setClients(clientsArray);
+      setFilteredClients(clientsArray);
+    } catch (err) {
+      console.error('Error loading submissions:', err);
+      setError(crm.error);
+      // If API fails, show empty state
+      setClients([]);
+      setFilteredClients([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
   // Initial load
   useEffect(() => {
-    const init = async () => {
-      setLoading(true);
-      
-      // Check if running on web (contacts not available)
-      if (Platform.OS === 'web') {
-        setHasPermission(false);
-        await loadSubmissions();
-        setLoading(false);
-        return;
-      }
-      
-      // Check permission status (persisted by OS)
-      const { status } = await Contacts.getPermissionsAsync();
-      console.log('Contact permission status:', status);
-      
-      if (status === 'granted') {
-        setHasPermission(true);
-        await loadContacts();
-      } else if (status === 'denied') {
-        setHasPermission(false);
-      } else {
-        // undetermined - will need to request
-        setHasPermission(false);
-      }
-      
-      await loadSubmissions();
-      setLoading(false);
-    };
-    
-    init();
+    loadSubmissions();
   }, []);
 
-  // Re-check permission when screen is focused (in case user changed in settings)
-  useEffect(() => {
-    const checkPermissionOnFocus = async () => {
-      if (Platform.OS === 'web') return;
-      
-      const { status } = await Contacts.getPermissionsAsync();
-      if (status === 'granted' && !hasPermission) {
-        setHasPermission(true);
-        await loadContacts();
-      }
-    };
-    
-    // Check every time the component mounts/updates
-    checkPermissionOnFocus();
-  }, [hasPermission]);
-
-  // Filter contacts based on search
+  // Filter clients based on search
   useEffect(() => {
     if (!searchQuery.trim()) {
-      setFilteredContacts(contacts);
+      setFilteredClients(clients);
     } else {
       const query = searchQuery.toLowerCase();
-      const filtered = contacts.filter(c => 
+      const filtered = clients.filter(c => 
         c.name.toLowerCase().includes(query) ||
-        c.email?.toLowerCase().includes(query) ||
-        c.phone?.includes(query)
+        c.phone?.toLowerCase().includes(query) ||
+        c.email?.toLowerCase().includes(query)
       );
-      setFilteredContacts(filtered);
+      setFilteredClients(filtered);
     }
-  }, [searchQuery, contacts]);
+  }, [searchQuery, clients]);
 
   // Refresh
-  const onRefresh = async () => {
+  const onRefresh = () => {
     setRefreshing(true);
-    if (hasPermission) {
-      await loadContacts();
-    }
-    await loadSubmissions();
-    setRefreshing(false);
-  };
-
-  // Create new contact in device
-  const createContact = async () => {
-    if (!newFirstName.trim() && !newLastName.trim()) {
-      Alert.alert('Erreur', lang === 'fr' ? 'Veuillez entrer un nom' : 'Please enter a name');
-      return;
-    }
-    if (!newPhone.trim()) {
-      Alert.alert('Erreur', t.email.invalidPhone);
-      return;
-    }
-
-    setSavingContact(true);
-    try {
-      const contact: Contacts.Contact = {
-        contactType: Contacts.ContactTypes.Person,
-        firstName: newFirstName,
-        lastName: newLastName,
-        phoneNumbers: newPhone ? [{ number: newPhone, label: 'mobile' }] : undefined,
-        emails: newEmail ? [{ email: newEmail, label: 'work' }] : undefined,
-      };
-
-      const contactId = await Contacts.addContactAsync(contact);
-      
-      if (Platform.OS === 'web') {
-        alert('✅ ' + t.clients.savedToContacts);
-      } else {
-        Alert.alert('✅', t.clients.savedToContacts);
-      }
-
-      // Reload contacts
-      await loadContacts();
-      
-      // Reset form and close modal
-      setNewFirstName('');
-      setNewLastName('');
-      setNewPhone('');
-      setNewEmail('');
-      setShowNewContactModal(false);
-
-      // Navigate to calculator with this contact
-      router.push({
-        pathname: '/(tabs)',
-        params: {
-          clientName: `${newFirstName} ${newLastName}`.trim(),
-          clientEmail: newEmail,
-          clientPhone: newPhone,
-        },
-      });
-    } catch (error) {
-      console.error('Error creating contact:', error);
-      Alert.alert('Erreur', lang === 'fr' ? 'Impossible de créer le contact' : 'Could not create contact');
-    } finally {
-      setSavingContact(false);
-    }
-  };
-
-  // Select existing contact and go to calculator
-  const selectContact = (contact: ContactData) => {
-    router.push({
-      pathname: '/(tabs)',
-      params: {
-        clientName: contact.name,
-        clientEmail: contact.email || '',
-        clientPhone: contact.phone || '',
-        contactId: contact.id,
-      },
-    });
-  };
-
-  // Call contact
-  const callContact = (phone: string) => {
-    Linking.openURL(`tel:${phone}`);
-  };
-
-  // Email contact
-  const emailContact = (email: string) => {
-    Linking.openURL(`mailto:${email}`);
+    loadSubmissions();
   };
 
   // Format date
@@ -315,12 +275,146 @@ export default function ClientsScreen() {
     }).format(amount);
   };
 
+  // Get days until follow-up
+  const getDaysUntil = (dateStr: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const date = new Date(dateStr);
+    date.setHours(0, 0, 0, 0);
+    const diff = Math.ceil((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return diff;
+  };
+
+  // Get follow-up status text
+  const getFollowUpText = (days: number) => {
+    if (days < 0) return crm.overdue;
+    if (days === 0) return crm.today;
+    if (days === 1) return crm.tomorrow;
+    return crm.inDays.replace('{n}', String(days));
+  };
+
+  // Check if client has pending follow-up
+  const hasPendingFollowUp = (client: Client) => {
+    return client.submissions.some(sub => 
+      sub.follow_ups?.some(f => !f.completed)
+    );
+  };
+
+  // Get next follow-up date for client
+  const getNextFollowUp = (client: Client): FollowUp | null => {
+    let nextFollowUp: FollowUp | null = null;
+    let nextDate: Date | null = null;
+    
+    for (const sub of client.submissions) {
+      for (const followUp of (sub.follow_ups || [])) {
+        if (!followUp.completed) {
+          const date = new Date(followUp.scheduled_date);
+          if (!nextDate || date < nextDate) {
+            nextDate = date;
+            nextFollowUp = followUp;
+          }
+        }
+      }
+    }
+    
+    return nextFollowUp;
+  };
+
+  // Call contact
+  const callContact = (phone: string) => {
+    Linking.openURL(`tel:${phone}`);
+  };
+
+  // Email contact
+  const emailContact = (email: string) => {
+    Linking.openURL(`mailto:${email}`);
+  };
+
+  // Open client details
+  const openClientDetails = (client: Client) => {
+    setSelectedClient(client);
+    setShowClientModal(true);
+  };
+
+  // Schedule follow-up
+  const openFollowUpModal = (submission: Submission) => {
+    setSelectedSubmission(submission);
+    // Default to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    setFollowUpDate(tomorrow.toISOString().split('T')[0]);
+    setFollowUpNotes('');
+    setShowFollowUpModal(true);
+  };
+
+  // Save follow-up
+  const saveFollowUp = async () => {
+    if (!selectedSubmission || !followUpDate) return;
+    
+    setSavingFollowUp(true);
+    try {
+      await axios.post(`${API_URL}/api/submissions/${selectedSubmission.id}/follow-up`, {
+        scheduled_date: followUpDate,
+        notes: followUpNotes,
+      });
+      
+      // Reload data
+      await loadSubmissions();
+      setShowFollowUpModal(false);
+      
+      if (Platform.OS === 'web') {
+        alert('✅ Suivi planifié!');
+      } else {
+        Alert.alert('✅', 'Suivi planifié!');
+      }
+    } catch (err) {
+      console.error('Error saving follow-up:', err);
+      Alert.alert('Erreur', 'Impossible de sauvegarder le suivi');
+    } finally {
+      setSavingFollowUp(false);
+    }
+  };
+
+  // Mark follow-up as done
+  const markFollowUpDone = async (submissionId: string, followUpId: string) => {
+    try {
+      await axios.put(`${API_URL}/api/submissions/${submissionId}/follow-up/${followUpId}`, {
+        completed: true,
+        completed_date: new Date().toISOString(),
+      });
+      
+      // Reload data
+      await loadSubmissions();
+      
+      if (Platform.OS === 'web') {
+        alert('✅ Suivi complété!');
+      } else {
+        Alert.alert('✅', 'Suivi complété!');
+      }
+    } catch (err) {
+      console.error('Error marking follow-up done:', err);
+    }
+  };
+
+  // Navigate to calculator with client info
+  const newQuoteForClient = (client: Client) => {
+    setShowClientModal(false);
+    router.push({
+      pathname: '/(tabs)',
+      params: {
+        clientName: client.name,
+        clientEmail: client.email,
+        clientPhone: client.phone,
+      },
+    });
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#4ECDC4" />
-          <Text style={styles.loadingText}>{t.loading}</Text>
+          <Text style={styles.loadingText}>{crm.loading}</Text>
         </View>
       </SafeAreaView>
     );
@@ -331,8 +425,8 @@ export default function ClientsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>{t.clients.title}</Text>
-          <Text style={styles.headerSubtitle}>{t.clients.subtitle}</Text>
+          <Text style={styles.headerTitle}>{crm.title}</Text>
+          <Text style={styles.headerSubtitle}>{crm.subtitle}</Text>
         </View>
         <View style={styles.headerActions}>
           <LanguageSelector
@@ -342,20 +436,54 @@ export default function ClientsScreen() {
         </View>
       </View>
 
-      {/* Permission required screen */}
-      {hasPermission === false && (
-        <View style={styles.permissionContainer}>
-          <Ionicons name="people-outline" size={64} color="#4ECDC4" />
-          <Text style={styles.permissionTitle}>{t.clients.permissionRequired}</Text>
-          <Text style={styles.permissionText}>{t.clients.permissionMessage}</Text>
-          <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-            <Text style={styles.permissionButtonText}>{t.clients.grantPermission}</Text>
+      {/* Search bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#888" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder={crm.search}
+          placeholderTextColor="#666"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery ? (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Ionicons name="close-circle" size={20} color="#888" />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
+      {/* Error state */}
+      {error && (
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle" size={48} color="#FF6B6B" />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadSubmissions}>
+            <Text style={styles.retryButtonText}>{crm.retry}</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {/* Main content */}
-      {hasPermission && (
+      {/* Empty state */}
+      {!error && clients.length === 0 && (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="people-outline" size={64} color="#4ECDC4" />
+          <Text style={styles.emptyTitle}>{crm.noSubmissions}</Text>
+          <Text style={styles.emptyText}>{crm.startByCalculator}</Text>
+          <TouchableOpacity 
+            style={styles.goToCalculatorButton}
+            onPress={() => router.push('/(tabs)')}
+          >
+            <Ionicons name="calculator" size={20} color="#1a1a2e" />
+            <Text style={styles.goToCalculatorText}>
+              {lang === 'fr' ? 'Aller au calculateur' : 'Go to calculator'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Clients list */}
+      {!error && clients.length > 0 && (
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -367,217 +495,281 @@ export default function ClientsScreen() {
             />
           }
         >
-          {/* Search bar */}
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color="#888" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder={t.clients.searchPlaceholder}
-              placeholderTextColor="#666"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery ? (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={20} color="#888" />
-              </TouchableOpacity>
-            ) : null}
-          </View>
-
-          {/* Add new contact button */}
-          <TouchableOpacity
-            style={styles.addContactButton}
-            onPress={() => setShowNewContactModal(true)}
-          >
-            <Ionicons name="person-add" size={24} color="#4ECDC4" />
-            <Text style={styles.addContactText}>{t.clients.newContact}</Text>
-          </TouchableOpacity>
-
-          {/* Contacts list */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              {t.clients.selectFromContacts} ({filteredContacts.length})
-            </Text>
-            
-            {filteredContacts.length === 0 ? (
-              <Text style={styles.emptyText}>{t.clients.noContacts}</Text>
-            ) : (
-              filteredContacts.slice(0, 50).map((contact) => (
-                <TouchableOpacity
-                  key={contact.id}
-                  style={styles.contactCard}
-                  onPress={() => selectContact(contact)}
-                >
-                  <View style={styles.contactAvatar}>
-                    <Text style={styles.contactInitial}>
-                      {contact.name.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={styles.contactInfo}>
-                    <Text style={styles.contactName}>{contact.name}</Text>
-                    {contact.phone && (
-                      <Text style={styles.contactDetail}>📱 {contact.phone}</Text>
-                    )}
-                    {contact.email && (
-                      <Text style={styles.contactDetail}>✉️ {contact.email}</Text>
-                    )}
-                  </View>
-                  <View style={styles.contactActions}>
-                    {contact.phone && (
-                      <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          callContact(contact.phone!);
-                        }}
-                      >
-                        <Ionicons name="call" size={18} color="#4ECDC4" />
-                      </TouchableOpacity>
-                    )}
-                    {contact.email && (
-                      <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          emailContact(contact.email!);
-                        }}
-                      >
-                        <Ionicons name="mail" size={18} color="#4ECDC4" />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                  <Ionicons name="chevron-forward" size={20} color="#666" />
-                </TouchableOpacity>
-              ))
-            )}
-          </View>
-
-          {/* Recent submissions */}
-          {submissions.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t.clients.recentSubmissions}</Text>
-              {submissions.slice(0, 10).map((sub) => (
-                <View key={sub.id} style={styles.submissionCard}>
-                  <View style={styles.submissionHeader}>
-                    <Text style={styles.submissionName}>{sub.clientName}</Text>
-                    <Text style={styles.submissionDate}>{formatDate(sub.date)}</Text>
-                  </View>
-                  <Text style={styles.submissionVehicle}>{sub.vehicle}</Text>
-                  <View style={styles.submissionDetails}>
-                    <Text style={styles.submissionPrice}>
-                      {formatCurrency(sub.price)} • {sub.term} {t.term.months}
-                    </Text>
-                    <Text style={styles.submissionPayment}>
-                      {formatCurrency(sub.payment)}/mois
-                    </Text>
-                  </View>
-                  <View style={styles.submissionActions}>
-                    {sub.clientPhone && (
-                      <TouchableOpacity
-                        style={styles.submissionActionButton}
-                        onPress={() => callContact(sub.clientPhone)}
-                      >
-                        <Ionicons name="call" size={16} color="#4ECDC4" />
-                        <Text style={styles.submissionActionText}>{t.clients.call}</Text>
-                      </TouchableOpacity>
-                    )}
-                    {sub.clientEmail && (
-                      <TouchableOpacity
-                        style={styles.submissionActionButton}
-                        onPress={() => emailContact(sub.clientEmail)}
-                      >
-                        <Ionicons name="mail" size={16} color="#4ECDC4" />
-                        <Text style={styles.submissionActionText}>{t.clients.sendEmail}</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-              ))}
+          {filteredClients.length === 0 ? (
+            <View style={styles.noResultsContainer}>
+              <Ionicons name="search" size={48} color="#666" />
+              <Text style={styles.noResultsText}>{crm.noResults}</Text>
             </View>
+          ) : (
+            filteredClients.map((client, index) => {
+              const nextFollowUp = getNextFollowUp(client);
+              const daysUntil = nextFollowUp ? getDaysUntil(nextFollowUp.scheduled_date) : null;
+              
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.clientCard}
+                  onPress={() => openClientDetails(client)}
+                >
+                  <View style={styles.clientHeader}>
+                    <View style={styles.clientInfo}>
+                      <Text style={styles.clientName}>{client.name}</Text>
+                      <Text style={styles.clientPhone}>{client.phone}</Text>
+                    </View>
+                    <View style={styles.clientBadge}>
+                      <Text style={styles.clientBadgeText}>
+                        {client.submissions.length} {crm.submissions}
+                      </Text>
+                    </View>
+                  </View>
+                  
+                  {/* Follow-up indicator */}
+                  {nextFollowUp && daysUntil !== null && (
+                    <View style={[
+                      styles.followUpIndicator,
+                      daysUntil < 0 && styles.followUpOverdue,
+                      daysUntil === 0 && styles.followUpToday,
+                    ]}>
+                      <Ionicons 
+                        name={daysUntil <= 0 ? "alarm" : "time-outline"} 
+                        size={16} 
+                        color={daysUntil < 0 ? "#FF6B6B" : daysUntil === 0 ? "#FFD93D" : "#4ECDC4"} 
+                      />
+                      <Text style={[
+                        styles.followUpText,
+                        daysUntil < 0 && styles.followUpTextOverdue,
+                      ]}>
+                        {crm.followUp}: {getFollowUpText(daysUntil)}
+                      </Text>
+                    </View>
+                  )}
+                  
+                  <View style={styles.clientFooter}>
+                    <Text style={styles.lastContactText}>
+                      {crm.lastContact}: {formatDate(client.last_submission_date)}
+                    </Text>
+                    <View style={styles.clientActions}>
+                      {client.phone && (
+                        <TouchableOpacity 
+                          style={styles.actionButton}
+                          onPress={() => callContact(client.phone)}
+                        >
+                          <Ionicons name="call" size={18} color="#4ECDC4" />
+                        </TouchableOpacity>
+                      )}
+                      {client.email && (
+                        <TouchableOpacity 
+                          style={styles.actionButton}
+                          onPress={() => emailContact(client.email)}
+                        >
+                          <Ionicons name="mail" size={18} color="#4ECDC4" />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
           )}
         </ScrollView>
       )}
 
-      {/* New Contact Modal */}
+      {/* Client Details Modal */}
       <Modal
-        visible={showNewContactModal}
-        transparent
+        visible={showClientModal}
         animationType="slide"
-        onRequestClose={() => setShowNewContactModal(false)}
+        transparent={true}
+        onRequestClose={() => setShowClientModal(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t.clients.newContact}</Text>
-              <TouchableOpacity
-                style={styles.modalClose}
-                onPress={() => setShowNewContactModal(false)}
-              >
-                <Ionicons name="close" size={24} color="#888" />
+              <Text style={styles.modalTitle}>{selectedClient?.name}</Text>
+              <TouchableOpacity onPress={() => setShowClientModal(false)}>
+                <Ionicons name="close" size={24} color="#fff" />
               </TouchableOpacity>
             </View>
-
-            <View style={styles.modalBody}>
-              <Text style={styles.inputLabel}>{t.clients.firstName}</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Jean"
-                placeholderTextColor="#666"
-                value={newFirstName}
-                onChangeText={setNewFirstName}
-              />
-
-              <Text style={styles.inputLabel}>{t.clients.lastName}</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Dupont"
-                placeholderTextColor="#666"
-                value={newLastName}
-                onChangeText={setNewLastName}
-              />
-
-              <Text style={styles.inputLabel}>{t.clients.phone} *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="514-555-1234"
-                placeholderTextColor="#666"
-                value={newPhone}
-                onChangeText={setNewPhone}
-                keyboardType="phone-pad"
-              />
-
-              <Text style={styles.inputLabel}>{t.clients.email}</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="client@email.com"
-                placeholderTextColor="#666"
-                value={newEmail}
-                onChangeText={setNewEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
+            
+            {/* Client contact info */}
+            <View style={styles.modalContactInfo}>
+              {selectedClient?.phone && (
+                <TouchableOpacity 
+                  style={styles.modalContactButton}
+                  onPress={() => callContact(selectedClient.phone)}
+                >
+                  <Ionicons name="call" size={20} color="#4ECDC4" />
+                  <Text style={styles.modalContactText}>{selectedClient.phone}</Text>
+                </TouchableOpacity>
+              )}
+              {selectedClient?.email && (
+                <TouchableOpacity 
+                  style={styles.modalContactButton}
+                  onPress={() => emailContact(selectedClient.email)}
+                >
+                  <Ionicons name="mail" size={20} color="#4ECDC4" />
+                  <Text style={styles.modalContactText}>{selectedClient.email}</Text>
+                </TouchableOpacity>
+              )}
             </View>
+            
+            {/* New quote button */}
+            <TouchableOpacity 
+              style={styles.newQuoteButton}
+              onPress={() => selectedClient && newQuoteForClient(selectedClient)}
+            >
+              <Ionicons name="add-circle" size={20} color="#1a1a2e" />
+              <Text style={styles.newQuoteButtonText}>{crm.newQuote}</Text>
+            </TouchableOpacity>
+            
+            {/* Submissions list */}
+            <Text style={styles.modalSectionTitle}>
+              {lang === 'fr' ? 'Historique des soumissions' : 'Submission History'}
+            </Text>
+            
+            <ScrollView style={styles.submissionsList}>
+              {selectedClient?.submissions.map((sub, idx) => (
+                <View key={idx} style={styles.submissionCard}>
+                  <View style={styles.submissionHeader}>
+                    <Text style={styles.submissionVehicle}>
+                      {sub.vehicle_brand} {sub.vehicle_model} {sub.vehicle_year}
+                    </Text>
+                    <Text style={styles.submissionDate}>
+                      {formatDate(sub.submission_date)}
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.submissionDetails}>
+                    <View style={styles.submissionDetail}>
+                      <Text style={styles.submissionLabel}>{crm.payment}:</Text>
+                      <Text style={styles.submissionValue}>
+                        {formatCurrency(sub.monthly_payment)}/{crm.months.substring(0,2)}
+                      </Text>
+                    </View>
+                    <View style={styles.submissionDetail}>
+                      <Text style={styles.submissionLabel}>{crm.option}:</Text>
+                      <Text style={styles.submissionValue}>{sub.option_type}</Text>
+                    </View>
+                    <View style={styles.submissionDetail}>
+                      <Text style={styles.submissionLabel}>Terme:</Text>
+                      <Text style={styles.submissionValue}>{sub.term} {crm.months}</Text>
+                    </View>
+                  </View>
+                  
+                  {/* Follow-ups */}
+                  {sub.follow_ups?.length > 0 && (
+                    <View style={styles.followUpsSection}>
+                      {sub.follow_ups.filter(f => !f.completed).map((followUp, fIdx) => (
+                        <View key={fIdx} style={styles.followUpItem}>
+                          <Ionicons name="time" size={16} color="#FFD93D" />
+                          <Text style={styles.followUpItemText}>
+                            {crm.followUpScheduled}: {formatDate(followUp.scheduled_date)}
+                          </Text>
+                          <TouchableOpacity
+                            style={styles.markDoneButton}
+                            onPress={() => markFollowUpDone(sub.id, followUp.id)}
+                          >
+                            <Ionicons name="checkmark" size={16} color="#4ECDC4" />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                  
+                  {/* Schedule follow-up button */}
+                  <TouchableOpacity
+                    style={styles.scheduleButton}
+                    onPress={() => openFollowUpModal(sub)}
+                  >
+                    <Ionicons name="calendar" size={16} color="#4ECDC4" />
+                    <Text style={styles.scheduleButtonText}>{crm.scheduleNew}</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
-            <View style={styles.modalButtons}>
+      {/* Follow-up Modal */}
+      <Modal
+        visible={showFollowUpModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowFollowUpModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.followUpModalContent}>
+            <Text style={styles.followUpModalTitle}>{crm.scheduleNew}</Text>
+            
+            <Text style={styles.followUpLabel}>{crm.scheduleDate}</Text>
+            <TextInput
+              style={styles.followUpInput}
+              value={followUpDate}
+              onChangeText={setFollowUpDate}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor="#666"
+            />
+            
+            {/* Quick date buttons */}
+            <View style={styles.quickDateButtons}>
+              <TouchableOpacity
+                style={styles.quickDateButton}
+                onPress={() => {
+                  const d = new Date();
+                  d.setDate(d.getDate() + 1);
+                  setFollowUpDate(d.toISOString().split('T')[0]);
+                }}
+              >
+                <Text style={styles.quickDateText}>{crm.tomorrow}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.quickDateButton}
+                onPress={() => {
+                  const d = new Date();
+                  d.setDate(d.getDate() + 3);
+                  setFollowUpDate(d.toISOString().split('T')[0]);
+                }}
+              >
+                <Text style={styles.quickDateText}>+3 {lang === 'fr' ? 'jours' : 'days'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.quickDateButton}
+                onPress={() => {
+                  const d = new Date();
+                  d.setDate(d.getDate() + 7);
+                  setFollowUpDate(d.toISOString().split('T')[0]);
+                }}
+              >
+                <Text style={styles.quickDateText}>+7 {lang === 'fr' ? 'jours' : 'days'}</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={styles.followUpLabel}>Notes</Text>
+            <TextInput
+              style={[styles.followUpInput, styles.notesInput]}
+              value={followUpNotes}
+              onChangeText={setFollowUpNotes}
+              placeholder={crm.addNotes}
+              placeholderTextColor="#666"
+              multiline
+            />
+            
+            <View style={styles.followUpActions}>
               <TouchableOpacity
                 style={styles.cancelButton}
-                onPress={() => setShowNewContactModal(false)}
+                onPress={() => setShowFollowUpModal(false)}
               >
-                <Text style={styles.cancelButtonText}>{t.email.cancel}</Text>
+                <Text style={styles.cancelButtonText}>{crm.cancel}</Text>
               </TouchableOpacity>
-
               <TouchableOpacity
-                style={[styles.saveButton, savingContact && styles.saveButtonDisabled]}
-                disabled={savingContact}
-                onPress={createContact}
+                style={styles.saveButton}
+                onPress={saveFollowUp}
+                disabled={savingFollowUp}
               >
-                {savingContact ? (
+                {savingFollowUp ? (
                   <ActivityIndicator size="small" color="#1a1a2e" />
                 ) : (
-                  <>
-                    <Ionicons name="checkmark" size={20} color="#1a1a2e" />
-                    <Text style={styles.saveButtonText}>{t.clients.save}</Text>
-                  </>
+                  <Text style={styles.saveButtonText}>{crm.save}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -599,20 +791,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#888',
+    color: '#fff',
     marginTop: 12,
+    fontSize: 16,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#2d2d44',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
   },
@@ -625,209 +818,189 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  permissionContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  permissionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginTop: 20,
-    textAlign: 'center',
-  },
-  permissionText: {
-    fontSize: 14,
-    color: '#888',
-    marginTop: 12,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  permissionButton: {
-    backgroundColor: '#4ECDC4',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginTop: 24,
-  },
-  permissionButtonText: {
-    color: '#1a1a2e',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 100,
-  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#2d2d44',
     borderRadius: 12,
-    paddingHorizontal: 14,
+    marginHorizontal: 20,
+    marginVertical: 16,
+    paddingHorizontal: 16,
     paddingVertical: 12,
-    marginBottom: 16,
   },
   searchInput: {
     flex: 1,
-    marginLeft: 10,
-    fontSize: 16,
     color: '#fff',
-  },
-  addContactButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(78, 205, 196, 0.15)',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#4ECDC4',
-    borderStyle: 'dashed',
-  },
-  addContactText: {
-    color: '#4ECDC4',
     fontSize: 16,
-    fontWeight: '600',
     marginLeft: 10,
   },
-  section: {
-    marginBottom: 24,
+  scrollView: {
+    flex: 1,
   },
-  sectionTitle: {
-    fontSize: 14,
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 100,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: 16,
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#4ECDC4',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 20,
+  },
+  retryButtonText: {
+    color: '#1a1a2e',
     fontWeight: '600',
-    color: '#888',
-    marginBottom: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  emptyTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+    textAlign: 'center',
   },
   emptyText: {
-    color: '#666',
-    textAlign: 'center',
-    padding: 20,
-  },
-  contactCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#2d2d44',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-  },
-  contactAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#4ECDC4',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  contactInitial: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1a1a2e',
-  },
-  contactInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  contactName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  contactDetail: {
-    fontSize: 12,
     color: '#888',
-    marginTop: 2,
-  },
-  contactActions: {
-    flexDirection: 'row',
-    marginRight: 8,
-  },
-  actionButton: {
-    padding: 8,
-    marginLeft: 4,
-  },
-  submissionCard: {
-    backgroundColor: '#2d2d44',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 10,
-  },
-  submissionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  submissionName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  submissionDate: {
-    fontSize: 12,
-    color: '#888',
-  },
-  submissionVehicle: {
     fontSize: 14,
-    color: '#4ECDC4',
-    marginBottom: 8,
+    marginTop: 8,
+    textAlign: 'center',
   },
-  submissionDetails: {
+  goToCalculatorButton: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: '#4ECDC4',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 24,
+    gap: 8,
+  },
+  goToCalculatorText: {
+    color: '#1a1a2e',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  noResultsContainer: {
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  noResultsText: {
+    color: '#666',
+    fontSize: 16,
+    marginTop: 12,
+  },
+  clientCard: {
+    backgroundColor: '#2d2d44',
+    borderRadius: 16,
+    padding: 16,
     marginBottom: 12,
   },
-  submissionPrice: {
-    fontSize: 13,
-    color: '#aaa',
-  },
-  submissionPayment: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#4ECDC4',
-  },
-  submissionActions: {
+  clientHeader: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#3d3d54',
-    paddingTop: 12,
-    gap: 12,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
-  submissionActionButton: {
+  clientInfo: {
+    flex: 1,
+  },
+  clientName: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  clientPhone: {
+    color: '#888',
+    fontSize: 14,
+    marginTop: 4,
+  },
+  clientBadge: {
+    backgroundColor: '#4ECDC4',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  clientBadgeText: {
+    color: '#1a1a2e',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  followUpIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(78, 205, 196, 0.15)',
+    backgroundColor: 'rgba(78, 205, 196, 0.1)',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
+    marginTop: 12,
+    gap: 8,
   },
-  submissionActionText: {
+  followUpOverdue: {
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+  },
+  followUpToday: {
+    backgroundColor: 'rgba(255, 217, 61, 0.1)',
+  },
+  followUpText: {
     color: '#4ECDC4',
-    marginLeft: 6,
     fontSize: 13,
-    fontWeight: '500',
+  },
+  followUpTextOverdue: {
+    color: '#FF6B6B',
+  },
+  clientFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#3d3d54',
+  },
+  lastContactText: {
+    color: '#888',
+    fontSize: 12,
+  },
+  clientActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
     justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: '#1a1a2e',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
+    maxHeight: '90%',
+    paddingBottom: 40,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -838,61 +1011,202 @@ const styles = StyleSheet.create({
     borderBottomColor: '#2d2d44',
   },
   modalTitle: {
+    color: '#fff',
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
   },
-  modalClose: {
-    padding: 4,
-  },
-  modalBody: {
-    padding: 20,
-  },
-  inputLabel: {
-    fontSize: 14,
-    color: '#888',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#2d2d44',
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    color: '#fff',
-    marginBottom: 16,
-  },
-  modalButtons: {
+  modalContactInfo: {
     flexDirection: 'row',
     paddingHorizontal: 20,
+    paddingVertical: 12,
+    gap: 16,
+  },
+  modalContactButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2d2d44',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 8,
+  },
+  modalContactText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  newQuoteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4ECDC4',
+    marginHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+  },
+  newQuoteButtonText: {
+    color: '#1a1a2e',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalSectionTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 12,
+  },
+  submissionsList: {
+    paddingHorizontal: 20,
+  },
+  submissionCard: {
+    backgroundColor: '#2d2d44',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  submissionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  submissionVehicle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  submissionDate: {
+    color: '#888',
+    fontSize: 12,
+  },
+  submissionDetails: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 12,
+    gap: 16,
+  },
+  submissionDetail: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  submissionLabel: {
+    color: '#888',
+    fontSize: 12,
+  },
+  submissionValue: {
+    color: '#4ECDC4',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  followUpsSection: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#3d3d54',
+  },
+  followUpItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 6,
+  },
+  followUpItemText: {
+    color: '#FFD93D',
+    fontSize: 13,
+    flex: 1,
+  },
+  markDoneButton: {
+    padding: 6,
+  },
+  scheduleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#4ECDC4',
+    borderRadius: 8,
+    paddingVertical: 10,
+    marginTop: 12,
+    gap: 6,
+  },
+  scheduleButtonText: {
+    color: '#4ECDC4',
+    fontSize: 14,
+  },
+  followUpModalContent: {
+    backgroundColor: '#1a1a2e',
+    margin: 20,
+    borderRadius: 16,
+    padding: 24,
+  },
+  followUpModalTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  followUpLabel: {
+    color: '#888',
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  followUpInput: {
+    backgroundColor: '#2d2d44',
+    borderRadius: 10,
+    padding: 14,
+    color: '#fff',
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  notesInput: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  quickDateButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 16,
+  },
+  quickDateButton: {
+    flex: 1,
+    backgroundColor: '#2d2d44',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  quickDateText: {
+    color: '#4ECDC4',
+    fontSize: 13,
+  },
+  followUpActions: {
+    flexDirection: 'row',
     gap: 12,
+    marginTop: 8,
   },
   cancelButton: {
     flex: 1,
     backgroundColor: '#2d2d44',
-    borderRadius: 12,
-    padding: 16,
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
   },
   cancelButtonText: {
-    fontSize: 16,
     color: '#fff',
+    fontSize: 16,
   },
   saveButton: {
-    flex: 2,
-    flexDirection: 'row',
+    flex: 1,
     backgroundColor: '#4ECDC4',
-    borderRadius: 12,
-    padding: 16,
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  saveButtonDisabled: {
-    opacity: 0.6,
   },
   saveButtonText: {
+    color: '#1a1a2e',
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a2e',
   },
 });
