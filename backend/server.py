@@ -252,6 +252,12 @@ def get_rate_for_term(rates: FinancingRates, term: int) -> float:
 async def root():
     return {"message": "Vehicle Financing Calculator API - v4 (avec historique et Bonus Cash)"}
 
+# Ping endpoint for keep-alive
+@api_router.get("/ping")
+async def ping():
+    """Endpoint pour garder le serveur actif (keep-alive)"""
+    return {"status": "ok", "message": "Server is alive"}
+
 # Get PDF info (page count)
 @api_router.post("/pdf-info")
 async def get_pdf_info(file: UploadFile = File(...)):
