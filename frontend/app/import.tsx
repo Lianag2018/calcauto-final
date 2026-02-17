@@ -971,18 +971,20 @@ export default function ImportScreen() {
           </View>
         </View>
 
-        {/* Progress Steps */}
+        {/* Progress Steps - 4 étapes */}
         <View style={styles.progressContainer}>
-          {['login', 'upload', 'select-pages', 'email-sent', 'success'].map((step, index) => (
+          {['login', 'upload', 'select-pages', 'email-sent'].map((step, index) => (
             <View key={step} style={styles.progressStep}>
               <View style={[
                 styles.progressDot,
                 currentStep === step && styles.progressDotActive,
-                ['upload', 'select-pages', 'preview', 'success'].indexOf(currentStep) >= index && styles.progressDotCompleted
+                (currentStep === 'email-sent' || currentStep === 'success') ? styles.progressDotCompleted :
+                ['upload', 'select-pages', 'email-sent'].indexOf(currentStep) >= index && styles.progressDotCompleted
               ]} />
-              {index < 4 ? <View style={[
+              {index < 3 ? <View style={[
                 styles.progressLine,
-                ['upload', 'select-pages', 'preview', 'success'].indexOf(currentStep) > index && styles.progressLineCompleted
+                (currentStep === 'email-sent' || currentStep === 'success') ? styles.progressLineCompleted :
+                ['upload', 'select-pages', 'email-sent'].indexOf(currentStep) > index && styles.progressLineCompleted
               ]} /> : null}
             </View>
           ))}
