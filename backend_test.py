@@ -293,7 +293,8 @@ def test_update_status(submission_id: str, status: str):
     try:
         response = requests.put(
             f"{BACKEND_URL}/submissions/{submission_id}/status",
-            params={"status": status},
+            json={"status": status},
+            headers={"Content-Type": "application/json"},
             timeout=10
         )
         
