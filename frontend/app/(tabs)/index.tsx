@@ -443,23 +443,36 @@ export default function HomeScreen() {
     echangeNet: number;
   } | null>(null);
 
-  const loadPrograms = useCallback(async () => {
+  const loadPrograms = useCallback(async (month?: number, year?: number) => {
     const startTime = Date.now();
     const MIN_LOADING_TIME = 2000; // Minimum 2 seconds for animation
     
     try {
-      await axios.post(`${API_URL}/api/seed`);
-      const response = await axios.get(`${API_URL}/api/programs`, {
+      // Load available periods
+      try {
+        const periodsRes = await axios.get(`${API_URL}/api/periods`);
+        setAvailablePeriods(periodsRes.data);
+      } catch (e) {
+        console.log('Could not load periods');
+      }
+      
+      // Build URL with optional month/year params
+      let url = `${API_URL}/api/programs`;
+      if (month && year) {
+        url += `?month=${month}&year=${year}`;
+      }
+      
+      const response = await axios.get(url, {
         headers: { 'Cache-Control': 'no-cache' }
       });
       setPrograms(response.data);
       setFilteredPrograms(response.data);
       
-      // Get current period from first program
+      // Get current period from first program or params
       if (response.data.length > 0) {
         setCurrentPeriod({
-          month: response.data[0].program_month,
-          year: response.data[0].program_year
+          month: month || response.data[0].program_month,
+          year: year || response.data[0].program_year
         });
       }
       
