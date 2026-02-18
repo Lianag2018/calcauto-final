@@ -2311,7 +2311,7 @@ async def compare_programs_with_submissions():
     """Compare les programmes actuels avec les soumissions passées pour trouver de meilleures offres"""
     from datetime import timedelta
     
-    # Get current programs
+    # Get current programs (latest month/year)
     latest = await db.programs.find_one(sort=[("program_year", -1), ("program_month", -1)])
     if not latest:
         return {"better_offers": [], "count": 0}
@@ -2319,19 +2319,19 @@ async def compare_programs_with_submissions():
     current_month = latest["program_month"]
     current_year = latest["program_year"]
     
-    # Get all pending/contacted submissions
+    # Get all pending/contacted submissions from PREVIOUS months
     submissions = await db.submissions.find({
         "status": {"$in": ["pending", "contacted"]},
         "$or": [
-            {"program_month": {"$ne": current_month}},
-            {"program_year": {"$ne": current_year}}
+            {"program_month": {"$lt": current_month}, "program_year": current_year},
+            {"program_year": {"$lt": current_year}}
         ]
     }).to_list(500)
     
     better_offers = []
     
     for sub in submissions:
-        # Find matching program
+        # Find matching program in current month
         program = await db.programs.find_one({
             "brand": sub["vehicle_brand"],
             "model": sub["vehicle_model"],
@@ -2339,6 +2339,16 @@ async def compare_programs_with_submissions():
             "program_month": current_month,
             "program_year": current_year
         })
+        
+        if not program:
+            # Try to find similar model (partial match)
+            program = await db.programs.find_one({
+                "brand": sub["vehicle_brand"],
+                "year": sub["vehicle_year"],
+                "program_month": current_month,
+                "program_year": current_year,
+                "model": {"$regex": sub["vehicle_model"].split()[0], "$options": "i"}
+            })
         
         if not program:
             continue
@@ -2355,7 +2365,8 @@ async def compare_programs_with_submissions():
         # Calculate with new program
         vehicle_price = sub["vehicle_price"]
         consumer_cash = program.get("consumer_cash", 0)
-        principal = vehicle_price - consumer_cash
+        bonus_cash = program.get("bonus_cash", 0)
+        principal = vehicle_price - consumer_cash - bonus_cash
         
         if new_rate == 0:
             new_payment = round(principal / term, 2)
@@ -2363,22 +2374,26 @@ async def compare_programs_with_submissions():
             monthly_rate = new_rate / 100 / 12
             new_payment = round(principal * (monthly_rate * (1 + monthly_rate) ** term) / ((1 + monthly_rate) ** term - 1), 2)
         
-        # Check if better
-        if new_payment < old_payment:
+        # Check if better (at least $10 savings)
+        if new_payment < old_payment - 10:
             savings_monthly = old_payment - new_payment
             savings_total = savings_monthly * term
             
             better_offer = {
                 "submission_id": sub["id"],
                 "client_name": sub["client_name"],
-                "client_phone": sub["client_phone"],
-                "client_email": sub["client_email"],
+                "client_phone": sub.get("client_phone", ""),
+                "client_email": sub.get("client_email", ""),
                 "vehicle": f"{sub['vehicle_brand']} {sub['vehicle_model']} {sub['vehicle_year']}",
-                "old_payment": old_payment,
-                "new_payment": new_payment,
-                "savings_monthly": round(savings_monthly, 2),
-                "savings_total": round(savings_total, 2),
-                "term": term,
+                "old_payment": float(old_payment),
+                "new_payment": float(new_payment),
+                "old_rate": float(sub.get("rate", 0)),
+                "new_rate": float(new_rate),
+                "savings_monthly": round(float(savings_monthly), 2),
+                "savings_total": round(float(savings_total), 2),
+                "term": int(term),
+                "old_program": f"{sub.get('program_month', '?')}/{sub.get('program_year', '?')}",
+                "new_program": f"{current_month}/{current_year}",
                 "approved": False,
                 "email_sent": False
             }
