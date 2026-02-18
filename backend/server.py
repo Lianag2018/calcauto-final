@@ -2309,110 +2309,104 @@ async def update_submission_status(submission_id: str, status: str):
 @api_router.post("/compare-programs")
 async def compare_programs_with_submissions():
     """Compare les programmes actuels avec les soumissions passées pour trouver de meilleures offres"""
-    from datetime import timedelta
     
-    # Get current programs (latest month/year)
-    latest = await db.programs.find_one(sort=[("program_year", -1), ("program_month", -1)])
-    if not latest:
-        return {"better_offers": [], "count": 0}
-    
-    current_month = latest["program_month"]
-    current_year = latest["program_year"]
-    
-    # Get all pending/contacted submissions from PREVIOUS months
-    submissions = await db.submissions.find({
-        "status": {"$in": ["pending", "contacted"]},
-        "$or": [
-            {"program_month": {"$lt": current_month}, "program_year": current_year},
-            {"program_year": {"$lt": current_year}}
-        ]
-    }).to_list(500)
-    
-    better_offers = []
-    
-    for sub in submissions:
-        # Find matching program in current month
-        program = await db.programs.find_one({
-            "brand": sub["vehicle_brand"],
-            "model": sub["vehicle_model"],
-            "year": sub["vehicle_year"],
-            "program_month": current_month,
-            "program_year": current_year
-        })
+    try:
+        # Get current programs (latest month/year)
+        latest = await db.programs.find_one(sort=[("program_year", -1), ("program_month", -1)])
+        if not latest:
+            return {"better_offers": [], "count": 0}
         
-        if not program:
-            # Try to find similar model (partial match)
+        current_month = latest["program_month"]
+        current_year = latest["program_year"]
+        
+        # Get all submissions from PREVIOUS months
+        submissions = await db.submissions.find({
+            "$or": [
+                {"program_month": {"$lt": current_month}, "program_year": current_year},
+                {"program_year": {"$lt": current_year}}
+            ]
+        }).to_list(500)
+        
+        better_offers = []
+        
+        for sub in submissions:
+            # Find matching program in current month
             program = await db.programs.find_one({
-                "brand": sub["vehicle_brand"],
-                "year": sub["vehicle_year"],
+                "brand": sub.get("vehicle_brand"),
+                "model": sub.get("vehicle_model"),
+                "year": sub.get("vehicle_year"),
                 "program_month": current_month,
-                "program_year": current_year,
-                "model": {"$regex": sub["vehicle_model"].split()[0], "$options": "i"}
+                "program_year": current_year
             })
-        
-        if not program:
-            continue
-        
-        # Calculate new payment
-        term = sub["term"]
-        old_payment = sub["payment_monthly"]
-        
-        # Get rate for this term
-        opt1_rates = program.get("option1_rates", {})
-        rate_key = f"rate_{term}"
-        new_rate = opt1_rates.get(rate_key, 4.99)
-        
-        # Calculate with new program
-        vehicle_price = sub["vehicle_price"]
-        consumer_cash = program.get("consumer_cash", 0)
-        bonus_cash = program.get("bonus_cash", 0)
-        principal = vehicle_price - consumer_cash - bonus_cash
-        
-        if new_rate == 0:
-            new_payment = round(principal / term, 2)
-        else:
-            monthly_rate = new_rate / 100 / 12
-            new_payment = round(principal * (monthly_rate * (1 + monthly_rate) ** term) / ((1 + monthly_rate) ** term - 1), 2)
-        
-        # Check if better (at least $10 savings)
-        if new_payment < old_payment - 10:
-            savings_monthly = old_payment - new_payment
-            savings_total = savings_monthly * term
             
-            better_offer = {
-                "submission_id": sub["id"],
-                "client_name": sub["client_name"],
-                "client_phone": sub.get("client_phone", ""),
-                "client_email": sub.get("client_email", ""),
-                "vehicle": f"{sub['vehicle_brand']} {sub['vehicle_model']} {sub['vehicle_year']}",
-                "old_payment": float(old_payment),
-                "new_payment": float(new_payment),
-                "old_rate": float(sub.get("rate", 0)),
-                "new_rate": float(new_rate),
-                "savings_monthly": round(float(savings_monthly), 2),
-                "savings_total": round(float(savings_total), 2),
-                "term": int(term),
-                "old_program": f"{sub.get('program_month', '?')}/{sub.get('program_year', '?')}",
-                "new_program": f"{current_month}/{current_year}",
-                "approved": False,
-                "email_sent": False
-            }
-            better_offers.append(better_offer)
-    
-    # Store better offers in DB for approval
-    if better_offers:
-        await db.better_offers.delete_many({})  # Clear old offers
-        # Insert without returning result to avoid ObjectId serialization issue
-        for offer in better_offers:
-            await db.better_offers.insert_one(offer)
+            if not program:
+                continue
+            
+            # Calculate new payment
+            term = int(sub.get("term", 72))
+            old_payment = float(sub.get("payment_monthly", 0))
+            
+            # Get rate for this term
+            opt1_rates = program.get("option1_rates", {})
+            rate_key = f"rate_{term}"
+            new_rate = float(opt1_rates.get(rate_key, 4.99))
+            
+            # Calculate with new program
+            vehicle_price = float(sub.get("vehicle_price", 0))
+            consumer_cash = float(program.get("consumer_cash", 0))
+            bonus_cash = float(program.get("bonus_cash", 0))
+            principal = vehicle_price - consumer_cash - bonus_cash
+            
+            if principal <= 0:
+                continue
+                
+            if new_rate == 0:
+                new_payment = round(principal / term, 2)
+            else:
+                monthly_rate = new_rate / 100 / 12
+                new_payment = round(principal * (monthly_rate * (1 + monthly_rate) ** term) / ((1 + monthly_rate) ** term - 1), 2)
+            
+            # Check if better (at least $10 savings)
+            if new_payment < old_payment - 10:
+                savings_monthly = old_payment - new_payment
+                savings_total = savings_monthly * term
+                
+                better_offers.append({
+                    "submission_id": str(sub.get("id", "")),
+                    "client_name": str(sub.get("client_name", "")),
+                    "client_phone": str(sub.get("client_phone", "")),
+                    "client_email": str(sub.get("client_email", "")),
+                    "vehicle": f"{sub.get('vehicle_brand', '')} {sub.get('vehicle_model', '')} {sub.get('vehicle_year', '')}",
+                    "old_payment": round(old_payment, 2),
+                    "new_payment": round(new_payment, 2),
+                    "old_rate": round(float(sub.get("rate", 0)), 2),
+                    "new_rate": round(new_rate, 2),
+                    "savings_monthly": round(savings_monthly, 2),
+                    "savings_total": round(savings_total, 2),
+                    "term": term,
+                    "old_program": f"{sub.get('program_month', '?')}/{sub.get('program_year', '?')}",
+                    "new_program": f"{current_month}/{current_year}",
+                    "approved": False,
+                    "email_sent": False
+                })
         
-        # Send notification email to admin
-        try:
-            send_better_offers_notification(better_offers)
-        except Exception as e:
-            logger.error(f"Error sending better offers notification: {e}")
+        # Store better offers in DB for approval
+        if better_offers:
+            await db.better_offers.delete_many({})  # Clear old offers
+            for offer in better_offers:
+                await db.better_offers.insert_one(offer)
+            
+            # Send notification email to admin
+            try:
+                send_better_offers_notification(better_offers)
+            except Exception as e:
+                logger.error(f"Error sending better offers notification: {e}")
+        
+        return {"better_offers": better_offers, "count": len(better_offers)}
     
-    return {"better_offers": better_offers, "count": len(better_offers)}
+    except Exception as e:
+        logger.error(f"Error in compare_programs: {e}")
+        return {"better_offers": [], "count": 0, "error": str(e)}
 
 def send_better_offers_notification(offers: List[dict]):
     """Envoie une notification par email des meilleures offres disponibles"""
