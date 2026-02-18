@@ -214,24 +214,35 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logoContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#4ECDC4',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
   },
-  title: {
-    fontSize: 28,
+  logoText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1a1a2e',
+  },
+  logoSubText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a2e',
+    marginTop: -2,
+  },
+  subtitle: {
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 18,
-    color: '#4ECDC4',
-    fontWeight: '600',
+  description: {
+    fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
   },
   errorContainer: {
     flexDirection: 'row',
