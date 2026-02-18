@@ -586,6 +586,52 @@ export default function ClientsScreen() {
     });
   };
 
+  // Delete contact from database
+  const deleteContact = async (client: Client) => {
+    const confirmDelete = Platform.OS === 'web'
+      ? window.confirm(`Supprimer ${client.name}?`)
+      : await new Promise<boolean>(resolve => 
+          Alert.alert(
+            'Supprimer le contact',
+            `Êtes-vous sûr de vouloir supprimer ${client.name}?`,
+            [
+              { text: 'Annuler', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Supprimer', style: 'destructive', onPress: () => resolve(true) }
+            ]
+          )
+        );
+    
+    if (!confirmDelete) return;
+    
+    try {
+      // Find contact by phone or email to delete from contacts collection
+      const contactKey = client.phone || client.email || client.name;
+      
+      // Try to delete from contacts collection
+      const contactsResponse = await axios.get(`${API_URL}/api/contacts`);
+      const contacts = contactsResponse.data;
+      const contactToDelete = contacts.find((c: any) => 
+        c.phone === client.phone || c.email === client.email || c.name === client.name
+      );
+      
+      if (contactToDelete) {
+        await axios.delete(`${API_URL}/api/contacts/${contactToDelete.id}`);
+      }
+      
+      // Reload data to refresh the list
+      await loadData();
+      
+      Platform.OS === 'web' 
+        ? alert('✅ Contact supprimé!')
+        : Alert.alert('✅', 'Contact supprimé!');
+    } catch (err) {
+      console.error('Error deleting contact:', err);
+      Platform.OS === 'web'
+        ? alert('❌ Erreur lors de la suppression')
+        : Alert.alert('Erreur', 'Impossible de supprimer le contact');
+    }
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
