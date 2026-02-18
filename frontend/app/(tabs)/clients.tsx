@@ -209,9 +209,20 @@ export default function ClientsScreen() {
 
   const loadData = async () => {
     try {
+      // Load submissions
       const response = await axios.get(`${API_URL}/api/submissions`);
       const allSubmissions: Submission[] = response.data;
       setSubmissions(allSubmissions);
+      
+      // Load saved contacts from database
+      let savedContacts: ImportedContact[] = [];
+      try {
+        const contactsResponse = await axios.get(`${API_URL}/api/contacts`);
+        savedContacts = contactsResponse.data;
+        console.log(`Loaded ${savedContacts.length} saved contacts`);
+      } catch (contactErr) {
+        console.log('Could not load saved contacts:', contactErr);
+      }
       
       // Build clients from submissions
       const clientsMap = new Map<string, Submission[]>();
@@ -222,12 +233,43 @@ export default function ClientsScreen() {
       }
       
       const clientsArray: Client[] = [];
+      
+      // Add clients from submissions
       clientsMap.forEach((subs) => {
         const sortedSubs = subs.sort((a, b) => new Date(b.submission_date).getTime() - new Date(a.submission_date).getTime());
         const latestSub = sortedSubs[0];
         const pendingReminders = subs.filter(s => s.reminder_date && !s.reminder_done);
         const nextReminder = pendingReminders.length > 0 
           ? pendingReminders.sort((a, b) => new Date(a.reminder_date!).getTime() - new Date(b.reminder_date!).getTime())[0].reminder_date 
+          : null;
+        clientsArray.push({
+          name: latestSub.client_name,
+          email: latestSub.client_email,
+          phone: latestSub.client_phone,
+          submissions: sortedSubs,
+          last_submission_date: latestSub.submission_date,
+          next_reminder: nextReminder,
+          has_pending_reminder: pendingReminders.length > 0
+        });
+      });
+      
+      // Add imported contacts that are not already in clients list
+      const existingKeys = new Set(clientsArray.map(c => (c.phone || c.email || c.name).toLowerCase()));
+      for (const contact of savedContacts) {
+        const key = (contact.phone || contact.email || contact.name).toLowerCase();
+        if (!existingKeys.has(key)) {
+          clientsArray.push({
+            name: contact.name,
+            email: contact.email,
+            phone: contact.phone,
+            submissions: [],
+            last_submission_date: contact.created_at || new Date().toISOString(),
+            next_reminder: null,
+            has_pending_reminder: false
+          });
+          existingKeys.add(key);
+        }
+      } 
           : null;
         clientsArray.push({
           name: latestSub.client_name,
