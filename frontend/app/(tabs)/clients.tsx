@@ -444,13 +444,35 @@ export default function ClientsScreen() {
         return;
       }
       
+      // SAVE CONTACTS TO DATABASE
+      try {
+        const contactsToSave = contacts.map(c => ({
+          name: c.name,
+          phone: c.phone,
+          email: c.email,
+          source: 'import'
+        }));
+        
+        const saveResponse = await axios.post(`${API_URL}/api/contacts/bulk`, {
+          contacts: contactsToSave
+        });
+        
+        console.log('Save response:', saveResponse.data);
+        
+        const { imported, skipped } = saveResponse.data;
+        
+        Platform.OS === 'web'
+          ? alert(`✅ ${imported} ${crm.importSuccess}${skipped > 0 ? ` (${skipped} doublons ignorés)` : ''}`)
+          : Alert.alert('✅', `${imported} ${crm.importSuccess}${skipped > 0 ? `\n(${skipped} doublons ignorés)` : ''}`);
+        
+      } catch (saveErr) {
+        console.error('Error saving contacts:', saveErr);
+        // Still show the contacts even if save failed
+      }
+      
       setImportedContacts(contacts);
       setShowImportModal(false);
       setShowImportedContactsModal(true);
-      
-      Platform.OS === 'web'
-        ? alert(`✅ ${contacts.length} ${crm.importSuccess}`)
-        : Alert.alert('✅', `${contacts.length} ${crm.importSuccess}`);
       
     } catch (err) {
       console.error('Error importing file:', err);
