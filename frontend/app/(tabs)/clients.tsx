@@ -1223,6 +1223,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center', 
     alignItems: 'center',
   },
+  actionBtnDelete: { 
+    width: 36, 
+    height: 36, 
+    borderRadius: 18, 
+    backgroundColor: 'rgba(255,107,107,0.15)', 
+    justifyContent: 'center', 
+    alignItems: 'center',
+  },
   clientReminderBadge: {
     flexDirection: 'row',
     alignItems: 'center',
