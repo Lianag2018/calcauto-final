@@ -236,6 +236,11 @@ export default function ClientsScreen() {
   const [reminders, setReminders] = useState<Submission[]>([]);
   const [remindersCount, setRemindersCount] = useState(0);
   
+  // Better offers
+  const [betterOffers, setBetterOffers] = useState<BetterOffer[]>([]);
+  const [checkingOffers, setCheckingOffers] = useState(false);
+  const [approvingOffer, setApprovingOffer] = useState<string | null>(null);
+  
   // Import contacts modal
   const [showImportModal, setShowImportModal] = useState(false);
   const [importedContacts, setImportedContacts] = useState<ImportedContact[]>([]);
@@ -262,6 +267,14 @@ export default function ClientsScreen() {
       const response = await axios.get(`${API_URL}/api/submissions`);
       const allSubmissions: Submission[] = response.data;
       setSubmissions(allSubmissions);
+      
+      // Load better offers
+      try {
+        const offersResponse = await axios.get(`${API_URL}/api/better-offers`);
+        setBetterOffers(offersResponse.data);
+      } catch (err) {
+        console.log('Could not load better offers:', err);
+      }
       
       // Load saved contacts from database
       let savedContacts: ImportedContact[] = [];
