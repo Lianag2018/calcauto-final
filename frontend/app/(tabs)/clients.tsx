@@ -17,12 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
-
-// Import contacts only for native platforms
-let Contacts: any = null;
-if (Platform.OS !== 'web') {
-  Contacts = require('expo-contacts');
-}
+import * as DocumentPicker from 'expo-document-picker';
 
 import { Language, saveLanguage, loadLanguage } from '../../utils/i18n';
 import { LanguageSelector } from '../../components/LanguageSelector';
@@ -63,7 +58,7 @@ interface Client {
   has_pending_reminder: boolean;
 }
 
-interface PhoneContact {
+interface ImportedContact {
   id: string;
   name: string;
   phone: string;
@@ -93,12 +88,6 @@ const crmTranslations = {
     loading: 'Chargement...',
     noData: 'Aucune donnée',
     goToCalculator: 'Aller au calculateur',
-    webNotSupported: 'Import de contacts disponible uniquement sur mobile (iOS/Android)',
-    permissionDenied: 'Permission refusée pour accéder aux contacts',
-    selectContact: 'Sélectionner un contact',
-    phoneContacts: 'Contacts téléphone',
-    noContactsFound: 'Aucun contact trouvé',
-    contactImported: 'Contact sélectionné! Créez une soumission.',
     submissions: 'soumissions',
     lastContact: 'Dernier contact',
     vehicle: 'Véhicule',
@@ -110,6 +99,22 @@ const crmTranslations = {
     notes: 'Notes',
     save: 'Sauvegarder',
     cancel: 'Annuler',
+    close: 'Fermer',
+    // Import modal translations
+    importTitle: 'Importer des contacts',
+    importDescription: 'Exportez vos contacts depuis iCloud ou Google, puis importez le fichier ici.',
+    iCloudOption: 'iCloud (vCard)',
+    iCloudDesc: 'Fichier .vcf exporté depuis iCloud',
+    googleOption: 'Google (CSV)',
+    googleDesc: 'Fichier .csv exporté depuis Google Contacts',
+    howToExport: 'Comment exporter?',
+    iCloudInstructions: '1. Aller sur icloud.com/contacts\n2. Sélectionner tous les contacts\n3. Exporter en vCard',
+    googleInstructions: '1. Aller sur contacts.google.com\n2. Exporter → Format vCard ou CSV',
+    importSuccess: 'contacts importés avec succès!',
+    importError: 'Erreur lors de l\'import',
+    selectFile: 'Sélectionner un fichier',
+    contactsImported: 'Contacts importés',
+    noContactsFound: 'Aucun contact trouvé dans le fichier',
   },
   en: {
     title: 'CRM',
@@ -133,12 +138,6 @@ const crmTranslations = {
     loading: 'Loading...',
     noData: 'No data',
     goToCalculator: 'Go to calculator',
-    webNotSupported: 'Contact import only available on mobile (iOS/Android)',
-    permissionDenied: 'Permission denied to access contacts',
-    selectContact: 'Select a contact',
-    phoneContacts: 'Phone contacts',
-    noContactsFound: 'No contacts found',
-    contactImported: 'Contact selected! Create a submission.',
     submissions: 'submissions',
     lastContact: 'Last contact',
     vehicle: 'Vehicle',
@@ -150,6 +149,22 @@ const crmTranslations = {
     notes: 'Notes',
     save: 'Save',
     cancel: 'Cancel',
+    close: 'Close',
+    // Import modal translations
+    importTitle: 'Import contacts',
+    importDescription: 'Export your contacts from iCloud or Google, then import the file here.',
+    iCloudOption: 'iCloud (vCard)',
+    iCloudDesc: '.vcf file exported from iCloud',
+    googleOption: 'Google (CSV)',
+    googleDesc: '.csv file exported from Google Contacts',
+    howToExport: 'How to export?',
+    iCloudInstructions: '1. Go to icloud.com/contacts\n2. Select all contacts\n3. Export as vCard',
+    googleInstructions: '1. Go to contacts.google.com\n2. Export → vCard or CSV format',
+    importSuccess: 'contacts imported successfully!',
+    importError: 'Error importing contacts',
+    selectFile: 'Select a file',
+    contactsImported: 'Contacts imported',
+    noContactsFound: 'No contacts found in file',
   }
 };
 
@@ -172,11 +187,11 @@ export default function ClientsScreen() {
   const [reminders, setReminders] = useState<Submission[]>([]);
   const [remindersCount, setRemindersCount] = useState(0);
   
-  // Contact import - CRITICAL FEATURE
-  const [showContactsModal, setShowContactsModal] = useState(false);
-  const [phoneContacts, setPhoneContacts] = useState<PhoneContact[]>([]);
-  const [loadingContacts, setLoadingContacts] = useState(false);
-  const [contactSearch, setContactSearch] = useState('');
+  // Import contacts modal
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importedContacts, setImportedContacts] = useState<ImportedContact[]>([]);
+  const [showImportedContactsModal, setShowImportedContactsModal] = useState(false);
+  const [importingFile, setImportingFile] = useState(false);
   
   // Client details modal
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -281,73 +296,175 @@ export default function ClientsScreen() {
   const emailContact = (email: string) => Linking.openURL(`mailto:${email}`);
 
   // ============================================
-  // IMPORT CONTACTS FROM PHONE - CRITICAL FEATURE
+  // PARSE vCard FILE
   // ============================================
-  const importContacts = async () => {
-    // Check if running on web
-    if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined' && window.alert) {
-        window.alert(crm.webNotSupported);
-      } else {
-        Alert.alert('Info', crm.webNotSupported);
+  const parseVCard = (content: string): ImportedContact[] => {
+    const contacts: ImportedContact[] = [];
+    const vcards = content.split('END:VCARD');
+    
+    for (const vcard of vcards) {
+      if (!vcard.includes('BEGIN:VCARD')) continue;
+      
+      let name = '';
+      let phone = '';
+      let email = '';
+      
+      const lines = vcard.split(/\r?\n/);
+      for (const line of lines) {
+        // Parse name (FN = Full Name)
+        if (line.startsWith('FN:') || line.startsWith('FN;')) {
+          name = line.split(':').slice(1).join(':').trim();
+        }
+        // Parse phone
+        if (line.startsWith('TEL') || line.includes('TEL;') || line.includes('TEL:')) {
+          const phoneMatch = line.match(/:([\d\s\-\+\(\)]+)/);
+          if (phoneMatch) {
+            phone = phoneMatch[1].trim();
+          }
+        }
+        // Parse email
+        if (line.startsWith('EMAIL') || line.includes('EMAIL;') || line.includes('EMAIL:')) {
+          const emailMatch = line.match(/:(.+@.+)/);
+          if (emailMatch) {
+            email = emailMatch[1].trim();
+          }
+        }
       }
-      return;
+      
+      if (name) {
+        contacts.push({
+          id: `import_${Date.now()}_${contacts.length}`,
+          name,
+          phone,
+          email,
+        });
+      }
     }
     
-    // Check if Contacts module is available
-    if (!Contacts) {
-      Alert.alert('Erreur', 'Module de contacts non disponible');
-      return;
+    return contacts;
+  };
+
+  // ============================================
+  // PARSE CSV FILE
+  // ============================================
+  const parseCSV = (content: string): ImportedContact[] => {
+    const contacts: ImportedContact[] = [];
+    const lines = content.split(/\r?\n/);
+    
+    if (lines.length < 2) return contacts;
+    
+    // Parse header to find column indices
+    const header = lines[0].toLowerCase();
+    const headers = header.split(',').map(h => h.trim().replace(/"/g, ''));
+    
+    const nameIdx = headers.findIndex(h => h.includes('name') || h.includes('nom'));
+    const firstNameIdx = headers.findIndex(h => h.includes('first') || h.includes('prénom') || h.includes('prenom'));
+    const lastNameIdx = headers.findIndex(h => h.includes('last') || h.includes('family') || h.includes('nom de famille'));
+    const phoneIdx = headers.findIndex(h => h.includes('phone') || h.includes('téléphone') || h.includes('telephone') || h.includes('mobile'));
+    const emailIdx = headers.findIndex(h => h.includes('email') || h.includes('mail') || h.includes('courriel'));
+    
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.trim()) continue;
+      
+      // Simple CSV parsing (doesn't handle all edge cases but works for most exports)
+      const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+      
+      let name = '';
+      if (nameIdx >= 0 && values[nameIdx]) {
+        name = values[nameIdx];
+      } else if (firstNameIdx >= 0 || lastNameIdx >= 0) {
+        const firstName = firstNameIdx >= 0 ? values[firstNameIdx] || '' : '';
+        const lastName = lastNameIdx >= 0 ? values[lastNameIdx] || '' : '';
+        name = `${firstName} ${lastName}`.trim();
+      }
+      
+      const phone = phoneIdx >= 0 ? values[phoneIdx] || '' : '';
+      const email = emailIdx >= 0 ? values[emailIdx] || '' : '';
+      
+      if (name) {
+        contacts.push({
+          id: `import_${Date.now()}_${contacts.length}`,
+          name,
+          phone,
+          email,
+        });
+      }
     }
     
-    setLoadingContacts(true);
+    return contacts;
+  };
+
+  // ============================================
+  // IMPORT FILE (vCard or CSV)
+  // ============================================
+  const importFile = async (type: 'vcard' | 'csv') => {
+    setImportingFile(true);
     try {
-      // Request permission
-      const { status } = await Contacts.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission', crm.permissionDenied);
-        setLoadingContacts(false);
+      const result = await DocumentPicker.getDocumentAsync({
+        type: type === 'vcard' ? ['text/vcard', 'text/x-vcard', '*/*'] : ['text/csv', 'text/comma-separated-values', '*/*'],
+        copyToCacheDirectory: true,
+      });
+      
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        setImportingFile(false);
         return;
       }
       
-      // Fetch contacts from phone
-      const { data } = await Contacts.getContactsAsync({
-        fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers, Contacts.Fields.Emails],
-      });
+      const file = result.assets[0];
+      console.log('Selected file:', file.name, file.uri);
       
-      // Format contacts
-      const formattedContacts: PhoneContact[] = data
-        .filter((c: any) => c.name && (c.phoneNumbers?.length > 0 || c.emails?.length > 0))
-        .map((c: any) => ({
-          id: c.id,
-          name: c.name || '',
-          phone: c.phoneNumbers?.[0]?.number || '',
-          email: c.emails?.[0]?.email || '',
-        }))
-        .sort((a: PhoneContact, b: PhoneContact) => a.name.localeCompare(b.name));
+      // Read file content
+      let content = '';
+      if (Platform.OS === 'web') {
+        // For web, fetch the file
+        const response = await fetch(file.uri);
+        content = await response.text();
+      } else {
+        // For native, use FileSystem
+        const FileSystem = require('expo-file-system');
+        content = await FileSystem.readAsStringAsync(file.uri);
+      }
       
-      console.log(`Loaded ${formattedContacts.length} contacts from phone`);
-      setPhoneContacts(formattedContacts);
-      setContactSearch('');
-      setShowContactsModal(true);
+      // Parse based on file type
+      let contacts: ImportedContact[] = [];
+      if (type === 'vcard' || file.name?.toLowerCase().endsWith('.vcf')) {
+        contacts = parseVCard(content);
+      } else {
+        contacts = parseCSV(content);
+      }
+      
+      console.log(`Parsed ${contacts.length} contacts`);
+      
+      if (contacts.length === 0) {
+        Platform.OS === 'web' 
+          ? alert(crm.noContactsFound)
+          : Alert.alert('Info', crm.noContactsFound);
+        setImportingFile(false);
+        return;
+      }
+      
+      setImportedContacts(contacts);
+      setShowImportModal(false);
+      setShowImportedContactsModal(true);
+      
+      Platform.OS === 'web'
+        ? alert(`✅ ${contacts.length} ${crm.importSuccess}`)
+        : Alert.alert('✅', `${contacts.length} ${crm.importSuccess}`);
+      
     } catch (err) {
-      console.error('Error loading contacts:', err);
-      Alert.alert('Erreur', 'Impossible de charger les contacts');
+      console.error('Error importing file:', err);
+      Platform.OS === 'web'
+        ? alert(crm.importError)
+        : Alert.alert('Erreur', crm.importError);
     } finally {
-      setLoadingContacts(false);
+      setImportingFile(false);
     }
   };
 
-  // Select contact and navigate to calculator with pre-filled info
-  const selectContact = (contact: PhoneContact) => {
-    setShowContactsModal(false);
-    
-    // Show confirmation
-    if (Platform.OS !== 'web') {
-      Alert.alert('✅', crm.contactImported);
-    }
-    
-    // Navigate to calculator with contact info
+  // Select imported contact and go to calculator
+  const selectImportedContact = (contact: ImportedContact) => {
+    setShowImportedContactsModal(false);
     router.push({
       pathname: '/(tabs)',
       params: {
@@ -357,14 +474,6 @@ export default function ClientsScreen() {
       },
     });
   };
-
-  // Filter phone contacts based on search
-  const filteredPhoneContacts = contactSearch.trim()
-    ? phoneContacts.filter(c =>
-        c.name.toLowerCase().includes(contactSearch.toLowerCase()) ||
-        c.phone.includes(contactSearch)
-      )
-    : phoneContacts;
 
   // ============================================
   // OTHER ACTIONS
@@ -652,7 +761,7 @@ export default function ClientsScreen() {
         </View>
       </View>
 
-      {/* Action Buttons - IMPORT BUTTON VISIBLE ONLY ON MOBILE */}
+      {/* Action Buttons */}
       <View style={styles.actionsRow}>
         <TouchableOpacity 
           style={styles.addButton}
@@ -661,22 +770,13 @@ export default function ClientsScreen() {
           <Ionicons name="add" size={20} color="#1a1a2e" />
           <Text style={styles.addButtonText}>{crm.add}</Text>
         </TouchableOpacity>
-        {Platform.OS !== 'web' && (
-          <TouchableOpacity 
-            style={styles.importButton}
-            onPress={importContacts}
-            disabled={loadingContacts}
-          >
-            {loadingContacts ? (
-              <ActivityIndicator size="small" color="#1a1a2e" />
-            ) : (
-              <>
-                <Ionicons name="cloud-download" size={20} color="#1a1a2e" />
-                <Text style={styles.importButtonText}>{crm.import}</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity 
+          style={styles.importButton}
+          onPress={() => setShowImportModal(true)}
+        >
+          <Ionicons name="cloud-download-outline" size={20} color="#FF9F43" />
+          <Text style={styles.importButtonText}>{crm.import}</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Tab Content */}
@@ -686,54 +786,102 @@ export default function ClientsScreen() {
       {activeTab === 'history' && renderHistoryTab()}
 
       {/* ============================================ */}
-      {/* CONTACTS IMPORT MODAL - SHOWS PHONE CONTACTS */}
+      {/* IMPORT CONTACTS MODAL - vCard/CSV Options */}
       {/* ============================================ */}
-      <Modal visible={showContactsModal} animationType="slide" transparent={true} onRequestClose={() => setShowContactsModal(false)}>
+      <Modal visible={showImportModal} animationType="slide" transparent={true} onRequestClose={() => setShowImportModal(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.contactsModalContent}>
+          <View style={styles.importModalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{crm.phoneContacts}</Text>
-              <TouchableOpacity onPress={() => setShowContactsModal(false)}>
+              <Text style={styles.modalTitle}>{crm.importTitle}</Text>
+              <TouchableOpacity onPress={() => setShowImportModal(false)}>
                 <Ionicons name="close" size={24} color="#fff" />
               </TouchableOpacity>
             </View>
-            <View style={styles.contactSearchContainer}>
-              <Ionicons name="search" size={20} color="#888" />
-              <TextInput
-                style={styles.contactSearchInput}
-                placeholder={crm.search}
-                placeholderTextColor="#666"
-                value={contactSearch}
-                onChangeText={setContactSearch}
-              />
-              {contactSearch ? (
-                <TouchableOpacity onPress={() => setContactSearch('')}>
-                  <Ionicons name="close-circle" size={20} color="#888" />
-                </TouchableOpacity>
-              ) : null}
-            </View>
-            <Text style={styles.contactsCount}>{filteredPhoneContacts.length} contacts</Text>
-            <ScrollView style={styles.contactsList}>
-              {filteredPhoneContacts.length === 0 ? (
-                <View style={styles.noContactsContainer}>
-                  <Ionicons name="people-outline" size={48} color="#666" />
-                  <Text style={styles.noContactsText}>{crm.noContactsFound}</Text>
+            
+            <View style={styles.importModalBody}>
+              <Text style={styles.importDescription}>{crm.importDescription}</Text>
+              
+              {/* iCloud Option */}
+              <TouchableOpacity 
+                style={styles.importOption} 
+                onPress={() => importFile('vcard')}
+                disabled={importingFile}
+              >
+                <View style={styles.importOptionIcon}>
+                  <Ionicons name="cloud-outline" size={28} color="#4ECDC4" />
                 </View>
-              ) : (
-                filteredPhoneContacts.map((contact, index) => (
-                  <TouchableOpacity key={contact.id || index} style={styles.contactItem} onPress={() => selectContact(contact)}>
-                    <View style={styles.contactAvatar}>
-                      <Text style={styles.contactAvatarText}>{contact.name.charAt(0).toUpperCase()}</Text>
-                    </View>
-                    <View style={styles.contactDetails}>
-                      <Text style={styles.contactName}>{contact.name}</Text>
-                      {contact.phone && <Text style={styles.contactPhone}>{contact.phone}</Text>}
-                      {contact.email && <Text style={styles.contactEmail}>{contact.email}</Text>}
-                    </View>
-                    <Ionicons name="chevron-forward" size={20} color="#888" />
-                  </TouchableOpacity>
-                ))
-              )}
+                <View style={styles.importOptionInfo}>
+                  <Text style={styles.importOptionTitle}>{crm.iCloudOption}</Text>
+                  <Text style={styles.importOptionDesc}>{crm.iCloudDesc}</Text>
+                </View>
+                {importingFile ? (
+                  <ActivityIndicator size="small" color="#4ECDC4" />
+                ) : (
+                  <Ionicons name="chevron-forward" size={24} color="#888" />
+                )}
+              </TouchableOpacity>
+              
+              {/* Google Option */}
+              <TouchableOpacity 
+                style={styles.importOption} 
+                onPress={() => importFile('csv')}
+                disabled={importingFile}
+              >
+                <View style={[styles.importOptionIcon, { backgroundColor: 'rgba(66, 133, 244, 0.1)' }]}>
+                  <Ionicons name="logo-google" size={28} color="#4285F4" />
+                </View>
+                <View style={styles.importOptionInfo}>
+                  <Text style={styles.importOptionTitle}>{crm.googleOption}</Text>
+                  <Text style={styles.importOptionDesc}>{crm.googleDesc}</Text>
+                </View>
+                {importingFile ? (
+                  <ActivityIndicator size="small" color="#4285F4" />
+                ) : (
+                  <Ionicons name="chevron-forward" size={24} color="#888" />
+                )}
+              </TouchableOpacity>
+              
+              {/* Instructions */}
+              <View style={styles.importInstructions}>
+                <Text style={styles.importInstructionsTitle}>{crm.howToExport}</Text>
+                <Text style={styles.importInstructionsText}>{crm.iCloudInstructions}</Text>
+                <Text style={[styles.importInstructionsText, { marginTop: 12 }]}>{crm.googleInstructions}</Text>
+              </View>
+            </View>
+            
+            <TouchableOpacity style={styles.closeButton} onPress={() => setShowImportModal(false)}>
+              <Text style={styles.closeButtonText}>{crm.close}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ============================================ */}
+      {/* IMPORTED CONTACTS LIST MODAL */}
+      {/* ============================================ */}
+      <Modal visible={showImportedContactsModal} animationType="slide" transparent={true} onRequestClose={() => setShowImportedContactsModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.contactsModalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{crm.contactsImported} ({importedContacts.length})</Text>
+              <TouchableOpacity onPress={() => setShowImportedContactsModal(false)}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.contactsList}>
+              {importedContacts.map((contact, index) => (
+                <TouchableOpacity key={contact.id || index} style={styles.contactItem} onPress={() => selectImportedContact(contact)}>
+                  <View style={styles.contactAvatar}>
+                    <Text style={styles.contactAvatarText}>{contact.name.charAt(0).toUpperCase()}</Text>
+                  </View>
+                  <View style={styles.contactDetails}>
+                    <Text style={styles.contactName}>{contact.name}</Text>
+                    {contact.phone && <Text style={styles.contactPhone}>{contact.phone}</Text>}
+                    {contact.email && <Text style={styles.contactEmail}>{contact.email}</Text>}
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color="#888" />
+                </TouchableOpacity>
+              ))}
             </ScrollView>
           </View>
         </View>
@@ -918,12 +1066,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     justifyContent: 'center',
-    backgroundColor: '#FF9F43', 
-    paddingVertical: 12, 
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#FF9F43',
+    paddingVertical: 10, 
     borderRadius: 12,
     gap: 8,
   },
-  importButtonText: { color: '#1a1a2e', fontSize: 16, fontWeight: '600' },
+  importButtonText: { color: '#FF9F43', fontSize: 16, fontWeight: '600' },
   
   // Tab Content
   tabContent: { flex: 1, paddingHorizontal: 16, marginTop: 12 },
@@ -1055,6 +1205,52 @@ const styles = StyleSheet.create({
   },
   modalTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
   
+  // Import Modal
+  importModalContent: { 
+    backgroundColor: '#1a1a2e', 
+    borderTopLeftRadius: 24, 
+    borderTopRightRadius: 24,
+    paddingBottom: 40,
+  },
+  importModalBody: { padding: 20 },
+  importDescription: { color: '#888', fontSize: 14, textAlign: 'center', marginBottom: 24 },
+  importOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2d2d44',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  importOptionIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  importOptionInfo: { flex: 1, marginLeft: 14 },
+  importOptionTitle: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  importOptionDesc: { color: '#888', fontSize: 13, marginTop: 2 },
+  importInstructions: {
+    backgroundColor: '#2d2d44',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+  },
+  importInstructionsTitle: { color: '#4ECDC4', fontSize: 14, fontWeight: '600', marginBottom: 8 },
+  importInstructionsText: { color: '#888', fontSize: 13, lineHeight: 20 },
+  closeButton: {
+    marginHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#888',
+    alignItems: 'center',
+  },
+  closeButtonText: { color: '#888', fontSize: 16, fontWeight: '600' },
+  
   // Contacts Modal
   contactsModalContent: { 
     backgroundColor: '#1a1a2e', 
@@ -1063,21 +1259,7 @@ const styles = StyleSheet.create({
     maxHeight: '85%', 
     paddingBottom: 40,
   },
-  contactSearchContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#2d2d44', 
-    borderRadius: 12, 
-    marginHorizontal: 20, 
-    marginVertical: 16, 
-    paddingHorizontal: 16, 
-    paddingVertical: 12,
-  },
-  contactSearchInput: { flex: 1, color: '#fff', fontSize: 16, marginLeft: 10 },
-  contactsCount: { color: '#888', fontSize: 13, marginHorizontal: 20, marginBottom: 10 },
   contactsList: { paddingHorizontal: 20 },
-  noContactsContainer: { alignItems: 'center', paddingVertical: 60 },
-  noContactsText: { color: '#666', fontSize: 16, marginTop: 12 },
   contactItem: { 
     flexDirection: 'row', 
     alignItems: 'center', 
