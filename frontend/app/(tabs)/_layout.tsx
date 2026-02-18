@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform } from 'react-native';
+import { Platform, View, Text, StyleSheet } from 'react-native';
 
 export default function TabsLayout() {
   return (
@@ -12,15 +12,23 @@ export default function TabsLayout() {
           backgroundColor: '#1a1a2e',
           borderTopColor: '#2d2d44',
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 85 : 65,
-          paddingBottom: Platform.OS === 'ios' ? 25 : 10,
+          height: Platform.OS === 'ios' ? 88 : Platform.OS === 'web' ? 70 : 65,
+          paddingBottom: Platform.OS === 'ios' ? 28 : Platform.OS === 'web' ? 10 : 10,
           paddingTop: 10,
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
         },
         tabBarActiveTintColor: '#4ECDC4',
         tabBarInactiveTintColor: '#888',
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '600',
+          marginTop: 4,
+        },
+        tabBarIconStyle: {
+          marginTop: 4,
         },
       }}
     >
@@ -29,7 +37,7 @@ export default function TabsLayout() {
         options={{
           title: 'Calculateur',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calculator" size={size} color={color} />
+            <Ionicons name="calculator" size={24} color={color} />
           ),
         }}
       />
@@ -38,7 +46,7 @@ export default function TabsLayout() {
         options={{
           title: 'Clients',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people" size={size} color={color} />
+            <Ionicons name="people" size={24} color={color} />
           ),
         }}
       />
