@@ -584,6 +584,7 @@ export default function HomeScreen() {
     
     const bonusCash = parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0;
     const consumerCash = selectedProgram.consumer_cash;
+    const comptant = parseFloat(comptantTxInclus) || 0; // Comptant tx inclus
     
     // Frais taxables
     const dossier = parseFloat(fraisDossier) || 0;
@@ -599,17 +600,19 @@ export default function HomeScreen() {
     // Calcul du montant taxable (prix + frais - échange)
     // Note: Consumer Cash est avant taxes, donc réduit le montant taxable
     
-    // Option 1: Prix - Consumer Cash - valeur échange + frais + dette échange + taxes
+    // Option 1: Prix - Consumer Cash - valeur échange + frais + dette échange + taxes - comptant - bonus cash
     const montantAvantTaxesO1 = price - consumerCash - valeurEchange + fraisTaxables;
     const taxesO1 = montantAvantTaxesO1 * tauxTaxe;
-    const principalOption1 = montantAvantTaxesO1 + taxesO1 + detteSurEchange;
+    const principalOption1Brut = montantAvantTaxesO1 + taxesO1 + detteSurEchange;
+    // Soustraire le comptant et bonus cash (déjà tx inclus)
+    const principalOption1 = principalOption1Brut - comptant - bonusCash;
     const rate1 = getRateForTerm(selectedProgram.option1_rates, selectedTerm);
-    const monthly1 = calculateMonthlyPayment(principalOption1, rate1, selectedTerm);
+    const monthly1 = calculateMonthlyPayment(Math.max(0, principalOption1), rate1, selectedTerm);
     const biweekly1 = monthly1 * 12 / 26; // 26 paiements par an
     const weekly1 = monthly1 * 12 / 52; // 52 paiements par an
     const total1 = monthly1 * selectedTerm;
     
-    // Option 2: Prix complet - valeur échange + frais + dette échange + taxes (pas de Consumer Cash)
+    // Option 2: Prix complet - valeur échange + frais + dette échange + taxes - comptant (pas de Consumer Cash ni Bonus)
     let monthly2: number | null = null;
     let biweekly2: number | null = null;
     let weekly2: number | null = null;
@@ -620,11 +623,13 @@ export default function HomeScreen() {
     
     const montantAvantTaxesO2 = price - valeurEchange + fraisTaxables;
     const taxesO2 = montantAvantTaxesO2 * tauxTaxe;
-    const principalOption2 = montantAvantTaxesO2 + taxesO2 + detteSurEchange;
+    const principalOption2Brut = montantAvantTaxesO2 + taxesO2 + detteSurEchange;
+    // Soustraire seulement le comptant pour l'option 2 (pas de bonus cash)
+    const principalOption2 = principalOption2Brut - comptant;
     
     if (selectedProgram.option2_rates) {
       rate2 = getRateForTerm(selectedProgram.option2_rates, selectedTerm);
-      monthly2 = calculateMonthlyPayment(principalOption2, rate2, selectedTerm);
+      monthly2 = calculateMonthlyPayment(Math.max(0, principalOption2), rate2, selectedTerm);
       biweekly2 = monthly2 * 12 / 26;
       weekly2 = monthly2 * 12 / 52;
       total2 = monthly2 * selectedTerm;
@@ -660,8 +665,10 @@ export default function HomeScreen() {
       fraisTaxables,
       taxes: taxesO1,
       echangeNet,
+      comptant,
+      bonusCash,
     });
-  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, tauxTaxe]);
+  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, tauxTaxe]);
 
   // Recalculate when inputs change
   useEffect(() => {
