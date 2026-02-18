@@ -197,6 +197,23 @@ const crmTranslations = {
     selectFile: 'Select a file',
     contactsImported: 'Contacts imported',
     noContactsFound: 'No contacts found in file',
+    // Better offers translations
+    noOffers: 'No offers available',
+    offersDesc: 'When new programs arrive, clients with better rates will appear here.',
+    checkNewPrograms: 'Check new programs',
+    checking: 'Checking...',
+    oldPayment: 'Old payment',
+    newPayment: 'New payment',
+    savings: 'Savings',
+    perMonth: '/month',
+    total: 'total',
+    approve: 'Approve & Send',
+    reject: 'Ignore',
+    approving: 'Sending...',
+    emailSent: 'Email sent!',
+    offerIgnored: 'Offer ignored',
+    offersFound: 'offer(s) found!',
+    noNewOffers: 'No new offers found',
   }
 };
 
