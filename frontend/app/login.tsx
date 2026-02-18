@@ -89,11 +89,14 @@ export default function LoginScreen() {
         >
           <View style={styles.header}>
             <View style={styles.logoContainer}>
-              <Ionicons name="car-sport" size={50} color="#4ECDC4" />
+              <Text style={styles.logoText}>CalcAuto</Text>
+              <Text style={styles.logoSubText}>AiPro</Text>
             </View>
-            <Text style={styles.title}>CalcAuto AiPro</Text>
             <Text style={styles.subtitle}>
               {isLogin ? 'Connexion' : 'Créer un compte'}
+            </Text>
+            <Text style={styles.description}>
+              {isLogin ? 'Connectez-vous pour accéder à vos données' : 'Créez votre compte pour commencer'}
             </Text>
           </View>
 
