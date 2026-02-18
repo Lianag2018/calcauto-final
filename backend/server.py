@@ -2402,7 +2402,9 @@ async def compare_programs_with_submissions():
     # Store better offers in DB for approval
     if better_offers:
         await db.better_offers.delete_many({})  # Clear old offers
-        await db.better_offers.insert_many(better_offers)
+        # Insert without returning result to avoid ObjectId serialization issue
+        for offer in better_offers:
+            await db.better_offers.insert_one(offer)
         
         # Send notification email to admin
         try:
