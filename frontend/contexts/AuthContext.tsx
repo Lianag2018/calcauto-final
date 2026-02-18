@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { Platform } from 'react-native';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8001';
 
@@ -21,6 +22,30 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Storage helper for web compatibility
+const storage = {
+  async getItem(key: string): Promise<string | null> {
+    if (Platform.OS === 'web') {
+      return localStorage.getItem(key);
+    }
+    return AsyncStorage.getItem(key);
+  },
+  async setItem(key: string, value: string): Promise<void> {
+    if (Platform.OS === 'web') {
+      localStorage.setItem(key, value);
+      return;
+    }
+    return AsyncStorage.setItem(key, value);
+  },
+  async removeItem(key: string): Promise<void> {
+    if (Platform.OS === 'web') {
+      localStorage.removeItem(key);
+      return;
+    }
+    return AsyncStorage.removeItem(key);
+  }
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,8 +56,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const token = await AsyncStorage.getItem('auth_token');
-      const userData = await AsyncStorage.getItem('user_data');
+      const token = await storage.getItem('auth_token');
+      const userData = await storage.getItem('user_data');
       
       if (token && userData) {
         setUser(JSON.parse(userData));
@@ -47,13 +72,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await axios.post(`${API_URL}/api/auth/login`, {
-        email,
+        email: email.toLowerCase().trim(),
         password,
       });
 
       if (response.data.success) {
-        await AsyncStorage.setItem('auth_token', response.data.token);
-        await AsyncStorage.setItem('user_data', JSON.stringify(response.data.user));
+        await storage.setItem('auth_token', response.data.token);
+        await storage.setItem('user_data', JSON.stringify(response.data.user));
         setUser(response.data.user);
         return { success: true };
       } else {
@@ -61,24 +86,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Erreur de connexion. Vérifiez vos identifiants.' 
-      };
+      const message = error.response?.data?.detail || error.response?.data?.error || 'Email ou mot de passe incorrect';
+      return { success: false, error: message };
     }
   };
 
   const register = async (name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await axios.post(`${API_URL}/api/auth/register`, {
-        name,
-        email,
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
         password,
       });
 
       if (response.data.success) {
-        await AsyncStorage.setItem('auth_token', response.data.token);
-        await AsyncStorage.setItem('user_data', JSON.stringify(response.data.user));
+        await storage.setItem('auth_token', response.data.token);
+        await storage.setItem('user_data', JSON.stringify(response.data.user));
         setUser(response.data.user);
         return { success: true };
       } else {
@@ -86,17 +109,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error: any) {
       console.error('Register error:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Erreur d\'inscription. Veuillez réessayer.' 
-      };
+      const message = error.response?.data?.detail || error.response?.data?.error || 'Erreur d\'inscription';
+      return { success: false, error: message };
     }
   };
 
   const logout = async () => {
     try {
-      await AsyncStorage.removeItem('auth_token');
-      await AsyncStorage.removeItem('user_data');
+      await storage.removeItem('auth_token');
+      await storage.removeItem('user_data');
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);

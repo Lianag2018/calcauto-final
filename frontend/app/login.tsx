@@ -9,7 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,7 +28,6 @@ export default function LoginScreen() {
   const handleSubmit = async () => {
     setError('');
     
-    // Validation
     if (!email.trim() || !password.trim()) {
       setError('Veuillez remplir tous les champs');
       return;
@@ -89,18 +87,16 @@ export default function LoginScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Logo/Header */}
           <View style={styles.header}>
             <View style={styles.logoContainer}>
-              <Ionicons name="calculator" size={60} color="#4ECDC4" />
+              <Ionicons name="car-sport" size={50} color="#4ECDC4" />
             </View>
             <Text style={styles.title}>CalcAuto AiPro</Text>
             <Text style={styles.subtitle}>
-              {isLogin ? 'Connectez-vous à votre compte' : 'Créer un compte'}
+              {isLogin ? 'Connexion' : 'Créer un compte'}
             </Text>
           </View>
 
-          {/* Error message */}
           {error ? (
             <View style={styles.errorContainer}>
               <Ionicons name="alert-circle" size={20} color="#FF6B6B" />
@@ -108,7 +104,6 @@ export default function LoginScreen() {
             </View>
           ) : null}
 
-          {/* Form */}
           <View style={styles.form}>
             {!isLogin && (
               <View style={styles.inputContainer}>
@@ -128,7 +123,7 @@ export default function LoginScreen() {
               <Ionicons name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Adresse email"
+                placeholder="Email"
                 placeholderTextColor="#666"
                 value={email}
                 onChangeText={setEmail}
@@ -182,10 +177,9 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Switch mode */}
           <View style={styles.switchContainer}>
             <Text style={styles.switchText}>
-              {isLogin ? "Vous n'avez pas de compte ?" : "Vous avez déjà un compte ?"}
+              {isLogin ? "Pas encore de compte ?" : "Déjà un compte ?"}
             </Text>
             <TouchableOpacity onPress={switchMode}>
               <Text style={styles.switchLink}>
@@ -232,9 +226,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#888',
-    textAlign: 'center',
+    fontSize: 18,
+    color: '#4ECDC4',
+    fontWeight: '600',
   },
   errorContainer: {
     flexDirection: 'row',
