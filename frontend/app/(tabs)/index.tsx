@@ -444,6 +444,8 @@ export default function HomeScreen() {
     fraisTaxables: number;
     taxes: number;
     echangeNet: number;
+    comptant?: number;
+    bonusCash?: number;
   } | null>(null);
 
   const loadPrograms = useCallback(async (month?: number, year?: number) => {
