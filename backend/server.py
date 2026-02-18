@@ -287,6 +287,79 @@ async def ping():
     """Endpoint pour garder le serveur actif (keep-alive)"""
     return {"status": "ok", "message": "Server is alive"}
 
+# ============ Auth Routes ============
+
+@api_router.post("/auth/register")
+async def register_user(user_data: UserRegister):
+    """Register a new user"""
+    # Check if email already exists
+    existing_user = await db.users.find_one({"email": user_data.email.lower()})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Cet email est déjà utilisé")
+    
+    # Create user
+    user = User(
+        name=user_data.name,
+        email=user_data.email.lower(),
+        password_hash=hash_password(user_data.password)
+    )
+    
+    user_dict = user.dict()
+    await db.users.insert_one(user_dict)
+    
+    # Generate token
+    token = generate_token()
+    await db.tokens.insert_one({
+        "user_id": user.id,
+        "token": token,
+        "created_at": datetime.utcnow()
+    })
+    
+    return {
+        "success": True,
+        "user": {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email
+        },
+        "token": token
+    }
+
+@api_router.post("/auth/login")
+async def login_user(credentials: UserLogin):
+    """Login user"""
+    user = await db.users.find_one({
+        "email": credentials.email.lower(),
+        "password_hash": hash_password(credentials.password)
+    })
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
+    
+    # Generate token
+    token = generate_token()
+    await db.tokens.insert_one({
+        "user_id": user["id"],
+        "token": token,
+        "created_at": datetime.utcnow()
+    })
+    
+    return {
+        "success": True,
+        "user": {
+            "id": user["id"],
+            "name": user["name"],
+            "email": user["email"]
+        },
+        "token": token
+    }
+
+@api_router.post("/auth/logout")
+async def logout_user(token: str):
+    """Logout user by deleting token"""
+    await db.tokens.delete_one({"token": token})
+    return {"success": True}
+
 # Get PDF info (page count)
 @api_router.post("/pdf-info")
 async def get_pdf_info(file: UploadFile = File(...)):
