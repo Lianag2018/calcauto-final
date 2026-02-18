@@ -221,7 +221,36 @@ class BetterOffer(BaseModel):
     approved: bool = False
     email_sent: bool = False
 
+# ============ Auth Models ============
+
+class UserRegister(BaseModel):
+    name: str
+    email: str
+    password: str
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class User(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    email: str
+    password_hash: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
 # ============ Utility Functions ============
+
+import hashlib
+import secrets
+
+def hash_password(password: str) -> str:
+    """Hash password using SHA256"""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def generate_token() -> str:
+    """Generate a random token"""
+    return secrets.token_hex(32)
 
 def calculate_monthly_payment(principal: float, annual_rate: float, months: int) -> float:
     """Calcule le paiement mensuel avec la formule d'amortissement"""
