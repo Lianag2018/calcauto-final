@@ -875,11 +875,97 @@ export default function ClientsScreen() {
   );
 
   const renderOffersTab = () => (
-    <ScrollView style={styles.tabContent}>
-      <View style={styles.emptyContainer}>
-        <Ionicons name="pricetag-outline" size={64} color="#888" />
-        <Text style={styles.emptyText}>{crm.noData}</Text>
-      </View>
+    <ScrollView 
+      style={styles.tabContent}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4ECDC4" />}
+    >
+      {/* Button to check for new offers */}
+      <TouchableOpacity 
+        style={styles.checkOffersButton}
+        onPress={checkForBetterOffers}
+        disabled={checkingOffers}
+      >
+        {checkingOffers ? (
+          <ActivityIndicator size="small" color="#1a1a2e" />
+        ) : (
+          <>
+            <Ionicons name="refresh" size={20} color="#1a1a2e" />
+            <Text style={styles.checkOffersButtonText}>{crm.checkNewPrograms}</Text>
+          </>
+        )}
+      </TouchableOpacity>
+
+      {betterOffers.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="pricetag-outline" size={64} color="#888" />
+          <Text style={styles.emptyText}>{crm.noOffers}</Text>
+          <Text style={styles.emptySubtext}>{crm.offersDesc}</Text>
+        </View>
+      ) : (
+        betterOffers.map((offer, index) => (
+          <View key={index} style={styles.offerCard}>
+            <View style={styles.offerHeader}>
+              <Text style={styles.offerClient}>{offer.client_name}</Text>
+              {offer.email_sent && (
+                <View style={styles.emailSentBadge}>
+                  <Ionicons name="checkmark-circle" size={14} color="#4ECDC4" />
+                  <Text style={styles.emailSentText}>Envoyé</Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.offerVehicle}>{offer.vehicle}</Text>
+            
+            {/* Payment comparison */}
+            <View style={styles.offerComparison}>
+              <View style={styles.offerOld}>
+                <Text style={styles.offerLabel}>{crm.oldPayment}</Text>
+                <Text style={styles.offerOldPrice}>{formatCurrency(offer.old_payment)}{crm.perMonth}</Text>
+              </View>
+              <Ionicons name="arrow-forward" size={20} color="#4ECDC4" />
+              <View style={styles.offerNew}>
+                <Text style={styles.offerLabel}>{crm.newPayment}</Text>
+                <Text style={styles.offerNewPrice}>{formatCurrency(offer.new_payment)}{crm.perMonth}</Text>
+              </View>
+            </View>
+            
+            {/* Savings */}
+            <View style={styles.offerSavings}>
+              <Ionicons name="trending-down" size={18} color="#4ECDC4" />
+              <Text style={styles.offerSavingsText}>
+                {crm.savings}: {formatCurrency(offer.savings_monthly)}{crm.perMonth} • {formatCurrency(offer.savings_total)} {crm.total}
+              </Text>
+            </View>
+            
+            {/* Action buttons */}
+            {!offer.email_sent && (
+              <View style={styles.offerActions}>
+                <TouchableOpacity 
+                  style={styles.ignoreBtn}
+                  onPress={() => ignoreOffer(offer.submission_id)}
+                >
+                  <Ionicons name="close" size={18} color="#888" />
+                  <Text style={styles.ignoreBtnText}>{crm.reject}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.approveBtn}
+                  onPress={() => approveOffer(offer.submission_id)}
+                  disabled={approvingOffer === offer.submission_id}
+                >
+                  {approvingOffer === offer.submission_id ? (
+                    <ActivityIndicator size="small" color="#1a1a2e" />
+                  ) : (
+                    <>
+                      <Ionicons name="checkmark" size={18} color="#1a1a2e" />
+                      <Text style={styles.approveBtnText}>{crm.approve}</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        ))
+      )}
+      <View style={{ height: 100 }} />
     </ScrollView>
   );
 
