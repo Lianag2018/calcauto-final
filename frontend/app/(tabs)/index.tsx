@@ -410,6 +410,9 @@ export default function HomeScreen() {
   // Custom bonus cash input (after taxes)
   const [customBonusCash, setCustomBonusCash] = useState('');
   
+  // Comptant (cash down payment, taxes included)
+  const [comptantTxInclus, setComptantTxInclus] = useState('');
+  
   // Frais additionnels (taxables)
   const [fraisDossier, setFraisDossier] = useState('259.95');
   const [taxePneus, setTaxePneus] = useState('15');
