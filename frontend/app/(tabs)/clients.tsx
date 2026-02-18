@@ -65,6 +65,21 @@ interface ImportedContact {
   email: string;
 }
 
+interface BetterOffer {
+  submission_id: string;
+  client_name: string;
+  client_phone: string;
+  client_email: string;
+  vehicle: string;
+  old_payment: number;
+  new_payment: number;
+  savings_monthly: number;
+  savings_total: number;
+  term: number;
+  approved: boolean;
+  email_sent: boolean;
+}
+
 const crmTranslations = {
   fr: {
     title: 'CRM',
