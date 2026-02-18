@@ -12,7 +12,7 @@ from typing import Dict, Any, List
 import sys
 
 # Backend URL from environment
-BACKEND_URL = "https://financeplus-44.preview.emergentagent.com/api"
+BACKEND_URL = "https://calcauto-finance.preview.emergentagent.com/api"
 
 class Colors:
     GREEN = '\033[92m'
