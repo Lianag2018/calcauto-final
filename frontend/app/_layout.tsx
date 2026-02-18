@@ -1,15 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import LoginScreen from './login';
 
 function RootLayoutNav() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [mounted, setMounted] = useState(false);
 
-  if (isLoading) {
+  // Force client-side rendering
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Don't render anything until mounted on client
+  if (!mounted || isLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#4ECDC4" />
