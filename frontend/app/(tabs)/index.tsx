@@ -1021,6 +1021,22 @@ export default function HomeScreen() {
                 </View>
               </View>
 
+              {/* Comptant (tx inclus) */}
+              <View style={styles.inputRow}>
+                <Text style={styles.inputLabel}>{lang === 'fr' ? 'Comptant (tx inclus)' : 'Cash Down (tax incl.)'}</Text>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.currencySymbol}>$</Text>
+                  <TextInput
+                    style={styles.priceInput}
+                    placeholder="0"
+                    placeholderTextColor="#666"
+                    keyboardType="numeric"
+                    value={comptantTxInclus}
+                    onChangeText={setComptantTxInclus}
+                  />
+                </View>
+              </View>
+
               {/* Frais additionnels (taxables) */}
               <View style={styles.feesSection}>
                 <Text style={styles.feesSectionTitle}>{t.fees.title}</Text>
