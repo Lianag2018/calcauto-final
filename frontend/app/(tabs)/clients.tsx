@@ -648,6 +648,69 @@ export default function ClientsScreen() {
     });
   };
 
+  // Check for better offers (compare new programs with past submissions)
+  const checkForBetterOffers = async () => {
+    setCheckingOffers(true);
+    try {
+      const response = await axios.post(`${API_URL}/api/compare-programs`);
+      const { better_offers, count } = response.data;
+      setBetterOffers(better_offers || []);
+      
+      if (count > 0) {
+        Platform.OS === 'web'
+          ? alert(`✅ ${count} ${crm.offersFound}`)
+          : Alert.alert('✅', `${count} ${crm.offersFound}`);
+      } else {
+        Platform.OS === 'web'
+          ? alert(crm.noNewOffers)
+          : Alert.alert('Info', crm.noNewOffers);
+      }
+    } catch (err) {
+      console.error('Error checking offers:', err);
+    } finally {
+      setCheckingOffers(false);
+    }
+  };
+
+  // Approve and send better offer email to client
+  const approveOffer = async (submissionId: string) => {
+    setApprovingOffer(submissionId);
+    try {
+      await axios.post(`${API_URL}/api/better-offers/${submissionId}/approve`);
+      
+      // Reload offers
+      const offersResponse = await axios.get(`${API_URL}/api/better-offers`);
+      setBetterOffers(offersResponse.data);
+      
+      Platform.OS === 'web'
+        ? alert(`✅ ${crm.emailSent}`)
+        : Alert.alert('✅', crm.emailSent);
+    } catch (err) {
+      console.error('Error approving offer:', err);
+      Platform.OS === 'web'
+        ? alert('❌ Erreur')
+        : Alert.alert('Erreur', "Impossible d'envoyer l'email");
+    } finally {
+      setApprovingOffer(null);
+    }
+  };
+
+  // Ignore/reject better offer
+  const ignoreOffer = async (submissionId: string) => {
+    try {
+      await axios.post(`${API_URL}/api/better-offers/${submissionId}/ignore`);
+      
+      // Remove from local state
+      setBetterOffers(prev => prev.filter(o => o.submission_id !== submissionId));
+      
+      Platform.OS === 'web'
+        ? alert(crm.offerIgnored)
+        : Alert.alert('Info', crm.offerIgnored);
+    } catch (err) {
+      console.error('Error ignoring offer:', err);
+    }
+  };
+
   // Delete contact from database
   const deleteContact = async (client: Client) => {
     const confirmDelete = Platform.OS === 'web'
