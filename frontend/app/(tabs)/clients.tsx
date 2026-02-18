@@ -269,18 +269,7 @@ export default function ClientsScreen() {
           });
           existingKeys.add(key);
         }
-      } 
-          : null;
-        clientsArray.push({
-          name: latestSub.client_name,
-          email: latestSub.client_email,
-          phone: latestSub.client_phone,
-          submissions: sortedSubs,
-          last_submission_date: latestSub.submission_date,
-          next_reminder: nextReminder,
-          has_pending_reminder: pendingReminders.length > 0
-        });
-      });
+      }
       
       clientsArray.sort((a, b) => a.name.localeCompare(b.name));
       setClients(clientsArray);
