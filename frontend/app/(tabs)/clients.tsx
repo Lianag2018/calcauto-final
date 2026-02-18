@@ -682,6 +682,9 @@ export default function ClientsScreen() {
                 <TouchableOpacity style={styles.actionBtn} onPress={(e) => { e.stopPropagation(); newQuoteForClient(client); }}>
                   <Ionicons name="add-circle" size={18} color="#4ECDC4" />
                 </TouchableOpacity>
+                <TouchableOpacity style={styles.actionBtnDelete} onPress={(e) => { e.stopPropagation(); deleteContact(client); }}>
+                  <Ionicons name="trash" size={18} color="#FF6B6B" />
+                </TouchableOpacity>
               </View>
             </View>
             {client.has_pending_reminder && (
