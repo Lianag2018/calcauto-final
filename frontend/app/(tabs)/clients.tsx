@@ -74,66 +74,82 @@ const crmTranslations = {
   fr: {
     title: 'CRM',
     remindersCount: 'rappel(s) à faire',
-    tabs: {
-      clients: 'Clients',
-      reminders: 'Rappels',
-      offers: 'Offres',
-      history: 'Hist.',
-    },
+    tabs: { clients: 'Clients', reminders: 'Rappels', offers: 'Offres', history: 'Hist.' },
     search: 'Rechercher par nom ou téléphone...',
     add: 'Ajouter',
     import: 'Importer',
     noClients: 'Aucun client',
-    noReminders: 'Aucun rappel',
-    reminderFor: 'Rappel pour',
+    noReminders: 'Aucun rappel en attente',
+    noSubmissions: 'Aucune soumission enregistrée',
+    startByCalculator: 'Commencez par créer une soumission dans le calculateur',
     dueToday: "Aujourd'hui",
     dueTomorrow: 'Demain',
     overdue: 'En retard',
     inDays: 'Dans {n} jours',
-    markDone: 'Marquer comme fait',
+    markDone: 'Fait',
     call: 'Appeler',
     edit: 'Modifier',
     delete: 'Supprimer',
     loading: 'Chargement...',
     noData: 'Aucune donnée',
     goToCalculator: 'Aller au calculateur',
-    webNotSupported: 'Import de contacts non disponible sur le web',
-    permissionDenied: 'Permission refusée',
+    webNotSupported: 'Import de contacts disponible uniquement sur mobile (iOS/Android)',
+    permissionDenied: 'Permission refusée pour accéder aux contacts',
     selectContact: 'Sélectionner un contact',
     phoneContacts: 'Contacts téléphone',
     noContactsFound: 'Aucun contact trouvé',
+    contactImported: 'Contact sélectionné! Créez une soumission.',
+    submissions: 'soumissions',
+    lastContact: 'Dernier contact',
+    vehicle: 'Véhicule',
+    payment: 'Paiement',
+    months: 'mois',
+    newQuote: 'Nouvelle soumission',
+    scheduleFollowUp: 'Planifier un suivi',
+    followUpDate: 'Date du suivi',
+    notes: 'Notes',
+    save: 'Sauvegarder',
+    cancel: 'Annuler',
   },
   en: {
     title: 'CRM',
     remindersCount: 'reminder(s) to do',
-    tabs: {
-      clients: 'Clients',
-      reminders: 'Reminders',
-      offers: 'Offers',
-      history: 'Hist.',
-    },
+    tabs: { clients: 'Clients', reminders: 'Reminders', offers: 'Offers', history: 'Hist.' },
     search: 'Search by name or phone...',
     add: 'Add',
     import: 'Import',
     noClients: 'No clients',
-    noReminders: 'No reminders',
-    reminderFor: 'Reminder for',
+    noReminders: 'No pending reminders',
+    noSubmissions: 'No submissions recorded',
+    startByCalculator: 'Start by creating a submission in the calculator',
     dueToday: 'Today',
     dueTomorrow: 'Tomorrow',
     overdue: 'Overdue',
     inDays: 'In {n} days',
-    markDone: 'Mark as done',
+    markDone: 'Done',
     call: 'Call',
     edit: 'Edit',
     delete: 'Delete',
     loading: 'Loading...',
     noData: 'No data',
     goToCalculator: 'Go to calculator',
-    webNotSupported: 'Contact import not available on web',
-    permissionDenied: 'Permission denied',
+    webNotSupported: 'Contact import only available on mobile (iOS/Android)',
+    permissionDenied: 'Permission denied to access contacts',
     selectContact: 'Select a contact',
     phoneContacts: 'Phone contacts',
     noContactsFound: 'No contacts found',
+    contactImported: 'Contact selected! Create a submission.',
+    submissions: 'submissions',
+    lastContact: 'Last contact',
+    vehicle: 'Vehicle',
+    payment: 'Payment',
+    months: 'months',
+    newQuote: 'New submission',
+    scheduleFollowUp: 'Schedule follow-up',
+    followUpDate: 'Follow-up date',
+    notes: 'Notes',
+    save: 'Save',
+    cancel: 'Cancel',
   }
 };
 
@@ -156,11 +172,22 @@ export default function ClientsScreen() {
   const [reminders, setReminders] = useState<Submission[]>([]);
   const [remindersCount, setRemindersCount] = useState(0);
   
-  // Contact import
+  // Contact import - CRITICAL FEATURE
   const [showContactsModal, setShowContactsModal] = useState(false);
   const [phoneContacts, setPhoneContacts] = useState<PhoneContact[]>([]);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [contactSearch, setContactSearch] = useState('');
+  
+  // Client details modal
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [showClientModal, setShowClientModal] = useState(false);
+  
+  // Follow-up modal
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [followUpDate, setFollowUpDate] = useState('');
+  const [followUpNotes, setFollowUpNotes] = useState('');
+  const [savingFollowUp, setSavingFollowUp] = useState(false);
 
   useEffect(() => { loadLanguage().then(setLang); }, []);
   const handleLanguageChange = useCallback((newLang: Language) => { setLang(newLang); saveLanguage(newLang); }, []);
@@ -204,7 +231,7 @@ export default function ClientsScreen() {
       
       // Get pending reminders
       const pendingReminders = allSubmissions.filter(s => s.reminder_date && !s.reminder_done);
-      setReminders(pendingReminders);
+      setReminders(pendingReminders.sort((a, b) => new Date(a.reminder_date!).getTime() - new Date(b.reminder_date!).getTime()));
       setRemindersCount(pendingReminders.length);
       
     } catch (err) {
@@ -247,45 +274,35 @@ export default function ClientsScreen() {
     return crm.inDays.replace('{n}', String(days));
   };
 
+  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA', { day: 'numeric', month: 'short', year: 'numeric' });
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 0 }).format(amount);
+  
   const callContact = (phone: string) => Linking.openURL(`tel:${phone}`);
   const emailContact = (email: string) => Linking.openURL(`mailto:${email}`);
 
-  const markReminderDone = async (submissionId: string) => {
-    try {
-      await axios.put(`${API_URL}/api/submissions/${submissionId}/done`);
-      await loadData();
-      Platform.OS === 'web' ? alert('✅ Rappel complété!') : Alert.alert('✅', 'Rappel complété!');
-    } catch (err) {
-      console.error('Error marking done:', err);
-    }
-  };
-
-  const deleteClient = async (clientPhone: string) => {
-    const confirm = Platform.OS === 'web' 
-      ? window.confirm('Supprimer ce client?')
-      : await new Promise(resolve => Alert.alert('Supprimer', 'Supprimer ce client?', [
-          { text: 'Annuler', onPress: () => resolve(false) },
-          { text: 'Supprimer', style: 'destructive', onPress: () => resolve(true) }
-        ]));
-    
-    if (confirm) {
-      // In real app, would delete from API
-      setClients(prev => prev.filter(c => c.phone !== clientPhone));
-      setFilteredClients(prev => prev.filter(c => c.phone !== clientPhone));
-    }
-  };
-
-  // Import contacts from phone
+  // ============================================
+  // IMPORT CONTACTS FROM PHONE - CRITICAL FEATURE
+  // ============================================
   const importContacts = async () => {
+    // Check if running on web
     if (Platform.OS === 'web') {
-      Alert.alert('Info', crm.webNotSupported);
+      if (typeof window !== 'undefined' && window.alert) {
+        window.alert(crm.webNotSupported);
+      } else {
+        Alert.alert('Info', crm.webNotSupported);
+      }
       return;
     }
     
-    if (!Contacts) return;
+    // Check if Contacts module is available
+    if (!Contacts) {
+      Alert.alert('Erreur', 'Module de contacts non disponible');
+      return;
+    }
     
     setLoadingContacts(true);
     try {
+      // Request permission
       const { status } = await Contacts.requestPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Permission', crm.permissionDenied);
@@ -293,10 +310,12 @@ export default function ClientsScreen() {
         return;
       }
       
+      // Fetch contacts from phone
       const { data } = await Contacts.getContactsAsync({
         fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers, Contacts.Fields.Emails],
       });
       
+      // Format contacts
       const formattedContacts: PhoneContact[] = data
         .filter((c: any) => c.name && (c.phoneNumbers?.length > 0 || c.emails?.length > 0))
         .map((c: any) => ({
@@ -307,17 +326,28 @@ export default function ClientsScreen() {
         }))
         .sort((a: PhoneContact, b: PhoneContact) => a.name.localeCompare(b.name));
       
+      console.log(`Loaded ${formattedContacts.length} contacts from phone`);
       setPhoneContacts(formattedContacts);
+      setContactSearch('');
       setShowContactsModal(true);
     } catch (err) {
       console.error('Error loading contacts:', err);
+      Alert.alert('Erreur', 'Impossible de charger les contacts');
     } finally {
       setLoadingContacts(false);
     }
   };
 
+  // Select contact and navigate to calculator with pre-filled info
   const selectContact = (contact: PhoneContact) => {
     setShowContactsModal(false);
+    
+    // Show confirmation
+    if (Platform.OS !== 'web') {
+      Alert.alert('✅', crm.contactImported);
+    }
+    
+    // Navigate to calculator with contact info
     router.push({
       pathname: '/(tabs)',
       params: {
@@ -328,12 +358,71 @@ export default function ClientsScreen() {
     });
   };
 
+  // Filter phone contacts based on search
   const filteredPhoneContacts = contactSearch.trim()
     ? phoneContacts.filter(c =>
         c.name.toLowerCase().includes(contactSearch.toLowerCase()) ||
         c.phone.includes(contactSearch)
       )
     : phoneContacts;
+
+  // ============================================
+  // OTHER ACTIONS
+  // ============================================
+  
+  const markReminderDone = async (submissionId: string) => {
+    try {
+      await axios.put(`${API_URL}/api/submissions/${submissionId}/done`);
+      await loadData();
+      Platform.OS === 'web' ? alert('✅ Rappel complété!') : Alert.alert('✅', 'Rappel complété!');
+    } catch (err) {
+      console.error('Error marking done:', err);
+    }
+  };
+
+  const openClientDetails = (client: Client) => {
+    setSelectedClient(client);
+    setShowClientModal(true);
+  };
+
+  const openFollowUpModal = (submission: Submission) => {
+    setSelectedSubmission(submission);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    setFollowUpDate(tomorrow.toISOString().split('T')[0]);
+    setFollowUpNotes(submission.notes || '');
+    setShowFollowUpModal(true);
+  };
+
+  const saveFollowUp = async () => {
+    if (!selectedSubmission || !followUpDate) return;
+    setSavingFollowUp(true);
+    try {
+      await axios.put(`${API_URL}/api/submissions/${selectedSubmission.id}/reminder`, {
+        reminder_date: new Date(followUpDate).toISOString(),
+        notes: followUpNotes
+      });
+      await loadData();
+      setShowFollowUpModal(false);
+      Platform.OS === 'web' ? alert('✅ Suivi planifié!') : Alert.alert('✅', 'Suivi planifié!');
+    } catch (err) {
+      Platform.OS === 'web' ? alert('❌ Erreur') : Alert.alert('Erreur');
+    } finally {
+      setSavingFollowUp(false);
+    }
+  };
+
+  const newQuoteForClient = (client: Client) => {
+    setShowClientModal(false);
+    router.push({
+      pathname: '/(tabs)',
+      params: {
+        clientName: client.name,
+        clientEmail: client.email,
+        clientPhone: client.phone,
+      },
+    });
+  };
 
   if (loading) {
     return (
@@ -346,6 +435,10 @@ export default function ClientsScreen() {
     );
   }
 
+  // ============================================
+  // TAB CONTENT RENDERERS
+  // ============================================
+  
   const renderClientsTab = () => (
     <ScrollView 
       style={styles.tabContent}
@@ -355,36 +448,42 @@ export default function ClientsScreen() {
         <View style={styles.emptyContainer}>
           <Ionicons name="people-outline" size={64} color="#4ECDC4" />
           <Text style={styles.emptyText}>{crm.noClients}</Text>
+          <Text style={styles.emptySubtext}>{crm.startByCalculator}</Text>
           <TouchableOpacity style={styles.goToCalcButton} onPress={() => router.push('/(tabs)')}>
             <Text style={styles.goToCalcText}>{crm.goToCalculator}</Text>
           </TouchableOpacity>
         </View>
       ) : (
         filteredClients.map((client, index) => (
-          <View key={index} style={styles.clientCard}>
+          <TouchableOpacity key={index} style={styles.clientCard} onPress={() => openClientDetails(client)}>
             <View style={styles.clientRow}>
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>{client.name.charAt(0).toUpperCase()}</Text>
               </View>
               <View style={styles.clientInfo}>
                 <Text style={styles.clientName}>{client.name.toUpperCase()}</Text>
-                <Text style={styles.clientPhone}>{client.phone}</Text>
+                {client.phone && <Text style={styles.clientPhone}>{client.phone}</Text>}
+                {client.email && <Text style={styles.clientEmail}>{client.email}</Text>}
               </View>
               <View style={styles.clientActions}>
                 {client.phone && (
-                  <TouchableOpacity style={styles.actionBtn} onPress={() => callContact(client.phone)}>
+                  <TouchableOpacity style={styles.actionBtn} onPress={(e) => { e.stopPropagation(); callContact(client.phone); }}>
                     <Ionicons name="call" size={18} color="#4ECDC4" />
                   </TouchableOpacity>
                 )}
-                <TouchableOpacity style={styles.actionBtn} onPress={() => router.push({ pathname: '/(tabs)', params: { clientName: client.name, clientEmail: client.email, clientPhone: client.phone }})}>
-                  <Ionicons name="pencil" size={18} color="#888" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionBtn} onPress={() => deleteClient(client.phone)}>
-                  <Ionicons name="trash" size={18} color="#FF6B6B" />
+                <TouchableOpacity style={styles.actionBtn} onPress={(e) => { e.stopPropagation(); newQuoteForClient(client); }}>
+                  <Ionicons name="add-circle" size={18} color="#4ECDC4" />
                 </TouchableOpacity>
               </View>
             </View>
-          </View>
+            {client.has_pending_reminder && (
+              <View style={styles.clientReminderBadge}>
+                <Ionicons name="notifications" size={12} color="#FFD93D" />
+                <Text style={styles.clientReminderText}>Rappel: {formatDate(client.next_reminder!)}</Text>
+              </View>
+            )}
+            <Text style={styles.clientSubmissions}>{client.submissions.length} {crm.submissions}</Text>
+          </TouchableOpacity>
         ))
       )}
       <View style={{ height: 100 }} />
@@ -414,6 +513,9 @@ export default function ClientsScreen() {
               </View>
               <Text style={styles.reminderVehicle}>
                 {reminder.vehicle_brand} {reminder.vehicle_model} {reminder.vehicle_year}
+              </Text>
+              <Text style={styles.reminderPayment}>
+                {formatCurrency(reminder.payment_monthly)}/{crm.months} • {reminder.term} {crm.months}
               </Text>
               {reminder.notes && <Text style={styles.reminderNotes}>{reminder.notes}</Text>}
               <View style={styles.reminderActions}>
@@ -453,24 +555,28 @@ export default function ClientsScreen() {
       {submissions.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="document-text-outline" size={64} color="#888" />
-          <Text style={styles.emptyText}>{crm.noData}</Text>
+          <Text style={styles.emptyText}>{crm.noSubmissions}</Text>
         </View>
       ) : (
-        submissions.slice(0, 20).map((sub, index) => (
-          <View key={index} style={styles.historyCard}>
+        submissions.map((sub, index) => (
+          <TouchableOpacity key={index} style={styles.historyCard} onPress={() => openFollowUpModal(sub)}>
             <View style={styles.historyHeader}>
               <Text style={styles.historyClient}>{sub.client_name}</Text>
-              <Text style={styles.historyDate}>
-                {new Date(sub.submission_date).toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA')}
-              </Text>
+              <Text style={styles.historyDate}>{formatDate(sub.submission_date)}</Text>
             </View>
             <Text style={styles.historyVehicle}>
               {sub.vehicle_brand} {sub.vehicle_model} {sub.vehicle_year}
             </Text>
             <Text style={styles.historyPayment}>
-              ${sub.payment_monthly.toFixed(0)}/mois • {sub.term} mois
+              {formatCurrency(sub.payment_monthly)}/{crm.months} • {sub.term} {crm.months}
             </Text>
-          </View>
+            {sub.reminder_date && !sub.reminder_done && (
+              <View style={styles.historyReminderBadge}>
+                <Ionicons name="notifications" size={12} color="#FFD93D" />
+                <Text style={styles.historyReminderText}>{formatDate(sub.reminder_date)}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
         ))
       )}
       <View style={{ height: 100 }} />
@@ -546,7 +652,7 @@ export default function ClientsScreen() {
         </View>
       </View>
 
-      {/* Action Buttons */}
+      {/* Action Buttons - IMPORT BUTTON VISIBLE ONLY ON MOBILE */}
       <View style={styles.actionsRow}>
         <TouchableOpacity 
           style={styles.addButton}
@@ -579,7 +685,9 @@ export default function ClientsScreen() {
       {activeTab === 'offers' && renderOffersTab()}
       {activeTab === 'history' && renderHistoryTab()}
 
-      {/* Contacts Import Modal */}
+      {/* ============================================ */}
+      {/* CONTACTS IMPORT MODAL - SHOWS PHONE CONTACTS */}
+      {/* ============================================ */}
       <Modal visible={showContactsModal} animationType="slide" transparent={true} onRequestClose={() => setShowContactsModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.contactsModalContent}>
@@ -598,7 +706,13 @@ export default function ClientsScreen() {
                 value={contactSearch}
                 onChangeText={setContactSearch}
               />
+              {contactSearch ? (
+                <TouchableOpacity onPress={() => setContactSearch('')}>
+                  <Ionicons name="close-circle" size={20} color="#888" />
+                </TouchableOpacity>
+              ) : null}
             </View>
+            <Text style={styles.contactsCount}>{filteredPhoneContacts.length} contacts</Text>
             <ScrollView style={styles.contactsList}>
               {filteredPhoneContacts.length === 0 ? (
                 <View style={styles.noContactsContainer}>
@@ -614,12 +728,103 @@ export default function ClientsScreen() {
                     <View style={styles.contactDetails}>
                       <Text style={styles.contactName}>{contact.name}</Text>
                       {contact.phone && <Text style={styles.contactPhone}>{contact.phone}</Text>}
+                      {contact.email && <Text style={styles.contactEmail}>{contact.email}</Text>}
                     </View>
                     <Ionicons name="chevron-forward" size={20} color="#888" />
                   </TouchableOpacity>
                 ))
               )}
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Client Details Modal */}
+      <Modal visible={showClientModal} animationType="slide" transparent={true} onRequestClose={() => setShowClientModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.clientModalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{selectedClient?.name}</Text>
+              <TouchableOpacity onPress={() => setShowClientModal(false)}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            {selectedClient && (
+              <ScrollView style={styles.clientModalBody}>
+                <View style={styles.clientModalInfo}>
+                  {selectedClient.phone && (
+                    <TouchableOpacity style={styles.clientModalContact} onPress={() => callContact(selectedClient.phone)}>
+                      <Ionicons name="call" size={20} color="#4ECDC4" />
+                      <Text style={styles.clientModalContactText}>{selectedClient.phone}</Text>
+                    </TouchableOpacity>
+                  )}
+                  {selectedClient.email && (
+                    <TouchableOpacity style={styles.clientModalContact} onPress={() => emailContact(selectedClient.email)}>
+                      <Ionicons name="mail" size={20} color="#4ECDC4" />
+                      <Text style={styles.clientModalContactText}>{selectedClient.email}</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <TouchableOpacity style={styles.newQuoteButton} onPress={() => newQuoteForClient(selectedClient)}>
+                  <Ionicons name="add-circle" size={20} color="#1a1a2e" />
+                  <Text style={styles.newQuoteButtonText}>{crm.newQuote}</Text>
+                </TouchableOpacity>
+                <Text style={styles.clientModalSectionTitle}>{crm.submissions} ({selectedClient.submissions.length})</Text>
+                {selectedClient.submissions.map((sub, idx) => (
+                  <TouchableOpacity key={idx} style={styles.submissionCard} onPress={() => { setShowClientModal(false); openFollowUpModal(sub); }}>
+                    <Text style={styles.submissionVehicle}>{sub.vehicle_brand} {sub.vehicle_model} {sub.vehicle_year}</Text>
+                    <Text style={styles.submissionPayment}>{formatCurrency(sub.payment_monthly)}/{crm.months}</Text>
+                    <Text style={styles.submissionDate}>{formatDate(sub.submission_date)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Follow-up Modal */}
+      <Modal visible={showFollowUpModal} animationType="slide" transparent={true} onRequestClose={() => setShowFollowUpModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.followUpModalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{crm.scheduleFollowUp}</Text>
+              <TouchableOpacity onPress={() => setShowFollowUpModal(false)}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.followUpForm}>
+              <Text style={styles.followUpLabel}>{crm.followUpDate}</Text>
+              <TextInput
+                style={styles.followUpInput}
+                value={followUpDate}
+                onChangeText={setFollowUpDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor="#666"
+              />
+              <Text style={styles.followUpLabel}>{crm.notes}</Text>
+              <TextInput
+                style={[styles.followUpInput, styles.followUpTextarea]}
+                value={followUpNotes}
+                onChangeText={setFollowUpNotes}
+                placeholder={crm.notes}
+                placeholderTextColor="#666"
+                multiline
+                numberOfLines={4}
+              />
+              <View style={styles.followUpButtons}>
+                <TouchableOpacity style={styles.cancelButton} onPress={() => setShowFollowUpModal(false)}>
+                  <Text style={styles.cancelButtonText}>{crm.cancel}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.saveButton} onPress={saveFollowUp} disabled={savingFollowUp}>
+                  {savingFollowUp ? (
+                    <ActivityIndicator size="small" color="#1a1a2e" />
+                  ) : (
+                    <Text style={styles.saveButtonText}>{crm.save}</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </View>
       </Modal>
@@ -670,12 +875,12 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     justifyContent: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
     borderRadius: 10,
-    gap: 6,
+    gap: 4,
   },
   tabActive: { backgroundColor: '#1a1a2e' },
-  tabText: { color: '#888', fontSize: 12, fontWeight: '600' },
+  tabText: { color: '#888', fontSize: 11, fontWeight: '600' },
   tabTextActive: { color: '#4ECDC4' },
   
   // Search
@@ -725,7 +930,8 @@ const styles = StyleSheet.create({
   
   // Empty State
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
-  emptyText: { color: '#888', fontSize: 16, marginTop: 12 },
+  emptyText: { color: '#888', fontSize: 18, marginTop: 16, fontWeight: '600' },
+  emptySubtext: { color: '#666', fontSize: 14, marginTop: 8, textAlign: 'center', paddingHorizontal: 20 },
   goToCalcButton: { 
     backgroundColor: '#4ECDC4', 
     paddingHorizontal: 24, 
@@ -755,6 +961,7 @@ const styles = StyleSheet.create({
   clientInfo: { flex: 1, marginLeft: 14 },
   clientName: { color: '#fff', fontSize: 16, fontWeight: '700' },
   clientPhone: { color: '#888', fontSize: 14, marginTop: 2 },
+  clientEmail: { color: '#666', fontSize: 12, marginTop: 1 },
   clientActions: { flexDirection: 'row', gap: 8 },
   actionBtn: { 
     width: 36, 
@@ -764,6 +971,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center', 
     alignItems: 'center',
   },
+  clientReminderBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 217, 61, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 10,
+    alignSelf: 'flex-start',
+    gap: 6,
+  },
+  clientReminderText: { color: '#FFD93D', fontSize: 12 },
+  clientSubmissions: { color: '#666', fontSize: 12, marginTop: 8 },
   
   // Reminder Card
   reminderCard: { 
@@ -780,7 +1000,8 @@ const styles = StyleSheet.create({
   reminderClient: { color: '#fff', fontSize: 16, fontWeight: '700' },
   reminderDue: { color: '#4ECDC4', fontSize: 13, fontWeight: '600' },
   reminderDueOverdue: { color: '#FF6B6B' },
-  reminderVehicle: { color: '#888', fontSize: 14, marginTop: 6 },
+  reminderVehicle: { color: '#4ECDC4', fontSize: 14, marginTop: 6 },
+  reminderPayment: { color: '#888', fontSize: 13, marginTop: 4 },
   reminderNotes: { color: '#aaa', fontSize: 13, marginTop: 8, fontStyle: 'italic' },
   reminderActions: { flexDirection: 'row', marginTop: 12, gap: 10 },
   reminderBtn: { 
@@ -809,16 +1030,21 @@ const styles = StyleSheet.create({
   historyDate: { color: '#888', fontSize: 12 },
   historyVehicle: { color: '#4ECDC4', fontSize: 14, marginTop: 4 },
   historyPayment: { color: '#888', fontSize: 13, marginTop: 4 },
-  
-  // Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' },
-  contactsModalContent: { 
-    backgroundColor: '#1a1a2e', 
-    borderTopLeftRadius: 24, 
-    borderTopRightRadius: 24, 
-    maxHeight: '85%', 
-    paddingBottom: 40,
+  historyReminderBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 217, 61, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    gap: 4,
   },
+  historyReminderText: { color: '#FFD93D', fontSize: 11 },
+  
+  // Modal Common
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' },
   modalHeader: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
@@ -828,6 +1054,15 @@ const styles = StyleSheet.create({
     borderBottomColor: '#2d2d44',
   },
   modalTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+  
+  // Contacts Modal
+  contactsModalContent: { 
+    backgroundColor: '#1a1a2e', 
+    borderTopLeftRadius: 24, 
+    borderTopRightRadius: 24, 
+    maxHeight: '85%', 
+    paddingBottom: 40,
+  },
   contactSearchContainer: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -839,6 +1074,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   contactSearchInput: { flex: 1, color: '#fff', fontSize: 16, marginLeft: 10 },
+  contactsCount: { color: '#888', fontSize: 13, marginHorizontal: 20, marginBottom: 10 },
   contactsList: { paddingHorizontal: 20 },
   noContactsContainer: { alignItems: 'center', paddingVertical: 60 },
   noContactsText: { color: '#666', fontSize: 16, marginTop: 12 },
@@ -862,4 +1098,82 @@ const styles = StyleSheet.create({
   contactDetails: { flex: 1, marginLeft: 12 },
   contactName: { color: '#fff', fontSize: 16, fontWeight: '600' },
   contactPhone: { color: '#888', fontSize: 13, marginTop: 2 },
+  contactEmail: { color: '#666', fontSize: 12, marginTop: 1 },
+  
+  // Client Modal
+  clientModalContent: {
+    backgroundColor: '#1a1a2e',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '85%',
+    paddingBottom: 40,
+  },
+  clientModalBody: { padding: 20 },
+  clientModalInfo: { marginBottom: 20 },
+  clientModalContact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 12,
+  },
+  clientModalContactText: { color: '#4ECDC4', fontSize: 16 },
+  newQuoteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4ECDC4',
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginBottom: 20,
+    gap: 8,
+  },
+  newQuoteButtonText: { color: '#1a1a2e', fontSize: 16, fontWeight: '600' },
+  clientModalSectionTitle: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 12 },
+  submissionCard: {
+    backgroundColor: '#2d2d44',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+  },
+  submissionVehicle: { color: '#4ECDC4', fontSize: 14, fontWeight: '600' },
+  submissionPayment: { color: '#fff', fontSize: 14, marginTop: 4 },
+  submissionDate: { color: '#888', fontSize: 12, marginTop: 4 },
+  
+  // Follow-up Modal
+  followUpModalContent: {
+    backgroundColor: '#1a1a2e',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 40,
+  },
+  followUpForm: { padding: 20 },
+  followUpLabel: { color: '#fff', fontSize: 14, fontWeight: '600', marginBottom: 8 },
+  followUpInput: {
+    backgroundColor: '#2d2d44',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    color: '#fff',
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  followUpTextarea: { minHeight: 100, textAlignVertical: 'top' },
+  followUpButtons: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#888',
+    alignItems: 'center',
+  },
+  cancelButtonText: { color: '#888', fontSize: 16, fontWeight: '600' },
+  saveButton: {
+    flex: 1,
+    backgroundColor: '#4ECDC4',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  saveButtonText: { color: '#1a1a2e', fontSize: 16, fontWeight: '600' },
 });
