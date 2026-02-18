@@ -239,6 +239,26 @@ class User(BaseModel):
     password_hash: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+# ============ Contact Models ============
+
+class Contact(BaseModel):
+    """Contact importé depuis vCard/CSV"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    phone: str = ""
+    email: str = ""
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    source: str = "import"  # import, manual
+
+class ContactCreate(BaseModel):
+    name: str
+    phone: str = ""
+    email: str = ""
+    source: str = "import"
+
+class ContactBulkCreate(BaseModel):
+    contacts: List[ContactCreate]
+
 # ============ Utility Functions ============
 
 import hashlib
