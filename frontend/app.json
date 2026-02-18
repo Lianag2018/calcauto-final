@@ -29,7 +29,16 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "name": "CalcAuto AiPro",
+      "shortName": "CalcAuto",
+      "description": "Calculateur de financement automobile avec CRM",
+      "backgroundColor": "#1a1a2e",
+      "themeColor": "#4ECDC4",
+      "display": "standalone",
+      "orientation": "portrait",
+      "startUrl": "/",
+      "scope": "/"
     },
     "plugins": [
       "expo-router",
