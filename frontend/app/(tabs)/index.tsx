@@ -780,6 +780,12 @@ export default function HomeScreen() {
             >
               <Ionicons name="cloud-upload-outline" size={20} color="#fff" />
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.importButton, {backgroundColor: '#e74c3c', marginLeft: 8}]}
+              onPress={handleLogout}
+            >
+              <Ionicons name="log-out-outline" size={20} color="#fff" />
+            </TouchableOpacity>
           </View>
         </View>
         
