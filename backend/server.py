@@ -274,6 +274,36 @@ def generate_token() -> str:
     """Generate a random token"""
     return secrets.token_hex(32)
 
+async def get_current_user(authorization: Optional[str] = Header(None)):
+    """Obtient l'utilisateur courant à partir du token d'autorisation"""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Token manquant")
+    
+    # Le token peut être "Bearer <token>" ou juste "<token>"
+    token = authorization.replace("Bearer ", "") if authorization.startswith("Bearer ") else authorization
+    
+    # Chercher le token dans la base
+    token_doc = await db.tokens.find_one({"token": token})
+    if not token_doc:
+        raise HTTPException(status_code=401, detail="Token invalide")
+    
+    # Chercher l'utilisateur
+    user = await db.users.find_one({"id": token_doc["user_id"]})
+    if not user:
+        raise HTTPException(status_code=401, detail="Utilisateur non trouvé")
+    
+    return user
+
+async def get_optional_user(authorization: Optional[str] = Header(None)):
+    """Obtient l'utilisateur courant si un token est fourni, sinon None"""
+    if not authorization:
+        return None
+    
+    try:
+        return await get_current_user(authorization)
+    except:
+        return None
+
 def calculate_monthly_payment(principal: float, annual_rate: float, months: int) -> float:
     """Calcule le paiement mensuel avec la formule d'amortissement"""
     if principal <= 0 or months <= 0:
