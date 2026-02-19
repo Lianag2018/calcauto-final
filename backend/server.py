@@ -2599,9 +2599,11 @@ def send_client_better_offer_email(offer: dict):
     send_email(offer['client_email'], f"🎉 Économisez {offer['savings_monthly']:.2f}$/mois sur votre {offer['vehicle']}!", html_body)
 
 @api_router.post("/better-offers/{submission_id}/ignore")
-async def ignore_better_offer(submission_id: str):
+async def ignore_better_offer(submission_id: str, authorization: Optional[str] = Header(None)):
     """Ignorer une meilleure offre"""
-    result = await db.better_offers.delete_one({"submission_id": submission_id})
+    user = await get_current_user(authorization)
+    
+    result = await db.better_offers.delete_one({"submission_id": submission_id, "owner_id": user["id"]})
     
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Offre non trouvée")
