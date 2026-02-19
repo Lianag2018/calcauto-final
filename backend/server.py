@@ -2441,7 +2441,7 @@ async def compare_programs_with_submissions(authorization: Optional[str] = Heade
         
         # Store better offers in DB for approval
         if better_offers:
-            await db.better_offers.delete_many({})  # Clear old offers
+            await db.better_offers.delete_many({"owner_id": user["id"]})  # Clear old offers for this user only
             for offer in better_offers:
                 await db.better_offers.insert_one(offer.copy())  # Use copy to avoid _id being added to original
             
