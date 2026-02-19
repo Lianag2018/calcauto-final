@@ -2698,6 +2698,28 @@ async def delete_contact(contact_id: str, authorization: Optional[str] = Header(
         raise HTTPException(status_code=404, detail="Contact non trouvé")
     return {"success": True, "message": "Contact supprimé"}
 
+@api_router.put("/contacts/{contact_id}")
+async def update_contact(contact_id: str, authorization: Optional[str] = Header(None), name: Optional[str] = None, phone: Optional[str] = None, email: Optional[str] = None):
+    """Met à jour un contact de l'utilisateur connecté"""
+    user = await get_current_user(authorization)
+    
+    update_data = {}
+    if name: update_data["name"] = name
+    if phone: update_data["phone"] = phone
+    if email: update_data["email"] = email
+    
+    if not update_data:
+        return {"success": False, "message": "Aucune donnée à mettre à jour"}
+    
+    result = await db.contacts.update_one(
+        {"id": contact_id, "owner_id": user["id"]},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Contact non trouvé")
+    return {"success": True, "message": "Contact mis à jour"}
+
 @api_router.delete("/contacts")
 async def delete_all_contacts(authorization: Optional[str] = Header(None)):
     """Supprime tous les contacts de l'utilisateur connecté"""
