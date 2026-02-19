@@ -2421,6 +2421,7 @@ async def compare_programs_with_submissions(authorization: Optional[str] = Heade
                 
                 better_offers.append({
                     "submission_id": str(sub.get("id", "")),
+                    "owner_id": user["id"],  # Add owner_id for isolation
                     "client_name": str(sub.get("client_name", "")),
                     "client_phone": str(sub.get("client_phone", "")),
                     "client_email": str(sub.get("client_email", "")),
