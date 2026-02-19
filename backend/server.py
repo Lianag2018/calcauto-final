@@ -159,6 +159,7 @@ class ImportRequest(BaseModel):
 class Submission(BaseModel):
     """Soumission client avec suivi"""
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    owner_id: str = ""  # ID de l'utilisateur propriétaire
     # Client info
     client_name: str
     client_phone: str
