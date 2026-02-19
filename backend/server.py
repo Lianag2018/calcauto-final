@@ -245,6 +245,7 @@ class User(BaseModel):
 class Contact(BaseModel):
     """Contact importé depuis vCard/CSV"""
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    owner_id: str = ""  # ID de l'utilisateur propriétaire
     name: str
     phone: str = ""
     email: str = ""
