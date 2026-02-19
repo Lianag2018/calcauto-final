@@ -26,6 +26,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AnimatedSplashScreen } from '../../components/AnimatedSplashScreen';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { Language, saveLanguage, loadLanguage, getTranslation, TranslationKeys } from '../../utils/i18n';
+import { useAuth } from '../../contexts/AuthContext';
 import frTranslations from '../../locales/fr.json';
 import enTranslations from '../../locales/en.json';
 
