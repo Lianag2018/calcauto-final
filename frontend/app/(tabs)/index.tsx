@@ -743,9 +743,8 @@ export default function HomeScreen() {
               onPress={() => setShowPeriodSelector(true)}
             >
               <Text style={styles.headerSubtitle}>
-                {currentPeriod ? `${monthNames[lang][currentPeriod.month]} ${currentPeriod.year}` : ''}
+                {currentPeriod ? `${monthNames[lang][currentPeriod.month]} ${currentPeriod.year} ▼` : ''}
               </Text>
-              <Ionicons name="chevron-down" size={16} color="#4ECDC4" style={{marginLeft: 4}} />
             </TouchableOpacity>
           </View>
           <View style={styles.headerActions}>
