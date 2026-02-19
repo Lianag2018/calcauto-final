@@ -125,6 +125,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const getToken = async (): Promise<string | null> => {
+    return await storage.getItem('auth_token');
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -133,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      getToken,
     }}>
       {children}
     </AuthContext.Provider>
