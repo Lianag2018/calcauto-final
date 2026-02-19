@@ -23,7 +23,10 @@ import { Language, saveLanguage, loadLanguage } from '../../utils/i18n';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { useAuth } from '../../contexts/AuthContext';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8001';
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 
+  (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app') 
+    ? 'https://calcauto-aipro.onrender.com' 
+    : 'http://localhost:8001');
 
 interface Submission {
   id: string;
