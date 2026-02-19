@@ -2191,9 +2191,11 @@ async def test_email():
 # ============ CRM Endpoints ============
 
 @api_router.post("/submissions")
-async def create_submission(submission: SubmissionCreate):
+async def create_submission(submission: SubmissionCreate, authorization: Optional[str] = Header(None)):
     """Créer une nouvelle soumission avec rappel automatique 24h"""
     from datetime import timedelta
+    
+    user = await get_current_user(authorization)
     
     # Set default reminder to 24h from now
     reminder_date = datetime.utcnow() + timedelta(hours=24)
@@ -2214,7 +2216,8 @@ async def create_submission(submission: SubmissionCreate):
         rate=submission.rate,
         program_month=submission.program_month,
         program_year=submission.program_year,
-        reminder_date=reminder_date
+        reminder_date=reminder_date,
+        owner_id=user["id"]
     )
     
     await db.submissions.insert_one(new_submission.dict())
@@ -2222,9 +2225,11 @@ async def create_submission(submission: SubmissionCreate):
     return {"success": True, "submission": new_submission.dict(), "message": "Soumission enregistrée - Rappel dans 24h"}
 
 @api_router.get("/submissions")
-async def get_submissions(search: Optional[str] = None, status: Optional[str] = None):
-    """Récupérer toutes les soumissions avec recherche optionnelle"""
-    query = {}
+async def get_submissions(search: Optional[str] = None, status: Optional[str] = None, authorization: Optional[str] = Header(None)):
+    """Récupérer les soumissions de l'utilisateur connecté"""
+    user = await get_current_user(authorization)
+    
+    query = {"owner_id": user["id"]}
     
     if search:
         # Search by name or phone
