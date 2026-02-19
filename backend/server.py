@@ -2394,7 +2394,7 @@ async def compare_programs_with_submissions():
         if better_offers:
             await db.better_offers.delete_many({})  # Clear old offers
             for offer in better_offers:
-                await db.better_offers.insert_one(offer)
+                await db.better_offers.insert_one(offer.copy())  # Use copy to avoid _id being added to original
             
             # Send notification email to admin
             try:
@@ -2402,6 +2402,7 @@ async def compare_programs_with_submissions():
             except Exception as e:
                 logger.error(f"Error sending better offers notification: {e}")
         
+        # Return clean offers without MongoDB ObjectId
         return {"better_offers": better_offers, "count": len(better_offers)}
     
     except Exception as e:
