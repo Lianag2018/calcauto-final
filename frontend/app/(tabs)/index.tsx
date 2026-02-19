@@ -328,6 +328,7 @@ const monthNames = {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { user, logout } = useAuth();
   const params = useLocalSearchParams<{
     clientName?: string;
     clientEmail?: string;
@@ -337,6 +338,24 @@ export default function HomeScreen() {
   
   const [lang, setLang] = useState<Language>('fr');
   const t = translations[lang];
+
+  // Handle logout
+  const handleLogout = () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Voulez-vous vous déconnecter?')) {
+        logout();
+      }
+    } else {
+      Alert.alert(
+        'Déconnexion',
+        'Voulez-vous vous déconnecter?',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          { text: 'Déconnexion', style: 'destructive', onPress: () => logout() }
+        ]
+      );
+    }
+  };
 
   // Load saved language preference on mount
   useEffect(() => {
