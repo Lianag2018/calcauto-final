@@ -2255,12 +2255,14 @@ async def get_submissions(search: Optional[str] = None, status: Optional[str] = 
     return submissions
 
 @api_router.get("/submissions/reminders")
-async def get_reminders():
-    """Récupérer les soumissions avec rappels dus ou à venir"""
+async def get_reminders(authorization: Optional[str] = Header(None)):
+    """Récupérer les soumissions avec rappels dus ou à venir pour l'utilisateur connecté"""
+    user = await get_current_user(authorization)
     now = datetime.utcnow()
     
-    # Get submissions where reminder is due and not done
+    # Get submissions where reminder is due and not done (filtré par owner_id)
     reminders_due = await db.submissions.find({
+        "owner_id": user["id"],
         "reminder_done": False,
         "reminder_date": {"$lte": now}
     }).sort("reminder_date", 1).to_list(100)
@@ -2270,6 +2272,7 @@ async def get_reminders():
     next_week = now + timedelta(days=7)
     
     reminders_upcoming = await db.submissions.find({
+        "owner_id": user["id"],
         "reminder_done": False,
         "reminder_date": {"$gt": now, "$lte": next_week}
     }).sort("reminder_date", 1).to_list(100)
@@ -2291,15 +2294,17 @@ async def get_reminders():
     }
 
 @api_router.put("/submissions/{submission_id}/reminder")
-async def update_reminder(submission_id: str, reminder: ReminderUpdate):
+async def update_reminder(submission_id: str, reminder: ReminderUpdate, authorization: Optional[str] = Header(None)):
     """Mettre à jour la date de rappel"""
+    user = await get_current_user(authorization)
+    
     update_data = {"reminder_date": reminder.reminder_date, "reminder_done": False}
     
     if reminder.notes:
         update_data["notes"] = reminder.notes
     
     result = await db.submissions.update_one(
-        {"id": submission_id},
+        {"id": submission_id, "owner_id": user["id"]},
         {"$set": update_data}
     )
     
@@ -2309,8 +2314,10 @@ async def update_reminder(submission_id: str, reminder: ReminderUpdate):
     return {"success": True, "message": "Rappel mis à jour"}
 
 @api_router.put("/submissions/{submission_id}/done")
-async def mark_reminder_done(submission_id: str, new_reminder_date: Optional[str] = None):
+async def mark_reminder_done(submission_id: str, authorization: Optional[str] = Header(None), new_reminder_date: Optional[str] = None):
     """Marquer un rappel comme fait, optionnellement planifier un nouveau"""
+    user = await get_current_user(authorization)
+    
     update_data = {"reminder_done": True, "status": "contacted"}
     
     if new_reminder_date:
@@ -2318,7 +2325,7 @@ async def mark_reminder_done(submission_id: str, new_reminder_date: Optional[str
         update_data["reminder_done"] = False
     
     result = await db.submissions.update_one(
-        {"id": submission_id},
+        {"id": submission_id, "owner_id": user["id"]},
         {"$set": update_data}
     )
     
@@ -2328,13 +2335,15 @@ async def mark_reminder_done(submission_id: str, new_reminder_date: Optional[str
     return {"success": True, "message": "Rappel marqué comme fait" + (" - Nouveau rappel planifié" if new_reminder_date else "")}
 
 @api_router.put("/submissions/{submission_id}/status")
-async def update_submission_status(submission_id: str, status: str):
+async def update_submission_status(submission_id: str, status: str, authorization: Optional[str] = Header(None)):
     """Mettre à jour le statut (pending, contacted, converted, lost)"""
+    user = await get_current_user(authorization)
+    
     if status not in ["pending", "contacted", "converted", "lost"]:
         raise HTTPException(status_code=400, detail="Statut invalide")
     
     result = await db.submissions.update_one(
-        {"id": submission_id},
+        {"id": submission_id, "owner_id": user["id"]},
         {"$set": {"status": status}}
     )
     
