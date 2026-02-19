@@ -607,7 +607,8 @@ export default function ClientsScreen() {
   
   const markReminderDone = async (submissionId: string) => {
     try {
-      await axios.put(`${API_URL}/api/submissions/${submissionId}/done`);
+      const headers = await getAuthHeaders();
+      await axios.put(`${API_URL}/api/submissions/${submissionId}/done`, {}, { headers });
       await loadData();
       Platform.OS === 'web' ? alert('✅ Rappel complété!') : Alert.alert('✅', 'Rappel complété!');
     } catch (err) {
@@ -633,10 +634,11 @@ export default function ClientsScreen() {
     if (!selectedSubmission || !followUpDate) return;
     setSavingFollowUp(true);
     try {
+      const headers = await getAuthHeaders();
       await axios.put(`${API_URL}/api/submissions/${selectedSubmission.id}/reminder`, {
         reminder_date: new Date(followUpDate).toISOString(),
         notes: followUpNotes
-      });
+      }, { headers });
       await loadData();
       setShowFollowUpModal(false);
       Platform.OS === 'web' ? alert('✅ Suivi planifié!') : Alert.alert('✅', 'Suivi planifié!');
@@ -663,7 +665,8 @@ export default function ClientsScreen() {
   const checkForBetterOffers = async () => {
     setCheckingOffers(true);
     try {
-      const response = await axios.post(`${API_URL}/api/compare-programs`);
+      const headers = await getAuthHeaders();
+      const response = await axios.post(`${API_URL}/api/compare-programs`, {}, { headers });
       const { better_offers, count } = response.data;
       setBetterOffers(better_offers || []);
       
