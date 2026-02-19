@@ -328,7 +328,7 @@ const monthNames = {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, getToken } = useAuth();
   const params = useLocalSearchParams<{
     clientName?: string;
     clientEmail?: string;
