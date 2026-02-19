@@ -61,7 +61,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = await storage.getItem('user_data');
       
       if (token && userData) {
-        setUser(JSON.parse(userData));
+        // Verify token is still valid by making a test request
+        try {
+          await axios.get(`${API_URL}/api/contacts`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          // Token is valid
+          setUser(JSON.parse(userData));
+        } catch (err: any) {
+          // Token is invalid - clear storage and force re-login
+          console.log('Token invalid, clearing session');
+          await storage.removeItem('auth_token');
+          await storage.removeItem('user_data');
+          setUser(null);
+        }
       }
     } catch (error) {
       console.error('Error checking auth:', error);
