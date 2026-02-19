@@ -2353,8 +2353,9 @@ async def update_submission_status(submission_id: str, status: str, authorizatio
     return {"success": True, "message": f"Statut mis à jour: {status}"}
 
 @api_router.post("/compare-programs")
-async def compare_programs_with_submissions():
+async def compare_programs_with_submissions(authorization: Optional[str] = Header(None)):
     """Compare les programmes actuels avec les soumissions passées pour trouver de meilleures offres"""
+    user = await get_current_user(authorization)
     
     try:
         # Get current programs (latest month/year)
@@ -2365,8 +2366,9 @@ async def compare_programs_with_submissions():
         current_month = latest["program_month"]
         current_year = latest["program_year"]
         
-        # Get all submissions from PREVIOUS months
+        # Get submissions from PREVIOUS months FOR THIS USER
         submissions = await db.submissions.find({
+            "owner_id": user["id"],
             "$or": [
                 {"program_month": {"$lt": current_month}, "program_year": current_year},
                 {"program_year": {"$lt": current_year}}
