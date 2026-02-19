@@ -745,9 +745,7 @@ export default function HomeScreen() {
               <Text style={styles.headerSubtitle}>
                 {currentPeriod ? `${monthNames[lang][currentPeriod.month]} ${currentPeriod.year}` : ''}
               </Text>
-              {availablePeriods.length > 1 && (
-                <Ionicons name="chevron-down" size={16} color="#4ECDC4" style={{marginLeft: 4}} />
-              )}
+              <Ionicons name="chevron-down" size={16} color="#4ECDC4" style={{marginLeft: 4}} />
             </TouchableOpacity>
           </View>
           <View style={styles.headerActions}>
