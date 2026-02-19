@@ -222,6 +222,7 @@ type TabType = 'clients' | 'reminders' | 'offers' | 'history';
 
 export default function ClientsScreen() {
   const router = useRouter();
+  const { getToken } = useAuth();
   const [lang, setLang] = useState<Language>('fr');
   const crm = crmTranslations[lang];
   
@@ -259,19 +260,27 @@ export default function ClientsScreen() {
   const [followUpNotes, setFollowUpNotes] = useState('');
   const [savingFollowUp, setSavingFollowUp] = useState(false);
 
+  // Helper function to get auth headers
+  const getAuthHeaders = async () => {
+    const token = await getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   useEffect(() => { loadLanguage().then(setLang); }, []);
   const handleLanguageChange = useCallback((newLang: Language) => { setLang(newLang); saveLanguage(newLang); }, []);
 
   const loadData = async () => {
     try {
+      const headers = await getAuthHeaders();
+      
       // Load submissions
-      const response = await axios.get(`${API_URL}/api/submissions`);
+      const response = await axios.get(`${API_URL}/api/submissions`, { headers });
       const allSubmissions: Submission[] = response.data;
       setSubmissions(allSubmissions);
       
       // Load better offers
       try {
-        const offersResponse = await axios.get(`${API_URL}/api/better-offers`);
+        const offersResponse = await axios.get(`${API_URL}/api/better-offers`, { headers });
         setBetterOffers(offersResponse.data);
       } catch (err) {
         console.log('Could not load better offers:', err);
@@ -280,7 +289,7 @@ export default function ClientsScreen() {
       // Load saved contacts from database
       let savedContacts: ImportedContact[] = [];
       try {
-        const contactsResponse = await axios.get(`${API_URL}/api/contacts`);
+        const contactsResponse = await axios.get(`${API_URL}/api/contacts`, { headers });
         savedContacts = contactsResponse.data;
         console.log(`Loaded ${savedContacts.length} saved contacts`);
       } catch (contactErr) {
