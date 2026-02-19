@@ -736,15 +736,17 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View>
+          <View style={{flex: 1}}>
             <Text style={styles.headerTitle}>{t.title}</Text>
             <TouchableOpacity 
-              style={styles.periodSelector}
+              style={{flexDirection: 'row', alignItems: 'center', backgroundColor: '#2d2d44', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginTop: 4}}
               onPress={() => setShowPeriodSelector(true)}
             >
-              <Text style={styles.headerSubtitle}>
-                {currentPeriod ? `${monthNames[lang][currentPeriod.month]} ${currentPeriod.year} ▼` : ''}
+              <Ionicons name="calendar-outline" size={14} color="#4ECDC4" />
+              <Text style={{color: '#4ECDC4', fontSize: 13, fontWeight: '600', marginLeft: 6}}>
+                {currentPeriod ? `${monthNames[lang][currentPeriod.month]} ${currentPeriod.year}` : 'Période'}
               </Text>
+              <Ionicons name="chevron-down" size={14} color="#4ECDC4" style={{marginLeft: 4}} />
             </TouchableOpacity>
           </View>
           <View style={styles.headerActions}>
