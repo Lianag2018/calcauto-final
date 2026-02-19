@@ -549,6 +549,7 @@ export default function ClientsScreen() {
       
       // SAVE CONTACTS TO DATABASE
       try {
+        const headers = await getAuthHeaders();
         const contactsToSave = contacts.map(c => ({
           name: c.name,
           phone: c.phone,
@@ -558,7 +559,7 @@ export default function ClientsScreen() {
         
         const saveResponse = await axios.post(`${API_URL}/api/contacts/bulk`, {
           contacts: contactsToSave
-        });
+        }, { headers });
         
         console.log('Save response:', saveResponse.data);
         
