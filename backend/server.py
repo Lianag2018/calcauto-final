@@ -2512,9 +2512,15 @@ def send_better_offers_notification(offers: List[dict]):
     send_email(SMTP_EMAIL, f"🔔 CalcAuto - {len(offers)} client(s) à relancer!", html_body)
 
 @api_router.get("/better-offers")
-async def get_better_offers():
-    """Récupérer les meilleures offres en attente d'approbation"""
-    offers = await db.better_offers.find({"approved": False, "email_sent": False}).to_list(100)
+async def get_better_offers(authorization: Optional[str] = Header(None)):
+    """Récupérer les meilleures offres en attente d'approbation pour l'utilisateur connecté"""
+    user = await get_current_user(authorization)
+    
+    offers = await db.better_offers.find({
+        "owner_id": user["id"],
+        "approved": False, 
+        "email_sent": False
+    }).to_list(100)
     
     for offer in offers:
         if "_id" in offer:
@@ -2523,9 +2529,11 @@ async def get_better_offers():
     return offers
 
 @api_router.post("/better-offers/{submission_id}/approve")
-async def approve_better_offer(submission_id: str):
+async def approve_better_offer(submission_id: str, authorization: Optional[str] = Header(None)):
     """Approuver et envoyer l'email au client pour une meilleure offre"""
-    offer = await db.better_offers.find_one({"submission_id": submission_id})
+    user = await get_current_user(authorization)
+    
+    offer = await db.better_offers.find_one({"submission_id": submission_id, "owner_id": user["id"]})
     
     if not offer:
         raise HTTPException(status_code=404, detail="Offre non trouvée")
@@ -2539,7 +2547,7 @@ async def approve_better_offer(submission_id: str):
         
         # Mark as sent
         await db.better_offers.update_one(
-            {"submission_id": submission_id},
+            {"submission_id": submission_id, "owner_id": user["id"]},
             {"$set": {"approved": True, "email_sent": True}}
         )
         
