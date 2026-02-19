@@ -1790,10 +1790,16 @@ export default function HomeScreen() {
                         setClientEmail('');
                         setClientName('');
                         setClientPhone('');
+                        
+                        // Show detailed success message with contact status
+                        const successMsg = lang === 'fr' 
+                          ? `✅ Email envoyé!\n\n📋 ${contactStatus}\n📊 Soumission enregistrée`
+                          : `✅ Email sent!\n\n📋 ${contactStatus}\n📊 Submission saved`;
+                        
                         if (Platform.OS === 'web') {
-                          alert(lang === 'fr' ? '✅ Email envoyé avec succès!' : '✅ Email sent successfully!');
+                          alert(successMsg);
                         } else {
-                          Alert.alert('Succès', lang === 'fr' ? 'Email envoyé avec succès!' : 'Email sent successfully!');
+                          Alert.alert('Succès', successMsg);
                         }
                       } else {
                         throw new Error(data.detail || 'Erreur');
