@@ -1679,6 +1679,9 @@ export default function HomeScreen() {
                         const token = await getToken();
                         const authHeaders = token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
                         
+                        // Track contact status for notification
+                        let contactStatus = '';
+                        
                         // 1. Check if contact exists and update/create
                         try {
                           const contactsResponse = await fetch(`${API_URL}/api/contacts`, { headers: authHeaders });
@@ -1703,7 +1706,9 @@ export default function HomeScreen() {
                                 headers: authHeaders,
                                 body: JSON.stringify(updateData),
                               });
-                              console.log('Contact updated:', existingContact.id);
+                              contactStatus = `Contact "${clientName || existingContact.name}" mis à jour`;
+                            } else {
+                              contactStatus = `Contact "${clientName || existingContact.name}" existant`;
                             }
                           } else {
                             // Create new contact
@@ -1717,10 +1722,11 @@ export default function HomeScreen() {
                                 source: 'submission'
                               }),
                             });
-                            console.log('New contact created');
+                            contactStatus = `Nouveau contact "${clientName || 'Client'}" créé`;
                           }
                         } catch (contactErr) {
                           console.log('Error managing contact:', contactErr);
+                          contactStatus = 'Contact non géré';
                         }
                         
                         // 2. Save submission to server database
