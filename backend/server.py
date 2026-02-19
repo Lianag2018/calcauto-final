@@ -2589,9 +2589,12 @@ async def ignore_better_offer(submission_id: str):
 # ============ Contacts API ============
 
 @api_router.get("/contacts")
-async def get_contacts():
-    """Récupère tous les contacts importés"""
-    contacts = await db.contacts.find().sort("name", 1).to_list(10000)
+async def get_contacts(authorization: Optional[str] = Header(None)):
+    """Récupère les contacts de l'utilisateur connecté"""
+    user = await get_current_user(authorization)
+    
+    # Filtrer par owner_id
+    contacts = await db.contacts.find({"owner_id": user["id"]}).sort("name", 1).to_list(10000)
     return [{
         "id": c.get("id"),
         "name": c.get("name"),
@@ -2602,37 +2605,42 @@ async def get_contacts():
     } for c in contacts]
 
 @api_router.post("/contacts")
-async def create_contact(contact: ContactCreate):
-    """Crée un nouveau contact"""
+async def create_contact(contact: ContactCreate, authorization: Optional[str] = Header(None)):
+    """Crée un nouveau contact pour l'utilisateur connecté"""
+    user = await get_current_user(authorization)
+    
     contact_obj = Contact(
         name=contact.name,
         phone=contact.phone,
         email=contact.email,
-        source=contact.source
+        source=contact.source,
+        owner_id=user["id"]
     )
     await db.contacts.insert_one(contact_obj.dict())
     return contact_obj
 
 @api_router.post("/contacts/bulk")
-async def create_contacts_bulk(request: ContactBulkCreate):
-    """Importe plusieurs contacts en masse"""
+async def create_contacts_bulk(request: ContactBulkCreate, authorization: Optional[str] = Header(None)):
+    """Importe plusieurs contacts en masse pour l'utilisateur connecté"""
+    user = await get_current_user(authorization)
+    
     if not request.contacts:
         return {"success": True, "imported": 0, "message": "Aucun contact à importer"}
     
-    # Préparer les contacts
+    # Préparer les contacts avec owner_id
     contacts_to_insert = []
     for c in request.contacts:
         contact_obj = Contact(
             name=c.name,
             phone=c.phone,
             email=c.email,
-            source=c.source
+            source=c.source,
+            owner_id=user["id"]
         )
         contacts_to_insert.append(contact_obj.dict())
     
-    # Supprimer les doublons par nom+phone avant insertion
-    # On garde les contacts existants et on n'ajoute que les nouveaux
-    existing_contacts = await db.contacts.find({}, {"name": 1, "phone": 1}).to_list(10000)
+    # Supprimer les doublons par nom+phone POUR CET UTILISATEUR avant insertion
+    existing_contacts = await db.contacts.find({"owner_id": user["id"]}, {"name": 1, "phone": 1}).to_list(10000)
     existing_keys = {(c.get("name", "").lower(), c.get("phone", "")) for c in existing_contacts}
     
     new_contacts = []
@@ -2653,17 +2661,22 @@ async def create_contacts_bulk(request: ContactBulkCreate):
     }
 
 @api_router.delete("/contacts/{contact_id}")
-async def delete_contact(contact_id: str):
-    """Supprime un contact"""
-    result = await db.contacts.delete_one({"id": contact_id})
+async def delete_contact(contact_id: str, authorization: Optional[str] = Header(None)):
+    """Supprime un contact de l'utilisateur connecté"""
+    user = await get_current_user(authorization)
+    
+    # S'assurer que le contact appartient à l'utilisateur
+    result = await db.contacts.delete_one({"id": contact_id, "owner_id": user["id"]})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Contact non trouvé")
     return {"success": True, "message": "Contact supprimé"}
 
 @api_router.delete("/contacts")
-async def delete_all_contacts():
-    """Supprime tous les contacts importés"""
-    result = await db.contacts.delete_many({})
+async def delete_all_contacts(authorization: Optional[str] = Header(None)):
+    """Supprime tous les contacts de l'utilisateur connecté"""
+    user = await get_current_user(authorization)
+    
+    result = await db.contacts.delete_many({"owner_id": user["id"]})
     return {"success": True, "deleted": result.deleted_count, "message": f"{result.deleted_count} contacts supprimés"}
 
 # Include the router in the main app
