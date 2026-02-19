@@ -690,10 +690,11 @@ export default function ClientsScreen() {
   const approveOffer = async (submissionId: string) => {
     setApprovingOffer(submissionId);
     try {
-      await axios.post(`${API_URL}/api/better-offers/${submissionId}/approve`);
+      const headers = await getAuthHeaders();
+      await axios.post(`${API_URL}/api/better-offers/${submissionId}/approve`, {}, { headers });
       
       // Reload offers
-      const offersResponse = await axios.get(`${API_URL}/api/better-offers`);
+      const offersResponse = await axios.get(`${API_URL}/api/better-offers`, { headers });
       setBetterOffers(offersResponse.data);
       
       Platform.OS === 'web'
@@ -712,7 +713,8 @@ export default function ClientsScreen() {
   // Ignore/reject better offer
   const ignoreOffer = async (submissionId: string) => {
     try {
-      await axios.post(`${API_URL}/api/better-offers/${submissionId}/ignore`);
+      const headers = await getAuthHeaders();
+      await axios.post(`${API_URL}/api/better-offers/${submissionId}/ignore`, {}, { headers });
       
       // Remove from local state
       setBetterOffers(prev => prev.filter(o => o.submission_id !== submissionId));
@@ -743,18 +745,19 @@ export default function ClientsScreen() {
     if (!confirmDelete) return;
     
     try {
+      const headers = await getAuthHeaders();
       // Find contact by phone or email to delete from contacts collection
       const contactKey = client.phone || client.email || client.name;
       
       // Try to delete from contacts collection
-      const contactsResponse = await axios.get(`${API_URL}/api/contacts`);
+      const contactsResponse = await axios.get(`${API_URL}/api/contacts`, { headers });
       const contacts = contactsResponse.data;
       const contactToDelete = contacts.find((c: any) => 
         c.phone === client.phone || c.email === client.email || c.name === client.name
       );
       
       if (contactToDelete) {
-        await axios.delete(`${API_URL}/api/contacts/${contactToDelete.id}`);
+        await axios.delete(`${API_URL}/api/contacts/${contactToDelete.id}`, { headers });
       }
       
       // Reload data to refresh the list
