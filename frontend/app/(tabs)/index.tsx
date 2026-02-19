@@ -1675,7 +1675,87 @@ export default function HomeScreen() {
                       const data = await response.json();
                       
                       if (data.success) {
-                        // Save submission to history
+                        // Get auth token
+                        const token = await getToken();
+                        const authHeaders = token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+                        
+                        // 1. Check if contact exists and update/create
+                        try {
+                          const contactsResponse = await fetch(`${API_URL}/api/contacts`, { headers: authHeaders });
+                          const existingContacts = await contactsResponse.json();
+                          
+                          const existingContact = existingContacts.find((c: any) => 
+                            c.name?.toLowerCase() === (clientName || '').toLowerCase() ||
+                            (c.phone && c.phone === clientPhone) ||
+                            (c.email && c.email === clientEmail)
+                          );
+                          
+                          if (existingContact) {
+                            // Update existing contact with new info if provided
+                            const updateData: any = {};
+                            if (clientEmail && clientEmail !== existingContact.email) updateData.email = clientEmail;
+                            if (clientPhone && clientPhone !== existingContact.phone) updateData.phone = clientPhone;
+                            if (clientName && clientName !== existingContact.name) updateData.name = clientName;
+                            
+                            if (Object.keys(updateData).length > 0) {
+                              await fetch(`${API_URL}/api/contacts/${existingContact.id}`, {
+                                method: 'PUT',
+                                headers: authHeaders,
+                                body: JSON.stringify(updateData),
+                              });
+                              console.log('Contact updated:', existingContact.id);
+                            }
+                          } else {
+                            // Create new contact
+                            await fetch(`${API_URL}/api/contacts`, {
+                              method: 'POST',
+                              headers: authHeaders,
+                              body: JSON.stringify({
+                                name: clientName || 'Client',
+                                phone: clientPhone,
+                                email: clientEmail,
+                                source: 'submission'
+                              }),
+                            });
+                            console.log('New contact created');
+                          }
+                        } catch (contactErr) {
+                          console.log('Error managing contact:', contactErr);
+                        }
+                        
+                        // 2. Save submission to server database
+                        try {
+                          const payment = paymentFrequency === 'monthly' ? localResult.option1Monthly :
+                                         paymentFrequency === 'biweekly' ? localResult.option1Biweekly :
+                                         localResult.option1Weekly;
+                          
+                          await fetch(`${API_URL}/api/submissions`, {
+                            method: 'POST',
+                            headers: authHeaders,
+                            body: JSON.stringify({
+                              client_name: clientName || 'Client',
+                              client_email: clientEmail,
+                              client_phone: clientPhone,
+                              vehicle_brand: selectedProgram.brand,
+                              vehicle_model: selectedProgram.model,
+                              vehicle_year: selectedProgram.year,
+                              vehicle_price: parseFloat(vehiclePrice) || 0,
+                              term: selectedTerm,
+                              payment_monthly: localResult.option1Monthly,
+                              payment_biweekly: localResult.option1Biweekly,
+                              payment_weekly: localResult.option1Weekly,
+                              selected_option: selectedOption || '1',
+                              rate: localResult.option1Rate,
+                              program_month: currentPeriod?.month || 2,
+                              program_year: currentPeriod?.year || 2026,
+                            }),
+                          });
+                          console.log('Submission saved to server');
+                        } catch (subErr) {
+                          console.log('Error saving submission to server:', subErr);
+                        }
+                        
+                        // 3. Also save locally for offline access
                         try {
                           const submission = {
                             id: Date.now().toString(),
@@ -1695,10 +1775,9 @@ export default function HomeScreen() {
                           const storedSubmissions = await AsyncStorage.getItem(SUBMISSIONS_KEY);
                           const existingSubmissions = storedSubmissions ? JSON.parse(storedSubmissions) : [];
                           existingSubmissions.unshift(submission);
-                          // Keep only last 100 submissions
                           await AsyncStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(existingSubmissions.slice(0, 100)));
                         } catch (e) {
-                          console.log('Error saving submission:', e);
+                          console.log('Error saving submission locally:', e);
                         }
                         
                         setShowEmailModal(false);
