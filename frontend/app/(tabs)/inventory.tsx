@@ -948,12 +948,16 @@ export default function InventoryScreen() {
                     />
                   </View>
                   <View style={styles.formGroup}>
-                    <Text style={styles.formLabel}>Coût Net (E.P. - Holdback)</Text>
-                    <View style={styles.calculatedField}>
-                      <Text style={styles.calculatedValue}>
-                        {formatPrice((parseFloat(reviewData.ep_cost) || 0) - (parseFloat(reviewData.holdback) || 0))}
-                      </Text>
-                    </View>
+                    <Text style={styles.formLabel}>Coût Net $</Text>
+                    <TextInput
+                      style={[styles.formInput, styles.costInput]}
+                      value={reviewData.net_cost?.toString() || String((parseFloat(reviewData.ep_cost) || 0) - (parseFloat(reviewData.holdback) || 0))}
+                      onChangeText={(v) => updateReviewField('net_cost', v)}
+                      keyboardType="numeric"
+                      placeholder="51620"
+                      placeholderTextColor="#666"
+                    />
+                    <Text style={styles.costHint}>Ajustez si augmentation non écrite</Text>
                   </View>
                 </View>
 
