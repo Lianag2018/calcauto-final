@@ -3639,7 +3639,7 @@ IMPORTANT:
         image_content = ImageContent(image_base64=request.image_base64)
         user_message = UserMessage(
             text="Analyse cette facture FCA Canada. Extrait toutes les informations et applique la règle de décodage des prix (enlever premier 0 et deux derniers chiffres). Retourne le JSON.",
-            image_contents=[image_content]
+            file_contents=[image_content]
         )
         
         response = await chat.send_message(user_message)
