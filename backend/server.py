@@ -3582,14 +3582,13 @@ class InvoiceScanRequest(BaseModel):
 
 @api_router.post("/inventory/scan-invoice")
 async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str] = Header(None)):
-    """Scanne une facture FCA - Système HYBRIDE: Parser structuré PUIS IA en fallback
+    """Scanne une facture FCA - Utilise GPT-4 Vision avec décodage VIN/Code Modèle
     
-    ORDRE DE TRAITEMENT:
-    1. OCR de l'image pour extraire le texte
-    2. Parser REGEX pour extraire VIN, E.P., PDCO, PREF, code modèle
-    3. Décoder le VIN → Année, Marque
-    4. Décoder le code modèle → Modèle, Trim
-    5. Seulement si confiance < 60% → IA GPT-4 Vision comme fallback
+    PROCESSUS:
+    1. GPT-4 Vision extrait les données brutes (codes encodés)
+    2. Décodage VIN → Année, Marque
+    3. Décodage Code Modèle → Modèle, Trim
+    4. Décodage des prix FCA
     """
     user = await get_current_user(authorization)
     
@@ -3600,161 +3599,157 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
         if not api_key:
             raise HTTPException(status_code=500, detail="Clé API non configurée")
         
-        # ÉTAPE 1: OCR - Extraire le texte de l'image avec GPT-4 Vision (juste OCR, pas d'analyse)
-        ocr_chat = LlmChat(
+        # GPT-4 Vision pour extraire les données BRUTES (sans décodage)
+        chat = LlmChat(
             api_key=api_key,
-            session_id=f"ocr-{uuid.uuid4()}",
-            system_message="Tu es un OCR. Retourne UNIQUEMENT le texte brut de cette image de facture, sans analyse ni interprétation. Inclus TOUS les chiffres, codes et montants visibles."
-        ).with_model("openai", "gpt-4o")
-        
-        image_content = ImageContent(image_base64=request.image_base64)
-        ocr_response = await ocr_chat.send_message(UserMessage(
-            text="Extrait tout le texte de cette facture FCA Canada. Retourne le texte brut.",
-            file_contents=[image_content]
-        ))
-        
-        extracted_text = ocr_response.strip()
-        logger.info(f"OCR extracted {len(extracted_text)} chars")
-        
-        # ÉTAPE 2: Parser REGEX structuré
-        vehicle_data = parse_fca_invoice_text(extracted_text)
-        parse_confidence = vehicle_data.get("parse_confidence", 0)
-        
-        logger.info(f"Regex parser confidence: {parse_confidence}%")
-        
-        # ÉTAPE 3: Décoder le VIN si trouvé
-        if vehicle_data.get("vin"):
-            vin_clean = vehicle_data["vin"].replace("-", "").upper()
-            if len(vin_clean) == 17:
-                vin_info = decode_vin(vin_clean)
-                if vin_info.get("valid"):
-                    vehicle_data["year"] = vin_info.get("year") or vehicle_data.get("year")
-                    if vin_info.get("manufacturer"):
-                        vehicle_data["brand"] = vin_info["manufacturer"]
-                    vehicle_data["vin"] = vin_clean
-                    parse_confidence += 10
-        
-        # ÉTAPE 4: Décoder le code modèle si trouvé dans les options
-        if vehicle_data.get("options"):
-            for opt in vehicle_data["options"][:3]:  # Vérifier les 3 premières options
-                code = opt.get("code", "").upper()
-                product_info = decode_product_code(code)
-                if product_info.get("brand"):
-                    vehicle_data["brand"] = product_info["brand"]
-                    vehicle_data["model"] = product_info["model"]
-                    vehicle_data["trim"] = product_info.get("trim") or vehicle_data.get("trim")
-                    parse_confidence += 15
-                    logger.info(f"Decoded product code {code}: {product_info}")
-                    break
-        
-        # ÉTAPE 5: Si confiance < 60%, utiliser l'IA comme fallback
-        if parse_confidence < 60:
-            logger.info(f"Confidence {parse_confidence}% < 60%, using AI fallback")
-            
-            ai_chat = LlmChat(
-                api_key=api_key,
-                session_id=f"invoice-ai-{uuid.uuid4()}",
-                system_message="""Tu es un expert en analyse de factures FCA Canada.
+            session_id=f"invoice-{uuid.uuid4()}",
+            system_message="""Tu es un OCR expert pour factures FCA Canada.
 
-RÈGLE DE DÉCODAGE DES PRIX FCA:
-Les prix sont sur 8 chiffres: 08663000
-Décoder: enlever PREMIER 0 + DEUX DERNIERS chiffres = 86630
-
-IMPORTANT:
-- PDCO = PDSF = MSRP (même valeur!)
-- E.P. = Coût réel dealer
-- Holdback = ~3% du PDCO
+IMPORTANT: Extrait les valeurs EXACTEMENT comme elles apparaissent sur la facture.
 
 Retourne ce JSON:
 {
-  "stock_no": "numéro écrit à la main",
-  "vin": "VIN 17 caractères sans tirets",
-  "model_code": "code modèle ex: DJ7L91",
-  "brand": "Ram|Dodge|Jeep|Chrysler",
-  "model": "2500",
-  "trim": "Tradesman|Express|etc",
-  "year": 2025,
-  "ep_cost": nombre,
-  "pdco": nombre,
-  "msrp": nombre (= pdco),
-  "pref": nombre,
-  "holdback": nombre,
-  "color": "couleur",
-  "options": [{"code": "X", "description": "Y", "amount": 0}]
-}"""
-            ).with_model("openai", "gpt-4o")
-            
-            ai_response = await ai_chat.send_message(UserMessage(
-                text="Analyse cette facture FCA. Applique la règle de décodage des prix. Retourne le JSON.",
-                file_contents=[image_content]
-            ))
-            
-            # Parse AI response
-            json_str = ai_response.strip()
-            if "```" in json_str:
-                parts = json_str.split("```")
-                for part in parts:
-                    if part.strip().startswith("json"):
-                        json_str = part.strip()[4:].strip()
-                        break
-                    elif part.strip().startswith("{"):
-                        json_str = part.strip()
-                        break
-            
-            try:
-                ai_data = json.loads(json_str)
+  "stock_no": "numéro écrit à la main (ex: 46055)",
+  "vin_raw": "VIN tel qu'il apparaît avec tirets (ex: 3C6UR5CL0-TG-240246)",
+  "model_code": "premier code du tableau MODEL/OPT (ex: DJ7L91)",
+  "description": "description du véhicule (ex: Ram 2500 Tradesman)",
+  
+  "ep_raw": "valeur E.P. exacte 8 chiffres (ex: 08431400)",
+  "pdco_raw": "valeur PDCO exacte 8 chiffres (ex: 09167500)", 
+  "pref_raw": "valeur PREF exacte 8 chiffres (ex: 08503900)",
+  
+  "subtotal": nombre (ex: 85014.00),
+  "invoice_total": nombre (ex: 89264.70),
+  
+  "color_code": "code couleur (ex: PW7)",
+  
+  "options": [
+    {"code": "CODE", "description": "description", "amount": montant ou 0}
+  ]
+}
+
+EXTRAIT UNIQUEMENT ce qui est VISIBLE. Ne devine pas."""
+        ).with_model("openai", "gpt-4o")
+        
+        image_content = ImageContent(image_base64=request.image_base64)
+        response = await chat.send_message(UserMessage(
+            text="Extrait les données de cette facture FCA. Retourne les valeurs EXACTEMENT comme elles apparaissent.",
+            file_contents=[image_content]
+        ))
+        
+        # Parse JSON response
+        json_str = response.strip()
+        if "```" in json_str:
+            parts = json_str.split("```")
+            for part in parts:
+                if part.strip().startswith("json"):
+                    json_str = part.strip()[4:].strip()
+                    break
+                elif part.strip().startswith("{"):
+                    json_str = part.strip()
+                    break
+        
+        try:
+            raw_data = json.loads(json_str)
+        except json.JSONDecodeError:
+            json_match = re.search(r'\{[\s\S]*\}', response)
+            if json_match:
+                raw_data = json.loads(json_match.group())
+            else:
+                raise HTTPException(status_code=400, detail="Impossible d'extraire les données JSON")
+        
+        logger.info(f"Raw OCR data: {raw_data}")
+        
+        # DÉCODAGE AUTOMATIQUE
+        vehicle_data = {
+            "stock_no": raw_data.get("stock_no", "").strip(),
+            "options": raw_data.get("options", [])
+        }
+        
+        # 1. Décoder le VIN
+        vin_raw = raw_data.get("vin_raw", "").replace("-", "").replace(" ", "").upper()
+        if len(vin_raw) >= 17:
+            vin_raw = vin_raw[:17]  # Prendre les 17 premiers caractères
+            vehicle_data["vin"] = vin_raw
+            vin_info = decode_vin(vin_raw)
+            if vin_info.get("valid"):
+                vehicle_data["year"] = vin_info.get("year")
+                vehicle_data["brand"] = vin_info.get("manufacturer", "Ram")
+                logger.info(f"VIN decoded: {vin_info}")
+        
+        # 2. Décoder le code modèle
+        model_code = raw_data.get("model_code", "").upper().strip()
+        if model_code:
+            product_info = decode_product_code(model_code)
+            if product_info.get("brand"):
+                vehicle_data["brand"] = product_info["brand"]
+                vehicle_data["model"] = product_info["model"]
+                vehicle_data["trim"] = product_info.get("trim")
+                logger.info(f"Model code {model_code} decoded: {product_info}")
+            else:
+                # Extraire le modèle de la description
+                desc = raw_data.get("description", "")
+                if "2500" in desc:
+                    vehicle_data["model"] = "2500"
+                elif "1500" in desc:
+                    vehicle_data["model"] = "1500"
+                elif "3500" in desc:
+                    vehicle_data["model"] = "3500"
                 
-                # Utiliser les données AI si elles sont plus complètes
-                if ai_data.get("vin") and not vehicle_data.get("vin"):
-                    vehicle_data["vin"] = ai_data["vin"].replace("-", "")
-                if ai_data.get("ep_cost") and not vehicle_data.get("ep_cost"):
-                    vehicle_data["ep_cost"] = ai_data["ep_cost"]
-                if ai_data.get("pdco") and not vehicle_data.get("pdco"):
-                    vehicle_data["pdco"] = ai_data["pdco"]
-                if ai_data.get("pref") and not vehicle_data.get("pref"):
-                    vehicle_data["pref"] = ai_data["pref"]
-                if ai_data.get("stock_no"):
-                    vehicle_data["stock_no"] = ai_data["stock_no"]
-                if ai_data.get("model") and not vehicle_data.get("model"):
-                    vehicle_data["model"] = ai_data["model"]
-                if ai_data.get("trim") and not vehicle_data.get("trim"):
-                    vehicle_data["trim"] = ai_data["trim"]
-                if ai_data.get("color"):
-                    vehicle_data["color"] = ai_data["color"]
-                if ai_data.get("options") and len(ai_data["options"]) > len(vehicle_data.get("options", [])):
-                    vehicle_data["options"] = ai_data["options"]
-                    
-                vehicle_data["parse_method"] = "hybrid_regex_ai"
-                
-            except json.JSONDecodeError:
-                json_match = re.search(r'\{[\s\S]*\}', ai_response)
-                if json_match:
-                    ai_data = json.loads(json_match.group())
-                    vehicle_data.update(ai_data)
-                vehicle_data["parse_method"] = "ai_fallback"
+                # Extraire le trim
+                for trim in ["Tradesman", "Express", "Big Horn", "Laramie", "Limited", "Rebel"]:
+                    if trim.lower() in desc.lower():
+                        vehicle_data["trim"] = trim
+                        break
+        
+        # 3. Décoder les prix FCA (enlever premier 0 et 2 derniers chiffres)
+        ep_raw = raw_data.get("ep_raw", "")
+        pdco_raw = raw_data.get("pdco_raw", "")
+        pref_raw = raw_data.get("pref_raw", "")
+        
+        vehicle_data["ep_cost"] = decode_fca_price(ep_raw) if ep_raw else 0
+        vehicle_data["pdco"] = decode_fca_price(pdco_raw) if pdco_raw else 0
+        vehicle_data["pref"] = decode_fca_price(pref_raw) if pref_raw else 0
+        
+        # PDCO = PDSF = MSRP (règle métier)
+        vehicle_data["msrp"] = vehicle_data["pdco"]
+        
+        logger.info(f"Prices decoded: E.P.={vehicle_data['ep_cost']}, PDCO={vehicle_data['pdco']}, PREF={vehicle_data['pref']}")
+        
+        # 4. Calculer holdback (3% du PDCO) et net_cost
+        if vehicle_data["pdco"]:
+            vehicle_data["holdback"] = round(vehicle_data["pdco"] * 0.03, 2)
         else:
-            vehicle_data["parse_method"] = "structured_regex"
+            vehicle_data["holdback"] = 0
         
-        # ÉTAPE 6: Assurer PDCO = MSRP (règle métier)
-        if vehicle_data.get("pdco") and not vehicle_data.get("msrp"):
-            vehicle_data["msrp"] = vehicle_data["pdco"]
-        elif vehicle_data.get("msrp") and not vehicle_data.get("pdco"):
-            vehicle_data["pdco"] = vehicle_data["msrp"]
+        if vehicle_data["ep_cost"]:
+            vehicle_data["net_cost"] = round(vehicle_data["ep_cost"] - vehicle_data["holdback"], 2)
+        else:
+            vehicle_data["net_cost"] = 0
         
-        # ÉTAPE 7: Calculer holdback et net_cost
-        ep_cost = vehicle_data.get("ep_cost", 0) or 0
-        pdco = vehicle_data.get("pdco", 0) or 0
-        holdback = vehicle_data.get("holdback", 0) or 0
+        # 5. Décoder la couleur
+        color_code = raw_data.get("color_code", "").upper()
+        color_map = {
+            "PW7": "Blanc Vif",
+            "PXJ": "Noir Cristal Nacré",
+            "PX8": "Noir Diamant",
+            "PAU": "Rouge Flamme",
+            "PSC": "Gris Destroyer",
+            "PWL": "Blanc Perle Tricouche",
+            "PGG": "Gris Granit Cristal",
+            "PBF": "Bleu Patriote Nacré",
+            "PR4": "Rouge Flamme",
+            "PW1": "Blanc Éclatant"
+        }
+        vehicle_data["color"] = color_map.get(color_code, color_code)
         
-        if not holdback and pdco:
-            holdback = round(pdco * 0.03, 2)
-            vehicle_data["holdback"] = holdback
+        # Ajouter subtotal et total
+        vehicle_data["subtotal"] = raw_data.get("subtotal", 0)
+        vehicle_data["invoice_total"] = raw_data.get("invoice_total", 0)
+        vehicle_data["parse_method"] = "ai_with_decoding"
         
-        vehicle_data["net_cost"] = round(ep_cost - holdback, 2) if ep_cost else 0
-        vehicle_data["parse_confidence"] = parse_confidence
-        
-        # Nettoyer les champs None
-        vehicle_data = {k: v for k, v in vehicle_data.items() if v is not None}
+        # Nettoyer les valeurs None et vides
+        vehicle_data = {k: v for k, v in vehicle_data.items() if v is not None and v != ""}
         
         return {
             "success": True,
