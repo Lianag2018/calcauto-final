@@ -164,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isLoading,
       isAuthenticated: !!user,
+      isAdmin: user?.is_admin || false,
       login,
       register,
       logout,
