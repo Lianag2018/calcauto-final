@@ -3701,6 +3701,9 @@ async def scan_and_save_invoice(request: InvoiceScanRequest, authorization: Opti
     
     vehicle_data = scan_result.get("vehicle", {})
     
+    # ENRICHIR avec décodage VIN et codes produits
+    vehicle_data = enrich_vehicle_data(vehicle_data)
+    
     # Check if stock_no already exists
     stock_no = vehicle_data.get("stock_no", "")
     if not stock_no:
