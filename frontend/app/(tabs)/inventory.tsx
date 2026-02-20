@@ -205,6 +205,71 @@ export default function InventoryScreen() {
     }
   };
 
+  // Invoice scanning functions
+  const pickImage = async (useCamera: boolean) => {
+    try {
+      let result;
+      
+      if (useCamera) {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Platform.OS === 'web'
+            ? alert('Permission caméra requise')
+            : Alert.alert('Erreur', 'Permission caméra requise');
+          return;
+        }
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          quality: 0.8,
+          base64: true,
+        });
+      } else {
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          quality: 0.8,
+          base64: true,
+        });
+      }
+
+      if (!result.canceled && result.assets[0].base64) {
+        await scanInvoice(result.assets[0].base64);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Platform.OS === 'web'
+        ? alert('Erreur lors de la sélection de l\'image')
+        : Alert.alert('Erreur', 'Erreur lors de la sélection de l\'image');
+    }
+  };
+
+  const scanInvoice = async (base64Image: string) => {
+    setScanning(true);
+    setScannedData(null);
+    
+    try {
+      const token = await getToken();
+      const response = await axios.post(
+        `${API_URL}/api/inventory/scan-and-save`,
+        { image_base64: base64Image },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        setScannedData(response.data);
+        fetchData(); // Refresh inventory
+        Platform.OS === 'web'
+          ? alert(`${response.data.message}`)
+          : Alert.alert('Succès', response.data.message);
+      }
+    } catch (error: any) {
+      const msg = error.response?.data?.detail || 'Erreur lors du scan';
+      console.error('Scan error:', error);
+      Platform.OS === 'web' ? alert(msg) : Alert.alert('Erreur', msg);
+    } finally {
+      setScanning(false);
+    }
+  };
+
   const handleDelete = async (stockNo: string) => {
     const confirm = Platform.OS === 'web'
       ? window.confirm(`Supprimer le véhicule ${stockNo}?`)
