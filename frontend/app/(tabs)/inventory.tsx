@@ -635,6 +635,107 @@ export default function InventoryScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Scan Invoice Modal */}
+      <Modal visible={showScanModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.scanModalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>📸 Scanner une facture</Text>
+              <TouchableOpacity onPress={() => { setShowScanModal(false); setScannedData(null); }}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            {scanning ? (
+              <View style={styles.scanningContainer}>
+                <ActivityIndicator size="large" color="#4ECDC4" />
+                <Text style={styles.scanningText}>Analyse de la facture en cours...</Text>
+                <Text style={styles.scanningSubtext}>L'IA extrait les données du véhicule</Text>
+              </View>
+            ) : scannedData ? (
+              <ScrollView style={styles.scannedDataContainer}>
+                <View style={styles.successBanner}>
+                  <Ionicons name="checkmark-circle" size={24} color="#4ECDC4" />
+                  <Text style={styles.successText}>{scannedData.message}</Text>
+                </View>
+                
+                <View style={styles.scannedVehicle}>
+                  <Text style={styles.scannedTitle}>
+                    {scannedData.vehicle?.year} {scannedData.vehicle?.brand} {scannedData.vehicle?.model}
+                  </Text>
+                  {scannedData.vehicle?.trim && (
+                    <Text style={styles.scannedTrim}>{scannedData.vehicle.trim}</Text>
+                  )}
+                  <Text style={styles.scannedStock}>Stock #{scannedData.vehicle?.stock_no}</Text>
+                  
+                  <View style={styles.scannedPrices}>
+                    <View style={styles.scannedPriceItem}>
+                      <Text style={styles.scannedPriceLabel}>EP Cost</Text>
+                      <Text style={styles.scannedPriceValue}>{formatPrice(scannedData.vehicle?.ep_cost || 0)}</Text>
+                    </View>
+                    <View style={styles.scannedPriceItem}>
+                      <Text style={styles.scannedPriceLabel}>Holdback</Text>
+                      <Text style={styles.scannedPriceValue}>{formatPrice(scannedData.vehicle?.holdback || 0)}</Text>
+                    </View>
+                    <View style={styles.scannedPriceItem}>
+                      <Text style={styles.scannedPriceLabel}>Net Cost</Text>
+                      <Text style={[styles.scannedPriceValue, { color: '#4ECDC4' }]}>{formatPrice(scannedData.vehicle?.net_cost || 0)}</Text>
+                    </View>
+                  </View>
+                  
+                  {scannedData.options_count > 0 && (
+                    <Text style={styles.optionsCount}>{scannedData.options_count} options extraites</Text>
+                  )}
+                </View>
+
+                <TouchableOpacity 
+                  style={styles.scanAgainBtn}
+                  onPress={() => setScannedData(null)}
+                >
+                  <Ionicons name="camera" size={20} color="#4ECDC4" />
+                  <Text style={styles.scanAgainText}>Scanner une autre facture</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            ) : (
+              <View style={styles.scanOptionsContainer}>
+                <Text style={styles.scanInstructions}>
+                  Prenez une photo de votre facture FCA ou importez une image existante.
+                </Text>
+                
+                <TouchableOpacity style={styles.scanOptionBtn} onPress={() => pickImage(true)}>
+                  <View style={styles.scanOptionIcon}>
+                    <Ionicons name="camera" size={32} color="#4ECDC4" />
+                  </View>
+                  <View style={styles.scanOptionText}>
+                    <Text style={styles.scanOptionTitle}>Prendre une photo</Text>
+                    <Text style={styles.scanOptionDesc}>Utilisez l'appareil photo</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={24} color="#666" />
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.scanOptionBtn} onPress={() => pickImage(false)}>
+                  <View style={styles.scanOptionIcon}>
+                    <Ionicons name="images" size={32} color="#4ECDC4" />
+                  </View>
+                  <View style={styles.scanOptionText}>
+                    <Text style={styles.scanOptionTitle}>Importer une image</Text>
+                    <Text style={styles.scanOptionDesc}>Depuis la galerie ou les fichiers</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={24} color="#666" />
+                </TouchableOpacity>
+
+                <View style={styles.scanTips}>
+                  <Text style={styles.scanTipsTitle}>💡 Conseils pour un meilleur scan:</Text>
+                  <Text style={styles.scanTip}>• Photo bien éclairée</Text>
+                  <Text style={styles.scanTip}>• Toute la facture visible</Text>
+                  <Text style={styles.scanTip}>• Image nette et stable</Text>
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
