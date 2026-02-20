@@ -2986,5 +2986,80 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1a1a2e',
   },
+  // Inventory styles
+  inventorySubtitle: {
+    fontSize: 13,
+    color: '#888',
+    marginBottom: 12,
+  },
+  inventoryScroll: {
+    marginHorizontal: -8,
+  },
+  inventoryCard: {
+    backgroundColor: '#2d2d44',
+    borderRadius: 12,
+    padding: 14,
+    marginHorizontal: 6,
+    minWidth: 160,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  inventoryCardSelected: {
+    borderColor: '#4ECDC4',
+    backgroundColor: '#3d3d54',
+  },
+  inventoryStock: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#4ECDC4',
+    marginBottom: 4,
+  },
+  inventoryModel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  inventoryTrim: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 6,
+  },
+  inventoryPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFB347',
+  },
+  inventoryProfit: {
+    fontSize: 11,
+    color: '#4ECDC4',
+    marginTop: 4,
+  },
+  noInventoryText: {
+    color: '#888',
+    fontStyle: 'italic',
+    padding: 16,
+  },
+  selectedInventoryBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#4ECDC4',
+  },
+  selectedInventoryInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 8,
+  },
+  selectedInventoryText: {
+    fontSize: 13,
+    color: '#4ECDC4',
+    flex: 1,
+  },
 });
 // Last update: Thu Feb 19 19:47:53 UTC 2026
