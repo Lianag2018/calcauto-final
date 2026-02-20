@@ -418,6 +418,11 @@ export default function HomeScreen() {
   const [selectedTerm, setSelectedTerm] = useState<number>(72);
   const availableTerms = [36, 48, 60, 72, 84, 96];
   
+  // Inventory selection for calculator
+  const [inventoryList, setInventoryList] = useState<any[]>([]);
+  const [selectedInventory, setSelectedInventory] = useState<any>(null);
+  const [showInventoryPicker, setShowInventoryPicker] = useState(false);
+  
   // Payment frequency
   const [paymentFrequency, setPaymentFrequency] = useState<'monthly' | 'biweekly' | 'weekly'>('monthly');
   
