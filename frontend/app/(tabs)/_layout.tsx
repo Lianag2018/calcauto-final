@@ -26,7 +26,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: '#4ECDC4',
         tabBarInactiveTintColor: '#888',
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: '600',
           marginTop: 4,
         },
@@ -38,18 +38,27 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Calculateur',
+          title: 'Calcul',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calculator" size={24} color={color} />
+            <Ionicons name="calculator" size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="inventory"
+        options={{
+          title: 'Inventaire',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="car-sport" size={22} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="clients"
         options={{
-          title: 'Clients',
+          title: 'CRM',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people" size={24} color={color} />
+            <Ionicons name="people" size={22} color={color} />
           ),
         }}
       />
@@ -58,9 +67,9 @@ export default function TabsLayout() {
         options={{
           title: 'Admin',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="shield-checkmark" size={24} color={color} />
+            <Ionicons name="shield-checkmark" size={22} color={color} />
           ),
-          href: isAdmin ? '/admin' : null, // Hide tab if not admin
+          href: isAdmin ? '/admin' : null,
         }}
       />
     </Tabs>
