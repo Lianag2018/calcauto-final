@@ -3428,6 +3428,23 @@ def decode_fca_price(raw_value: str) -> float:
             return 0
     return 0
 
+def decode_fca_holdback(raw_value: str) -> float:
+    """Décode un holdback FCA: 6 chiffres, enlever le premier 0
+    Exemple: 050000 → 5000
+    """
+    # Remove any non-numeric characters
+    cleaned = re.sub(r'[^\d]', '', str(raw_value))
+    
+    if len(cleaned) >= 4:
+        # Remove first 0 if present
+        if cleaned.startswith('0'):
+            cleaned = cleaned[1:]
+        try:
+            return float(cleaned)
+        except:
+            return 0
+    return 0
+
 def parse_fca_invoice_text(text: str) -> dict:
     """Parser automatique pour factures FCA Canada - Format standard
     
