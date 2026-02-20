@@ -32,10 +32,17 @@ import enTranslations from '../../locales/en.json';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 
-  (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app') 
-    ? 'https://calcauto-aipro.onrender.com' 
-    : 'http://localhost:8001');
+// Force the production backend URL for Vercel deployments (evaluated at runtime)
+const getApiUrl = (): string => {
+  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+    return 'https://calcauto-aipro.onrender.com';
+  }
+  if (process.env.EXPO_PUBLIC_BACKEND_URL) {
+    return process.env.EXPO_PUBLIC_BACKEND_URL;
+  }
+  return 'http://localhost:8001';
+};
+const API_URL = getApiUrl();
 const SUBMISSIONS_KEY = 'calcauto_submissions';
 
 // ============ Loading Animation Component ============
