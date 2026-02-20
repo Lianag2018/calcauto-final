@@ -1046,10 +1046,77 @@ export default function HomeScreen() {
             )}
           </View>
 
+          {/* Inventory Selection - Filtered by selected brand */}
+          {selectedProgram && inventoryList.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>
+                {lang === 'fr' ? '📦 Inventaire disponible' : '📦 Available Inventory'}
+              </Text>
+              <Text style={styles.inventorySubtitle}>
+                {lang === 'fr' 
+                  ? `Véhicules ${selectedProgram.brand} en stock`
+                  : `${selectedProgram.brand} vehicles in stock`}
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.inventoryScroll}>
+                {inventoryList
+                  .filter(v => v.brand?.toLowerCase() === selectedProgram.brand?.toLowerCase())
+                  .map((vehicle) => (
+                    <TouchableOpacity
+                      key={vehicle.id}
+                      style={[
+                        styles.inventoryCard,
+                        selectedInventory?.id === vehicle.id && styles.inventoryCardSelected
+                      ]}
+                      onPress={() => {
+                        setSelectedInventory(vehicle);
+                        setVehiclePrice(String(vehicle.asking_price || vehicle.msrp || ''));
+                      }}
+                    >
+                      <Text style={styles.inventoryStock}>#{vehicle.stock_no}</Text>
+                      <Text style={styles.inventoryModel}>
+                        {vehicle.year} {vehicle.model}
+                      </Text>
+                      <Text style={styles.inventoryTrim}>{vehicle.trim}</Text>
+                      <Text style={styles.inventoryPrice}>
+                        {formatCurrency(vehicle.asking_price || vehicle.msrp)}
+                      </Text>
+                      {vehicle.net_cost && (
+                        <Text style={styles.inventoryProfit}>
+                          Profit: {formatCurrency((vehicle.asking_price || vehicle.msrp) - vehicle.net_cost)}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                {inventoryList.filter(v => v.brand?.toLowerCase() === selectedProgram.brand?.toLowerCase()).length === 0 && (
+                  <Text style={styles.noInventoryText}>
+                    {lang === 'fr' 
+                      ? `Aucun véhicule ${selectedProgram.brand} en inventaire`
+                      : `No ${selectedProgram.brand} vehicles in inventory`}
+                  </Text>
+                )}
+              </ScrollView>
+            </View>
+          )}
+
           {/* Price Input and Calculation */}
           {selectedProgram && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{t.vehicle.vehiclePrice}</Text>
+              
+              {/* Selected inventory info */}
+              {selectedInventory && (
+                <View style={styles.selectedInventoryBanner}>
+                  <View style={styles.selectedInventoryInfo}>
+                    <Ionicons name="car-sport" size={20} color="#4ECDC4" />
+                    <Text style={styles.selectedInventoryText}>
+                      Stock #{selectedInventory.stock_no} - {selectedInventory.year} {selectedInventory.brand} {selectedInventory.model} {selectedInventory.trim}
+                    </Text>
+                  </View>
+                  <TouchableOpacity onPress={() => { setSelectedInventory(null); setVehiclePrice(''); }}>
+                    <Ionicons name="close-circle" size={22} color="#FF6B6B" />
+                  </TouchableOpacity>
+                </View>
+              )}
               
               {/* Prix du véhicule */}
               <View style={styles.inputRow}>
