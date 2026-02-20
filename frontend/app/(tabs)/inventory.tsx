@@ -817,6 +817,245 @@ export default function InventoryScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Review/Edit Modal - Révision des données scannées */}
+      <Modal visible={showReviewModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>📝 Vérifier et corriger</Text>
+              <TouchableOpacity onPress={() => { setShowReviewModal(false); setReviewData(null); }}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            {reviewData && (
+              <ScrollView style={styles.formScroll}>
+                <View style={styles.reviewBanner}>
+                  <Ionicons name="information-circle" size={20} color="#FFB347" />
+                  <Text style={styles.reviewBannerText}>
+                    Vérifiez les données extraites et corrigez si nécessaire
+                  </Text>
+                </View>
+
+                <View style={styles.formRow}>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Stock # *</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      value={reviewData.stock_no?.toString()}
+                      onChangeText={(v) => updateReviewField('stock_no', v)}
+                      placeholder="46093"
+                      placeholderTextColor="#666"
+                    />
+                  </View>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>VIN</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      value={reviewData.vin}
+                      onChangeText={(v) => updateReviewField('vin', v)}
+                      placeholder="3C6UR5CL..."
+                      placeholderTextColor="#666"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.formRow}>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Marque *</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      value={reviewData.brand}
+                      onChangeText={(v) => updateReviewField('brand', v)}
+                      placeholder="Ram"
+                      placeholderTextColor="#666"
+                    />
+                  </View>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Modèle *</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      value={reviewData.model}
+                      onChangeText={(v) => updateReviewField('model', v)}
+                      placeholder="2500 Express"
+                      placeholderTextColor="#666"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.formRow}>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Trim</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      value={reviewData.trim}
+                      onChangeText={(v) => updateReviewField('trim', v)}
+                      placeholder="Crew Cab 4x4"
+                      placeholderTextColor="#666"
+                    />
+                  </View>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Année</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      value={reviewData.year?.toString()}
+                      onChangeText={(v) => updateReviewField('year', v)}
+                      keyboardType="numeric"
+                      placeholder="2025"
+                      placeholderTextColor="#666"
+                    />
+                  </View>
+                </View>
+
+                <Text style={styles.sectionTitle}>💰 Coûts (modifiables)</Text>
+
+                <View style={styles.formRow}>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>E.P. (Coût réel) $</Text>
+                    <TextInput
+                      style={[styles.formInput, styles.costInput]}
+                      value={reviewData.ep_cost?.toString()}
+                      onChangeText={(v) => updateReviewField('ep_cost', v)}
+                      keyboardType="numeric"
+                      placeholder="86630"
+                      placeholderTextColor="#666"
+                    />
+                  </View>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>PDCO (Prix dealer) $</Text>
+                    <TextInput
+                      style={[styles.formInput, styles.costInput]}
+                      value={reviewData.pdco?.toString()}
+                      onChangeText={(v) => updateReviewField('pdco', v)}
+                      keyboardType="numeric"
+                      placeholder="94305"
+                      placeholderTextColor="#666"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.formRow}>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Holdback $</Text>
+                    <TextInput
+                      style={[styles.formInput, styles.costInput]}
+                      value={reviewData.holdback?.toString()}
+                      onChangeText={(v) => updateReviewField('holdback', v)}
+                      keyboardType="numeric"
+                      placeholder="2829"
+                      placeholderTextColor="#666"
+                    />
+                  </View>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Coût Net (E.P. - Holdback)</Text>
+                    <View style={styles.calculatedField}>
+                      <Text style={styles.calculatedValue}>
+                        {formatPrice((parseFloat(reviewData.ep_cost) || 0) - (parseFloat(reviewData.holdback) || 0))}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                <Text style={styles.sectionTitle}>🏷️ Prix de vente</Text>
+
+                <View style={styles.formRow}>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>PDSF $</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      value={reviewData.msrp?.toString()}
+                      onChangeText={(v) => updateReviewField('msrp', v)}
+                      keyboardType="numeric"
+                      placeholder="99500"
+                      placeholderTextColor="#666"
+                    />
+                  </View>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Prix affiché $</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      value={reviewData.asking_price?.toString()}
+                      onChangeText={(v) => updateReviewField('asking_price', v)}
+                      keyboardType="numeric"
+                      placeholder="95995"
+                      placeholderTextColor="#666"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.formRow}>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Couleur</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      value={reviewData.color}
+                      onChangeText={(v) => updateReviewField('color', v)}
+                      placeholder="Noir cristal"
+                      placeholderTextColor="#666"
+                    />
+                  </View>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Type</Text>
+                    <View style={styles.typeSelector}>
+                      <TouchableOpacity
+                        style={[styles.typeBtn, reviewData.type === 'neuf' && styles.typeBtnActive]}
+                        onPress={() => updateReviewField('type', 'neuf')}
+                      >
+                        <Text style={[styles.typeBtnText, reviewData.type === 'neuf' && styles.typeBtnTextActive]}>Neuf</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.typeBtn, reviewData.type === 'occasion' && styles.typeBtnActive]}
+                        onPress={() => updateReviewField('type', 'occasion')}
+                      >
+                        <Text style={[styles.typeBtnText, reviewData.type === 'occasion' && styles.typeBtnTextActive]}>Occasion</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+
+                {reviewData.options && reviewData.options.length > 0 && (
+                  <>
+                    <Text style={styles.sectionTitle}>📦 Options extraites ({reviewData.options.length})</Text>
+                    <View style={styles.optionsList}>
+                      {reviewData.options.slice(0, 5).map((opt: any, idx: number) => (
+                        <View key={idx} style={styles.optionItem}>
+                          <Text style={styles.optionCode}>{opt.code}</Text>
+                          <Text style={styles.optionDesc} numberOfLines={1}>{opt.description}</Text>
+                          <Text style={styles.optionAmount}>{opt.amount ? formatPrice(opt.amount) : '-'}</Text>
+                        </View>
+                      ))}
+                      {reviewData.options.length > 5 && (
+                        <Text style={styles.moreOptions}>+ {reviewData.options.length - 5} autres options</Text>
+                      )}
+                    </View>
+                  </>
+                )}
+
+                <View style={styles.reviewActions}>
+                  <TouchableOpacity 
+                    style={styles.cancelBtn} 
+                    onPress={() => { setShowReviewModal(false); setReviewData(null); }}
+                  >
+                    <Text style={styles.cancelBtnText}>Annuler</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.submitBtn, saving && styles.submitBtnDisabled]} 
+                    onPress={saveReviewedVehicle}
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <ActivityIndicator size="small" color="#1a1a2e" />
+                    ) : (
+                      <Text style={styles.submitBtnText}>✓ Confirmer et ajouter</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
