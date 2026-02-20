@@ -394,6 +394,19 @@ async def login_user(credentials: UserLogin):
     if not user:
         raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect")
     
+    # Check if user is blocked
+    if user.get("is_blocked", False):
+        raise HTTPException(status_code=403, detail="Votre compte a été désactivé. Contactez l'administrateur.")
+    
+    # Update last_login
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"last_login": datetime.utcnow()}}
+    )
+    
+    # Check if user should be admin
+    is_admin = user.get("is_admin", False) or user["email"] == ADMIN_EMAIL
+    
     # Generate token
     token = generate_token()
     await db.tokens.insert_one({
@@ -407,7 +420,8 @@ async def login_user(credentials: UserLogin):
         "user": {
             "id": user["id"],
             "name": user["name"],
-            "email": user["email"]
+            "email": user["email"],
+            "is_admin": is_admin
         },
         "token": token
     }
