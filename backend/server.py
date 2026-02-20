@@ -3429,9 +3429,9 @@ def decode_fca_price(raw_value: str) -> float:
     return 0
 
 def decode_fca_holdback(raw_value: str) -> float:
-    """Décode un holdback FCA (6 chiffres)
-    Format: 0XXXXX où XXXX est le montant x10
-    Exemple: 050000 → enlever premier 0 → 50000 → diviser par 10 → 5000$
+    """Décode un holdback FCA - même règle que les prix
+    Enlever premier 0 + deux derniers chiffres
+    Exemple: 050000 → 50000 → 500 → 500$
     """
     # Remove any non-numeric characters
     cleaned = re.sub(r'[^\d]', '', str(raw_value))
@@ -3440,10 +3440,11 @@ def decode_fca_holdback(raw_value: str) -> float:
         # Remove first 0 if present
         if cleaned.startswith('0'):
             cleaned = cleaned[1:]
-        # Diviser par 10 (le dernier chiffre est décimal)
+        # Remove last 2 digits
+        if len(cleaned) >= 2:
+            cleaned = cleaned[:-2]
         try:
-            value = float(cleaned) / 10
-            return value
+            return float(cleaned)
         except:
             return 0
     return 0
