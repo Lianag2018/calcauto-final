@@ -3118,6 +3118,278 @@ async def add_product_code(code: ProductCode, authorization: Optional[str] = Hea
 import re
 import base64
 
+# ============ VIN Decoder ============
+
+def decode_vin(vin: str) -> dict:
+    """Décode un VIN et extrait les informations du véhicule
+    
+    Structure VIN (17 caractères):
+    - Position 1-3: WMI (World Manufacturer Identifier)
+    - Position 4-8: VDS (Vehicle Descriptor Section)
+    - Position 9: Check digit
+    - Position 10: Model year
+    - Position 11: Plant code
+    - Position 12-17: Serial number
+    """
+    result = {
+        "vin": vin,
+        "valid": False,
+        "year": None,
+        "manufacturer": None,
+        "plant": None,
+        "serial": None
+    }
+    
+    # Clean VIN
+    vin = vin.upper().replace("-", "").replace(" ", "")
+    
+    if len(vin) != 17:
+        return result
+    
+    result["valid"] = True
+    result["vin"] = vin
+    
+    # Position 10: Model Year (1980-2039 cycle)
+    year_codes = {
+        'A': 2010, 'B': 2011, 'C': 2012, 'D': 2013, 'E': 2014,
+        'F': 2015, 'G': 2016, 'H': 2017, 'J': 2018, 'K': 2019,
+        'L': 2020, 'M': 2021, 'N': 2022, 'P': 2023, 'R': 2024,
+        'S': 2025, 'T': 2026, 'V': 2027, 'W': 2028, 'X': 2029,
+        'Y': 2030, '1': 2031, '2': 2032, '3': 2033, '4': 2034,
+        '5': 2035, '6': 2036, '7': 2037, '8': 2038, '9': 2039
+    }
+    year_char = vin[9]
+    result["year"] = year_codes.get(year_char)
+    
+    # WMI (positions 1-3): Manufacturer
+    wmi = vin[0:3]
+    wmi_manufacturers = {
+        # Ram / Chrysler
+        "3C6": {"manufacturer": "Ram", "country": "Mexico (Toluca)"},
+        "3C4": {"manufacturer": "Chrysler", "country": "Mexico"},
+        "3C3": {"manufacturer": "Chrysler", "country": "Mexico"},
+        "1C4": {"manufacturer": "Chrysler", "country": "USA"},
+        "1C6": {"manufacturer": "Ram", "country": "USA"},
+        "2C3": {"manufacturer": "Chrysler", "country": "Canada"},
+        # Dodge
+        "1B3": {"manufacturer": "Dodge", "country": "USA"},
+        "2B3": {"manufacturer": "Dodge", "country": "Canada"},
+        "3D4": {"manufacturer": "Dodge", "country": "Mexico"},
+        # Jeep
+        "1C4": {"manufacturer": "Jeep", "country": "USA"},
+        "1J4": {"manufacturer": "Jeep", "country": "USA"},
+        "1J8": {"manufacturer": "Jeep", "country": "USA"},
+        # Fiat
+        "3FA": {"manufacturer": "Fiat", "country": "Mexico"},
+        "ZFA": {"manufacturer": "Fiat", "country": "Italy"},
+    }
+    
+    if wmi in wmi_manufacturers:
+        result["manufacturer"] = wmi_manufacturers[wmi]["manufacturer"]
+        result["country"] = wmi_manufacturers[wmi]["country"]
+    
+    # Position 11: Plant code
+    result["plant"] = vin[10]
+    
+    # Positions 12-17: Serial number
+    result["serial"] = vin[11:17]
+    
+    return result
+
+# ============ FCA Product Code Database ============
+
+# Base de données des codes produits FCA/Stellantis
+# Format: CODE -> {brand, model, trim, body, description}
+FCA_PRODUCT_CODES = {
+    # Ram 2500 Series (DJ = Heavy Duty 2500)
+    "DJ7L91": {"brand": "Ram", "model": "2500", "trim": "Tradesman", "body": "Crew Cab 4x4 6'4\" Box", "description": "Ram 2500 Tradesman Crew Cab 4x4"},
+    "DJ7L92": {"brand": "Ram", "model": "2500", "trim": "Big Horn", "body": "Crew Cab 4x4 6'4\" Box", "description": "Ram 2500 Big Horn Crew Cab 4x4"},
+    "DJ7L94": {"brand": "Ram", "model": "2500", "trim": "Laramie", "body": "Crew Cab 4x4 6'4\" Box", "description": "Ram 2500 Laramie Crew Cab 4x4"},
+    "DJ7L96": {"brand": "Ram", "model": "2500", "trim": "Limited", "body": "Crew Cab 4x4 6'4\" Box", "description": "Ram 2500 Limited Crew Cab 4x4"},
+    "DJ7L98": {"brand": "Ram", "model": "2500", "trim": "Power Wagon", "body": "Crew Cab 4x4 6'4\" Box", "description": "Ram 2500 Power Wagon Crew Cab 4x4"},
+    
+    # Ram 1500 Series (DS/DT = 1500)
+    "DT6L91": {"brand": "Ram", "model": "1500", "trim": "Tradesman", "body": "Crew Cab 4x4 5'7\" Box", "description": "Ram 1500 Tradesman Crew Cab 4x4"},
+    "DT6L92": {"brand": "Ram", "model": "1500", "trim": "Big Horn", "body": "Crew Cab 4x4 5'7\" Box", "description": "Ram 1500 Big Horn Crew Cab 4x4"},
+    "DT6H92": {"brand": "Ram", "model": "1500", "trim": "Big Horn", "body": "Quad Cab 4x4 6'4\" Box", "description": "Ram 1500 Big Horn Quad Cab 4x4"},
+    "DT6L94": {"brand": "Ram", "model": "1500", "trim": "Laramie", "body": "Crew Cab 4x4 5'7\" Box", "description": "Ram 1500 Laramie Crew Cab 4x4"},
+    "DT6L96": {"brand": "Ram", "model": "1500", "trim": "Limited", "body": "Crew Cab 4x4 5'7\" Box", "description": "Ram 1500 Limited Crew Cab 4x4"},
+    "DT6L97": {"brand": "Ram", "model": "1500", "trim": "Rebel", "body": "Crew Cab 4x4 5'7\" Box", "description": "Ram 1500 Rebel Crew Cab 4x4"},
+    "DT6L99": {"brand": "Ram", "model": "1500", "trim": "TRX", "body": "Crew Cab 4x4 5'7\" Box", "description": "Ram 1500 TRX Crew Cab 4x4"},
+    
+    # Ram 3500 Series (D2 = Heavy Duty 3500)
+    "D2RL91": {"brand": "Ram", "model": "3500", "trim": "Tradesman", "body": "Crew Cab 4x4 6'4\" Box", "description": "Ram 3500 Tradesman Crew Cab 4x4"},
+    "D2RL92": {"brand": "Ram", "model": "3500", "trim": "Big Horn", "body": "Crew Cab 4x4 6'4\" Box", "description": "Ram 3500 Big Horn Crew Cab 4x4"},
+    "D2RL94": {"brand": "Ram", "model": "3500", "trim": "Laramie", "body": "Crew Cab 4x4 6'4\" Box", "description": "Ram 3500 Laramie Crew Cab 4x4"},
+    "D2RL96": {"brand": "Ram", "model": "3500", "trim": "Limited", "body": "Crew Cab 4x4 6'4\" Box", "description": "Ram 3500 Limited Crew Cab 4x4"},
+    
+    # Jeep
+    "JLXL74": {"brand": "Jeep", "model": "Wrangler", "trim": "Rubicon", "body": "4-Door 4x4", "description": "Jeep Wrangler Rubicon Unlimited 4x4"},
+    "JLXL72": {"brand": "Jeep", "model": "Wrangler", "trim": "Sahara", "body": "4-Door 4x4", "description": "Jeep Wrangler Sahara Unlimited 4x4"},
+    "JLXL70": {"brand": "Jeep", "model": "Wrangler", "trim": "Sport", "body": "4-Door 4x4", "description": "Jeep Wrangler Sport Unlimited 4x4"},
+    "WKXL74": {"brand": "Jeep", "model": "Grand Cherokee", "trim": "Summit", "body": "4x4", "description": "Jeep Grand Cherokee Summit 4x4"},
+    "WKXL72": {"brand": "Jeep", "model": "Grand Cherokee", "trim": "Limited", "body": "4x4", "description": "Jeep Grand Cherokee Limited 4x4"},
+    "MPXL74": {"brand": "Jeep", "model": "Compass", "trim": "Limited", "body": "4x4", "description": "Jeep Compass Limited 4x4"},
+    
+    # Dodge
+    "LDXL74": {"brand": "Dodge", "model": "Durango", "trim": "R/T", "body": "AWD", "description": "Dodge Durango R/T AWD"},
+    "LDXL76": {"brand": "Dodge", "model": "Durango", "trim": "SRT", "body": "AWD", "description": "Dodge Durango SRT AWD"},
+    "LAXL74": {"brand": "Dodge", "model": "Charger", "trim": "R/T", "body": "RWD", "description": "Dodge Charger R/T"},
+    "LCXL74": {"brand": "Dodge", "model": "Challenger", "trim": "R/T", "body": "RWD", "description": "Dodge Challenger R/T"},
+    "HNXL74": {"brand": "Dodge", "model": "Hornet", "trim": "R/T", "body": "AWD", "description": "Dodge Hornet R/T AWD"},
+    
+    # Chrysler
+    "RUXL74": {"brand": "Chrysler", "model": "Pacifica", "trim": "Limited", "body": "FWD", "description": "Chrysler Pacifica Limited"},
+    "RUXL78": {"brand": "Chrysler", "model": "Pacifica", "trim": "Pinnacle", "body": "AWD", "description": "Chrysler Pacifica Pinnacle AWD"},
+}
+
+# Codes d'options communes FCA
+FCA_OPTION_CODES = {
+    # Moteurs
+    "ETM": "6.7L Cummins Turbo Diesel I-6",
+    "ETK": "6.7L Cummins High Output Turbo Diesel",
+    "EZH": "6.4L HEMI V8",
+    "ERC": "5.7L HEMI V8 MDS VVT",
+    "ERB": "3.6L Pentastar V6",
+    "EZC": "3.0L EcoDiesel V6",
+    "ESG": "2.0L Turbo I-4 PHEV",
+    
+    # Transmissions
+    "DFM": "8-Speed Automatic TorqueFlite HD",
+    "DFD": "8-Speed Automatic TorqueFlite 8HP75",
+    "DFH": "6-Speed Manual",
+    "DFL": "8-Speed Automatic 8HP95",
+    
+    # Couleurs
+    "PXJ": "Noir Cristal Nacré",
+    "PW7": "Blanc Vif",
+    "PAU": "Rouge Flamme",
+    "PBF": "Bleu Patriote",
+    "PSC": "Gris Destroyer",
+    "PX8": "Noir Diamant",
+    "PWL": "Blanc Perle",
+    "PGG": "Gris Granit",
+    
+    # Options populaires
+    "AHU": "Préparation Remorquage Sellette/Col-de-cygne",
+    "XAC": "Groupe Remorquage Max",
+    "ADA": "Différentiel Arrière Anti-spin",
+    "CLF": "Tapis de Protection Mopar",
+    "LHL": "Commandes Auxiliaires Tableau de Bord",
+    "LNC": "Feux de Gabarit",
+    "MWH": "Doublures Passage de Roue Arrière",
+    "UAQ": "Uconnect 5 NAV 12\" Écran",
+    "RC3": "Radio Uconnect 5 8.4\" Écran",
+    "GWA": "Boîte de Transfert Électronique",
+    "DSA": "Suspension Pneumatique Arrière",
+    
+    # Frais/Taxes
+    "801": "Frais de Transport",
+    "4CP": "Taxe Accise Fédérale Climatiseur",
+    "92HC1": "Cotisation Protection Produit",
+    "92HC2": "Allocation Marketing",
+}
+
+def decode_product_code(code: str) -> dict:
+    """Décode un code produit FCA et retourne les informations du véhicule"""
+    code = code.upper().strip()
+    
+    # Chercher dans la base de données
+    if code in FCA_PRODUCT_CODES:
+        return FCA_PRODUCT_CODES[code]
+    
+    # Essayer de décoder le pattern si pas trouvé
+    result = {
+        "brand": None,
+        "model": None,
+        "trim": None,
+        "body": None,
+        "description": None
+    }
+    
+    # Patterns de préfixes connus
+    if code.startswith("DJ"):
+        result["brand"] = "Ram"
+        result["model"] = "2500"
+    elif code.startswith("DT") or code.startswith("DS"):
+        result["brand"] = "Ram"
+        result["model"] = "1500"
+    elif code.startswith("D2"):
+        result["brand"] = "Ram"
+        result["model"] = "3500"
+    elif code.startswith("JL"):
+        result["brand"] = "Jeep"
+        result["model"] = "Wrangler"
+    elif code.startswith("WK"):
+        result["brand"] = "Jeep"
+        result["model"] = "Grand Cherokee"
+    elif code.startswith("MP"):
+        result["brand"] = "Jeep"
+        result["model"] = "Compass"
+    elif code.startswith("LD"):
+        result["brand"] = "Dodge"
+        result["model"] = "Durango"
+    elif code.startswith("LA"):
+        result["brand"] = "Dodge"
+        result["model"] = "Charger"
+    elif code.startswith("LC"):
+        result["brand"] = "Dodge"
+        result["model"] = "Challenger"
+    elif code.startswith("RU"):
+        result["brand"] = "Chrysler"
+        result["model"] = "Pacifica"
+    
+    return result
+
+def decode_option_code(code: str) -> str:
+    """Retourne la description d'un code d'option FCA"""
+    code = code.upper().strip()
+    return FCA_OPTION_CODES.get(code, None)
+
+def enrich_vehicle_data(vehicle_data: dict) -> dict:
+    """Enrichit les données d'un véhicule avec le décodage VIN et codes produits"""
+    
+    # Décoder le VIN si présent
+    vin = vehicle_data.get("vin", "")
+    if vin and len(vin.replace("-", "")) == 17:
+        vin_info = decode_vin(vin)
+        if vin_info["valid"]:
+            # Mettre à jour l'année si pas déjà définie
+            if not vehicle_data.get("year") and vin_info.get("year"):
+                vehicle_data["year"] = vin_info["year"]
+            # Mettre à jour la marque si pas définie
+            if not vehicle_data.get("brand") and vin_info.get("manufacturer"):
+                vehicle_data["brand"] = vin_info["manufacturer"]
+    
+    # Chercher et décoder le code produit principal (première option ou MODEL/OPT)
+    options = vehicle_data.get("options", [])
+    if options:
+        first_option = options[0]
+        code = first_option.get("code", "")
+        
+        # Vérifier si c'est un code de modèle (pas un code d'option)
+        product_info = decode_product_code(code)
+        if product_info.get("brand"):
+            # C'est un code de véhicule
+            if not vehicle_data.get("brand"):
+                vehicle_data["brand"] = product_info["brand"]
+            if not vehicle_data.get("model"):
+                vehicle_data["model"] = product_info["model"]
+            if not vehicle_data.get("trim"):
+                vehicle_data["trim"] = product_info.get("trim")
+            if product_info.get("description"):
+                first_option["description"] = product_info["description"]
+    
+    # Enrichir les descriptions des options
+    for option in options:
+        code = option.get("code", "")
+        if not option.get("description") or len(option.get("description", "")) < 5:
+            desc = decode_option_code(code)
+            if desc:
+                option["description"] = desc
+    
+    return vehicle_data
+
 def decode_fca_price(raw_value: str) -> float:
     """Décode un prix FCA: enlève le premier 0 et les deux derniers chiffres
     Exemple: 08663000 → 86630
