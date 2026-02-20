@@ -1169,4 +1169,5 @@ const styles = StyleSheet.create({
   cancelBtn: { flex: 1, padding: 16, borderRadius: 10, borderWidth: 1, borderColor: '#666', alignItems: 'center' },
   cancelBtnText: { color: '#888', fontSize: 16, fontWeight: '600' },
   submitBtnDisabled: { opacity: 0.6 },
+  costHint: { fontSize: 10, color: '#FFB347', marginTop: 4, fontStyle: 'italic' },
 });
