@@ -3622,26 +3622,30 @@ IMPORTANT: Extrait les valeurs EXACTEMENT comme elles apparaissent sur la factur
 
 Retourne ce JSON:
 {
-  "stock_no": "numéro écrit à la main (ex: 46055)",
-  "vin_raw": "VIN tel qu'il apparaît avec tirets (ex: 3C6UR5CL0-TG-240246)",
-  "model_code": "premier code du tableau MODEL/OPT (ex: DJ7L91)",
-  "description": "description du véhicule (ex: Ram 2500 Tradesman)",
+  "stock_no": "numéro écrit à la main en bas (ex: 46058)",
+  "vin_raw": "VIN tel qu'il apparaît avec tirets (ex: 1C6PJTAGX-TL-160857)",
+  "model_code": "premier code du tableau MODEL/OPT (ex: JTJL98)",
+  "description": "description du véhicule (ex: Gladiator Willys)",
   
-  "ep_raw": "valeur E.P. exacte 8 chiffres (ex: 08431400)",
-  "pdco_raw": "valeur PDCO exacte 8 chiffres (ex: 09167500)", 
-  "pref_raw": "valeur PREF exacte 8 chiffres (ex: 08503900)",
+  "ep_raw": "valeur E.P. exacte 8 chiffres (ex: 05662000)",
+  "pdco_raw": "valeur PDCO exacte 8 chiffres (ex: 05999500)", 
+  "pref_raw": "valeur PREF exacte 8 chiffres si présent (ex: 05714500)",
+  "holdback_raw": "valeur holdback 6 chiffres si présent en bas à gauche (ex: 050000)",
   
-  "subtotal": nombre (ex: 85014.00),
-  "invoice_total": nombre (ex: 89264.70),
+  "subtotal": nombre du SUB TOTAL EXCLUDING TAXES (ex: 57120.00),
+  "invoice_total": nombre INVOICE TOTAL (ex: 59976.00),
   
-  "color_code": "code couleur (ex: PW7)",
+  "color_code": "code couleur si visible (ex: PGE, PW7)",
   
   "options": [
     {"code": "CODE", "description": "description", "amount": montant ou 0}
   ]
 }
 
-EXTRAIT UNIQUEMENT ce qui est VISIBLE. Ne devine pas."""
+IMPORTANT:
+- Le holdback est souvent écrit en bas à gauche sous forme de 6 chiffres (ex: 050000 = 5000$)
+- Décodage: enlever le premier 0 pour obtenir le montant
+- EXTRAIT UNIQUEMENT ce qui est VISIBLE. Ne devine pas."""
         ).with_model("openai", "gpt-4o")
         
         image_content = ImageContent(image_base64=request.image_base64)
