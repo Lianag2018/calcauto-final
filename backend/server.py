@@ -3113,6 +3113,188 @@ async def add_product_code(code: ProductCode, authorization: Optional[str] = Hea
     )
     return {"success": True, "message": f"Code {code.code} ajouté"}
 
+# ============ Invoice Scanner with AI ============
+
+class InvoiceScanRequest(BaseModel):
+    image_base64: str
+
+@api_router.post("/inventory/scan-invoice")
+async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str] = Header(None)):
+    """Scanne une facture FCA et extrait les données du véhicule"""
+    user = await get_current_user(authorization)
+    
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+        
+        # Get API key
+        api_key = os.environ.get("EMERGENT_LLM_KEY") or os.environ.get("OPENAI_API_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="Clé API non configurée")
+        
+        # Create chat instance with GPT-4 Vision
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"invoice-scan-{uuid.uuid4()}",
+            system_message="""Tu es un expert en analyse de factures de véhicules FCA/Stellantis (Chrysler, Dodge, Jeep, Ram, Fiat).
+            
+Analyse l'image de facture et extrait les informations suivantes en JSON:
+
+{
+  "stock_no": "numéro de stock",
+  "vin": "numéro VIN complet",
+  "brand": "marque (Chrysler, Dodge, Jeep, Ram, Fiat)",
+  "model": "modèle du véhicule",
+  "trim": "version/trim",
+  "year": année (nombre),
+  "type": "neuf",
+  
+  "pdco": prix PDCO en nombre (enlève le premier 0 et les deux derniers chiffres si format 08663000),
+  "ep_cost": prix EP/Employee Price en nombre,
+  "holdback": montant holdback en nombre,
+  "msrp": PDSF/MSRP en nombre,
+  
+  "color": "couleur du véhicule",
+  
+  "options": [
+    {"code": "CODE", "description": "description", "amount": montant}
+  ]
+}
+
+IMPORTANT:
+- Pour décoder les prix FCA: enlève le premier 0 et les deux derniers chiffres
+  Exemple: 08663000 → 86630
+- Retourne UNIQUEMENT le JSON, pas de texte avant ou après
+- Si une information n'est pas trouvée, utilise null ou 0"""
+        ).with_model("openai", "gpt-4o")
+        
+        # Create image content
+        image_content = ImageContent(image_base64=request.image_base64)
+        
+        # Send message with image
+        user_message = UserMessage(
+            text="Analyse cette facture de véhicule et extrait toutes les informations en JSON.",
+            image_contents=[image_content]
+        )
+        
+        response = await chat.send_message(user_message)
+        
+        # Parse the JSON response
+        # Clean the response (remove markdown code blocks if present)
+        json_str = response.strip()
+        if json_str.startswith("```"):
+            json_str = json_str.split("```")[1]
+            if json_str.startswith("json"):
+                json_str = json_str[4:]
+        json_str = json_str.strip()
+        
+        try:
+            vehicle_data = json.loads(json_str)
+        except json.JSONDecodeError:
+            # Try to extract JSON from the response
+            import re
+            json_match = re.search(r'\{[\s\S]*\}', response)
+            if json_match:
+                vehicle_data = json.loads(json_match.group())
+            else:
+                raise HTTPException(status_code=400, detail="Impossible d'extraire les données de la facture")
+        
+        # Calculate net_cost
+        ep_cost = vehicle_data.get("ep_cost", 0) or 0
+        holdback = vehicle_data.get("holdback", 0) or 0
+        net_cost = ep_cost - holdback if ep_cost and holdback else 0
+        vehicle_data["net_cost"] = net_cost
+        
+        return {
+            "success": True,
+            "vehicle": vehicle_data,
+            "message": "Facture analysée avec succès"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error scanning invoice: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur lors de l'analyse: {str(e)}")
+
+@api_router.post("/inventory/scan-and-save")
+async def scan_and_save_invoice(request: InvoiceScanRequest, authorization: Optional[str] = Header(None)):
+    """Scanne une facture ET sauvegarde automatiquement le véhicule"""
+    user = await get_current_user(authorization)
+    
+    # First scan the invoice
+    scan_result = await scan_invoice(request, authorization)
+    
+    if not scan_result.get("success"):
+        return scan_result
+    
+    vehicle_data = scan_result.get("vehicle", {})
+    
+    # Check if stock_no already exists
+    stock_no = vehicle_data.get("stock_no", "")
+    if not stock_no:
+        raise HTTPException(status_code=400, detail="Numéro de stock non trouvé dans la facture")
+    
+    existing = await db.inventory.find_one({"stock_no": stock_no, "owner_id": user["id"]})
+    
+    # Prepare vehicle document
+    vehicle_doc = {
+        "id": str(uuid.uuid4()),
+        "owner_id": user["id"],
+        "stock_no": stock_no,
+        "vin": vehicle_data.get("vin", ""),
+        "brand": vehicle_data.get("brand", ""),
+        "model": vehicle_data.get("model", ""),
+        "trim": vehicle_data.get("trim", ""),
+        "year": vehicle_data.get("year", datetime.now().year),
+        "type": vehicle_data.get("type", "neuf"),
+        "pdco": vehicle_data.get("pdco", 0) or 0,
+        "ep_cost": vehicle_data.get("ep_cost", 0) or 0,
+        "holdback": vehicle_data.get("holdback", 0) or 0,
+        "net_cost": vehicle_data.get("net_cost", 0) or 0,
+        "msrp": vehicle_data.get("msrp", 0) or 0,
+        "asking_price": vehicle_data.get("msrp", 0) or 0,  # Default to MSRP
+        "sold_price": None,
+        "status": "disponible",
+        "km": 0,
+        "color": vehicle_data.get("color", ""),
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    
+    if existing:
+        # Update existing
+        await db.inventory.update_one(
+            {"stock_no": stock_no, "owner_id": user["id"]},
+            {"$set": vehicle_doc}
+        )
+        action = "mis à jour"
+    else:
+        # Insert new
+        await db.inventory.insert_one(vehicle_doc)
+        action = "ajouté"
+    
+    # Save options if present
+    options = vehicle_data.get("options", [])
+    if options:
+        # Delete existing options
+        await db.vehicle_options.delete_many({"stock_no": stock_no})
+        # Insert new options
+        for idx, opt in enumerate(options):
+            await db.vehicle_options.insert_one({
+                "id": str(uuid.uuid4()),
+                "stock_no": stock_no,
+                "product_code": opt.get("code", ""),
+                "order": idx,
+                "description": opt.get("description", ""),
+                "amount": opt.get("amount", 0) or 0
+            })
+    
+    return {
+        "success": True,
+        "vehicle": vehicle_doc,
+        "options_count": len(options),
+        "action": action,
+        "message": f"Véhicule {stock_no} {action} avec {len(options)} options"
+    }
+
 # ============ Admin Endpoints ============
 
 class AdminUserResponse(BaseModel):
