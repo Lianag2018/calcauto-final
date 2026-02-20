@@ -496,6 +496,19 @@ export default function HomeScreen() {
         console.log('Could not load periods');
       }
       
+      // Load inventory
+      try {
+        const token = await getToken();
+        if (token) {
+          const invRes = await axios.get(`${API_URL}/api/inventory`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setInventoryList(invRes.data.filter((v: any) => v.status === 'disponible'));
+        }
+      } catch (e) {
+        console.log('Could not load inventory');
+      }
+      
       // Build URL with optional month/year params
       let url = `${API_URL}/api/programs`;
       if (month && year) {
