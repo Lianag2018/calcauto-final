@@ -1,105 +1,77 @@
-<analysis>
-<original_problem_statement>
+<analysis>**original_problem_statement:**
 The user wants to continue developing a mobile application for iOS and Android named CalcAuto AiPro, which functions as a comprehensive vehicle financing calculator.
 
-The initial goal was to fix a backend crash related to the Better Offers feature. During the session, several new critical requirements and bugs emerged:
+The initial scope was to fix backend crashes and deploy the application. This has since expanded to include several critical features requested by the user during the development process.
 
 **PRODUCT REQUIREMENTS:**
-*   **Data Isolation (Multi-Tenancy):** Each user must only have access to their own contacts, submissions, and offers. Data should not be shared between users.
-*   **Save Submissions to Server:** When a user sends a calculation via email from the calculator, the submission must be saved to the server's database, linked to their account, and appear in their CRM history.
-*   **Smart Contact Management (Upsert):** When saving a submission, the system should check if the client (by name, email, or phone) already exists. If so, it should update the existing contact's information. If not, it should create a new contact.
-*   **Visible Feedback:** The user should receive a visible notification (e.g., an alert) confirming whether a contact was created or updated after sending a submission.
-*   **Logout Functionality:** A clear and accessible logout button should be available within the application.
-*   **Production Deployment:** The entire application (frontend, backend, database) should be deployed to a live, production-ready environment (the user chose Render for the backend and Vercel for the frontend).
-*   **Data Accuracy:** Correct any data discrepancies, such as the Bonus Cash 3000 issue reported by the user.
-*   **UI Regressions:** Fix any UI regressions that occur, such as the disappearing period selector arrow.
-*   **New App Icon:** Replace the default Vercel icon with a custom, professional icon for the application.
+*   **Data Isolation (Multi-Tenancy):** Each user must only have access to their own data (contacts, submissions, etc.). (Completed)
+*   **Save Submissions to Server:** Calculator submissions must be saved to the user's account. (Completed)
+*   **Smart Contact Management (Upsert):** Avoid creating duplicate contacts. (Completed)
+*   **Logout Functionality:** Provide a clear logout option. (Completed)
+*   **Production Deployment:** Deploy the application to a live environment. (Completed on Vercel/Render)
+*   **Admin Panel (P0):** An administration panel for the super-user () to view all registered users, see their activity (last login, contact count), and block/unblock their access. (Completed)
+*   **Inventory Management (P0):** A system to manage vehicle inventory. (Partially Implemented)
+    *   Create a database and API to store detailed vehicle information, including costs (EP, PDCO), pricing (MSRP), and status (Available, Sold). (Completed)
+    -   Build a UI to view, filter, and manage the inventory. (Completed)
+*   **Invoice Scanning with AI (P0):** A feature to scan a vehicle invoice (photo or PDF) and automatically populate the inventory. (In Progress)
+    *   The system must use a hybrid approach: first, a structured parser (regex) for known FCA invoice formats, and if that fails, a fallback to an AI Vision model (OpenAI GPT-4o Vision).
+    *   The parser must automatically decode the VIN to extract the vehicle year.
+    *   The parser must use a database of FCA product codes to automatically determine the vehicle's model and trim from the base product code (e.g., ).
+*   **Calculator & Inventory Integration (P1):** In the main calculator, allow the user to select a vehicle from the inventory by its stock number, which should automatically fill in the price and other details.
 
-</original_problem_statement>
 **User's preferred language**: French (fr). The next agent MUST respond in French.
 
 **what currently exists?**
-A full-stack application has been developed and deployed to a production environment.
-*   **Backend:** A FastAPI application deployed on Render (). It includes endpoints for all features and now fully supports multi-tenancy (data isolation).
-*   **Frontend:** An Expo (React Native) web application deployed on Vercel ().
-*   **Database:** A MongoDB Atlas database instance () is used for production data.
-*   **Features Implemented:**
-    *   The Better Offers backend crash is fixed.
-    *   Full data isolation by  is implemented across contacts, submissions, and offers. Existing data was migrated.
-    *   Submissions are now saved to the server when sent via email.
-    *   Contact upsert logic is in place.
-    *   A logout button has been added to the UI.
-    *   The period selector UI regression was fixed.
-    *   A new custom app icon has been created and added to the project.
+A full-stack application with a React Native (Expo) frontend deployed on Vercel and a FastAPI backend deployed on Render, connected to a MongoDB Atlas database.
+*   **Features Completed:** Multi-tenancy, server-side submissions, contact upsert logic, logout, and production deployment are all functional.
+*   **Admin Panel:** A fully functional admin panel has been implemented. The admin () can view all users, their stats, and block/unblock their accounts.
+*   **Inventory Management:** The backend models and API endpoints for managing inventory are complete. The frontend has a dedicated Inventaire tab that successfully lists and allows management of vehicles.
+*   **Invoice Parser Logic:** The backend contains the complete logic for the hybrid invoice parser, including VIN/product code decoders, ready to be used by the frontend.
 
 **Last working item**:
-*   Last item agent was working: The user reported they can no longer log in to the production application deployed on Vercel, after a new app icon was added and the code was pushed and redeployed. This is a critical regression.
+*   Last item agent was working: Implementing the frontend for the **Invoice Scanning** feature in the Inventaire tab. The user wants to press a button, take a photo of an invoice, and have the system automatically parse it using the hybrid (Regex + AI) backend logic and add the vehicle to the inventory.
 *   Status: IN PROGRESS
-*   Agent Testing Done: N (The agent was about to investigate when the session ended).
-*   Which testing method agent to use? manual testing by curl. The agent should first try to log in using the user's credentials via a  command to the production Render backend (). This will isolate whether the problem is with the backend or the Vercel frontend.
-*   User Testing Done: Y (User confirmed they cannot log in).
+*   Agent Testing Done: N
+*   Which testing method agent to use? Frontend testing agent. The agent needs to verify the entire flow:
+    1.  The UI for uploading an image from the Inventaire screen.
+    2.  The successful call to the backend endpoint .
+    3.  The UI correctly updates to show the newly added vehicle after parsing.
+*   User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: **Production Login is Broken (P0)**
-     - Attempted fixes: The session ended immediately after the user reported the issue. No fixes have been attempted.
+  - Issue 1: **Frontend for Invoice Scanning is Broken/Incomplete (P0)**
+     - Attempted fixes: The agent added the UI code for a scan button and modal to . The  dependency was installed. However, the Expo development server started crashing/restarting in a loop right after, preventing any further progress or testing.
      - Next debug checklist:
-        1.  Verify the Render backend is running and accessible. Use [{"month":2,"year":2026,"count":81},{"month":1,"year":2026,"count":76}] to check for a valid response.
-        2.  Attempt to log in directly to the backend using  and the user's credentials ( / ) to the endpoint .
-        3.  If backend login works, the issue is on the Vercel frontend. Check the browser's developer console on the Vercel URL for any errors when trying to log in.
-        4.  Inspect the deployed code on Vercel, specifically  and , to ensure the  is correctly read and used. There might be an issue with how environment variables are handled in the Vercel build.
-        5.  Check the Vercel deployment logs for any build errors or warnings that were missed.
-     - Why fix this issue and what will be achieved with the fix?: The entire production application is unusable without a working login. This is the highest possible priority.
+        1.  Restart the frontend server (frontend: ERROR (no such process)
+frontend: ERROR (no such process)) and check the logs () to diagnose the Expo crash loop. It may be related to the new  dependency or a syntax error.
+        2.  Once the server is stable, finalize the code in . Ensure the  and  functions correctly handle image selection, send the  image data to the  endpoint, and refresh the inventory list upon success.
+        3.  Use the  to get a test invoice image (like the one the user provided) to perform an end-to-end test of the feature.
+     - Why fix this issue and what will be achieved with the fix?: This is the core of the new inventory automation feature requested by the user. Fixing it will allow for rapid, error-free population of the vehicle inventory.
      - Status: IN PROGRESS
-     - Is recurring issue? Y (Login and auth issues have been a recurring theme, often due to caching or environment/token mismatches).
+     - Is recurring issue? N
      - Should Test frontend/backend/both after fix?: both
      - Blocked on other issue: None
 
-  - Issue 2: **User Confirmation on Bonus Cash 3000 (P1)**
-     - Attempted fixes: The agent investigated the database and concluded the data was correct (Ram 1500 had the bonus, Ram 2500/3500 did not). However, the user was never explicitly shown this and may not be convinced.
-     - Next debug checklist:
-        1.  Present the findings to the user again clearly.
-        2.  Ask the user to perform a specific calculation for a Ram 1500 and a Ram 2500 in the app.
-        3.  Ask for a screenshot if they still see a discrepancy.
-     - Why fix this issue and what will be achieved with the fix?: Ensures data accuracy and builds user trust.
-     - Status: USER VERIFICATION PENDING
-     - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix?: backend
-     - Blocked on other issue: Issue 1: Production Login is Broken
-
 **In progress Task List**:
-  - None.
+- None. All work is captured in the issue above.
 
 **Upcoming and Future Tasks**
+*   **(P1) Integrate Inventory with Calculator:** Modify the calculator screen () to add a dropdown/search box where the user can select a vehicle by its  from the inventory. Selecting a vehicle should automatically populate its  and other relevant details into the calculator form.
 *   **(P2) Finalize App Store / Play Store Build Process:** Prepare the app for native mobile deployment by creating build configurations and binaries (/).
-*   **(P3) Refactor :** The main calculator file () is over 1800 lines long. It should be broken down into smaller components for better maintainability (e.g., , , ).
-*   **(P3) Copy Dev Data to Production DB (Optional):** The user's production database (MongoDB Atlas) is currently separate from the development data. The user may want to migrate all 800+ contacts and 14 submissions from the development DB to the production DB. This should be confirmed with the user.
+*   **(P3) Refactor :** The main calculator file () is over 1800 lines long and should be broken down into smaller components.
+*   **(P3) User Confirmation on Bonus Cash 3000:** The data discrepancy issue was investigated in a previous session, but the user was never explicitly shown the findings to confirm they were satisfied. This should be revisited.
+*   **(P3) Copy Dev Data to Production DB (Optional):** Confirm with the user if they want to migrate any remaining data from the development environment to the production database.
 
 **Completed work in this session**
-- **Critical Bug Fix**: Resolved the backend crash in the Better Offers feature caused by  serialization.
-- **Architectural Overhaul (Data Isolation)**:
-  - Re-architected the entire backend to be multi-tenant.
-  - Added  to , , and  database models.
-  - Secured all relevant API endpoints to filter data based on the logged-in user's token.
-- **Data Migration**: Wrote and executed a script to assign all existing data (815 contacts, 14 submissions) to the user's .
-- **Feature Implementation**:
-  - Implemented Save Submission to Server functionality in the calculator.
-  - Implemented Upsert Contact logic to prevent duplicate contacts.
-  - Added a visible logout button in the frontend header.
-  - Added user-facing alerts to confirm contact creation/updates.
-- **Troubleshooting**:
-  - Diagnosed and fixed a critical Metro bundler issue () that prevented frontend updates.
-  - Resolved extensive user confusion between different project URLs ( vs. ).
-  - Debugged and resolved multiple login/session issues caused by browser caching and invalid tokens.
-- **Production Deployment**:
-  - Guided the user through deploying the backend to Render, including environment variable setup.
-  - Guided the user through multiple failed attempts and finally a successful deployment of the frontend to Vercel.
-  - Resolved  configuration conflicts.
-- **UI/UX**:
-  - Added a new custom application icon.
-  - Fixed a UI regression where the period selector arrow disappeared.
+- **Production Issues Resolved:** Fixed critical production login failures on Vercel by correcting the hardcoded backend URL.
+- **Data Migration:** Successfully migrated the user's lost CRM data (815 contacts, 17 submissions) to the production MongoDB Atlas database.
+- **Admin Panel Feature:** Implemented a complete, admin-only panel to view and manage application users, including blocking/unblocking access.
+- **Inventory Management Feature (Phase 1):** Built the backend API and frontend UI for managing a vehicle inventory.
+- **Invoice Parser Backend:** Designed and implemented the backend logic for a sophisticated hybrid invoice parser (Regex + AI) with VIN and product code enrichment capabilities.
+- **Deployment Configuration:** Updated the entire codebase to point to the user's new, correct Render backend service ().
 
 **Earlier issues found/mentioned but not fixed**
-   - None, the Bonus Cash 3000 issue is tracked in the pending list.
+   - **Bonus Cash 3000:** This data-related issue was investigated, and the agent concluded it was not a bug. However, the user was never formally updated, and their confirmation was not received. This is tracked in Upcoming Tasks.
 
 **Known issue recurrence from previous fork**
   - Not applicable.
@@ -108,81 +80,74 @@ A full-stack application has been developed and deployed to a production environ
 
 
 **Key Technical Concepts**
--   **Frontend:** React Native (Expo), Expo Router, , React Context API for auth.
--   **Backend:** Python, FastAPI, Motor (async MongoDB), .
--   **Authentication:** JWT-based, passed as a Bearer token in headers.
--   **Multi-Tenancy:** Data isolation implemented at the API level using an  field in database documents.
--   **Deployment:**
-    -   Backend deployed as a Web Service on **Render**.
-    -   Frontend deployed as a Static Site on **Vercel**.
-    -   Database hosted on **MongoDB Atlas**.
--   **CI/CD:** Code is pushed to a new GitHub repo () which triggers deployments on Vercel and Render.
+- **Frontend:** React Native (Expo), Expo Router, , React Context API.
+- **Backend:** Python, FastAPI, Motor (async MongoDB), .
+- **Authentication:** JWT-based with an  flag in the token payload.
+- **Deployment:** Render (Backend), Vercel (Frontend), MongoDB Atlas (DB).
+- **AI/ML:** Hybrid Parsing (Regex + OpenAI GPT-4o Vision) for document understanding. Data Enrichment via VIN and product code decoding.
 
 **key DB schema**
-  - **users**: 
-  - **contacts**:  (owner_id is NEW)
-  - **submissions**:  (owner_id is NEW)
-  - **better_offers**:  (owner_id is NEW)
-  - **programs**: Stores vehicle financing program details.
+  - **users**:  (new fields in bold).
+  - **inventory**: (NEW Collection) .
+  - **vehicle_options**: (NEW Collection) .
 
 **changes in tech stack**
-  - The application has moved from a local/preview environment to a full production stack on Render, Vercel, and MongoDB Atlas.
+  - **expo-image-picker:** Added to the frontend for selecting invoice images.
+  - **pdfplumber:** The chosen library for the server-side regex PDF parser.
+  - **OpenAI GPT-4o Vision:** The chosen AI model for the invoice parsing fallback.
 
 **All files of reference**
--   : Contains all business logic, including the new multi-tenancy implementation.
--   : Critical for enforcing authentication on the frontend.
--   : Manages auth state, token storage, and validation.
--   : Contains the core calculator UI and the new logic for saving submissions and upserting contacts.
--   : The CRM interface.
--    & : Deployment configuration files.
+-   : Contains all new backend logic for Admin, Inventory, and Invoice Scanning.
+-   : The primary file for the last worked-on feature. Needs debugging.
+-   : The completed Admin Panel UI.
+-   : Controls visibility of the new feature tabs.
+-   : Manages user state, including the  property.
+
+**Areas that need refactoring**:
+- The file  is still extremely large (+1800 lines) and should be broken down into smaller, manageable components.
 
 **Critical Info for New Agent**
-1.  **PRODUCTION IS BROKEN:** The immediate and only priority is to fix the login on the live Vercel app. Do not work on anything else until the user can log in and use the production app.
-2.  **ENVIRONMENT CONFUSION:** The user has struggled with different URLs (preview vs. production). Always be explicit about which URL you are referring to. The production frontend is .
-3.  **GITHUB SYNC ISSUES:** The Save to GitHub button in the Emergent UI has been highly unreliable. After making code changes, always manually verify on  that the changes have been pushed before telling the user to redeploy on Vercel.
-4.  **SEPARATE DATABASES:** Remind the user that the production app (Vercel/Render) uses the MongoDB Atlas database (), which is separate from the development database used in the Emergent preview URL. Data (like contacts) is not shared between them unless migrated.
-5.  **USER FRUSTRATION:** The user has been through a very long and frustrating deployment process. Be patient, clear, and prioritize fixing the live application above all else.
+1.  **PRIORITY:** The immediate priority is to fix the crash in the frontend  component and complete the invoice scanning feature. The user is highly engaged with this functionality.
+2.  **USER COLLABORATION:** The user provides excellent, detailed technical specifications (e.g., the invoice parsing logic). Treat their input as a primary source of requirements and architecture.
+3.  **ENVIRONMENT:** The production backend is . Ensure all API calls use this URL. The user has previously been confused by multiple Render services, so be clear about which one is active.
+4.  **HYBRID PARSER:** The backend is ready for the hybrid parsing model (regex first, AI fallback). The frontend implementation should send the image data to  and let the backend handle the complex parsing logic.
 
-**documents created in this job**
-  - 
-  - 
-  - 
+**documents and test reports created in this job**
+- None.
 
 **Last 10 User Messages and any pending HUMAN messages**
-- : Reports they can no longer log in to the working application. **(PENDING - CRITICAL)**
-- : Asks for a new professional app icon to be created. **(Completed)**
-- : Confirms the Vercel app is working after disabling deployment protection. **(Now broken)**
-- : Provides the new Vercel URL. **(Info)**
-- : Confirms they have deployed to Vercel. **(Info)**
-- : Shows a screenshot of a Vercel deployment error. **(Resolved)**
-- : Expresses frustration and considers deleting and restarting the Vercel project. **(Info)**
-- : Reports misery and error on deployment. **(Info)**
-- : Confirms they force-pushed to GitHub. **(Info)**
-- : Responds no to a question, indicating an issue with deployment triggering. **(Info)**
+- The user's recent messages detail a sophisticated architecture for parsing vehicle invoices, combining regex, AI, VIN decoding, and product code lookups. They are driving the design of this feature.
+- : Confirmed the plan to add automatic VIN and product code decoding to enrich the data during invoice parsing. (In Progress)
+- : Asked if product codes and VINs could be decoded for more vehicle details. (Answered)
+- : Provided a very detailed analysis of an FCA invoice and a Python code example for a structured parser, endorsing the hybrid (regex + AI) approach. (Acknowledged)
+- : Provided more context on invoice parsing and the use of OpenAI. (Acknowledged)
+- : Confirmed the choices for the invoice scanning feature flow. (Acknowledged)
+- : Detailed the request for an invoice scanning feature that uses the camera to automatically populate the inventory. (In Progress)
+-  & : Provided extremely detailed, professional-grade specifications for the inventory database schema and business logic (e.g., how  and  should be handled). (Completed)
+- : Asked for a new feature: an inventory management system where vehicles could be chosen by stock number in the calculator. (In Progress)
+- : Asked if they could delete the old, confusing Render service. (Answered)
 
 **Project Health Check:**
-*   **Broken:** The production frontend on Vercel is broken; users cannot log in.
+*   **Broken:** The Invoice Scanning UI in  is non-functional and was causing the Expo development server to crash.
 *   **Mocked:** None.
 
 **3rd Party Integrations**
-*   **OpenAI GPT-4o**: Used for PDF data extraction (part of original app). Requires  in Render environment variables.
-*   **Gmail SMTP**: Used for sending email notifications. Requires user's SMTP credentials in Render environment variables.
+*   **OpenAI GPT-4o / Vision**: For AI-based invoice parsing. Uses  environment variable.
+*   **Gmail SMTP**: For sending emails.
 *   **Render**: Hosts the FastAPI backend.
 *   **Vercel**: Hosts the Expo web frontend.
 *   **MongoDB Atlas**: Hosts the production database.
-*   **GitHub**: Source code repository ().
+*   **GitHub**: Source code repository.
 
 **Testing status**
-  - Testing agent used after significant changes: YES (for backend data isolation).
-  - Troubleshoot agent used after agent stuck in loop: YES (to fix the Metro bundler issue).
-  - Test files created: None.
-  - Known regressions: Login on the production Vercel app is currently not working.
+  - Testing agent used after significant changes: NO (but should be used for the invoice scanning feature).
+  - Troubleshoot agent used after agent stuck in loop: NO
+  - Test files created: []
+  - Known regressions: The Expo development server was unstable after adding the  dependency.
 
 **Credentials to test flow:**
--   **URL:** 
 -   **User:** 
 -   **Password:** 
 
 **What agent forgot to execute**
-- The agent never got final, explicit confirmation from the user that the Bonus Cash 3000 issue was resolved to their satisfaction. The agent concluded it was user error, but this was not verified.
-</analysis>
+- The agent failed to stabilize the frontend development environment after installing . They moved to summarize the work without resolving the Expo crash loop, leaving the invoice scanning feature in a broken state.</analysis>
