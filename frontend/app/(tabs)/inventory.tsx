@@ -392,10 +392,18 @@ export default function InventoryScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Inventaire</Text>
         <View style={styles.headerButtons}>
-          <TouchableOpacity style={styles.scanButton} onPress={() => setShowScanModal(true)}>
+          <TouchableOpacity 
+            style={styles.scanButton} 
+            onPress={() => setShowScanModal(true)}
+            testID="scan-invoice-button"
+          >
             <Ionicons name="camera" size={22} color="#1a1a2e" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.addButton} onPress={() => setShowAddModal(true)}>
+          <TouchableOpacity 
+            style={styles.addButton} 
+            onPress={() => setShowAddModal(true)}
+            testID="add-vehicle-button"
+          >
             <Ionicons name="add" size={24} color="#1a1a2e" />
           </TouchableOpacity>
         </View>
