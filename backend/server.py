@@ -2892,7 +2892,13 @@ async def create_inventory_vehicle(vehicle: InventoryCreate, authorization: Opti
     # Check if stock_no already exists
     existing = await db.inventory.find_one({"stock_no": vehicle.stock_no, "owner_id": user["id"]})
     if existing:
-        raise HTTPException(status_code=400, detail=f"Le numéro de stock {vehicle.stock_no} existe déjà")
+        raise HTTPException(status_code=400, detail=f"Le numéro de stock {vehicle.stock_no} existe déjà dans l'inventaire")
+    
+    # Check if VIN already exists (if provided)
+    if vehicle.vin:
+        existing_vin = await db.inventory.find_one({"vin": vehicle.vin, "owner_id": user["id"]})
+        if existing_vin:
+            raise HTTPException(status_code=400, detail=f"Le VIN {vehicle.vin} existe déjà (Stock #{existing_vin.get('stock_no')})")
     
     # Calculate net_cost
     net_cost = vehicle.ep_cost - vehicle.holdback if vehicle.ep_cost and vehicle.holdback else 0
