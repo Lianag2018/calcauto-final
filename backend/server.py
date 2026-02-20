@@ -3587,7 +3587,8 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
         
-        api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
+        # Utiliser EMERGENT_LLM_KEY en priorité (clé universelle)
+        api_key = os.environ.get("EMERGENT_LLM_KEY") or os.environ.get("OPENAI_API_KEY")
         if not api_key:
             raise HTTPException(status_code=500, detail="Clé API non configurée")
         
