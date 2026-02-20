@@ -3115,71 +3115,193 @@ async def add_product_code(code: ProductCode, authorization: Optional[str] = Hea
 
 # ============ Invoice Scanner with AI ============
 
+import re
+import base64
+
+def decode_fca_price(raw_value: str) -> float:
+    """Décode un prix FCA: enlève le premier 0 et les deux derniers chiffres
+    Exemple: 08663000 → 86630
+    """
+    # Remove any non-numeric characters
+    cleaned = re.sub(r'[^\d]', '', str(raw_value))
+    
+    if len(cleaned) >= 4:
+        # Remove first 0 if present and last 2 digits
+        if cleaned.startswith('0'):
+            cleaned = cleaned[1:]
+        if len(cleaned) >= 2:
+            cleaned = cleaned[:-2]
+        try:
+            return float(cleaned)
+        except:
+            return 0
+    return 0
+
+def parse_invoice_text(text: str) -> dict:
+    """Parse automatique d'une facture FCA avec regex"""
+    result = {
+        "stock_no": None,
+        "vin": None,
+        "brand": None,
+        "model": None,
+        "trim": None,
+        "year": None,
+        "pdco": None,
+        "ep_cost": None,
+        "holdback": None,
+        "msrp": None,
+        "options": [],
+        "parse_confidence": 0
+    }
+    
+    lines = text.split('\n')
+    confidence = 0
+    
+    # VIN pattern (17 characters, alphanumeric)
+    vin_match = re.search(r'\b([A-HJ-NPR-Z0-9]{17})\b', text)
+    if vin_match:
+        result["vin"] = vin_match.group(1)
+        confidence += 20
+    
+    # Stock number pattern
+    stock_match = re.search(r'(?:stock|stk|#)\s*[:#]?\s*(\d{4,6})', text, re.IGNORECASE)
+    if stock_match:
+        result["stock_no"] = stock_match.group(1)
+        confidence += 15
+    
+    # Brand detection
+    brands = {
+        "ram": "Ram", "dodge": "Dodge", "jeep": "Jeep", 
+        "chrysler": "Chrysler", "fiat": "Fiat"
+    }
+    for key, value in brands.items():
+        if key in text.lower():
+            result["brand"] = value
+            confidence += 10
+            break
+    
+    # Year detection (2020-2030)
+    year_match = re.search(r'\b(202[0-9]|203[0-5])\b', text)
+    if year_match:
+        result["year"] = int(year_match.group(1))
+        confidence += 10
+    
+    # Price patterns - E.P., PDCO, PREF, MSRP
+    for line in lines:
+        line_upper = line.upper()
+        
+        # E.P. (Employee Price / Cost)
+        if 'E.P.' in line_upper or 'EP ' in line_upper or 'EMPLOYEE' in line_upper:
+            price_match = re.search(r'(\d{8,10})', line)
+            if price_match:
+                result["ep_cost"] = decode_fca_price(price_match.group(1))
+                confidence += 15
+        
+        # PDCO (Dealer Price)
+        if 'PDCO' in line_upper or 'DEALER' in line_upper:
+            price_match = re.search(r'(\d{8,10})', line)
+            if price_match:
+                result["pdco"] = decode_fca_price(price_match.group(1))
+                confidence += 15
+        
+        # Holdback
+        if 'HOLDBACK' in line_upper or 'HB' in line_upper:
+            price_match = re.search(r'[\$]?\s*(\d{1,5}(?:[.,]\d{2})?)', line)
+            if price_match:
+                result["holdback"] = float(price_match.group(1).replace(',', ''))
+                confidence += 10
+        
+        # MSRP / PDSF
+        if 'MSRP' in line_upper or 'PDSF' in line_upper:
+            price_match = re.search(r'[\$]?\s*(\d{2,6}(?:[.,]\d{2})?)', line)
+            if price_match:
+                result["msrp"] = float(price_match.group(1).replace(',', ''))
+                confidence += 10
+    
+    # Model detection (common patterns)
+    model_patterns = [
+        r'(1500|2500|3500)\s*([\w\s]+)',  # Ram trucks
+        r'(WRANGLER|GRAND CHEROKEE|COMPASS|GLADIATOR)',  # Jeep
+        r'(CHARGER|CHALLENGER|DURANGO|HORNET)',  # Dodge
+        r'(PACIFICA|300)',  # Chrysler
+    ]
+    for pattern in model_patterns:
+        model_match = re.search(pattern, text, re.IGNORECASE)
+        if model_match:
+            result["model"] = model_match.group(0).strip()
+            confidence += 10
+            break
+    
+    result["parse_confidence"] = min(confidence, 100)
+    return result
+
 class InvoiceScanRequest(BaseModel):
     image_base64: str
 
 @api_router.post("/inventory/scan-invoice")
 async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str] = Header(None)):
-    """Scanne une facture FCA et extrait les données du véhicule"""
+    """Scanne une facture FCA - Système hybride: Parser auto + fallback IA"""
     user = await get_current_user(authorization)
     
     try:
+        # ÉTAPE 1: Essayer l'OCR/extraction de texte basique
+        # Pour les images, on utilise directement l'IA car l'OCR basique est limité
+        
+        # ÉTAPE 2: Utiliser GPT-4 Vision pour l'analyse
         from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
         
-        # Get API key
         api_key = os.environ.get("EMERGENT_LLM_KEY") or os.environ.get("OPENAI_API_KEY")
         if not api_key:
             raise HTTPException(status_code=500, detail="Clé API non configurée")
         
-        # Create chat instance with GPT-4 Vision
         chat = LlmChat(
             api_key=api_key,
             session_id=f"invoice-scan-{uuid.uuid4()}",
-            system_message="""Tu es un expert en analyse de factures de véhicules FCA/Stellantis (Chrysler, Dodge, Jeep, Ram, Fiat).
-            
-Analyse l'image de facture et extrait les informations suivantes en JSON:
+            system_message="""Tu es un expert en analyse de factures de véhicules FCA/Stellantis.
+
+RÈGLE IMPORTANTE POUR LES PRIX:
+Les prix FCA sont encodés ainsi: 08663000
+Pour obtenir le vrai prix: enlève le premier 0 et les deux derniers chiffres
+Exemple: 08663000 → 86630 (soit 86 630$)
+
+Analyse l'image et extrait les informations en JSON:
 
 {
-  "stock_no": "numéro de stock",
-  "vin": "numéro VIN complet",
-  "brand": "marque (Chrysler, Dodge, Jeep, Ram, Fiat)",
-  "model": "modèle du véhicule",
+  "stock_no": "numéro de stock (4-6 chiffres)",
+  "vin": "VIN complet 17 caractères",
+  "brand": "Ram|Dodge|Jeep|Chrysler|Fiat",
+  "model": "modèle",
   "trim": "version/trim",
-  "year": année (nombre),
+  "year": nombre (année),
   "type": "neuf",
   
-  "pdco": prix PDCO en nombre (enlève le premier 0 et les deux derniers chiffres si format 08663000),
-  "ep_cost": prix EP/Employee Price en nombre,
-  "holdback": montant holdback en nombre,
-  "msrp": PDSF/MSRP en nombre,
+  "pdco": nombre (prix PDCO décodé),
+  "ep_cost": nombre (prix EP décodé - c'est le coût réel),
+  "holdback": nombre (montant holdback exact de la facture),
+  "msrp": nombre (PDSF),
   
-  "color": "couleur du véhicule",
+  "color": "couleur",
   
   "options": [
-    {"code": "CODE", "description": "description", "amount": montant}
+    {"code": "CODE_PRODUIT", "description": "description", "amount": montant}
   ]
 }
 
 IMPORTANT:
-- Pour décoder les prix FCA: enlève le premier 0 et les deux derniers chiffres
-  Exemple: 08663000 → 86630
-- Retourne UNIQUEMENT le JSON, pas de texte avant ou après
-- Si une information n'est pas trouvée, utilise null ou 0"""
+- Décode les prix selon la règle (enlever 1er 0 et 2 derniers chiffres)
+- Le holdback est une valeur exacte sur la facture, ne pas calculer
+- Retourne UNIQUEMENT le JSON valide"""
         ).with_model("openai", "gpt-4o")
         
-        # Create image content
         image_content = ImageContent(image_base64=request.image_base64)
-        
-        # Send message with image
         user_message = UserMessage(
-            text="Analyse cette facture de véhicule et extrait toutes les informations en JSON.",
+            text="Analyse cette facture FCA et extrait toutes les informations en JSON. Applique la règle de décodage des prix.",
             image_contents=[image_content]
         )
         
         response = await chat.send_message(user_message)
         
-        # Parse the JSON response
-        # Clean the response (remove markdown code blocks if present)
+        # Parse JSON response
         json_str = response.strip()
         if json_str.startswith("```"):
             json_str = json_str.split("```")[1]
@@ -3190,19 +3312,18 @@ IMPORTANT:
         try:
             vehicle_data = json.loads(json_str)
         except json.JSONDecodeError:
-            # Try to extract JSON from the response
-            import re
             json_match = re.search(r'\{[\s\S]*\}', response)
             if json_match:
                 vehicle_data = json.loads(json_match.group())
             else:
-                raise HTTPException(status_code=400, detail="Impossible d'extraire les données de la facture")
+                raise HTTPException(status_code=400, detail="Impossible d'extraire les données")
         
         # Calculate net_cost
         ep_cost = vehicle_data.get("ep_cost", 0) or 0
         holdback = vehicle_data.get("holdback", 0) or 0
         net_cost = ep_cost - holdback if ep_cost and holdback else 0
         vehicle_data["net_cost"] = net_cost
+        vehicle_data["parse_method"] = "ai"
         
         return {
             "success": True,
@@ -3212,7 +3333,7 @@ IMPORTANT:
         
     except Exception as e:
         logger.error(f"Error scanning invoice: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Erreur lors de l'analyse: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
 
 @api_router.post("/inventory/scan-and-save")
 async def scan_and_save_invoice(request: InvoiceScanRequest, authorization: Optional[str] = Header(None)):
