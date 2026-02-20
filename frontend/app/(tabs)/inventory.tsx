@@ -302,10 +302,10 @@ export default function InventoryScreen() {
     try {
       const token = await getToken();
       
-      // Recalculer le net_cost si nécessaire
       const ep = parseFloat(reviewData.ep_cost) || 0;
       const hb = parseFloat(reviewData.holdback) || 0;
-      const netCost = ep - hb;
+      // Utiliser le net_cost édité par l'utilisateur, sinon calculer
+      const netCost = reviewData.net_cost ? parseFloat(reviewData.net_cost) : (ep - hb);
 
       await axios.post(`${API_URL}/api/inventory`, {
         stock_no: reviewData.stock_no,
