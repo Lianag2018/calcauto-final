@@ -251,18 +251,35 @@ export default function InventoryScreen() {
     
     try {
       const token = await getToken();
+      // Appeler scan-invoice (SANS sauvegarde) pour obtenir les données à réviser
       const response = await axios.post(
-        `${API_URL}/api/inventory/scan-and-save`,
+        `${API_URL}/api/inventory/scan-invoice`,
         { image_base64: base64Image },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (response.data.success) {
-        setScannedData(response.data);
-        fetchData(); // Refresh inventory
-        Platform.OS === 'web'
-          ? alert(`${response.data.message}`)
-          : Alert.alert('Succès', response.data.message);
+        // Préparer les données pour révision/correction
+        const vehicle = response.data.vehicle || {};
+        setReviewData({
+          stock_no: vehicle.stock_no || '',
+          vin: vehicle.vin || '',
+          brand: vehicle.brand || 'Ram',
+          model: vehicle.model || '',
+          trim: vehicle.trim || '',
+          year: vehicle.year || new Date().getFullYear(),
+          type: vehicle.type || 'neuf',
+          ep_cost: vehicle.ep_cost || 0,
+          pdco: vehicle.pdco || 0,
+          holdback: vehicle.holdback || 0,
+          net_cost: vehicle.net_cost || 0,
+          msrp: vehicle.msrp || 0,
+          asking_price: vehicle.asking_price || vehicle.msrp || 0,
+          color: vehicle.color || '',
+          options: vehicle.options || []
+        });
+        setShowScanModal(false);
+        setShowReviewModal(true);
       }
     } catch (error: any) {
       const msg = error.response?.data?.detail || 'Erreur lors du scan';
@@ -271,6 +288,59 @@ export default function InventoryScreen() {
     } finally {
       setScanning(false);
     }
+  };
+
+  const saveReviewedVehicle = async () => {
+    if (!reviewData.stock_no || !reviewData.brand || !reviewData.model) {
+      Platform.OS === 'web'
+        ? alert('Stock #, Marque et Modèle sont requis')
+        : Alert.alert('Erreur', 'Stock #, Marque et Modèle sont requis');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const token = await getToken();
+      
+      // Recalculer le net_cost si nécessaire
+      const ep = parseFloat(reviewData.ep_cost) || 0;
+      const hb = parseFloat(reviewData.holdback) || 0;
+      const netCost = ep - hb;
+
+      await axios.post(`${API_URL}/api/inventory`, {
+        stock_no: reviewData.stock_no,
+        vin: reviewData.vin,
+        brand: reviewData.brand,
+        model: reviewData.model,
+        trim: reviewData.trim,
+        year: parseInt(reviewData.year) || new Date().getFullYear(),
+        type: reviewData.type,
+        pdco: parseFloat(reviewData.pdco) || 0,
+        ep_cost: ep,
+        holdback: hb,
+        net_cost: netCost,
+        msrp: parseFloat(reviewData.msrp) || 0,
+        asking_price: parseFloat(reviewData.asking_price) || 0,
+        km: 0,
+        color: reviewData.color,
+      }, { headers: { Authorization: `Bearer ${token}` } });
+
+      setShowReviewModal(false);
+      setReviewData(null);
+      fetchData();
+      Platform.OS === 'web'
+        ? alert('Véhicule ajouté avec succès!')
+        : Alert.alert('Succès', 'Véhicule ajouté avec succès!');
+    } catch (error: any) {
+      const msg = error.response?.data?.detail || 'Erreur lors de la sauvegarde';
+      Platform.OS === 'web' ? alert(msg) : Alert.alert('Erreur', msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateReviewField = (field: string, value: string | number) => {
+    setReviewData((prev: any) => ({ ...prev, [field]: value }));
   };
 
   const handleDelete = async (stockNo: string) => {
