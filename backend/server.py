@@ -3137,100 +3137,164 @@ def decode_fca_price(raw_value: str) -> float:
             return 0
     return 0
 
-def parse_invoice_text(text: str) -> dict:
-    """Parse automatique d'une facture FCA avec regex"""
+def parse_fca_invoice_text(text: str) -> dict:
+    """Parser automatique pour factures FCA Canada - Format standard
+    
+    Structure FCA:
+    - Header: Dealer, VIN, Order Number
+    - Options: CODE + DESCRIPTION + MONTANT
+    - Footer: E.P., PDCO, PREF + Totaux
+    """
     result = {
         "stock_no": None,
         "vin": None,
-        "brand": None,
+        "brand": "Ram",  # Default pour FCA
         "model": None,
         "trim": None,
         "year": None,
         "pdco": None,
         "ep_cost": None,
+        "pref": None,
         "holdback": None,
         "msrp": None,
+        "subtotal": None,
+        "invoice_total": None,
         "options": [],
         "parse_confidence": 0
     }
     
-    lines = text.split('\n')
     confidence = 0
     
-    # VIN pattern (17 characters, alphanumeric)
-    vin_match = re.search(r'\b([A-HJ-NPR-Z0-9]{17})\b', text)
+    # VIN pattern (17 characters, peut avoir des tirets)
+    # Format FCA: 3C6UR5CLX-TG-270712
+    vin_match = re.search(r'\b([A-HJ-NPR-Z0-9]{3,}[-]?[A-HJ-NPR-Z0-9]{2,}[-]?[A-HJ-NPR-Z0-9]{5,})\b', text)
     if vin_match:
-        result["vin"] = vin_match.group(1)
+        result["vin"] = vin_match.group(1).replace("-", "")
         confidence += 20
     
-    # Stock number pattern
-    stock_match = re.search(r'(?:stock|stk|#)\s*[:#]?\s*(\d{4,6})', text, re.IGNORECASE)
-    if stock_match:
-        result["stock_no"] = stock_match.group(1)
-        confidence += 15
+    # Alternative VIN pattern sans tirets
+    if not result["vin"]:
+        vin_match = re.search(r'\b([A-HJ-NPR-Z0-9]{17})\b', text)
+        if vin_match:
+            result["vin"] = vin_match.group(1)
+            confidence += 20
     
-    # Brand detection
-    brands = {
-        "ram": "Ram", "dodge": "Dodge", "jeep": "Jeep", 
-        "chrysler": "Chrysler", "fiat": "Fiat"
-    }
-    for key, value in brands.items():
-        if key in text.lower():
-            result["brand"] = value
-            confidence += 10
-            break
+    # Year detection from VIN (10th character = year code)
+    if result["vin"] and len(result["vin"]) == 17:
+        year_code = result["vin"][9]
+        year_map = {'R': 2024, 'S': 2025, 'T': 2026, 'V': 2027, 'W': 2028}
+        result["year"] = year_map.get(year_code, 2025)
+        confidence += 5
     
-    # Year detection (2020-2030)
-    year_match = re.search(r'\b(202[0-9]|203[0-5])\b', text)
-    if year_match:
-        result["year"] = int(year_match.group(1))
-        confidence += 10
-    
-    # Price patterns - E.P., PDCO, PREF, MSRP
-    for line in lines:
-        line_upper = line.upper()
-        
-        # E.P. (Employee Price / Cost)
-        if 'E.P.' in line_upper or 'EP ' in line_upper or 'EMPLOYEE' in line_upper:
-            price_match = re.search(r'(\d{8,10})', line)
-            if price_match:
-                result["ep_cost"] = decode_fca_price(price_match.group(1))
-                confidence += 15
-        
-        # PDCO (Dealer Price)
-        if 'PDCO' in line_upper or 'DEALER' in line_upper:
-            price_match = re.search(r'(\d{8,10})', line)
-            if price_match:
-                result["pdco"] = decode_fca_price(price_match.group(1))
-                confidence += 15
-        
-        # Holdback
-        if 'HOLDBACK' in line_upper or 'HB' in line_upper:
-            price_match = re.search(r'[\$]?\s*(\d{1,5}(?:[.,]\d{2})?)', line)
-            if price_match:
-                result["holdback"] = float(price_match.group(1).replace(',', ''))
-                confidence += 10
-        
-        # MSRP / PDSF
-        if 'MSRP' in line_upper or 'PDSF' in line_upper:
-            price_match = re.search(r'[\$]?\s*(\d{2,6}(?:[.,]\d{2})?)', line)
-            if price_match:
-                result["msrp"] = float(price_match.group(1).replace(',', ''))
-                confidence += 10
-    
-    # Model detection (common patterns)
+    # Model detection - Ram trucks
     model_patterns = [
-        r'(1500|2500|3500)\s*([\w\s]+)',  # Ram trucks
-        r'(WRANGLER|GRAND CHEROKEE|COMPASS|GLADIATOR)',  # Jeep
-        r'(CHARGER|CHALLENGER|DURANGO|HORNET)',  # Dodge
-        r'(PACIFICA|300)',  # Chrysler
+        (r'[Rr]am\s*(1500|2500|3500)', 'Ram'),
+        (r'(1500|2500|3500)\s*([A-Za-z]+)', 'Ram'),
+        (r'(EXPRESS|LARAMIE|LIMITED|BIG HORN|TRADESMAN|REBEL)', None),
     ]
-    for pattern in model_patterns:
-        model_match = re.search(pattern, text, re.IGNORECASE)
-        if model_match:
-            result["model"] = model_match.group(0).strip()
+    
+    for pattern, brand in model_patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            if brand:
+                result["brand"] = brand
+            model_num = re.search(r'(1500|2500|3500)', match.group(0))
+            if model_num:
+                result["model"] = model_num.group(1)
+            trim_match = re.search(r'(EXPRESS|LARAMIE|LIMITED|BIG HORN|TRADESMAN|REBEL)', text, re.IGNORECASE)
+            if trim_match:
+                result["trim"] = trim_match.group(1).title()
+            confidence += 15
+            break
+    
+    # E.P. (Employee Price / Cost) - Format: E.P. 08663000
+    ep_patterns = [
+        r'E\.P\.?\s*(\d{7,10})',
+        r'E\.P\.\s+(\d{7,10})',
+        r'EP\s+(\d{7,10})',
+    ]
+    for pattern in ep_patterns:
+        ep_match = re.search(pattern, text)
+        if ep_match:
+            result["ep_cost"] = decode_fca_price(ep_match.group(1))
+            confidence += 20
+            break
+    
+    # PDCO (Dealer Price) - Format: PDCO 09430500
+    pdco_patterns = [
+        r'PDCO\s*(\d{7,10})',
+        r'PDCO\s+(\d{7,10})',
+    ]
+    for pattern in pdco_patterns:
+        pdco_match = re.search(pattern, text)
+        if pdco_match:
+            result["pdco"] = decode_fca_price(pdco_match.group(1))
+            confidence += 20
+            break
+    
+    # PREF - Format: PREF*08735500 ou PREF 08735500
+    pref_patterns = [
+        r'PREF\*?\s*(\d{7,10})',
+        r'PREF\s+(\d{7,10})',
+    ]
+    for pattern in pref_patterns:
+        pref_match = re.search(pattern, text)
+        if pref_match:
+            result["pref"] = decode_fca_price(pref_match.group(1))
             confidence += 10
             break
+    
+    # Sub Total - Format: SUB TOTAL... 87,330.00
+    subtotal_match = re.search(r'SUB\s*TOTAL[^0-9]*(\d{1,3}(?:[,.\s]\d{3})*(?:[.,]\d{2})?)', text, re.IGNORECASE)
+    if subtotal_match:
+        result["subtotal"] = float(subtotal_match.group(1).replace(',', '').replace(' ', ''))
+        confidence += 5
+    
+    # Invoice Total
+    total_match = re.search(r'(?:INVOICE\s*)?TOTAL[^0-9]*(\d{1,3}(?:[,.\s]\d{3})*(?:[.,]\d{2})?)', text, re.IGNORECASE)
+    if total_match:
+        result["invoice_total"] = float(total_match.group(1).replace(',', '').replace(' ', ''))
+    
+    # Calculate holdback (usually ~3% of PDCO, but should be read from invoice if present)
+    if result["pdco"] and result["ep_cost"]:
+        # Standard holdback calculation as fallback
+        result["holdback"] = round(result["pdco"] * 0.03, 2)
+        confidence += 5
+    
+    # MSRP approximation (usually close to PDCO or subtotal)
+    if result["pdco"]:
+        result["msrp"] = result["pdco"]
+    elif result["subtotal"]:
+        result["msrp"] = result["subtotal"]
+    
+    # Extract options - Format: CODE  DESCRIPTION  AMOUNT
+    # Pattern: 2-6 alphanumeric code, description, optional price
+    option_lines = re.findall(
+        r'\b([A-Z0-9]{2,6})\s+([A-Z][A-Z0-9\s/\-\.,\']+?)\s+(\d{1,3}(?:[,.\s]\d{3})*(?:[.,]\d{2})?|\*|SANS\s*FRAIS)',
+        text,
+        re.IGNORECASE
+    )
+    
+    for code, desc, amount in option_lines:
+        # Skip certain codes that aren't real options
+        if code in ['VIN', 'GST', 'TPS', 'QUE', 'INC']:
+            continue
+        
+        amount_float = 0
+        if amount and amount not in ['*', 'SANS FRAIS']:
+            try:
+                amount_float = float(amount.replace(',', '').replace(' ', ''))
+            except:
+                amount_float = 0
+        
+        result["options"].append({
+            "code": code.upper(),
+            "description": desc.strip()[:100],  # Limit description length
+            "amount": amount_float
+        })
+    
+    if len(result["options"]) > 3:
+        confidence += 10
     
     result["parse_confidence"] = min(confidence, 100)
     return result
@@ -3240,62 +3304,69 @@ class InvoiceScanRequest(BaseModel):
 
 @api_router.post("/inventory/scan-invoice")
 async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str] = Header(None)):
-    """Scanne une facture FCA - Système hybride: Parser auto + fallback IA"""
+    """Scanne une facture FCA - Système hybride: Parser auto + IA GPT-4 Vision
+    
+    1. Envoie l'image à GPT-4 Vision pour extraction
+    2. Applique les règles de décodage FCA (enlever 1er 0 + 2 derniers chiffres)
+    3. Calcule le net_cost automatiquement
+    """
     user = await get_current_user(authorization)
     
     try:
-        # ÉTAPE 1: Essayer l'OCR/extraction de texte basique
-        # Pour les images, on utilise directement l'IA car l'OCR basique est limité
-        
-        # ÉTAPE 2: Utiliser GPT-4 Vision pour l'analyse
         from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
         
-        api_key = os.environ.get("EMERGENT_LLM_KEY") or os.environ.get("OPENAI_API_KEY")
+        api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
         if not api_key:
             raise HTTPException(status_code=500, detail="Clé API non configurée")
         
         chat = LlmChat(
             api_key=api_key,
             session_id=f"invoice-scan-{uuid.uuid4()}",
-            system_message="""Tu es un expert en analyse de factures de véhicules FCA/Stellantis.
+            system_message="""Tu es un expert en analyse de factures FCA Canada (Stellantis).
 
-RÈGLE IMPORTANTE POUR LES PRIX:
-Les prix FCA sont encodés ainsi: 08663000
-Pour obtenir le vrai prix: enlève le premier 0 et les deux derniers chiffres
-Exemple: 08663000 → 86630 (soit 86 630$)
+STRUCTURE D'UNE FACTURE FCA:
+1. Header: Dealer info, VIN, Order Number, Date
+2. Vehicle: Model/Opt code, Description (ex: Ram 2500 Express)
+3. Options: Liste de codes avec descriptions et montants
+4. Footer: E.P., PDCO, PREF + Totaux
 
-Analyse l'image et extrait les informations en JSON:
+RÈGLE CRITIQUE POUR LES PRIX FCA:
+Les prix sont encodés sur 8 chiffres: 08663000
+Pour décoder: enlever le PREMIER 0 et les DEUX DERNIERS chiffres
+Exemple: 08663000 → 86630 (soit 86,630$)
 
+EXTRACTION REQUISE - Retourne ce JSON exact:
 {
-  "stock_no": "numéro de stock (4-6 chiffres)",
-  "vin": "VIN complet 17 caractères",
-  "brand": "Ram|Dodge|Jeep|Chrysler|Fiat",
-  "model": "modèle",
-  "trim": "version/trim",
-  "year": nombre (année),
-  "type": "neuf",
+  "stock_no": "numéro écrit à la main ou vide",
+  "vin": "VIN 17 caractères sans tirets",
+  "brand": "Ram|Dodge|Jeep|Chrysler",
+  "model": "1500|2500|3500 ou autre",
+  "trim": "Express|Laramie|Limited|etc",
+  "year": 2025,
   
-  "pdco": nombre (prix PDCO décodé),
-  "ep_cost": nombre (prix EP décodé - c'est le coût réel),
-  "holdback": nombre (montant holdback exact de la facture),
-  "msrp": nombre (PDSF),
+  "ep_cost": nombre (E.P. décodé - coût réel),
+  "pdco": nombre (PDCO décodé - prix dealer),
+  "pref": nombre (PREF décodé si présent),
+  "holdback": nombre (environ 3% de PDCO),
+  "msrp": nombre (proche du subtotal),
+  "subtotal": nombre (SUB TOTAL de la facture),
   
-  "color": "couleur",
+  "color": "couleur si visible",
   
   "options": [
-    {"code": "CODE_PRODUIT", "description": "description", "amount": montant}
+    {"code": "CODE", "description": "description", "amount": montant_decimal}
   ]
 }
 
 IMPORTANT:
-- Décode les prix selon la règle (enlever 1er 0 et 2 derniers chiffres)
-- Le holdback est une valeur exacte sur la facture, ne pas calculer
-- Retourne UNIQUEMENT le JSON valide"""
+- Applique la règle de décodage pour E.P., PDCO, PREF
+- Le holdback est généralement 3% du PDCO
+- Retourne UNIQUEMENT le JSON, rien d'autre"""
         ).with_model("openai", "gpt-4o")
         
         image_content = ImageContent(image_base64=request.image_base64)
         user_message = UserMessage(
-            text="Analyse cette facture FCA et extrait toutes les informations en JSON. Applique la règle de décodage des prix.",
+            text="Analyse cette facture FCA Canada. Extrait toutes les informations et applique la règle de décodage des prix (enlever premier 0 et deux derniers chiffres). Retourne le JSON.",
             image_contents=[image_content]
         )
         
@@ -3304,10 +3375,14 @@ IMPORTANT:
         # Parse JSON response
         json_str = response.strip()
         if json_str.startswith("```"):
-            json_str = json_str.split("```")[1]
-            if json_str.startswith("json"):
-                json_str = json_str[4:]
-        json_str = json_str.strip()
+            parts = json_str.split("```")
+            for part in parts:
+                if part.strip().startswith("json"):
+                    json_str = part.strip()[4:].strip()
+                    break
+                elif part.strip().startswith("{"):
+                    json_str = part.strip()
+                    break
         
         try:
             vehicle_data = json.loads(json_str)
@@ -3316,14 +3391,20 @@ IMPORTANT:
             if json_match:
                 vehicle_data = json.loads(json_match.group())
             else:
-                raise HTTPException(status_code=400, detail="Impossible d'extraire les données")
+                raise HTTPException(status_code=400, detail="Impossible d'extraire les données JSON")
         
-        # Calculate net_cost
+        # Calculate net_cost = ep_cost - holdback
         ep_cost = vehicle_data.get("ep_cost", 0) or 0
         holdback = vehicle_data.get("holdback", 0) or 0
-        net_cost = ep_cost - holdback if ep_cost and holdback else 0
-        vehicle_data["net_cost"] = net_cost
-        vehicle_data["parse_method"] = "ai"
+        
+        # If holdback not provided, calculate as 3% of PDCO
+        if not holdback and vehicle_data.get("pdco"):
+            holdback = round(vehicle_data["pdco"] * 0.03, 2)
+            vehicle_data["holdback"] = holdback
+        
+        net_cost = ep_cost - holdback if ep_cost else 0
+        vehicle_data["net_cost"] = round(net_cost, 2)
+        vehicle_data["parse_method"] = "ai_gpt4_vision"
         
         return {
             "success": True,
