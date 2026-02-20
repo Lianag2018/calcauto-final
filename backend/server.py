@@ -2834,6 +2834,285 @@ async def delete_all_contacts(authorization: Optional[str] = Header(None)):
     result = await db.contacts.delete_many({"owner_id": user["id"]})
     return {"success": True, "deleted": result.deleted_count, "message": f"{result.deleted_count} contacts supprimés"}
 
+# ============ Inventory Endpoints ============
+
+@api_router.get("/inventory")
+async def get_inventory(
+    authorization: Optional[str] = Header(None),
+    type: Optional[str] = None,
+    status: Optional[str] = None,
+    year: Optional[int] = None,
+    brand: Optional[str] = None
+):
+    """Récupère l'inventaire de l'utilisateur avec filtres optionnels"""
+    user = await get_current_user(authorization)
+    
+    query = {"owner_id": user["id"]}
+    if type:
+        query["type"] = type
+    if status:
+        query["status"] = status
+    if year:
+        query["year"] = year
+    if brand:
+        query["brand"] = {"$regex": brand, "$options": "i"}
+    
+    vehicles = []
+    async for vehicle in db.inventory.find(query, {"_id": 0}).sort("stock_no", 1):
+        vehicles.append(vehicle)
+    
+    return vehicles
+
+@api_router.get("/inventory/{stock_no}")
+async def get_inventory_vehicle(stock_no: str, authorization: Optional[str] = Header(None)):
+    """Récupère un véhicule par numéro de stock"""
+    user = await get_current_user(authorization)
+    
+    vehicle = await db.inventory.find_one(
+        {"stock_no": stock_no, "owner_id": user["id"]},
+        {"_id": 0}
+    )
+    
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Véhicule non trouvé")
+    
+    # Get options for this vehicle
+    options = []
+    async for opt in db.vehicle_options.find({"stock_no": stock_no}, {"_id": 0}).sort("order", 1):
+        options.append(opt)
+    
+    vehicle["options"] = options
+    return vehicle
+
+@api_router.post("/inventory")
+async def create_inventory_vehicle(vehicle: InventoryCreate, authorization: Optional[str] = Header(None)):
+    """Ajoute un véhicule à l'inventaire"""
+    user = await get_current_user(authorization)
+    
+    # Check if stock_no already exists
+    existing = await db.inventory.find_one({"stock_no": vehicle.stock_no, "owner_id": user["id"]})
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Le numéro de stock {vehicle.stock_no} existe déjà")
+    
+    # Calculate net_cost
+    net_cost = vehicle.ep_cost - vehicle.holdback if vehicle.ep_cost and vehicle.holdback else 0
+    
+    vehicle_data = InventoryVehicle(
+        owner_id=user["id"],
+        stock_no=vehicle.stock_no,
+        vin=vehicle.vin,
+        brand=vehicle.brand,
+        model=vehicle.model,
+        trim=vehicle.trim,
+        year=vehicle.year,
+        type=vehicle.type,
+        pdco=vehicle.pdco,
+        ep_cost=vehicle.ep_cost,
+        holdback=vehicle.holdback,
+        net_cost=net_cost,
+        msrp=vehicle.msrp,
+        asking_price=vehicle.asking_price,
+        km=vehicle.km,
+        color=vehicle.color
+    )
+    
+    await db.inventory.insert_one(vehicle_data.dict())
+    return {"success": True, "vehicle": vehicle_data.dict(), "message": f"Véhicule {vehicle.stock_no} ajouté"}
+
+@api_router.post("/inventory/bulk")
+async def create_inventory_bulk(vehicles: List[InventoryCreate], authorization: Optional[str] = Header(None)):
+    """Import en masse de véhicules"""
+    user = await get_current_user(authorization)
+    
+    added = 0
+    updated = 0
+    errors = []
+    
+    for vehicle in vehicles:
+        try:
+            # Calculate net_cost
+            net_cost = vehicle.ep_cost - vehicle.holdback if vehicle.ep_cost and vehicle.holdback else 0
+            
+            vehicle_data = {
+                "id": str(uuid.uuid4()),
+                "owner_id": user["id"],
+                "stock_no": vehicle.stock_no,
+                "vin": vehicle.vin,
+                "brand": vehicle.brand,
+                "model": vehicle.model,
+                "trim": vehicle.trim,
+                "year": vehicle.year,
+                "type": vehicle.type,
+                "pdco": vehicle.pdco,
+                "ep_cost": vehicle.ep_cost,
+                "holdback": vehicle.holdback,
+                "net_cost": net_cost,
+                "msrp": vehicle.msrp,
+                "asking_price": vehicle.asking_price,
+                "km": vehicle.km,
+                "color": vehicle.color,
+                "status": "disponible",
+                "sold_price": None,
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            }
+            
+            # Upsert: update if exists, insert if not
+            result = await db.inventory.update_one(
+                {"stock_no": vehicle.stock_no, "owner_id": user["id"]},
+                {"$set": vehicle_data},
+                upsert=True
+            )
+            
+            if result.upserted_id:
+                added += 1
+            else:
+                updated += 1
+                
+        except Exception as e:
+            errors.append({"stock_no": vehicle.stock_no, "error": str(e)})
+    
+    return {
+        "success": True,
+        "added": added,
+        "updated": updated,
+        "errors": errors,
+        "message": f"{added} ajoutés, {updated} mis à jour"
+    }
+
+@api_router.put("/inventory/{stock_no}")
+async def update_inventory_vehicle(stock_no: str, update: InventoryUpdate, authorization: Optional[str] = Header(None)):
+    """Met à jour un véhicule"""
+    user = await get_current_user(authorization)
+    
+    update_data = {k: v for k, v in update.dict().items() if v is not None}
+    update_data["updated_at"] = datetime.utcnow()
+    
+    # Recalculate net_cost if ep_cost or holdback changed
+    if "ep_cost" in update_data or "holdback" in update_data:
+        vehicle = await db.inventory.find_one({"stock_no": stock_no, "owner_id": user["id"]})
+        if vehicle:
+            ep_cost = update_data.get("ep_cost", vehicle.get("ep_cost", 0))
+            holdback = update_data.get("holdback", vehicle.get("holdback", 0))
+            update_data["net_cost"] = ep_cost - holdback
+    
+    result = await db.inventory.update_one(
+        {"stock_no": stock_no, "owner_id": user["id"]},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Véhicule non trouvé")
+    
+    return {"success": True, "message": f"Véhicule {stock_no} mis à jour"}
+
+@api_router.delete("/inventory/{stock_no}")
+async def delete_inventory_vehicle(stock_no: str, authorization: Optional[str] = Header(None)):
+    """Supprime un véhicule de l'inventaire"""
+    user = await get_current_user(authorization)
+    
+    result = await db.inventory.delete_one({"stock_no": stock_no, "owner_id": user["id"]})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Véhicule non trouvé")
+    
+    # Also delete associated options
+    await db.vehicle_options.delete_many({"stock_no": stock_no})
+    
+    return {"success": True, "message": f"Véhicule {stock_no} supprimé"}
+
+@api_router.put("/inventory/{stock_no}/status")
+async def update_vehicle_status(stock_no: str, status: str, sold_price: Optional[float] = None, authorization: Optional[str] = Header(None)):
+    """Change le statut d'un véhicule (disponible/réservé/vendu)"""
+    user = await get_current_user(authorization)
+    
+    if status not in ["disponible", "réservé", "vendu"]:
+        raise HTTPException(status_code=400, detail="Statut invalide")
+    
+    update_data = {"status": status, "updated_at": datetime.utcnow()}
+    if status == "vendu" and sold_price:
+        update_data["sold_price"] = sold_price
+    
+    result = await db.inventory.update_one(
+        {"stock_no": stock_no, "owner_id": user["id"]},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Véhicule non trouvé")
+    
+    return {"success": True, "message": f"Statut mis à jour: {status}"}
+
+# Vehicle Options endpoints
+@api_router.post("/inventory/{stock_no}/options")
+async def add_vehicle_option(stock_no: str, option: VehicleOption, authorization: Optional[str] = Header(None)):
+    """Ajoute une option à un véhicule"""
+    user = await get_current_user(authorization)
+    
+    # Verify vehicle exists and belongs to user
+    vehicle = await db.inventory.find_one({"stock_no": stock_no, "owner_id": user["id"]})
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Véhicule non trouvé")
+    
+    option_data = option.dict()
+    option_data["stock_no"] = stock_no
+    
+    await db.vehicle_options.insert_one(option_data)
+    return {"success": True, "message": "Option ajoutée"}
+
+@api_router.get("/inventory/stats/summary")
+async def get_inventory_stats(authorization: Optional[str] = Header(None)):
+    """Statistiques d'inventaire"""
+    user = await get_current_user(authorization)
+    
+    total = await db.inventory.count_documents({"owner_id": user["id"]})
+    disponible = await db.inventory.count_documents({"owner_id": user["id"], "status": "disponible"})
+    reserve = await db.inventory.count_documents({"owner_id": user["id"], "status": "réservé"})
+    vendu = await db.inventory.count_documents({"owner_id": user["id"], "status": "vendu"})
+    neuf = await db.inventory.count_documents({"owner_id": user["id"], "type": "neuf"})
+    occasion = await db.inventory.count_documents({"owner_id": user["id"], "type": "occasion"})
+    
+    # Calculate total value
+    pipeline = [
+        {"$match": {"owner_id": user["id"], "status": "disponible"}},
+        {"$group": {"_id": None, "total_msrp": {"$sum": "$msrp"}, "total_cost": {"$sum": "$net_cost"}}}
+    ]
+    result = await db.inventory.aggregate(pipeline).to_list(1)
+    totals = result[0] if result else {"total_msrp": 0, "total_cost": 0}
+    
+    return {
+        "total": total,
+        "disponible": disponible,
+        "reserve": reserve,
+        "vendu": vendu,
+        "neuf": neuf,
+        "occasion": occasion,
+        "total_msrp": totals.get("total_msrp", 0),
+        "total_cost": totals.get("total_cost", 0),
+        "potential_profit": totals.get("total_msrp", 0) - totals.get("total_cost", 0)
+    }
+
+# Product codes reference
+@api_router.get("/product-codes")
+async def get_product_codes():
+    """Récupère le référentiel des codes produits"""
+    codes = []
+    async for code in db.product_codes.find({}, {"_id": 0}):
+        codes.append(code)
+    return codes
+
+@api_router.post("/product-codes")
+async def add_product_code(code: ProductCode, authorization: Optional[str] = Header(None)):
+    """Ajoute un code produit au référentiel"""
+    await require_admin(authorization)
+    
+    await db.product_codes.update_one(
+        {"code": code.code},
+        {"$set": code.dict()},
+        upsert=True
+    )
+    return {"success": True, "message": f"Code {code.code} ajouté"}
+
 # ============ Admin Endpoints ============
 
 class AdminUserResponse(BaseModel):
