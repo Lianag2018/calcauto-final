@@ -3169,30 +3169,36 @@ def decode_vin(vin: str) -> dict:
     
     # WMI (positions 1-3): Manufacturer
     wmi = vin[0:3]
-    wmi_manufacturers = {
-        # Ram / Chrysler
-        "3C6": {"manufacturer": "Ram", "country": "Mexico (Toluca)"},
-        "3C4": {"manufacturer": "Chrysler", "country": "Mexico"},
-        "3C3": {"manufacturer": "Chrysler", "country": "Mexico"},
-        "1C4": {"manufacturer": "Chrysler", "country": "USA"},
-        "1C6": {"manufacturer": "Ram", "country": "USA"},
-        "2C3": {"manufacturer": "Chrysler", "country": "Canada"},
-        # Dodge
-        "1B3": {"manufacturer": "Dodge", "country": "USA"},
-        "2B3": {"manufacturer": "Dodge", "country": "Canada"},
-        "3D4": {"manufacturer": "Dodge", "country": "Mexico"},
-        # Jeep
-        "1C4": {"manufacturer": "Jeep", "country": "USA"},
-        "1J4": {"manufacturer": "Jeep", "country": "USA"},
-        "1J8": {"manufacturer": "Jeep", "country": "USA"},
-        # Fiat
-        "3FA": {"manufacturer": "Fiat", "country": "Mexico"},
-        "ZFA": {"manufacturer": "Fiat", "country": "Italy"},
-    }
     
-    if wmi in wmi_manufacturers:
-        result["manufacturer"] = wmi_manufacturers[wmi]["manufacturer"]
-        result["country"] = wmi_manufacturers[wmi]["country"]
+    # Check for Jeep Gladiator (VIN starts with 1C6PJ or 1C6PJTAG)
+    if vin.startswith("1C6PJ") or vin.startswith("1C6PJTAG"):
+        result["manufacturer"] = "Jeep"
+        result["country"] = "USA (Toledo)"
+        result["model_hint"] = "Gladiator"
+    else:
+        wmi_manufacturers = {
+            # Ram / Chrysler
+            "3C6": {"manufacturer": "Ram", "country": "Mexico (Toluca)"},
+            "3C4": {"manufacturer": "Chrysler", "country": "Mexico"},
+            "3C3": {"manufacturer": "Chrysler", "country": "Mexico"},
+            "1C4": {"manufacturer": "Jeep", "country": "USA"},
+            "1C6": {"manufacturer": "Ram", "country": "USA"},
+            "2C3": {"manufacturer": "Chrysler", "country": "Canada"},
+            # Dodge
+            "1B3": {"manufacturer": "Dodge", "country": "USA"},
+            "2B3": {"manufacturer": "Dodge", "country": "Canada"},
+            "3D4": {"manufacturer": "Dodge", "country": "Mexico"},
+            # Jeep
+            "1J4": {"manufacturer": "Jeep", "country": "USA"},
+            "1J8": {"manufacturer": "Jeep", "country": "USA"},
+            # Fiat
+            "3FA": {"manufacturer": "Fiat", "country": "Mexico"},
+            "ZFA": {"manufacturer": "Fiat", "country": "Italy"},
+        }
+        
+        if wmi in wmi_manufacturers:
+            result["manufacturer"] = wmi_manufacturers[wmi]["manufacturer"]
+            result["country"] = wmi_manufacturers[wmi]["country"]
     
     # Position 11: Plant code
     result["plant"] = vin[10]
