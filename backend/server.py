@@ -267,6 +267,92 @@ class ContactCreate(BaseModel):
 class ContactBulkCreate(BaseModel):
     contacts: List[ContactCreate]
 
+# ============ Inventory Models ============
+
+class InventoryVehicle(BaseModel):
+    """Véhicule en inventaire avec coûts réels"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    owner_id: str = ""
+    
+    # Identification
+    stock_no: str                    # Numéro de stock (clé principale)
+    vin: str = ""
+    
+    # Véhicule
+    brand: str
+    model: str
+    trim: str = ""
+    year: int
+    type: str = "neuf"               # neuf | occasion
+    
+    # Prix et coûts (valeurs EXACTES de la facture)
+    pdco: float = 0                  # Prix dealer officiel
+    ep_cost: float = 0               # Coût réel (Employee Price)
+    holdback: float = 0              # Holdback (valeur facture, PAS calculé)
+    net_cost: float = 0              # ep_cost - holdback (calculé à l'import)
+    
+    # Prix de vente
+    msrp: float = 0                  # PDSF
+    asking_price: float = 0          # Prix affiché
+    sold_price: Optional[float] = None
+    
+    # Statut
+    status: str = "disponible"       # disponible | réservé | vendu
+    km: int = 0                      # Pour occasions
+    color: str = ""
+    
+    # Métadonnées
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class InventoryCreate(BaseModel):
+    stock_no: str
+    vin: str = ""
+    brand: str
+    model: str
+    trim: str = ""
+    year: int
+    type: str = "neuf"
+    pdco: float = 0
+    ep_cost: float = 0
+    holdback: float = 0
+    msrp: float = 0
+    asking_price: float = 0
+    km: int = 0
+    color: str = ""
+
+class InventoryUpdate(BaseModel):
+    vin: Optional[str] = None
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    trim: Optional[str] = None
+    year: Optional[int] = None
+    type: Optional[str] = None
+    pdco: Optional[float] = None
+    ep_cost: Optional[float] = None
+    holdback: Optional[float] = None
+    msrp: Optional[float] = None
+    asking_price: Optional[float] = None
+    sold_price: Optional[float] = None
+    status: Optional[str] = None
+    km: Optional[int] = None
+    color: Optional[str] = None
+
+class VehicleOption(BaseModel):
+    """Option/équipement d'un véhicule"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    stock_no: str
+    product_code: str
+    order: int = 0
+    description: str
+    amount: float = 0
+
+class ProductCode(BaseModel):
+    """Référentiel des codes produits FCA"""
+    code: str
+    description_standard: str
+    category: str = ""               # moteur, esthétique, sécurité, etc.
+
 # ============ Utility Functions ============
 
 import hashlib
