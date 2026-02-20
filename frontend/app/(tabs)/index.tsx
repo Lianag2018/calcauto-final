@@ -545,6 +545,26 @@ export default function HomeScreen() {
     loadPrograms();
   }, [loadPrograms]);
 
+  // Load inventory separately when user is authenticated
+  useEffect(() => {
+    const loadInventory = async () => {
+      try {
+        const token = await getToken();
+        if (token) {
+          const invRes = await axios.get(`${API_URL}/api/inventory`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const disponible = invRes.data.filter((v: any) => v.status === 'disponible');
+          setInventoryList(disponible);
+          console.log('Inventory loaded:', disponible.length, 'vehicles');
+        }
+      } catch (e) {
+        console.log('Could not load inventory:', e);
+      }
+    };
+    loadInventory();
+  }, []);
+
   // Filter programs when year or brand changes
   useEffect(() => {
     let filtered = [...programs];
