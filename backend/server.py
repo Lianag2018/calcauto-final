@@ -239,6 +239,12 @@ class User(BaseModel):
     email: str
     password_hash: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    is_admin: bool = False
+    is_blocked: bool = False
+    last_login: Optional[datetime] = None
+
+# Admin email - this user will always be admin
+ADMIN_EMAIL = "danielgiroux007@gmail.com"
 
 # ============ Contact Models ============
 
