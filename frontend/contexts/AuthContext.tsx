@@ -8,7 +8,7 @@ import { Platform } from 'react-native';
 const getApiUrl = (): string => {
   // Check if we're running on Vercel (production)
   if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
-    return 'https://calcauto-aipro.onrender.com';
+    return 'https://calcauto-final-backend.onrender.com';
   }
   // Check environment variable (for local dev)
   if (process.env.EXPO_PUBLIC_BACKEND_URL) {
