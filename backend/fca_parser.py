@@ -131,15 +131,22 @@ def parse_fca_invoice_text(text: str) -> dict:
             break
     
     # -------------------
-    # Subtotal
+    # Subtotal (SUB TOTAL EXCLUDING TAXES / SOMME PARTIELLE SANS TAXES)
     # -------------------
-    subtotal_match = re.search(r"SUB\s*TOTAL.*?(\d{1,3}[,\s]?\d{3}\.\d{2})", text, re.IGNORECASE)
-    if subtotal_match:
-        subtotal_str = subtotal_match.group(1).replace(",", "").replace(" ", "")
-        try:
-            data["subtotal"] = float(subtotal_str)
-        except:
-            pass
+    subtotal_patterns = [
+        r"SUB\s*TOTAL\s*EXCLUDING\s*TAXES.*?(\d{1,3}[,\s]?\d{3}\.\d{2})",
+        r"SOMME\s*PARTIELLE\s*SANS\s*TAXES.*?(\d{1,3}[,\s]?\d{3}\.\d{2})",
+        r"SUB\s*TOTAL.*?(\d{1,3}[,\s]?\d{3}\.\d{2})"
+    ]
+    for pattern in subtotal_patterns:
+        subtotal_match = re.search(pattern, text, re.IGNORECASE)
+        if subtotal_match:
+            subtotal_str = subtotal_match.group(1).replace(",", "").replace(" ", "")
+            try:
+                data["subtotal"] = float(subtotal_str)
+            except:
+                pass
+            break
     
     # -------------------
     # Total Invoice
