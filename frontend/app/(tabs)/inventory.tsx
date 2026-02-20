@@ -391,9 +391,14 @@ export default function InventoryScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Inventaire</Text>
-        <TouchableOpacity style={styles.addButton} onPress={() => setShowAddModal(true)}>
-          <Ionicons name="add" size={24} color="#1a1a2e" />
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity style={styles.scanButton} onPress={() => setShowScanModal(true)}>
+            <Ionicons name="camera" size={22} color="#1a1a2e" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.addButton} onPress={() => setShowAddModal(true)}>
+            <Ionicons name="add" size={24} color="#1a1a2e" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {stats && (
