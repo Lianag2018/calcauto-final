@@ -3614,23 +3614,29 @@ Les prix sont encodés sur 8 chiffres: 08663000
 Pour décoder: enlever le PREMIER 0 et les DEUX DERNIERS chiffres
 Exemple: 08663000 → 86630 (soit 86,630$)
 
+IMPORTANT - DÉFINITIONS DES PRIX:
+- E.P. = Coût réel du véhicule pour le concessionnaire (Employee Price)
+- PDCO = PDSF = MSRP = Prix de détail suggéré par le fabricant (CE SONT LA MÊME CHOSE)
+- PREF = Prix de référence
+- Holdback = environ 3% du PDCO
+
 EXTRACTION REQUISE - Retourne ce JSON exact:
 {
-  "stock_no": "numéro écrit à la main ou vide",
+  "stock_no": "numéro écrit à la main en bas de la facture",
   "vin": "VIN 17 caractères sans tirets",
   "brand": "Ram|Dodge|Jeep|Chrysler",
   "model": "1500|2500|3500 ou autre",
-  "trim": "Express|Laramie|Limited|etc",
+  "trim": "Express|Tradesman|Laramie|Limited|etc",
   "year": 2025,
   
   "ep_cost": nombre (E.P. décodé - coût réel),
-  "pdco": nombre (PDCO décodé - prix dealer),
+  "pdco": nombre (PDCO décodé),
+  "msrp": nombre (IDENTIQUE au PDCO - c'est le PDSF),
   "pref": nombre (PREF décodé si présent),
   "holdback": nombre (environ 3% de PDCO),
-  "msrp": nombre (proche du subtotal),
   "subtotal": nombre (SUB TOTAL de la facture),
   
-  "color": "couleur si visible",
+  "color": "couleur si visible (ex: Blanc Éclatant, Noir Étincelant)",
   
   "options": [
     {"code": "CODE", "description": "description", "amount": montant_decimal}
@@ -3639,6 +3645,7 @@ EXTRACTION REQUISE - Retourne ce JSON exact:
 
 IMPORTANT:
 - Applique la règle de décodage pour E.P., PDCO, PREF
+- PDCO = PDSF = MSRP (même valeur!)
 - Le holdback est généralement 3% du PDCO
 - Retourne UNIQUEMENT le JSON, rien d'autre"""
         ).with_model("openai", "gpt-4o")
