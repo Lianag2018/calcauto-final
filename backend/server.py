@@ -3723,6 +3723,7 @@ IMPORTANT:
         ep_raw = raw_data.get("ep_raw", "")
         pdco_raw = raw_data.get("pdco_raw", "")
         pref_raw = raw_data.get("pref_raw", "")
+        holdback_raw = raw_data.get("holdback_raw", "")
         
         vehicle_data["ep_cost"] = decode_fca_price(ep_raw) if ep_raw else 0
         vehicle_data["pdco"] = decode_fca_price(pdco_raw) if pdco_raw else 0
@@ -3733,16 +3734,25 @@ IMPORTANT:
         
         logger.info(f"Prices decoded: E.P.={vehicle_data['ep_cost']}, PDCO={vehicle_data['pdco']}, PREF={vehicle_data['pref']}")
         
-        # 4. Calculer holdback (3% du PDCO) et net_cost
-        if vehicle_data["pdco"]:
+        # 4. Holdback - PRIORITÉ: valeur extraite de la facture, sinon 3% du PDCO
+        if holdback_raw:
+            # Holdback est sur 6 chiffres: 050000 → 5000
+            holdback_decoded = decode_fca_holdback(holdback_raw)
+            vehicle_data["holdback"] = holdback_decoded
+            logger.info(f"Holdback from invoice: {holdback_raw} → {holdback_decoded}")
+        elif vehicle_data["pdco"]:
             vehicle_data["holdback"] = round(vehicle_data["pdco"] * 0.03, 2)
+            logger.info(f"Holdback calculated (3%): {vehicle_data['holdback']}")
         else:
             vehicle_data["holdback"] = 0
         
+        # Coût Net = E.P. - Holdback
         if vehicle_data["ep_cost"]:
             vehicle_data["net_cost"] = round(vehicle_data["ep_cost"] - vehicle_data["holdback"], 2)
         else:
             vehicle_data["net_cost"] = 0
+        
+        logger.info(f"Net cost: {vehicle_data['ep_cost']} - {vehicle_data['holdback']} = {vehicle_data['net_cost']}")
         
         # 5. Décoder la couleur
         color_code = raw_data.get("color_code", "").upper()
