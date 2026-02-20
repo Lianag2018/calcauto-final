@@ -75,6 +75,9 @@ export default function InventoryScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showScanModal, setShowScanModal] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scannedData, setScannedData] = useState<any>(null);
   const [filter, setFilter] = useState<'tous' | 'neuf' | 'occasion'>('tous');
   const [statusFilter, setStatusFilter] = useState<'tous' | 'disponible' | 'réservé' | 'vendu'>('tous');
   const [searchQuery, setSearchQuery] = useState('');
