@@ -37,11 +37,16 @@ Application mobile iOS/Android de calculateur de financement automobile pour con
 - Calcul automatique: net_cost = ep_cost - holdback
 - Filtres et recherche
 
-### 6. Scanner de Factures FCA ✅ (NEW)
-- GPT-4 Vision pour analyse d'images
+### 6. Scanner de Factures FCA ✅ (COMPLETED)
+- GPT-4o Vision via emergentintegrations (EMERGENT_LLM_KEY)
 - Règle de décodage FCA (enlever 1er 0 + 2 derniers)
 - Extraction: VIN, Modèle, E.P., PDCO, PREF, Options
-- Sauvegarde automatique
+- Sauvegarde automatique dans l'inventaire
+- Interface utilisateur complète:
+  - Bouton caméra (orange) dans l'en-tête Inventaire
+  - Modal avec options "Prendre une photo" / "Importer une image"
+  - Conseils pour un meilleur scan
+  - Affichage des résultats avec véhicule ajouté
 
 ## Technical Architecture
 
@@ -113,6 +118,12 @@ Application mobile iOS/Android de calculateur de financement automobile pour con
 - Admin: danielgiroux007@gmail.com
 - Production URL: https://calcauto-final.vercel.app
 - Backend URL: https://calcauto-final-backend.onrender.com
+
+## Latest Changes (Feb 20, 2026)
+- ✅ Fixed invoice scan integration (ImageContent → file_contents parameter)
+- ✅ Switched from OPENAI_API_KEY to EMERGENT_LLM_KEY for reliability
+- ✅ Added testID attributes for scan/add buttons
+- ✅ All frontend tests passed (6/6)
 
 ## Last Updated
 February 20, 2026
