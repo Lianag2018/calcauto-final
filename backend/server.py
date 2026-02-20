@@ -3239,6 +3239,13 @@ FCA_PRODUCT_CODES = {
     "JLXL74": {"brand": "Jeep", "model": "Wrangler", "trim": "Rubicon", "body": "4-Door 4x4", "description": "Jeep Wrangler Rubicon Unlimited 4x4"},
     "JLXL72": {"brand": "Jeep", "model": "Wrangler", "trim": "Sahara", "body": "4-Door 4x4", "description": "Jeep Wrangler Sahara Unlimited 4x4"},
     "JLXL70": {"brand": "Jeep", "model": "Wrangler", "trim": "Sport", "body": "4-Door 4x4", "description": "Jeep Wrangler Sport Unlimited 4x4"},
+    # Jeep Gladiator (JT = Gladiator)
+    "JTJL98": {"brand": "Jeep", "model": "Gladiator", "trim": "Willys", "body": "Crew Cab 4x4", "description": "Jeep Gladiator Willys 4x4"},
+    "JTJL96": {"brand": "Jeep", "model": "Gladiator", "trim": "Rubicon", "body": "Crew Cab 4x4", "description": "Jeep Gladiator Rubicon 4x4"},
+    "JTJL94": {"brand": "Jeep", "model": "Gladiator", "trim": "Overland", "body": "Crew Cab 4x4", "description": "Jeep Gladiator Overland 4x4"},
+    "JTJL92": {"brand": "Jeep", "model": "Gladiator", "trim": "Sport S", "body": "Crew Cab 4x4", "description": "Jeep Gladiator Sport S 4x4"},
+    "JTJL90": {"brand": "Jeep", "model": "Gladiator", "trim": "Sport", "body": "Crew Cab 4x4", "description": "Jeep Gladiator Sport 4x4"},
+    # Grand Cherokee
     "WKXL74": {"brand": "Jeep", "model": "Grand Cherokee", "trim": "Summit", "body": "4x4", "description": "Jeep Grand Cherokee Summit 4x4"},
     "WKXL72": {"brand": "Jeep", "model": "Grand Cherokee", "trim": "Limited", "body": "4x4", "description": "Jeep Grand Cherokee Limited 4x4"},
     "MPXL74": {"brand": "Jeep", "model": "Compass", "trim": "Limited", "body": "4x4", "description": "Jeep Compass Limited 4x4"},
