@@ -497,8 +497,8 @@ export default function InventoryScreen() {
             <Text style={styles.statLabel}>Réservé</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={[styles.statNumber, { color: '#4ECDC4' }]}>{formatPrice(stats.potential_profit)}</Text>
-            <Text style={styles.statLabel}>Profit pot.</Text>
+            <Text style={[styles.statNumber, { color: '#888' }]}>{stats.vendu || 0}</Text>
+            <Text style={styles.statLabel}>Vendu</Text>
           </View>
         </View>
       )}
