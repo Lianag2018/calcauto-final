@@ -4242,9 +4242,11 @@ Retourne UNIQUEMENT ce JSON:
                 # Décoder les valeurs (supporte les deux formats de clés)
                 vin_raw = str(raw.get("vin", raw.get("v", ""))).replace("-", "").replace(" ", "").upper()[:17]
                 
-                # Auto-correction VIN avec validation checksum
-                vin_corrected, vin_was_corrected = auto_correct_vin(vin_raw) if len(vin_raw) == 17 else (vin_raw, False)
-                vin_valid = validate_vin_checksum(vin_corrected) if len(vin_corrected) == 17 else False
+                # PATCH 3: Unifier VIN - utiliser validate_and_correct_vin uniquement
+                vin_result = validate_and_correct_vin(vin_raw) if len(vin_raw) == 17 else {"corrected": vin_raw, "is_valid": False, "was_corrected": False}
+                vin_corrected = vin_result.get("corrected", vin_raw)
+                vin_valid = vin_result.get("is_valid", False)
+                vin_was_corrected = vin_result.get("was_corrected", False)
                 vin_info = decode_vin(vin_corrected) if len(vin_corrected) == 17 else {}
                 
                 model_code = str(raw.get("model_code", raw.get("m", ""))).upper().strip()[:7]
