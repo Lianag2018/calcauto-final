@@ -4381,6 +4381,39 @@ Retourne UNIQUEMENT ce JSON:
                     "message": "Données critiques manquantes ou invalides. Révision obligatoire."
                 }
         
+        # ===== MONITORING: LOG PARSING METRICS =====
+        try:
+            score = validation.get("score", 0) if validation else 0
+            duration = 0
+            if vehicle_data and vehicle_data.get("metrics"):
+                duration = vehicle_data["metrics"].get("parse_duration_sec", 0)
+            
+            # Déterminer le statut basé sur le score
+            if score >= 85:
+                status = "auto"
+            elif score >= 60:
+                status = "review"
+            else:
+                status = "vision"
+            
+            log_entry = {
+                "timestamp": datetime.now(),
+                "owner_id": user["id"],
+                "parse_method": parse_method,
+                "score": score,
+                "status": status,
+                "vin_valid": vehicle_data.get("vin_valid") if vehicle_data else False,
+                "vin": vehicle_data.get("vin", "")[:17] if vehicle_data else "",
+                "ep_cost": vehicle_data.get("ep_cost", 0) if vehicle_data else 0,
+                "duration_sec": duration,
+                "success": True
+            }
+            
+            await db.parsing_metrics.insert_one(log_entry)
+            logger.info(f"Parsing metric logged: status={status}, score={score}")
+        except Exception as log_err:
+            logger.warning(f"Failed to log parsing metric: {log_err}")
+        
         return {
             "success": True,
             "vehicle": vehicle_data,
