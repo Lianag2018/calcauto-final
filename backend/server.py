@@ -4433,8 +4433,42 @@ Retourne UNIQUEMENT ce JSON:
                 logger.error(f"Erreur Vision: {ai_err}")
                 raise HTTPException(status_code=500, detail=f"Erreur analyse: {str(ai_err)}")
         
-        # PATCH: Supprimé le nettoyage destructif qui pouvait supprimer des champs valides
-        # vehicle_data = {k: v for k, v in vehicle_data.items() if v is not None and v != ""}
+        # ===== RÈGLE D'OR : JAMAIS ENREGISTRER SI INVALIDE =====
+        # Le système n'enregistre jamais si :
+        # - VIN invalide (ou manquant)
+        # - EP manquant
+        # - PDCO manquant
+        # - EP >= PDCO
+        
+        if vehicle_data:
+            vin = vehicle_data.get("vin", "")
+            ep = vehicle_data.get("ep_cost", 0) or 0
+            pdco = vehicle_data.get("pdco", 0) or 0
+            
+            blocking_errors = []
+            
+            if not vin or len(vin) != 17:
+                blocking_errors.append("VIN manquant ou invalide (doit être 17 caractères)")
+            
+            if not ep or ep <= 0:
+                blocking_errors.append("EP (Employee Price) manquant")
+            
+            if not pdco or pdco <= 0:
+                blocking_errors.append("PDCO (Dealer Price) manquant")
+            
+            if ep > 0 and pdco > 0 and ep >= pdco:
+                blocking_errors.append(f"EP ({ep}) doit être inférieur à PDCO ({pdco})")
+            
+            if blocking_errors:
+                return {
+                    "success": False,
+                    "review_required": True,
+                    "blocking_errors": blocking_errors,
+                    "vehicle": vehicle_data,
+                    "validation": validation,
+                    "parse_method": parse_method,
+                    "message": "Données critiques manquantes ou invalides. Révision obligatoire."
+                }
         
         return {
             "success": True,
