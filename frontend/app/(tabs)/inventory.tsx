@@ -1198,6 +1198,9 @@ const styles = StyleSheet.create({
   optionsCount: { color: '#FFB347', fontSize: 13, marginTop: 12, textAlign: 'center' },
   scanAgainBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, padding: 16, borderWidth: 1, borderColor: '#4ECDC4', borderRadius: 10 },
   scanAgainText: { color: '#4ECDC4', fontSize: 15, fontWeight: '600', marginLeft: 8 },
+  // PDF option button styles
+  pdfOptionBtn: { borderWidth: 1, borderColor: '#FF6B6B', borderStyle: 'dashed' },
+  pdfIcon: { backgroundColor: 'rgba(255, 107, 107, 0.1)' },
   // Review modal styles
   reviewBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 179, 71, 0.1)', padding: 12, borderRadius: 10, marginBottom: 16 },
   reviewBannerText: { color: '#FFB347', fontSize: 13, marginLeft: 8, flex: 1 },
