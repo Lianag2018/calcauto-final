@@ -3398,7 +3398,16 @@ FCA_PRODUCT_CODES = {
     "JTJL94": {"brand": "Jeep", "model": "Gladiator", "trim": "Overland", "body": "Crew Cab 4x4", "description": "Jeep Gladiator Overland 4x4"},
     "JTJL92": {"brand": "Jeep", "model": "Gladiator", "trim": "Sport S", "body": "Crew Cab 4x4", "description": "Jeep Gladiator Sport S 4x4"},
     "JTJL90": {"brand": "Jeep", "model": "Gladiator", "trim": "Sport", "body": "Crew Cab 4x4", "description": "Jeep Gladiator Sport 4x4"},
-    # Grand Cherokee
+    
+    # Grand Cherokee (WL Series - 2022+)
+    "WLJP74": {"brand": "Jeep", "model": "Grand Cherokee", "trim": "Limited", "body": "4x4", "description": "Jeep Grand Cherokee Limited 4x4"},
+    "WLJP75": {"brand": "Jeep", "model": "Grand Cherokee L", "trim": "Limited", "body": "4x4", "description": "Jeep Grand Cherokee L Limited 4x4"},
+    "WLJH74": {"brand": "Jeep", "model": "Grand Cherokee", "trim": "Laredo", "body": "4x4", "description": "Jeep Grand Cherokee Laredo 4x4"},
+    "WLJH75": {"brand": "Jeep", "model": "Grand Cherokee L", "trim": "Altitude", "body": "4x4", "description": "Jeep Grand Cherokee L Altitude 4x4"},
+    "WLJS74": {"brand": "Jeep", "model": "Grand Cherokee", "trim": "Summit", "body": "4x4", "description": "Jeep Grand Cherokee Summit 4x4"},
+    "WLJS75": {"brand": "Jeep", "model": "Grand Cherokee L", "trim": "Summit", "body": "4x4", "description": "Jeep Grand Cherokee L Summit 4x4"},
+    "WLJT74": {"brand": "Jeep", "model": "Grand Cherokee", "trim": "Overland", "body": "4x4", "description": "Jeep Grand Cherokee Overland 4x4"},
+    "WLJT75": {"brand": "Jeep", "model": "Grand Cherokee L", "trim": "Overland", "body": "4x4", "description": "Jeep Grand Cherokee L Overland 4x4"},
     "WKXL74": {"brand": "Jeep", "model": "Grand Cherokee", "trim": "Summit", "body": "4x4", "description": "Jeep Grand Cherokee Summit 4x4"},
     "WKXL72": {"brand": "Jeep", "model": "Grand Cherokee", "trim": "Limited", "body": "4x4", "description": "Jeep Grand Cherokee Limited 4x4"},
     "MPXL74": {"brand": "Jeep", "model": "Compass", "trim": "Limited", "body": "4x4", "description": "Jeep Compass Limited 4x4"},
