@@ -3890,6 +3890,45 @@ IMPORTANT: Extrait les valeurs RAW, le décodage sera fait côté serveur."""
         logger.error(f"Error scanning invoice: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
 
+
+@api_router.post("/inventory/scan-invoice-file")
+async def scan_invoice_file(
+    file: UploadFile = File(...),
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Scanne une facture FCA depuis un fichier uploadé (PDF ou image).
+    Utilise le parser structuré (regex) pour les PDFs.
+    
+    USAGE: POST multipart/form-data avec field 'file'
+    """
+    user = await get_current_user(authorization)
+    
+    try:
+        # Lire le fichier
+        file_bytes = await file.read()
+        
+        # Détecter le type de fichier
+        is_pdf = (
+            file.content_type == "application/pdf" or
+            file.filename.lower().endswith(".pdf") or
+            file_bytes[:4] == b'%PDF'
+        )
+        
+        # Convertir en base64 pour réutiliser la logique existante
+        file_base64 = base64.b64encode(file_bytes).decode('utf-8')
+        
+        # Appeler le scan existant
+        request = InvoiceScanRequest(image_base64=file_base64, is_pdf=is_pdf)
+        return await scan_invoice(request, authorization)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error scanning invoice file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
+
+
 @api_router.post("/inventory/scan-and-save")
 async def scan_and_save_invoice(request: InvoiceScanRequest, authorization: Optional[str] = Header(None)):
     """Scanne une facture ET sauvegarde automatiquement le véhicule"""
