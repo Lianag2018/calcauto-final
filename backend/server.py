@@ -17,6 +17,14 @@ import io
 import pypdf
 import pdfplumber
 import tempfile
+import hashlib
+import time
+
+# OCR imports
+import pytesseract
+from PIL import Image
+import cv2
+import numpy as np
 
 # For Excel generation
 try:
