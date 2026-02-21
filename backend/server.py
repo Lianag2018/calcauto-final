@@ -4413,6 +4413,161 @@ async def scan_invoice_file(
         raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
 
 
+@api_router.post("/test-ocr")
+async def test_ocr_pipeline(file: UploadFile = File(...)):
+    """
+    🧪 ENDPOINT DE TEST - Pipeline OCR sans sauvegarde
+    
+    Teste le pipeline OCR complet sur une image de facture FCA:
+    - Niveau 1: PDF → pdfplumber
+    - Niveau 2: Image → OpenCV ROI + Tesseract
+    - Niveau 3: Fallback → GPT-4 Vision (si score < 70)
+    
+    USAGE: POST multipart/form-data avec field 'file'
+    Retourne: JSON avec données extraites + métriques + debug info
+    
+    ⚠️ NE SAUVEGARDE PAS en base de données
+    """
+    from ocr import process_image_ocr_pipeline, process_image_global_ocr
+    from parser import parse_invoice_text
+    from vin_utils import validate_and_correct_vin, decode_vin_year, decode_vin_brand
+    from validation import validate_invoice_data as validate_invoice_full, calculate_validation_score
+    
+    try:
+        start_time = time.time()
+        
+        # Lire le fichier
+        file_bytes = await file.read()
+        file_size = len(file_bytes)
+        
+        # Détecter le type
+        is_pdf = (
+            file.content_type == "application/pdf" or
+            file.filename.lower().endswith(".pdf") or
+            file_bytes[:4] == b'%PDF'
+        )
+        
+        result = {
+            "success": True,
+            "file_info": {
+                "filename": file.filename,
+                "size_bytes": file_size,
+                "content_type": file.content_type,
+                "is_pdf": is_pdf
+            },
+            "pipeline_used": None,
+            "raw_ocr": {},
+            "parsed_data": {},
+            "vin_analysis": {},
+            "validation": {},
+            "metrics": {},
+            "debug": {}
+        }
+        
+        # ===== TEST NIVEAU 1: PDF =====
+        if is_pdf:
+            result["pipeline_used"] = "pdf_native"
+            extracted_text = extract_pdf_text(file_bytes)
+            
+            result["debug"]["pdf_text_length"] = len(extracted_text) if extracted_text else 0
+            result["debug"]["pdf_text_preview"] = extracted_text[:500] if extracted_text else ""
+            
+            if extracted_text and len(extracted_text) > 100:
+                parsed = parse_fca_invoice_structured(extracted_text)
+                validation = validate_invoice_data(parsed)
+                
+                result["parsed_data"] = parsed
+                result["validation"] = validation
+                
+                # VIN analysis
+                vin = parsed.get("vin", "")
+                if vin:
+                    vin_result = validate_and_correct_vin(vin)
+                    result["vin_analysis"] = vin_result
+        
+        # ===== TEST NIVEAU 2: OCR PAR ZONES =====
+        else:
+            result["pipeline_used"] = "ocr_zones"
+            
+            # Pipeline OCR par zones
+            ocr_result = process_image_ocr_pipeline(file_bytes)
+            result["raw_ocr"] = {
+                "zones_processed": ocr_result.get("zones_processed", 0),
+                "vin_text": ocr_result.get("vin_text", "")[:200],
+                "finance_text": ocr_result.get("finance_text", "")[:200],
+                "options_text": ocr_result.get("options_text", "")[:300],
+                "totals_text": ocr_result.get("totals_text", "")[:200],
+            }
+            
+            # Parser structuré
+            parsed = parse_invoice_text(ocr_result)
+            result["parsed_data"] = {
+                "vin": parsed.get("vin"),
+                "model_code": parsed.get("model_code"),
+                "stock_no": parsed.get("stock_no"),
+                "ep_cost": parsed.get("ep_cost"),
+                "pdco": parsed.get("pdco"),
+                "pref": parsed.get("pref"),
+                "holdback": parsed.get("holdback"),
+                "subtotal": parsed.get("subtotal"),
+                "invoice_total": parsed.get("invoice_total"),
+                "options_count": len(parsed.get("options", [])),
+                "options": parsed.get("options", [])[:10],  # Limiter à 10
+                "fields_extracted": parsed.get("fields_extracted", 0)
+            }
+            
+            # VIN analysis approfondi
+            vin = parsed.get("vin", "")
+            if vin:
+                vin_result = validate_and_correct_vin(vin)
+                result["vin_analysis"] = {
+                    "original": vin_result.get("original"),
+                    "corrected": vin_result.get("corrected"),
+                    "is_valid": vin_result.get("is_valid"),
+                    "was_corrected": vin_result.get("was_corrected"),
+                    "correction_type": vin_result.get("correction_type"),
+                    "year": vin_result.get("year"),
+                    "brand": vin_result.get("brand"),
+                    "confidence": vin_result.get("confidence")
+                }
+            
+            # Validation complète
+            parsed["vin_valid"] = result["vin_analysis"].get("is_valid", False) if result["vin_analysis"] else False
+            validation_result = validate_invoice_full(parsed)
+            result["validation"] = validation_result
+            
+            # Recommandation fallback
+            score = validation_result.get("score", 0)
+            if score < 70:
+                result["debug"]["recommendation"] = "Score < 70, le fallback GPT-4 Vision serait utilisé en production"
+            else:
+                result["debug"]["recommendation"] = f"Score {score}/100 suffisant, pas besoin de fallback Vision"
+            
+            # Test OCR global (comparaison)
+            global_text = process_image_global_ocr(file_bytes)
+            result["debug"]["global_ocr_length"] = len(global_text)
+            result["debug"]["global_ocr_preview"] = global_text[:300] if global_text else ""
+        
+        # Métriques finales
+        duration = round(time.time() - start_time, 3)
+        result["metrics"] = {
+            "parse_duration_sec": duration,
+            "validation_score": result["validation"].get("score", 0),
+            "cost_estimate": "$0.00 (100% open-source)"
+        }
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Test OCR error: {str(e)}")
+        import traceback
+        return {
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
 @api_router.post("/inventory/scan-and-save")
 async def scan_and_save_invoice(request: InvoiceScanRequest, authorization: Optional[str] = Header(None)):
     """Scanne une facture ET sauvegarde automatiquement le véhicule"""
