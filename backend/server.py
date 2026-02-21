@@ -4133,21 +4133,19 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
             logger.info("Fallback → GPT-4 Vision (OCR insuffisant ou échec)")
             
             try:
-                from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+                import openai
                 
-                api_key = os.environ.get("EMERGENT_LLM_KEY") or os.environ.get("OPENAI_API_KEY")
+                api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
                 if not api_key:
                     raise HTTPException(status_code=500, detail="Clé API Vision non configurée")
                 
-                # Option: Utiliser image originale pour précision maximale (légèrement plus cher mais 100% fiable)
-                # Pour économiser: compress_image_for_vision(file_bytes, max_size=2048, quality=90)
-                compressed_base64 = request.image_base64  # Image originale pour précision maximale
+                client = openai.OpenAI(api_key=api_key)
                 
-                # OPTIMISATION 2: Prompt ultra-précis pour factures FCA
-                chat = LlmChat(
-                    api_key=api_key,
-                    session_id=f"fca-{uuid.uuid4().hex[:8]}",
-                    system_message="""Tu es un extracteur EXPERT de factures FCA Canada. Tu dois extraire les données avec une précision de 100%.
+                # Image en base64 pour Vision
+                compressed_base64 = request.image_base64
+                
+                # Prompt ultra-précis pour factures FCA
+                system_prompt = """Tu es un extracteur EXPERT de factures FCA Canada. Tu dois extraire les données avec une précision de 100%.
 
 RÈGLES CRITIQUES:
 
@@ -4191,16 +4189,29 @@ Retourne UNIQUEMENT ce JSON:
   "color": "description couleur",
   "options": [{"c":"code 2-5 chars","d":"description","a":"montant brut ou 0"}]
 }"""
-                ).with_model("openai", "gpt-4o")
                 
-                image_content = ImageContent(image_base64=compressed_base64)
-                response = await chat.send_message(UserMessage(
-                    text="Extrait JSON facture FCA.",
-                    file_contents=[image_content]
-                ))
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": "Extrait JSON facture FCA."},
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{compressed_base64}",
+                                        "detail": "high"
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    max_tokens=2000
+                )
                 
-                # Parse JSON avec nettoyage
-                json_str = response.strip()
+                json_str = response.choices[0].message.content.strip()
                 if "```" in json_str:
                     for part in json_str.split("```"):
                         clean = part.strip()
