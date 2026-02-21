@@ -3762,87 +3762,104 @@ class InvoiceScanRequest(BaseModel):
 
 @api_router.post("/inventory/scan-invoice")
 async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str] = Header(None)):
-    """Scanne une facture FCA - Parser structuré (regex) avec fallback IA
+    """
+    Scanne une facture FCA - Parser V4 Industriel
     
-    MÉTHODE PRINCIPALE: Parser structuré avec pdfplumber + regex
-    - Rapide, fiable, sans coût API
-    - Supporte les PDFs natifs
+    FLOW:
+    1. PDF → pdfplumber
+    2. Image → OCR Tesseract + prétraitement
+    3. Parser structuré V4
+    4. Validation stricte avec score
+    5. Fallback IA seulement si score < 65
     
-    FALLBACK: GPT-4 Vision (pour images uniquement)
-    - Utilisé si pas de PDF ou si parsing structuré échoue
+    Inclut: métriques, hash fichier, anti-doublon
     """
     user = await get_current_user(authorization)
     
     try:
+        start_time = time.time()
+        
         # Décoder le base64
         try:
             file_bytes = base64.b64decode(request.image_base64)
         except:
             raise HTTPException(status_code=400, detail="Base64 invalide")
         
-        # Détecter si c'est un PDF (magic bytes: %PDF)
+        # Générer le hash du fichier pour anti-doublon
+        file_hash = generate_file_hash(file_bytes)
+        
+        # Détecter si c'est un PDF
         is_pdf = file_bytes[:4] == b'%PDF' or request.is_pdf
+        
+        extracted_text = ""
+        extraction_method = ""
+        
+        # ===== EXTRACTION TEXTE =====
+        if is_pdf:
+            logger.info("Extraction PDF avec pdfplumber")
+            extracted_text = extract_pdf_text(file_bytes)
+            extraction_method = "pdfplumber"
+        else:
+            logger.info("Extraction image avec OCR Tesseract")
+            extracted_text = extract_text_from_image(file_bytes)
+            extraction_method = "ocr_tesseract"
+        
+        # Log du texte extrait pour debug
+        logger.debug(f"Texte extrait ({len(extracted_text)} chars): {extracted_text[:500]}...")
         
         vehicle_data = None
         parse_method = None
+        validation = {"score": 0, "errors": ["Extraction échouée"], "is_valid": False}
         
-        # ===== MÉTHODE 1: PARSER STRUCTURÉ (PDF) =====
-        if is_pdf:
-            logger.info("Détection PDF - utilisation du parser structuré")
-            try:
-                pdf_text = extract_pdf_text(file_bytes)
+        # ===== PARSING STRUCTURÉ V4 =====
+        if extracted_text and len(extracted_text) > 50:
+            parsed = parse_fca_invoice_structured(extracted_text)
+            validation = validate_invoice_data(parsed)
+            
+            logger.info(f"Parsing structuré: score={validation['score']}, errors={validation['errors']}")
+            
+            if validation["is_valid"]:
+                # Parser structuré a réussi
+                vin = parsed.get("vin", "")
+                vin_info = decode_vin(vin) if vin and len(vin) == 17 else {}
                 
-                if pdf_text and len(pdf_text) > 100:
-                    parsed = parse_fca_invoice_structured(pdf_text)
-                    
-                    # Vérifier que le parsing a extrait des données essentielles
-                    if parsed.get("vin") or parsed.get("ep_cost"):
-                        parse_method = "structured_regex"
-                        
-                        # Enrichir avec décodage VIN
-                        vin = parsed.get("vin", "")
-                        vin_info = {}
-                        if vin and len(vin) == 17:
-                            vin_info = decode_vin(vin)
-                        
-                        # Enrichir avec décodage code modèle
-                        model_code = parsed.get("model_code", "")
-                        product_info = {}
-                        if model_code:
-                            product_info = decode_product_code(model_code)
-                        
-                        vehicle_data = {
-                            "vin": vin,
-                            "model_code": model_code,
-                            "year": vin_info.get("year") or datetime.now().year,
-                            "brand": product_info.get("brand") or vin_info.get("manufacturer") or "Ram",
-                            "model": product_info.get("model") or "",
-                            "trim": product_info.get("trim") or "",
-                            "ep_cost": parsed.get("ep_cost") or 0,
-                            "pdco": parsed.get("pdco") or 0,
-                            "pref": parsed.get("pref") or 0,
-                            "holdback": parsed.get("holdback") or 0,
-                            "msrp": parsed.get("pdco") or 0,  # PDCO = PDSF
-                            "net_cost": parsed.get("ep_cost") or 0,  # Coût = E.P.
-                            "subtotal": parsed.get("subtotal_excl_tax") or 0,
-                            "invoice_total": parsed.get("invoice_total") or 0,
-                            "options": parsed.get("options", []),
-                            "parse_method": "structured_regex",
-                            "parse_confidence": 90  # Haute confiance pour parsing structuré
-                        }
-                        
-                        logger.info(f"Parser structuré réussi: VIN={vin}, EP={vehicle_data['ep_cost']}, PDCO={vehicle_data['pdco']}")
-                    else:
-                        logger.warning("Parser structuré: données insuffisantes, fallback IA")
-                else:
-                    logger.warning("Extraction PDF: texte insuffisant")
-                    
-            except Exception as pdf_err:
-                logger.error(f"Erreur parser PDF: {pdf_err}")
+                model_code = parsed.get("model_code", "")
+                product_info = decode_product_code(model_code) if model_code else {}
+                
+                parse_duration = round(time.time() - start_time, 3)
+                
+                vehicle_data = {
+                    "vin": vin,
+                    "model_code": model_code,
+                    "year": vin_info.get("year") or datetime.now().year,
+                    "brand": product_info.get("brand") or vin_info.get("manufacturer") or "Stellantis",
+                    "model": product_info.get("model") or "",
+                    "trim": product_info.get("trim") or "",
+                    "ep_cost": parsed.get("ep_cost") or 0,
+                    "pdco": parsed.get("pdco") or 0,
+                    "pref": parsed.get("pref") or 0,
+                    "holdback": parsed.get("holdback") or 0,
+                    "msrp": parsed.get("pdco") or 0,
+                    "net_cost": parsed.get("ep_cost") or 0,
+                    "subtotal": parsed.get("subtotal_excl_tax") or 0,
+                    "invoice_total": parsed.get("invoice_total") or 0,
+                    "options": parsed.get("options", []),
+                    "file_hash": file_hash,
+                    "parse_method": f"structured_v4_{extraction_method}",
+                    "metrics": {
+                        "text_length": len(extracted_text),
+                        "validation_score": validation["score"],
+                        "parse_duration_sec": parse_duration,
+                        "extraction_method": extraction_method
+                    }
+                }
+                
+                parse_method = f"structured_v4_{extraction_method}"
+                logger.info(f"Parser V4 réussi: VIN={vin}, EP={vehicle_data['ep_cost']}, Score={validation['score']}")
         
-        # ===== MÉTHODE 2: FALLBACK IA (Images ou si PDF échoue) =====
+        # ===== FALLBACK IA (si score insuffisant) =====
         if vehicle_data is None:
-            logger.info("Utilisation du fallback IA (GPT-4 Vision)")
+            logger.info(f"Fallback IA requis (score={validation['score']})")
             
             try:
                 from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
@@ -3862,7 +3879,7 @@ Retourne ce JSON:
 {
   "stock_no": "numéro écrit à la main (ex: 46058)",
   "vin_raw": "VIN avec tirets (ex: 1C6PJTAGX-TL-160857)",
-  "model_code": "code modèle (ex: JTJL98, WLJP74)",
+  "model_code": "code modèle (ex: JTJL98, WLJP74, WLJH75)",
   "description": "description véhicule",
   "ep_raw": "valeur E.P. 8 chiffres (ex: 05662000)",
   "pdco_raw": "valeur PDCO 8 chiffres (ex: 05999500)",
@@ -3871,7 +3888,7 @@ Retourne ce JSON:
   "subtotal": nombre SUB TOTAL EXCLUDING TAXES,
   "invoice_total": nombre INVOICE TOTAL,
   "color_code": "code couleur (ex: PW7)",
-  "options": [{"code": "CODE", "description": "desc", "amount": 0}]
+  "options": [{"code": "CODE", "description": "desc", "amount_raw": "montant 8 chiffres"}]
 }
 
 IMPORTANT: Extrait les valeurs RAW, le décodage sera fait côté serveur."""
@@ -3919,6 +3936,16 @@ IMPORTANT: Extrait les valeurs RAW, le décodage sera fait côté serveur."""
                 pref = clean_fca_price(raw_data.get("pref_raw", ""))
                 holdback = clean_fca_price(raw_data.get("holdback_raw", ""))
                 
+                # Décoder les options
+                options = []
+                for opt in raw_data.get("options", []):
+                    amt_raw = opt.get("amount_raw", opt.get("amount", "0"))
+                    options.append({
+                        "product_code": opt.get("code", "").upper(),
+                        "description": opt.get("description", "")[:100],
+                        "amount": clean_fca_price(str(amt_raw)) if isinstance(amt_raw, (int, str)) else 0
+                    })
+                
                 # Couleur
                 color_code = raw_data.get("color_code", "").upper()
                 color_map = {
@@ -3927,26 +3954,35 @@ IMPORTANT: Extrait les valeurs RAW, le décodage sera fait côté serveur."""
                     "PGG": "Gris Granit Cristal", "PBF": "Bleu Patriote Nacré"
                 }
                 
+                parse_duration = round(time.time() - start_time, 3)
+                
                 vehicle_data = {
                     "stock_no": raw_data.get("stock_no", "").strip(),
                     "vin": vin_raw,
                     "model_code": model_code,
                     "year": vin_info.get("year") or datetime.now().year,
-                    "brand": product_info.get("brand") or vin_info.get("manufacturer") or "Ram",
+                    "brand": product_info.get("brand") or vin_info.get("manufacturer") or "Stellantis",
                     "model": product_info.get("model") or "",
                     "trim": product_info.get("trim") or "",
                     "ep_cost": ep_cost,
                     "pdco": pdco,
                     "pref": pref,
                     "holdback": holdback,
-                    "msrp": pdco,  # PDCO = PDSF
-                    "net_cost": ep_cost,  # Coût = E.P.
+                    "msrp": pdco,
+                    "net_cost": ep_cost,
                     "subtotal": raw_data.get("subtotal", 0),
                     "invoice_total": raw_data.get("invoice_total", 0),
                     "color": color_map.get(color_code, color_code),
-                    "options": raw_data.get("options", []),
+                    "options": options,
+                    "file_hash": file_hash,
                     "parse_method": "ai_fallback",
-                    "parse_confidence": 70
+                    "metrics": {
+                        "text_length": len(extracted_text) if extracted_text else 0,
+                        "validation_score": validation["score"],
+                        "parse_duration_sec": parse_duration,
+                        "extraction_method": "gpt4_vision",
+                        "structured_failed_reason": validation["errors"]
+                    }
                 }
                 
                 parse_method = "ai_fallback"
@@ -3962,6 +3998,7 @@ IMPORTANT: Extrait les valeurs RAW, le décodage sera fait côté serveur."""
         return {
             "success": True,
             "vehicle": vehicle_data,
+            "validation": validation,
             "message": f"Facture analysée avec succès ({parse_method})",
             "parse_method": parse_method
         }
