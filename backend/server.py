@@ -3537,6 +3537,11 @@ def extract_text_from_image(file_bytes: bytes) -> str:
     try:
         # Charger l'image
         image = Image.open(io.BytesIO(file_bytes))
+        
+        # Convertir en RGB si nécessaire (pour les images RGBA ou autres)
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+        
         img = np.array(image)
         
         # Convertir en niveaux de gris
@@ -3545,22 +3550,32 @@ def extract_text_from_image(file_bytes: bytes) -> str:
         else:
             gray = img
         
+        # Redimensionner si l'image est trop grande (améliore la vitesse OCR)
+        max_dimension = 3000
+        height, width = gray.shape[:2]
+        if max(height, width) > max_dimension:
+            scale = max_dimension / max(height, width)
+            gray = cv2.resize(gray, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+        
         # Amélioration du contraste
         gray = cv2.convertScaleAbs(gray, alpha=1.5, beta=10)
         
         # Seuillage adaptatif pour améliorer la lisibilité
-        thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)[1]
+        thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
         
         # OCR avec Tesseract (anglais + français)
         text = pytesseract.image_to_string(
             thresh,
             lang="eng+fra",
-            config="--psm 6"
+            config="--psm 6 --oem 3"
         )
         
+        logger.info(f"OCR extracted {len(text)} chars")
         return text
     except Exception as e:
-        logger.error(f"OCR error: {e}")
+        logger.error(f"OCR error: {str(e)}")
+        import traceback
+        logger.error(f"OCR traceback: {traceback.format_exc()}")
         return ""
 
 
