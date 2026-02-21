@@ -124,28 +124,29 @@ def extract_zones(image: np.ndarray) -> Dict[str, np.ndarray]:
     """
     Découpe la facture FCA en zones (ROI - Region of Interest)
     
-    Structure fixe des factures FCA:
-    - Haut gauche → VIN
-    - Haut droite → Codes financiers (EP, PDCO, PREF)
-    - Centre → Options
-    - Bas → Totaux
+    Structure des factures FCA Canada:
+    - Haut droite → VIN + Model code
+    - Centre → Options (liste des équipements)
+    - Bas gauche → Codes financiers (EP, PDCO, PREF)
+    - Bas droite → Totaux (Subtotal, Total)
     
     OCR par zones = beaucoup plus propre que OCR global
     """
     h, w = image.shape[:2]
     
     zones = {
-        # Zone VIN: haut gauche (0-25% hauteur, 0-60% largeur)
-        "vin": image[0:int(h*0.25), 0:int(w*0.6)],
+        # Zone VIN: haut droite (0-35% hauteur, 40-100% largeur)
+        "vin": image[0:int(h*0.35), int(w*0.4):w],
         
-        # Zone financière: haut droite (0-35% hauteur, 50-100% largeur)
-        "finance": image[0:int(h*0.35), int(w*0.5):w],
+        # Zone options: centre (30-75% hauteur, toute largeur)
+        "options": image[int(h*0.30):int(h*0.75), :],
         
-        # Zone options: centre (35-85% hauteur, toute largeur)
-        "options": image[int(h*0.35):int(h*0.85), :],
+        # Zone financière: BAS GAUCHE (65-95% hauteur, 0-50% largeur)
+        # C'est là que EP, PDCO, PREF sont situés
+        "finance": image[int(h*0.65):int(h*0.95), 0:int(w*0.5)],
         
-        # Zone totaux: bas (75-100% hauteur, toute largeur)
-        "totals": image[int(h*0.75):h, :]
+        # Zone totaux: bas droite (70-100% hauteur, 50-100% largeur)
+        "totals": image[int(h*0.70):h, int(w*0.5):w]
     }
     
     return zones
