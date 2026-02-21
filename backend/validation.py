@@ -126,13 +126,14 @@ def calculate_validation_score(data: Dict[str, Any]) -> Dict[str, Any]:
     score = 0
     checks = []
     
-    # VIN valide
+    # VIN valide - scoring plus strict
     if data.get("vin") and data.get("vin_valid", False):
         score += 25
         checks.append(("VIN valide", True, 25))
     elif data.get("vin"):
-        score += 15
-        checks.append(("VIN présent (non validé)", True, 15))
+        # VIN présent mais checksum invalide = seulement 5 points (plus strict)
+        score += 5
+        checks.append(("VIN présent (checksum invalide)", True, 5))
     else:
         checks.append(("VIN manquant", False, 0))
     
