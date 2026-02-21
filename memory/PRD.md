@@ -3,62 +3,61 @@
 ## Original Problem Statement
 Application mobile iOS/Android "CalcAuto AiPro" - Calculateur de financement automobile complet avec gestion d'inventaire et scan de factures FCA.
 
-## CHANGELOG (2026-02-21)
+## CHANGELOG
 
-### Parser V4 Industriel Implémenté
-Suite au code review de ChatGPT, le parser de factures FCA a été entièrement réécrit:
+### 2026-02-21 - Parser V5 Industriel avec VIN Auto-Correction
 
-**Architecture V4:**
+**Architecture V5 finale:**
 ```
-Upload
-   ↓
-PDF ? → pdfplumber (extraction texte)
-   ↓
-Image ? → OCR Tesseract + prétraitement OpenCV
-   ↓
-Parser structuré (regex améliorés)
-   ↓
-Validation stricte (score 0-100)
-   ↓
-Score >= 65 → Sauvegarde directe
-   ↓
-Score < 65 → Fallback IA (GPT-4 Vision)
+PDF natif → Parser structuré (pdfplumber + regex) → $0
+IMAGE     → GPT-4 Vision (image originale) → ~$0.03-0.05
+           ↓
+      Extraction JSON
+           ↓
+      Auto-correction VIN (checksum + OCR fixes)
+           ↓
+      Validation (score 0-100)
+           ↓
+      Retour avec flags
 ```
 
-**Améliorations apportées:**
-1. **OCR Tesseract** pour images (avant fallback IA) - Gratuit
-2. **Patterns regex corrigés:**
-   - Model code restreint à zone MODEL/OPT
-   - Holdback recherché après PREF
-   - Options avec pattern plus strict
-3. **Validation stricte avec score:**
-   - VIN valide (17 chars): +25 pts
-   - E.P. > 10000$: +20 pts
-   - PDCO > E.P.: +20 pts
-   - Subtotal présent: +15 pts
-   - Total présent: +10 pts
-   - Options >= 3: +10 pts
-4. **Anti-doublon:**
-   - Hash SHA256 du fichier
-   - VIN unique
-5. **Métriques de parsing:**
-   - Durée
-   - Longueur texte extrait
-   - Score validation
-   - Méthode utilisée
+**Fonctionnalités VIN:**
+- ✅ Validation checksum ISO 3779
+- ✅ Auto-correction erreurs OCR (O→0, I→1, P↔J, etc.)
+- ✅ Décodage année (10e caractère)
+- ✅ Décodage constructeur (WMI 3 premiers chars)
+- ✅ Validation cohérence VIN ↔ marque
+- ✅ Flag si VIN corrigé ou incohérent
 
-**Limitation connue:**
-- Photos prises en angle/avec reflets → OCR échoue → Fallback IA requis
-- PDFs natifs → Parser structuré fonctionne parfaitement
+**Réponse API enrichie:**
+```json
+{
+  "vehicle": {
+    "vin": "1C6PJTAGXTL160857",
+    "vin_valid": true,
+    "vin_corrected": true,
+    "vin_original": "1C6JJTAG7LL160857",
+    "vin_brand": "Jeep",
+    "vin_consistent": true,
+    "ep_cost": 56620,
+    "pdco": 59995
+  },
+  "validation": {
+    "score": 95,
+    "errors": ["VIN auto-corrigé"],
+    "is_valid": true
+  }
+}
+```
 
-## Core Requirements Status
+## Statut des Fonctionnalités
 
-### P0 - Complété
+### P0 - Complété ✅
 - [x] Authentification utilisateur
 - [x] Data isolation (multi-tenancy)
-- [x] Save submissions to server
 - [x] Admin Panel
-- [x] **Parser V4 de factures FCA** - IMPLÉMENTÉ
+- [x] **Parser V5 de factures FCA**
+- [x] **Auto-correction VIN avec validation checksum**
 
 ### P1 - En cours
 - [ ] Finaliser intégration Calculateur-Inventaire
@@ -67,60 +66,55 @@ Score < 65 → Fallback IA (GPT-4 Vision)
 ### P2/P3 - Backlog
 - [ ] Refactoriser index.tsx (1800+ lignes)
 - [ ] Builds App Store / Play Store
+- [ ] Dashboard métriques parsing
 
-## Technical Architecture
+## Architecture Technique
 
-### Backend Dependencies
+### Backend
 ```
-pdfplumber==0.11.9      # Extraction texte PDF
-pytesseract==0.3.13     # OCR images
-opencv-python-headless  # Prétraitement images
-Pillow                  # Manipulation images
+/app/backend/server.py
+├── VIN Validation (lignes 3170-3320)
+│   ├── validate_vin_checksum()
+│   ├── auto_correct_vin()
+│   ├── decode_vin_year()
+│   ├── decode_vin_brand()
+│   └── validate_vin_brand_consistency()
+│
+├── Parser FCA (lignes 3470-3700)
+│   ├── clean_fca_price()
+│   ├── parse_fca_invoice_structured()
+│   └── validate_invoice_data()
+│
+└── Endpoint scan-invoice (lignes 3980-4250)
+    ├── PDF → structured parser
+    └── IMAGE → GPT-4 Vision + VIN correction
 ```
 
-### System Requirements (Render)
-```bash
-apt-get install -y tesseract-ocr tesseract-ocr-fra
+### Dependencies
 ```
-
-### API Endpoints
-
-**POST /api/inventory/scan-invoice**
-- Input: `{ image_base64: string, is_pdf?: boolean }`
-- Output: 
-```json
-{
-  "success": true,
-  "vehicle": {
-    "vin": "...",
-    "ep_cost": 65345,
-    "pdco": 70355,
-    "file_hash": "sha256...",
-    "metrics": {
-      "text_length": 1500,
-      "validation_score": 85,
-      "parse_duration_sec": 0.5,
-      "extraction_method": "ocr_tesseract"
-    }
-  },
-  "validation": {
-    "score": 85,
-    "errors": [],
-    "is_valid": true
-  },
-  "parse_method": "structured_v4_ocr_tesseract"
-}
+pdfplumber==0.11.9
+pytesseract==0.3.13
+opencv-python-headless==4.10.0.84
+Pillow==10.4.0
 ```
 
 ## Credentials Test
 - Email: `danielgiroux007@gmail.com`
 - Password: `Liana2018$`
 
-## Known Issues
-- Frontend tunnel ngrok en conflit temporaire
-- Photos angle/reflets nécessitent fallback IA
+## Résultats Tests
 
-## Next Steps
-1. Tester avec PDFs natifs (meilleur résultat attendu)
-2. Finaliser intégration calculateur-inventaire
-3. Dashboard métriques parsing (optionnel)
+### Facture Gladiator (1C6PJTAGXTL160857)
+| Champ | Attendu | Obtenu | Status |
+|-------|---------|--------|--------|
+| E.P. | 56620 | 56620 | ✅ |
+| PDCO | 59995 | 59995 | ✅ |
+| PREF | 57145 | 57145 | ✅ |
+| Holdback | 500 | 500 | ✅ |
+| VIN Valid | - | True | ✅ |
+| VIN Corrected | - | True | ✅ |
+
+## Prochaines Étapes
+1. Intégrer calculateur-inventaire (sélection véhicule → remplir prix)
+2. Dashboard métriques parsing (optionnel)
+3. Tests avec plus de factures pour affiner les patterns OCR
