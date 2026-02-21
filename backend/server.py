@@ -4128,9 +4128,9 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
             except Exception as ocr_err:
                 logger.warning(f"OCR Zones échoué: {ocr_err}, passage au fallback Vision")
         
-        # ===== NIVEAU 2: IMAGE → GPT-4 VISION OPTIMISÉ =====
+        # ===== NIVEAU 3: FALLBACK → GPT-4 VISION (SI SCORE < 70) =====
         if vehicle_data is None:
-            logger.info("Image → GPT-4 Vision (optimisé)")
+            logger.info("Fallback → GPT-4 Vision (OCR insuffisant ou échec)")
             
             try:
                 from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
