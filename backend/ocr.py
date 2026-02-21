@@ -159,7 +159,8 @@ def ocr_zone(zone_img: np.ndarray, lang: str = "eng+fra", psm: int = 6) -> str:
     OCR ciblé sur une zone prétraitée
     
     PSM modes:
-    - 6: Assume a single uniform block of text (meilleur pour zones)
+    - 6: Assume a single uniform block of text (défaut pour zones)
+    - 7: Treat the image as a single text line (meilleur pour VIN)
     - 4: Assume a single column of text
     - 11: Sparse text
     """
@@ -227,6 +228,7 @@ def process_image_ocr_pipeline(file_bytes: bytes) -> Dict[str, str]:
     
     # 2. Redimensionner - taille optimale pour OCR
     image = resize_if_needed(image, max_dim=1800)
+    h, w = image.shape[:2]
     
     # 3. Correction perspective (redresser le document)
     warped = auto_warp_document(image)
@@ -234,39 +236,51 @@ def process_image_ocr_pipeline(file_bytes: bytes) -> Dict[str, str]:
     # 4. Extraire les zones
     zones = extract_zones(warped)
     
-    # 5. OCR sur chaque zone
-    result["vin_text"] = ocr_zone(zones["vin"], psm=6)
+    # 5. OCR sur chaque zone avec PSM optimisé
+    
+    # Zone VIN: utiliser PSM=7 (single line) pour meilleure précision VIN
+    result["vin_text"] = ocr_zone(zones["vin"], psm=7)
+    
+    # AMÉLIORATION: Fallback avec zone élargie si VIN trop court
+    if len(result["vin_text"]) < 10:
+        logger.info("VIN zone trop courte, élargissement de la zone")
+        enlarged_vin_zone = warped[0:int(h*0.45), int(w*0.3):w]
+        result["vin_text"] = ocr_zone(enlarged_vin_zone, psm=7)
+    
     if result["vin_text"] and len(result["vin_text"]) > 10:
         result["zones_processed"] += 1
     
+    # Zone finance: PSM=6 (block)
     result["finance_text"] = ocr_zone(zones["finance"], psm=6)
     if result["finance_text"] and len(result["finance_text"]) > 10:
         result["zones_processed"] += 1
     
+    # Zone options: PSM=6 (block)
     result["options_text"] = ocr_zone(zones["options"], psm=6)
     if result["options_text"] and len(result["options_text"]) > 10:
         result["zones_processed"] += 1
     
+    # Zone totaux: PSM=6 (block)
     result["totals_text"] = ocr_zone(zones["totals"], psm=6)
     if result["totals_text"] and len(result["totals_text"]) > 10:
         result["zones_processed"] += 1
     
-    # 6. OCR global comme backup/complément
-    global_text = process_image_global_ocr(file_bytes)
-    
-    # 7. Combiner: utiliser global_text comme full_text principal si zones pauvres
-    if result["zones_processed"] < 2 and len(global_text) > 200:
-        result["full_text"] = global_text
-        result["parse_method"] = "ocr_global"
-        logger.info(f"Using global OCR (zones={result['zones_processed']}, global_len={len(global_text)})")
-    else:
+    # 6. AMÉLIORATION: OCR global seulement si zones insuffisantes
+    if result["zones_processed"] >= 2:
+        # Zones suffisantes, pas besoin de global (évite duplication/bruit)
         result["full_text"] = "\n".join([
             result["vin_text"],
             result["finance_text"],
             result["options_text"],
-            result["totals_text"],
-            global_text  # Ajouter aussi le global pour plus de couverture
+            result["totals_text"]
         ])
+        logger.info(f"Using zones only (zones={result['zones_processed']})")
+    else:
+        # Zones insuffisantes, ajouter OCR global
+        global_text = process_image_global_ocr(file_bytes)
+        result["full_text"] = global_text
+        result["parse_method"] = "ocr_global"
+        logger.info(f"Using global OCR fallback (zones={result['zones_processed']}, global_len={len(global_text)})")
     
     logger.info(f"OCR Pipeline: {result['zones_processed']}/4 zones processed")
     
