@@ -267,10 +267,11 @@ def validate_invoice_data(data: Dict[str, Any]) -> Dict[str, Any]:
     result["status"] = scoring["status"]
     result["checks"].extend([f"{check[0]}: {check[2]}pts" for check in scoring["checks"] if check[1]])
     
-    # Déterminer validité globale
+    # PATCH: Déterminer validité globale - seuil relevé à 85 pour règle zéro erreur
+    # is_valid = True seulement si score >= 85 ET pas d'erreurs ET VIN ET EP présents
     result["is_valid"] = (
         len(result["errors"]) == 0 and 
-        result["score"] >= 50 and
+        result["score"] >= 85 and
         data.get("vin") is not None and
         ep > 0
     )
