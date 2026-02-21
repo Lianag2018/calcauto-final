@@ -3917,56 +3917,8 @@ def parse_fca_invoice_structured(text: str) -> dict:
     return data
 
 
-def validate_invoice_data(data: dict) -> dict:
-    """
-    Validation stricte des données parsées.
-    Retourne un score de confiance et les erreurs détectées.
-    """
-    score = 0
-    errors = []
-    
-    # VIN valide (17 caractères)
-    if data.get("vin") and len(str(data["vin"])) == 17:
-        score += 25
-    else:
-        errors.append("VIN invalide ou manquant")
-    
-    # E.P. valide (> 10000$)
-    if data.get("ep_cost") and data["ep_cost"] > 10000:
-        score += 20
-    else:
-        errors.append("E.P. invalide ou manquant")
-    
-    # PDCO valide et cohérent (> E.P.)
-    ep = data.get("ep_cost") or 0
-    pdco = data.get("pdco") or 0
-    if pdco > ep > 0:
-        score += 20
-    elif pdco > 0:
-        score += 10
-        errors.append("PDCO <= E.P. (incohérent)")
-    else:
-        errors.append("PDCO manquant")
-    
-    # Subtotal présent
-    if data.get("subtotal_excl_tax") and data["subtotal_excl_tax"] > 0:
-        score += 15
-    
-    # Total facture présent
-    if data.get("invoice_total") and data["invoice_total"] > 0:
-        score += 10
-    
-    # Au moins 3 options
-    if len(data.get("options", [])) >= 3:
-        score += 10
-    elif len(data.get("options", [])) >= 1:
-        score += 5
-    
-    return {
-        "score": min(score, 100),
-        "errors": errors,
-        "is_valid": score >= 65
-    }
+# SUPPRIMÉ: validate_invoice_data locale - utiliser celle de validation.py
+# Importée comme: from validation import validate_invoice_data as validate_invoice_full
 
 
 class InvoiceScanRequest(BaseModel):
