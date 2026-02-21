@@ -4433,8 +4433,8 @@ Retourne UNIQUEMENT ce JSON:
                 logger.error(f"Erreur Vision: {ai_err}")
                 raise HTTPException(status_code=500, detail=f"Erreur analyse: {str(ai_err)}")
         
-        # Nettoyer les valeurs None/vides
-        vehicle_data = {k: v for k, v in vehicle_data.items() if v is not None and v != ""}
+        # PATCH: Supprimé le nettoyage destructif qui pouvait supprimer des champs valides
+        # vehicle_data = {k: v for k, v in vehicle_data.items() if v is not None and v != ""}
         
         return {
             "success": True,
