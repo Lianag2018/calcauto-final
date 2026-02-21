@@ -43,17 +43,20 @@ class TestPDFParsing:
     """Tests pour les PDF natifs"""
     
     def test_pdf_valide_parfait(self):
-        """1️⃣ PDF valide parfait → auto_approved"""
+        """1️⃣ PDF valide parfait → auto_approved (score >= 85)"""
         data = {
             "vin": "1C4RJHBG6S8806264",
             "vin_valid": True,
+            "model_code": "WLJP74",  # +5 pts
             "ep_cost": 69979,
             "pdco": 75445,
             "pref": 70704,
-            "subtotal_excl_tax": 70679,
+            "holdback": 1530,  # +5 pts
+            "subtotal": 70679,  # Corriger: utiliser "subtotal" pas "subtotal_excl_tax"
             "invoice_total": 74212.95,
             "options": [{"code": "A"}, {"code": "B"}, {"code": "C"}, {"code": "D"}, {"code": "E"}]
         }
+        # Score attendu: VIN(25) + EP(15) + PDCO(15) + EP<PDCO(15) + Subtotal(10) + 5 Options(10) + Model(5) + Holdback(5) = 100
         result = validate_invoice_data(data)
         assert result["score"] >= 85, f"Score {result['score']} < 85 pour PDF parfait"
         assert result["is_valid"] == True
