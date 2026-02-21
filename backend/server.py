@@ -3586,13 +3586,14 @@ def parse_fca_invoice_structured(text: str) -> dict:
     
     # -------------------------
     # SUBTOTAL EXCLUDING TAXES
-    # Pattern FCA:
+    # Pattern FCA - plusieurs formats possibles:
     # SUB TOTAL EXCLUDING TAXES
     # SOMME PARTIELLE SANS TAXES
     # 57,120.00
+    # OU tout sur la même ligne
     # -------------------------
     subtotal_match = re.search(
-        r"SUB\s*TOTAL\s*EXCLUDING\s*TAXES.*?\n.*?([\d,]+\.\d{2})",
+        r"SUB\s*TOTAL\s*EXCLUDING\s*TAXES[\s\S]*?([\d,]+\.\d{2})",
         text,
         re.IGNORECASE
     )
