@@ -4081,8 +4081,9 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                 ocr_score = validation_result["score"]
                 logger.info(f"OCR Zones: score={ocr_score}, VIN={vin_corrected}, EP={parsed.get('ep_cost')}")
                 
-                # Si score >= 70, on utilise le résultat OCR
-                if ocr_score >= 70:
+                # AMÉLIORATION: Seuil abaissé à 60 pour réduire coût IA
+                # Score 60+ = OCR acceptable, pas besoin de fallback Vision
+                if ocr_score >= 60:
                     vin_info = decode_vin(vin_corrected) if len(vin_corrected) == 17 else {}
                     model_code = parsed.get("model_code", "")
                     product_info = decode_product_code(model_code) if model_code else {}
