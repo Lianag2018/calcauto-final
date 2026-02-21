@@ -4114,10 +4114,19 @@ Règle: Extrais les valeurs EXACTEMENT comme écrites sur la facture."""
                 
                 # Décoder les valeurs (supporte les deux formats de clés)
                 vin_raw = str(raw.get("vin", raw.get("v", ""))).replace("-", "").replace(" ", "").upper()[:17]
-                vin_info = decode_vin(vin_raw) if len(vin_raw) == 17 else {}
+                
+                # Auto-correction VIN avec validation checksum
+                vin_corrected, vin_was_corrected = auto_correct_vin(vin_raw) if len(vin_raw) == 17 else (vin_raw, False)
+                vin_valid = validate_vin_checksum(vin_corrected) if len(vin_corrected) == 17 else False
+                vin_info = decode_vin(vin_corrected) if len(vin_corrected) == 17 else {}
                 
                 model_code = str(raw.get("model_code", raw.get("m", ""))).upper().strip()[:7]
                 product_info = decode_product_code(model_code) if model_code else {}
+                
+                # Validation cohérence VIN ↔ marque
+                vin_brand = decode_vin_brand(vin_corrected)
+                expected_brand = product_info.get("brand")
+                vin_consistent = validate_vin_brand_consistency(vin_corrected, expected_brand) if vin_brand else True
                 
                 ep_cost = clean_fca_price(str(raw.get("ep", raw.get("e", ""))))
                 pdco = clean_fca_price(str(raw.get("pdco", raw.get("p", ""))))
