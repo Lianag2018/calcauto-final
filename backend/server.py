@@ -3235,14 +3235,17 @@ def auto_correct_vin(vin: str) -> tuple:
             if validate_vin_checksum(corrected):
                 return corrected, True
     
-    # Stratégie 2: Permutations communes FCA (P↔J, 7↔T, X↔K, etc.)
+    # Stratégie 2: Permutations communes FCA (P↔J, S↔5, X↔K, etc.)
     common_swaps = [
         ("P", "J"), ("J", "P"),
+        ("P", "S"), ("S", "P"),  # P et S se ressemblent
+        ("5", "S"), ("S", "5"),  # 5 et S se ressemblent
         ("7", "T"), ("T", "7"),
         ("X", "K"), ("K", "X"),
         ("6", "G"), ("G", "6"),
         ("Y", "T"), ("T", "Y"),
         ("0", "D"), ("D", "0"),
+        ("8", "B"), ("B", "8"),
     ]
     for old, new in common_swaps:
         for i, char in enumerate(vin):
@@ -3251,33 +3254,46 @@ def auto_correct_vin(vin: str) -> tuple:
                 if validate_vin_checksum(corrected):
                     return corrected, True
     
-    # Stratégie 3: Essayer combinaisons doubles pour VINs FCA
-    # Position 4: souvent P ou J pour Jeep
-    if vin[3] == "J":
-        test = vin[:3] + "P" + vin[4:]
-        if validate_vin_checksum(test):
-            return test, True
-    
-    # Positions multiples: essayer T au lieu de 7 ou Y
-    for pos in [9, 10]:  # Position année et plant
-        if vin[pos] in ["7", "Y"]:
-            test = vin[:pos] + "T" + vin[pos+1:]
+    # Stratégie 3: Corriger l'année (position 10) - très important
+    # P souvent confondu avec S (2023 vs 2025)
+    year_pos = 9  # Index 9 = position 10
+    year_swaps = [("P", "S"), ("S", "P"), ("R", "S"), ("S", "R"), ("P", "R"), ("T", "7")]
+    for old, new in year_swaps:
+        if vin[year_pos] == old:
+            test = vin[:year_pos] + new + vin[year_pos+1:]
             if validate_vin_checksum(test):
                 return test, True
-        if vin[pos] == "T":
-            for repl in ["7", "S", "R"]:
-                test = vin[:pos] + repl + vin[pos+1:]
-                if validate_vin_checksum(test):
-                    return test, True
     
-    # Stratégie 4: Si le check digit (position 9) semble erroné,
-    # recalculer et remplacer
+    # Stratégie 4: Combinaisons multiples pour VINs Jeep/Ram
+    # Position 5: K souvent lu comme X
+    if len(vin) >= 6 and vin[4] in ["X", "K"]:
+        swap = "K" if vin[4] == "X" else "X"
+        test = vin[:4] + swap + vin[5:]
+        if validate_vin_checksum(test):
+            return test, True
+        # Essayer avec correction année aussi
+        for old, new in [("P", "S"), ("S", "P")]:
+            if vin[year_pos] == old:
+                test2 = test[:year_pos] + new + test[year_pos+1:]
+                if validate_vin_checksum(test2):
+                    return test2, True
+    
+    # Stratégie 5: Recalculer check digit si tout le reste semble OK
     expected_check = compute_vin_check_digit(vin)
     if vin[8] != expected_check:
         corrected = vin[:8] + expected_check + vin[9:]
-        # Vérifier que le reste du VIN est plausible
-        # (lettres aux bonnes positions, pas de I/O/Q)
         if not any(c in "IOQ" for c in corrected):
+            return corrected, True
+    
+    # Stratégie 6: P/J + année + check digit
+    if vin[3] == "J":
+        test = vin[:3] + "P" + vin[4:]
+        check = compute_vin_check_digit(test)
+        test = test[:8] + check + test[9:]
+        if validate_vin_checksum(test):
+            return test, True
+    
+    return vin, False
             return corrected, True
     
     # Stratégie 5: Essayer P/J + recalculer check digit
