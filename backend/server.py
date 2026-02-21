@@ -3551,7 +3551,8 @@ def enrich_vehicle_data(vehicle_data: dict) -> dict:
     options = vehicle_data.get("options", [])
     if options:
         first_option = options[0]
-        code = first_option.get("code", "")
+        # PATCH: Utiliser "product_code" au lieu de "code"
+        code = first_option.get("product_code", first_option.get("code", ""))
         
         # Vérifier si c'est un code de modèle (pas un code d'option)
         product_info = decode_product_code(code)
@@ -3568,7 +3569,8 @@ def enrich_vehicle_data(vehicle_data: dict) -> dict:
     
     # Enrichir les descriptions des options
     for option in options:
-        code = option.get("code", "")
+        # PATCH: Utiliser "product_code" au lieu de "code"
+        code = option.get("product_code", option.get("code", ""))
         if not option.get("description") or len(option.get("description", "")) < 5:
             desc = decode_option_code(code)
             if desc:
@@ -3576,24 +3578,8 @@ def enrich_vehicle_data(vehicle_data: dict) -> dict:
     
     return vehicle_data
 
-def decode_fca_price(raw_value: str) -> float:
-    """Décode un prix FCA: enlève le premier 0 et les deux derniers chiffres
-    Exemple: 08663000 → 86630
-    """
-    # Remove any non-numeric characters
-    cleaned = re.sub(r'[^\d]', '', str(raw_value))
-    
-    if len(cleaned) >= 4:
-        # Remove first 0 if present and last 2 digits
-        if cleaned.startswith('0'):
-            cleaned = cleaned[1:]
-        if len(cleaned) >= 2:
-            cleaned = cleaned[:-2]
-        try:
-            return float(cleaned)
-        except:
-            return 0
-    return 0
+# PATCH: decode_fca_price() supprimé - utiliser clean_fca_price() uniquement
+# Fonction dupliquée de clean_fca_price() dans parser.py
 
 def decode_fca_holdback(raw_value: str) -> float:
     """Décode un holdback FCA - même règle que les prix
@@ -3799,18 +3785,19 @@ def parse_fca_invoice_structured(text: str) -> dict:
     # -------------------------
     # VIN (17 caractères, format FCA avec ou sans tirets)
     # -------------------------
-    # D'abord chercher avec tirets et nettoyer
-    vin_match = re.search(r"([0-9A-HJ-NPR-Z]{1,5}[-]?[A-HJ-NPR-Z0-9]{2}[-]?[A-HJ-NPR-Z0-9]{6,10})", text)
+    # PATCH: Pattern VIN plus strict - 17 caractères exacts
+    # Priorité 1: VIN standard 17 caractères (plus fiable)
+    vin_match = re.search(r"\b([0-9A-HJ-NPR-Z]{17})\b", text)
     if vin_match:
-        vin_raw = vin_match.group(1).replace("-", "").replace(" ", "")
-        if len(vin_raw) >= 17:
-            data["vin"] = vin_raw[:17]
+        data["vin"] = vin_match.group(1)
     
-    # Fallback: VIN standard 17 caractères
+    # Fallback: VIN FCA avec tirets (format 1C4RJHBG6-S8-806264)
     if not data["vin"]:
-        vin_match = re.search(r"\b([0-9A-HJ-NPR-Z]{17})\b", text)
-        if vin_match:
-            data["vin"] = vin_match.group(1)
+        vin_dash_match = re.search(r"\b([0-9A-HJ-NPR-Z]{9})[-\s]([A-HJ-NPR-Z0-9]{2})[-\s]([A-HJ-NPR-Z0-9]{6})\b", text)
+        if vin_dash_match:
+            vin_raw = vin_dash_match.group(1) + vin_dash_match.group(2) + vin_dash_match.group(3)
+            if len(vin_raw) == 17:
+                data["vin"] = vin_raw
     
     # -------------------------
     # Model Code - RESTREINT à la zone MODEL/OPT
@@ -4671,7 +4658,8 @@ async def scan_and_save_invoice(request: InvoiceScanRequest, authorization: Opti
             await db.vehicle_options.insert_one({
                 "id": str(uuid.uuid4()),
                 "stock_no": stock_no,
-                "product_code": opt.get("code", ""),
+                # PATCH: Support "product_code" et "code" pour compatibilité
+                "product_code": opt.get("product_code", opt.get("code", "")),
                 "order": idx,
                 "description": opt.get("description", ""),
                 "amount": opt.get("amount", 0) or 0
