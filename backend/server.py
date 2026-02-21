@@ -3460,8 +3460,20 @@ def decode_fca_holdback(raw_value: str) -> float:
     return 0
 
 # =========================
-# PARSER STRUCTURÉ FCA - VERSION PRODUCTION
+# PARSER STRUCTURÉ FCA V4 - VERSION PRODUCTION INDUSTRIELLE
 # =========================
+
+# Codes invalides à exclure des options
+INVALID_OPTION_CODES = {
+    "VIN", "GST", "TPS", "QUE", "INC", "PDCO", "PREF", 
+    "MODEL", "TOTAL", "MSRP", "SUB", "KG", "GVW"
+}
+
+
+def generate_file_hash(file_bytes: bytes) -> str:
+    """Génère un hash SHA256 unique pour le fichier"""
+    return hashlib.sha256(file_bytes).hexdigest()
+
 
 def clean_fca_price(raw_value: str) -> int:
     """
@@ -3471,18 +3483,14 @@ def clean_fca_price(raw_value: str) -> int:
     Exemple: 05662000 -> 56620
     """
     raw_value = str(raw_value).strip()
-    
-    # Remove any non-numeric characters
     raw_value = re.sub(r'[^\d]', '', raw_value)
     
     if not raw_value:
         return 0
     
-    # Remove leading 0 if present
     if raw_value.startswith("0"):
         raw_value = raw_value[1:]
     
-    # Remove last 2 digits
     if len(raw_value) >= 2:
         raw_value = raw_value[:-2]
     
@@ -3493,9 +3501,7 @@ def clean_fca_price(raw_value: str) -> int:
 
 
 def clean_decimal_price(raw_value: str) -> float:
-    """
-    Nettoie les montants format décimal: 57,120.00 -> 57120.00
-    """
+    """Nettoie les montants format décimal: 57,120.00 -> 57120.00"""
     raw_value = str(raw_value).replace(",", "").strip()
     try:
         return float(raw_value)
@@ -3524,12 +3530,44 @@ def extract_pdf_text(file_bytes: bytes) -> str:
     return text
 
 
+def extract_text_from_image(file_bytes: bytes) -> str:
+    """
+    OCR image avec Tesseract + prétraitement OpenCV
+    """
+    try:
+        # Charger l'image
+        image = Image.open(io.BytesIO(file_bytes))
+        img = np.array(image)
+        
+        # Convertir en niveaux de gris
+        if len(img.shape) == 3:
+            gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        else:
+            gray = img
+        
+        # Amélioration du contraste
+        gray = cv2.convertScaleAbs(gray, alpha=1.5, beta=10)
+        
+        # Seuillage adaptatif pour améliorer la lisibilité
+        thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)[1]
+        
+        # OCR avec Tesseract (anglais + français)
+        text = pytesseract.image_to_string(
+            thresh,
+            lang="eng+fra",
+            config="--psm 6"
+        )
+        
+        return text
+    except Exception as e:
+        logger.error(f"OCR error: {e}")
+        return ""
+
+
 def parse_fca_invoice_structured(text: str) -> dict:
     """
-    Parser structuré pour factures FCA Canada.
-    Utilise regex pour extraire les données de manière fiable.
-    
-    Extrait: VIN, Model Code, EP, PDCO, PREF, Holdback, Subtotal, Total, Options
+    Parser structuré V4 pour factures FCA Canada.
+    Patterns améliorés et plus stricts.
     """
     data = {
         "vin": None,
@@ -3541,26 +3579,41 @@ def parse_fca_invoice_structured(text: str) -> dict:
         "subtotal_excl_tax": None,
         "invoice_total": None,
         "options": [],
-        "parse_method": "structured_regex"
+        "parse_method": "structured_v4"
     }
     
     # -------------------------
-    # VIN (17 caractères)
+    # VIN (17 caractères, format FCA avec ou sans tirets)
     # -------------------------
-    vin_match = re.search(r"\b[0-9A-HJ-NPR-Z]{17}\b", text)
+    # D'abord chercher avec tirets et nettoyer
+    vin_match = re.search(r"([0-9A-HJ-NPR-Z]{1,5}[-]?[A-HJ-NPR-Z0-9]{2}[-]?[A-HJ-NPR-Z0-9]{6,10})", text)
     if vin_match:
-        data["vin"] = vin_match.group(0)
+        vin_raw = vin_match.group(1).replace("-", "").replace(" ", "")
+        if len(vin_raw) >= 17:
+            data["vin"] = vin_raw[:17]
+    
+    # Fallback: VIN standard 17 caractères
+    if not data["vin"]:
+        vin_match = re.search(r"\b([0-9A-HJ-NPR-Z]{17})\b", text)
+        if vin_match:
+            data["vin"] = vin_match.group(1)
     
     # -------------------------
-    # Model Code (ex: WLJP74, JTJL98, DT6P98)
+    # Model Code - RESTREINT à la zone MODEL/OPT
+    # Pattern: 5-7 caractères alphanumériques (ex: WLJP74, WLJH75, JTJL98)
     # -------------------------
-    model_code_match = re.search(r"\b[A-Z]{2,4}\d{2}\b", text)
-    if model_code_match:
-        data["model_code"] = model_code_match.group(0)
+    model_section = re.search(r"MODEL/OPT[\s\S]{0,50}?\n\s*([A-Z]{2,4}[A-Z0-9]{2,4})", text)
+    if model_section:
+        data["model_code"] = model_section.group(1)
+    else:
+        # Fallback: chercher pattern FCA standard (2-4 lettres + 2 chiffres)
+        model_match = re.search(r"\b(WL[A-Z]{2}\d{2}|JT[A-Z]{2}\d{2}|DT[A-Z0-9]{2}\d{2})\b", text)
+        if model_match:
+            data["model_code"] = model_match.group(1)
     
     # -------------------------
     # E.P. (Employee Price / Coût)
-    # Pattern: E.P. 08663000
+    # Pattern: E.P. suivi de 7-10 chiffres
     # -------------------------
     ep_match = re.search(r"E\.P\.?\s*(\d{7,10})", text)
     if ep_match:
@@ -3568,7 +3621,6 @@ def parse_fca_invoice_structured(text: str) -> dict:
     
     # -------------------------
     # PDCO (Prix dealer / PDSF base)
-    # Pattern: PDCO 09430500
     # -------------------------
     pdco_match = re.search(r"PDCO\s*(\d{7,10})", text)
     if pdco_match:
@@ -3576,29 +3628,28 @@ def parse_fca_invoice_structured(text: str) -> dict:
     
     # -------------------------
     # PREF (Prix de référence)
-    # Pattern: PREF* 08735500 ou PREF 08735500
     # -------------------------
     pref_match = re.search(r"PREF\*?\s*(\d{7,10})", text)
     if pref_match:
         data["pref"] = clean_fca_price(pref_match.group(1))
     
     # -------------------------
-    # HOLDBACK (généralement 6 chiffres en bas à gauche)
-    # Pattern: 050000 = 500$
-    # Chercher un pattern de holdback spécifique
+    # HOLDBACK - AMÉLIORÉ
+    # Chercher dans la zone financière près de PREF
+    # Format: 6 chiffres commençant par 0 (ex: 070000 = 700$)
     # -------------------------
-    # Chercher un nombre de 6 chiffres commençant par 0 qui n'est pas un autre code
-    holdback_match = re.search(r"\b(0\d{5})\b", text)
+    # Méthode 1: Chercher après PREF
+    holdback_match = re.search(r"PREF\*?\s*\d{7,10}\s+(\d{6})\b", text)
     if holdback_match:
         data["holdback"] = clean_fca_price(holdback_match.group(1))
+    else:
+        # Méthode 2: Chercher un 0XXXXX isolé près de GVW/KG
+        holdback_match = re.search(r"\b(0[3-9]\d{4})\b\s*(?:GVW|KG|$)", text)
+        if holdback_match:
+            data["holdback"] = clean_fca_price(holdback_match.group(1))
     
     # -------------------------
     # SUBTOTAL EXCLUDING TAXES
-    # Pattern FCA - plusieurs formats possibles:
-    # SUB TOTAL EXCLUDING TAXES
-    # SOMME PARTIELLE SANS TAXES
-    # 57,120.00
-    # OU tout sur la même ligne
     # -------------------------
     subtotal_match = re.search(
         r"SUB\s*TOTAL\s*EXCLUDING\s*TAXES[\s\S]*?([\d,]+\.\d{2})",
@@ -3616,9 +3667,8 @@ def parse_fca_invoice_structured(text: str) -> dict:
         text
     )
     if not total_match:
-        # Alternative: INVOICE TOTAL format
         total_match = re.search(
-            r"INVOICE\s*TOTAL\s*([\d,]+\.\d{2})",
+            r"INVOICE\s*TOTAL[\s\S]*?([\d,]+\.\d{2})",
             text,
             re.IGNORECASE
         )
@@ -3626,59 +3676,83 @@ def parse_fca_invoice_structured(text: str) -> dict:
         data["invoice_total"] = clean_decimal_price(total_match.group(1))
     
     # -------------------------
-    # OPTIONS
-    # Pattern: CODE  DESCRIPTION  000000 (8 chiffres FCA)
+    # OPTIONS - PATTERN AMÉLIORÉ
+    # Format: CODE (2-5 chars) + DESCRIPTION (5+ chars) + MONTANT (6-10 chiffres ou SANS FRAIS)
     # -------------------------
     option_pattern = re.findall(
-        r"\b([A-Z0-9]{2,6})\s+(.+?)\s+(\d{6,10})\b",
+        r"\n\s*([A-Z0-9]{2,5})\s+([A-Z0-9][A-Z0-9 ,\-\/'\.]{4,}?)\s+(\d{6,10}|\*|SANS\s*FRAIS)",
         text
     )
     
     for code, desc, amount in option_pattern:
-        # Skip certain codes that aren't real options
-        if code.upper() in ['VIN', 'GST', 'TPS', 'QUE', 'INC', 'PDCO', 'PREF', 'MSRP']:
+        if code.upper() in INVALID_OPTION_CODES:
             continue
-        try:
-            data["options"].append({
-                "product_code": code.upper(),
-                "description": desc.strip()[:100],
-                "amount": clean_fca_price(amount)
-            })
-        except:
-            continue
+        
+        # Nettoyer le montant
+        if amount in ['*', 'SANS FRAIS', 'SANS']:
+            amt = 0
+        else:
+            amt = clean_fca_price(amount)
+        
+        data["options"].append({
+            "product_code": code.upper(),
+            "description": desc.strip()[:100],
+            "amount": amt
+        })
     
     return data
 
 
-def parse_fca_invoice_text(text: str) -> dict:
-    """Wrapper pour compatibilité - utilise le parser structuré"""
-    structured = parse_fca_invoice_structured(text)
+def validate_invoice_data(data: dict) -> dict:
+    """
+    Validation stricte des données parsées.
+    Retourne un score de confiance et les erreurs détectées.
+    """
+    score = 0
+    errors = []
     
-    # Convertir au format attendu par l'ancien code
-    result = {
-        "vin": structured.get("vin"),
-        "model_code": structured.get("model_code"),
-        "ep_cost": structured.get("ep_cost"),
-        "pdco": structured.get("pdco"),
-        "pref": structured.get("pref"),
-        "holdback": structured.get("holdback") or 0,
-        "msrp": structured.get("pdco"),  # PDCO = PDSF
-        "subtotal": structured.get("subtotal_excl_tax"),
-        "invoice_total": structured.get("invoice_total"),
-        "options": structured.get("options", []),
-        "parse_method": "structured_regex"
+    # VIN valide (17 caractères)
+    if data.get("vin") and len(str(data["vin"])) == 17:
+        score += 25
+    else:
+        errors.append("VIN invalide ou manquant")
+    
+    # E.P. valide (> 10000$)
+    if data.get("ep_cost") and data["ep_cost"] > 10000:
+        score += 20
+    else:
+        errors.append("E.P. invalide ou manquant")
+    
+    # PDCO valide et cohérent (> E.P.)
+    ep = data.get("ep_cost") or 0
+    pdco = data.get("pdco") or 0
+    if pdco > ep > 0:
+        score += 20
+    elif pdco > 0:
+        score += 10
+        errors.append("PDCO <= E.P. (incohérent)")
+    else:
+        errors.append("PDCO manquant")
+    
+    # Subtotal présent
+    if data.get("subtotal_excl_tax") and data["subtotal_excl_tax"] > 0:
+        score += 15
+    
+    # Total facture présent
+    if data.get("invoice_total") and data["invoice_total"] > 0:
+        score += 10
+    
+    # Au moins 3 options
+    if len(data.get("options", [])) >= 3:
+        score += 10
+    elif len(data.get("options", [])) >= 1:
+        score += 5
+    
+    return {
+        "score": min(score, 100),
+        "errors": errors,
+        "is_valid": score >= 65
     }
-    
-    # Calculer confidence basé sur les champs trouvés
-    confidence = 0
-    if result["vin"]: confidence += 25
-    if result["ep_cost"]: confidence += 25
-    if result["pdco"]: confidence += 20
-    if result["model_code"]: confidence += 15
-    if len(result["options"]) > 2: confidence += 15
-    
-    result["parse_confidence"] = min(confidence, 100)
-    return result
 
 
 class InvoiceScanRequest(BaseModel):
