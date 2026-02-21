@@ -3270,6 +3270,24 @@ def auto_correct_vin(vin: str) -> tuple:
                 if validate_vin_checksum(test):
                     return test, True
     
+    # Stratégie 4: Si le check digit (position 9) semble erroné,
+    # recalculer et remplacer
+    expected_check = compute_vin_check_digit(vin)
+    if vin[8] != expected_check:
+        corrected = vin[:8] + expected_check + vin[9:]
+        # Vérifier que le reste du VIN est plausible
+        # (lettres aux bonnes positions, pas de I/O/Q)
+        if not any(c in "IOQ" for c in corrected):
+            return corrected, True
+    
+    # Stratégie 5: Essayer P/J + recalculer check digit
+    if vin[3] == "J":
+        test = vin[:3] + "P" + vin[4:]
+        check = compute_vin_check_digit(test)
+        test = test[:8] + check + test[9:]
+        if validate_vin_checksum(test):
+            return test, True
+    
     return vin, False
 
 
