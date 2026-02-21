@@ -4342,14 +4342,14 @@ Retourne UNIQUEMENT ce JSON:
                     "parse_method": "vision_optimized",
                     "metrics": {
                         "parse_duration_sec": parse_duration,
-                        "validation_score": validation_score,
+                        "validation_score": validation.get("score", 0),
                         "image_compressed": True,
                         "cost_estimate": "~$0.02"
                     }
                 }
                 
                 parse_method = "vision_optimized"
-                logger.info(f"Vision optimisé: VIN={vin_raw}, EP={ep_cost}, Score={validation_score}, Duration={parse_duration}s")
+                logger.info(f"Vision optimisé: VIN={vin_corrected}, EP={ep_cost}, Score={validation.get('score', 0)}, Duration={parse_duration}s")
                 
             except HTTPException:
                 raise
