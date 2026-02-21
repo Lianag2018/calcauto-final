@@ -3679,184 +3679,212 @@ class InvoiceScanRequest(BaseModel):
 
 @api_router.post("/inventory/scan-invoice")
 async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str] = Header(None)):
-    """Scanne une facture FCA - Utilise GPT-4 Vision avec décodage VIN/Code Modèle
+    """Scanne une facture FCA - Parser structuré (regex) avec fallback IA
     
-    PROCESSUS:
-    1. GPT-4 Vision extrait les données brutes (codes encodés)
-    2. Décodage VIN → Année, Marque
-    3. Décodage Code Modèle → Modèle, Trim
-    4. Décodage des prix FCA
+    MÉTHODE PRINCIPALE: Parser structuré avec pdfplumber + regex
+    - Rapide, fiable, sans coût API
+    - Supporte les PDFs natifs
+    
+    FALLBACK: GPT-4 Vision (pour images uniquement)
+    - Utilisé si pas de PDF ou si parsing structuré échoue
     """
     user = await get_current_user(authorization)
     
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+        # Décoder le base64
+        try:
+            file_bytes = base64.b64decode(request.image_base64)
+        except:
+            raise HTTPException(status_code=400, detail="Base64 invalide")
         
-        api_key = os.environ.get("EMERGENT_LLM_KEY") or os.environ.get("OPENAI_API_KEY")
-        if not api_key:
-            raise HTTPException(status_code=500, detail="Clé API non configurée")
+        # Détecter si c'est un PDF (magic bytes: %PDF)
+        is_pdf = file_bytes[:4] == b'%PDF' or request.is_pdf
         
-        # GPT-4 Vision pour extraire les données BRUTES (sans décodage)
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"invoice-{uuid.uuid4()}",
-            system_message="""Tu es un OCR expert pour factures FCA Canada.
+        vehicle_data = None
+        parse_method = None
+        
+        # ===== MÉTHODE 1: PARSER STRUCTURÉ (PDF) =====
+        if is_pdf:
+            logger.info("Détection PDF - utilisation du parser structuré")
+            try:
+                pdf_text = extract_pdf_text(file_bytes)
+                
+                if pdf_text and len(pdf_text) > 100:
+                    parsed = parse_fca_invoice_structured(pdf_text)
+                    
+                    # Vérifier que le parsing a extrait des données essentielles
+                    if parsed.get("vin") or parsed.get("ep_cost"):
+                        parse_method = "structured_regex"
+                        
+                        # Enrichir avec décodage VIN
+                        vin = parsed.get("vin", "")
+                        vin_info = {}
+                        if vin and len(vin) == 17:
+                            vin_info = decode_vin(vin)
+                        
+                        # Enrichir avec décodage code modèle
+                        model_code = parsed.get("model_code", "")
+                        product_info = {}
+                        if model_code:
+                            product_info = decode_product_code(model_code)
+                        
+                        vehicle_data = {
+                            "vin": vin,
+                            "model_code": model_code,
+                            "year": vin_info.get("year") or datetime.now().year,
+                            "brand": product_info.get("brand") or vin_info.get("manufacturer") or "Ram",
+                            "model": product_info.get("model") or "",
+                            "trim": product_info.get("trim") or "",
+                            "ep_cost": parsed.get("ep_cost") or 0,
+                            "pdco": parsed.get("pdco") or 0,
+                            "pref": parsed.get("pref") or 0,
+                            "holdback": parsed.get("holdback") or 0,
+                            "msrp": parsed.get("pdco") or 0,  # PDCO = PDSF
+                            "net_cost": parsed.get("ep_cost") or 0,  # Coût = E.P.
+                            "subtotal": parsed.get("subtotal_excl_tax") or 0,
+                            "invoice_total": parsed.get("invoice_total") or 0,
+                            "options": parsed.get("options", []),
+                            "parse_method": "structured_regex",
+                            "parse_confidence": 90  # Haute confiance pour parsing structuré
+                        }
+                        
+                        logger.info(f"Parser structuré réussi: VIN={vin}, EP={vehicle_data['ep_cost']}, PDCO={vehicle_data['pdco']}")
+                    else:
+                        logger.warning("Parser structuré: données insuffisantes, fallback IA")
+                else:
+                    logger.warning("Extraction PDF: texte insuffisant")
+                    
+            except Exception as pdf_err:
+                logger.error(f"Erreur parser PDF: {pdf_err}")
+        
+        # ===== MÉTHODE 2: FALLBACK IA (Images ou si PDF échoue) =====
+        if vehicle_data is None:
+            logger.info("Utilisation du fallback IA (GPT-4 Vision)")
+            
+            try:
+                from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+                
+                api_key = os.environ.get("EMERGENT_LLM_KEY") or os.environ.get("OPENAI_API_KEY")
+                if not api_key:
+                    raise HTTPException(status_code=500, detail="Clé API non configurée pour le fallback IA")
+                
+                chat = LlmChat(
+                    api_key=api_key,
+                    session_id=f"invoice-{uuid.uuid4()}",
+                    system_message="""Tu es un OCR expert pour factures FCA Canada.
 
-IMPORTANT: Extrait les valeurs EXACTEMENT comme elles apparaissent sur la facture.
+Extrait les valeurs EXACTEMENT comme elles apparaissent sur la facture.
 
 Retourne ce JSON:
 {
-  "stock_no": "numéro écrit à la main en bas (ex: 46058)",
-  "vin_raw": "VIN tel qu'il apparaît avec tirets (ex: 1C6PJTAGX-TL-160857)",
-  "model_code": "premier code du tableau MODEL/OPT (ex: JTJL98)",
-  "description": "description du véhicule (ex: Gladiator Willys)",
-  
-  "ep_raw": "valeur E.P. exacte 8 chiffres (ex: 05662000)",
-  "pdco_raw": "valeur PDCO exacte 8 chiffres (ex: 05999500)", 
-  "pref_raw": "valeur PREF exacte 8 chiffres si présent (ex: 05714500)",
-  "holdback_raw": "valeur holdback 6 chiffres si présent en bas à gauche (ex: 050000)",
-  
-  "subtotal": nombre du SUB TOTAL EXCLUDING TAXES (ex: 57120.00),
-  "invoice_total": nombre INVOICE TOTAL (ex: 59976.00),
-  
-  "color_code": "code couleur si visible (ex: PGE, PW7)",
-  
-  "options": [
-    {"code": "CODE", "description": "description", "amount": montant ou 0}
-  ]
+  "stock_no": "numéro écrit à la main (ex: 46058)",
+  "vin_raw": "VIN avec tirets (ex: 1C6PJTAGX-TL-160857)",
+  "model_code": "code modèle (ex: JTJL98, WLJP74)",
+  "description": "description véhicule",
+  "ep_raw": "valeur E.P. 8 chiffres (ex: 05662000)",
+  "pdco_raw": "valeur PDCO 8 chiffres (ex: 05999500)",
+  "pref_raw": "valeur PREF si présent",
+  "holdback_raw": "holdback 6 chiffres (ex: 050000)",
+  "subtotal": nombre SUB TOTAL EXCLUDING TAXES,
+  "invoice_total": nombre INVOICE TOTAL,
+  "color_code": "code couleur (ex: PW7)",
+  "options": [{"code": "CODE", "description": "desc", "amount": 0}]
 }
 
-IMPORTANT:
-- Le holdback est souvent écrit en bas à gauche sous forme de 6 chiffres (ex: 050000 = 5000$)
-- Décodage: enlever le premier 0 pour obtenir le montant
-- EXTRAIT UNIQUEMENT ce qui est VISIBLE. Ne devine pas."""
-        ).with_model("openai", "gpt-4o")
-        
-        image_content = ImageContent(image_base64=request.image_base64)
-        response = await chat.send_message(UserMessage(
-            text="Extrait les données de cette facture FCA. Retourne les valeurs EXACTEMENT comme elles apparaissent.",
-            file_contents=[image_content]
-        ))
-        
-        # Parse JSON response
-        json_str = response.strip()
-        if "```" in json_str:
-            parts = json_str.split("```")
-            for part in parts:
-                if part.strip().startswith("json"):
-                    json_str = part.strip()[4:].strip()
-                    break
-                elif part.strip().startswith("{"):
-                    json_str = part.strip()
-                    break
-        
-        try:
-            raw_data = json.loads(json_str)
-        except json.JSONDecodeError:
-            json_match = re.search(r'\{[\s\S]*\}', response)
-            if json_match:
-                raw_data = json.loads(json_match.group())
-            else:
-                raise HTTPException(status_code=400, detail="Impossible d'extraire les données JSON")
-        
-        logger.info(f"Raw OCR data: {raw_data}")
-        
-        # DÉCODAGE AUTOMATIQUE
-        vehicle_data = {
-            "stock_no": raw_data.get("stock_no", "").strip(),
-            "options": raw_data.get("options", [])
-        }
-        
-        # 1. Décoder le VIN
-        vin_raw = raw_data.get("vin_raw", "").replace("-", "").replace(" ", "").upper()
-        if len(vin_raw) >= 17:
-            vin_raw = vin_raw[:17]  # Prendre les 17 premiers caractères
-            vehicle_data["vin"] = vin_raw
-            vin_info = decode_vin(vin_raw)
-            if vin_info.get("valid"):
-                vehicle_data["year"] = vin_info.get("year")
-                vehicle_data["brand"] = vin_info.get("manufacturer", "Ram")
-                logger.info(f"VIN decoded: {vin_info}")
-        
-        # 2. Décoder le code modèle
-        model_code = raw_data.get("model_code", "").upper().strip()
-        if model_code:
-            product_info = decode_product_code(model_code)
-            if product_info.get("brand"):
-                vehicle_data["brand"] = product_info["brand"]
-                vehicle_data["model"] = product_info["model"]
-                vehicle_data["trim"] = product_info.get("trim")
-                logger.info(f"Model code {model_code} decoded: {product_info}")
-            else:
-                # Extraire le modèle de la description
-                desc = raw_data.get("description", "")
-                if "2500" in desc:
-                    vehicle_data["model"] = "2500"
-                elif "1500" in desc:
-                    vehicle_data["model"] = "1500"
-                elif "3500" in desc:
-                    vehicle_data["model"] = "3500"
+IMPORTANT: Extrait les valeurs RAW, le décodage sera fait côté serveur."""
+                ).with_model("openai", "gpt-4o")
                 
-                # Extraire le trim
-                for trim in ["Tradesman", "Express", "Big Horn", "Laramie", "Limited", "Rebel"]:
-                    if trim.lower() in desc.lower():
-                        vehicle_data["trim"] = trim
-                        break
+                image_content = ImageContent(image_base64=request.image_base64)
+                response = await chat.send_message(UserMessage(
+                    text="Extrait les données de cette facture FCA. Retourne les valeurs EXACTEMENT.",
+                    file_contents=[image_content]
+                ))
+                
+                # Parse JSON
+                json_str = response.strip()
+                if "```" in json_str:
+                    for part in json_str.split("```"):
+                        if part.strip().startswith("json"):
+                            json_str = part.strip()[4:].strip()
+                            break
+                        elif part.strip().startswith("{"):
+                            json_str = part.strip()
+                            break
+                
+                try:
+                    raw_data = json.loads(json_str)
+                except:
+                    json_match = re.search(r'\{[\s\S]*\}', response)
+                    if json_match:
+                        raw_data = json.loads(json_match.group())
+                    else:
+                        raise HTTPException(status_code=400, detail="Impossible d'extraire les données JSON")
+                
+                # Décoder VIN
+                vin_raw = raw_data.get("vin_raw", "").replace("-", "").replace(" ", "").upper()
+                if len(vin_raw) >= 17:
+                    vin_raw = vin_raw[:17]
+                vin_info = decode_vin(vin_raw) if vin_raw else {}
+                
+                # Décoder code modèle
+                model_code = raw_data.get("model_code", "").upper().strip()
+                product_info = decode_product_code(model_code) if model_code else {}
+                
+                # Décoder les prix FCA
+                ep_cost = clean_fca_price(raw_data.get("ep_raw", ""))
+                pdco = clean_fca_price(raw_data.get("pdco_raw", ""))
+                pref = clean_fca_price(raw_data.get("pref_raw", ""))
+                holdback = clean_fca_price(raw_data.get("holdback_raw", ""))
+                
+                # Couleur
+                color_code = raw_data.get("color_code", "").upper()
+                color_map = {
+                    "PW7": "Blanc Vif", "PXJ": "Noir Cristal Nacré", "PX8": "Noir Diamant",
+                    "PAU": "Rouge Flamme", "PSC": "Gris Destroyer", "PWL": "Blanc Perle Tricouche",
+                    "PGG": "Gris Granit Cristal", "PBF": "Bleu Patriote Nacré"
+                }
+                
+                vehicle_data = {
+                    "stock_no": raw_data.get("stock_no", "").strip(),
+                    "vin": vin_raw,
+                    "model_code": model_code,
+                    "year": vin_info.get("year") or datetime.now().year,
+                    "brand": product_info.get("brand") or vin_info.get("manufacturer") or "Ram",
+                    "model": product_info.get("model") or "",
+                    "trim": product_info.get("trim") or "",
+                    "ep_cost": ep_cost,
+                    "pdco": pdco,
+                    "pref": pref,
+                    "holdback": holdback,
+                    "msrp": pdco,  # PDCO = PDSF
+                    "net_cost": ep_cost,  # Coût = E.P.
+                    "subtotal": raw_data.get("subtotal", 0),
+                    "invoice_total": raw_data.get("invoice_total", 0),
+                    "color": color_map.get(color_code, color_code),
+                    "options": raw_data.get("options", []),
+                    "parse_method": "ai_fallback",
+                    "parse_confidence": 70
+                }
+                
+                parse_method = "ai_fallback"
+                logger.info(f"Fallback IA réussi: VIN={vin_raw}, EP={ep_cost}")
+                
+            except Exception as ai_err:
+                logger.error(f"Erreur fallback IA: {ai_err}")
+                raise HTTPException(status_code=500, detail=f"Erreur d'analyse: {str(ai_err)}")
         
-        # 3. Décoder les prix FCA (enlever premier 0 et 2 derniers chiffres)
-        ep_raw = raw_data.get("ep_raw", "")
-        pdco_raw = raw_data.get("pdco_raw", "")
-        pref_raw = raw_data.get("pref_raw", "")
-        holdback_raw = raw_data.get("holdback_raw", "")
-        
-        vehicle_data["ep_cost"] = decode_fca_price(ep_raw) if ep_raw else 0
-        vehicle_data["pdco"] = decode_fca_price(pdco_raw) if pdco_raw else 0
-        vehicle_data["pref"] = decode_fca_price(pref_raw) if pref_raw else 0
-        
-        # PDCO = PDSF = MSRP (règle métier)
-        vehicle_data["msrp"] = vehicle_data["pdco"]
-        
-        # Holdback - juste informatif, pas de calcul
-        if holdback_raw:
-            vehicle_data["holdback"] = decode_fca_holdback(holdback_raw)
-        else:
-            vehicle_data["holdback"] = 0
-        
-        # Coût = E.P. directement (pas de soustraction)
-        vehicle_data["net_cost"] = vehicle_data["ep_cost"]
-        
-        logger.info(f"Prices: E.P./Coût={vehicle_data['ep_cost']}, PDSF={vehicle_data['msrp']}, Holdback={vehicle_data['holdback']}")
-        
-        # 5. Décoder la couleur
-        color_code = raw_data.get("color_code", "").upper()
-        color_map = {
-            "PW7": "Blanc Vif",
-            "PXJ": "Noir Cristal Nacré",
-            "PX8": "Noir Diamant",
-            "PAU": "Rouge Flamme",
-            "PSC": "Gris Destroyer",
-            "PWL": "Blanc Perle Tricouche",
-            "PGG": "Gris Granit Cristal",
-            "PBF": "Bleu Patriote Nacré",
-            "PR4": "Rouge Flamme",
-            "PW1": "Blanc Éclatant"
-        }
-        vehicle_data["color"] = color_map.get(color_code, color_code)
-        
-        # Ajouter subtotal et total
-        vehicle_data["subtotal"] = raw_data.get("subtotal", 0)
-        vehicle_data["invoice_total"] = raw_data.get("invoice_total", 0)
-        vehicle_data["parse_method"] = "ai_with_decoding"
-        
-        # Nettoyer les valeurs None et vides
+        # Nettoyer les valeurs None/vides
         vehicle_data = {k: v for k, v in vehicle_data.items() if v is not None and v != ""}
         
         return {
             "success": True,
             "vehicle": vehicle_data,
-            "message": "Facture analysée avec succès"
+            "message": f"Facture analysée avec succès ({parse_method})",
+            "parse_method": parse_method
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error scanning invoice: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
