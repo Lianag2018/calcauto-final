@@ -4274,7 +4274,7 @@ Retourne UNIQUEMENT ce JSON:
                     raw = json.loads(json_str)
                 except json.JSONDecodeError as je:
                     # Essayer d'extraire juste le JSON
-                    match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response, re.DOTALL)
+                    match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', json_str, re.DOTALL)
                     if match:
                         try:
                             clean_json = match.group()
