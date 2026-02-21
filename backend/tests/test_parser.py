@@ -96,12 +96,13 @@ class TestFCAParser:
         assert vin == "1C4RJKBG5S8123456"
     
     def test_parse_vin_with_dashes(self):
-        """Parse VIN avec tirets FCA"""
-        text = "1C4RJ-KB-G5S812345"
+        """Parse VIN avec tirets FCA - format réel"""
+        # Format FCA réel: 1C4RJKBG5-S8-806267
+        text = "VIN: 1C4RJKBG5-S8-806267"
         vin = parse_vin(text)
-        # Devrait extraire les 17 premiers chars
         assert vin is not None
         assert len(vin) == 17
+        assert vin == "1C4RJKBG5S8806267"
     
     def test_parse_financial_data(self):
         """Parse données financières"""
