@@ -3460,7 +3460,7 @@ def decode_fca_holdback(raw_value: str) -> float:
     return 0
 
 # =========================
-# PARSER STRUCTURÉ FCA V4 - VERSION PRODUCTION INDUSTRIELLE
+# PARSER STRUCTURÉ FCA V5 - VERSION INDUSTRIELLE OPTIMISÉE
 # =========================
 
 # Codes invalides à exclure des options
@@ -3469,10 +3469,52 @@ INVALID_OPTION_CODES = {
     "MODEL", "TOTAL", "MSRP", "SUB", "KG", "GVW"
 }
 
+# Cache des codes produits FCA (évite lookups répétés)
+FCA_PRODUCT_CACHE = {}
+
 
 def generate_file_hash(file_bytes: bytes) -> str:
     """Génère un hash SHA256 unique pour le fichier"""
     return hashlib.sha256(file_bytes).hexdigest()
+
+
+def compress_image_for_vision(file_bytes: bytes, max_size: int = 1024, quality: int = 70) -> str:
+    """
+    Compresse l'image pour réduire les tokens Vision API.
+    - Redimensionne à max 1024px
+    - Compression JPEG quality 70
+    - Retourne base64 optimisé
+    
+    Économie: ~60-70% de tokens en moins
+    """
+    try:
+        image = Image.open(io.BytesIO(file_bytes))
+        
+        # Convertir en RGB si nécessaire
+        if image.mode in ('RGBA', 'P'):
+            image = image.convert('RGB')
+        
+        # Redimensionner proportionnellement
+        width, height = image.size
+        if max(width, height) > max_size:
+            ratio = max_size / max(width, height)
+            new_size = (int(width * ratio), int(height * ratio))
+            image = image.resize(new_size, Image.Resampling.LANCZOS)
+        
+        # Compression JPEG
+        buffer = io.BytesIO()
+        image.save(buffer, format='JPEG', quality=quality, optimize=True)
+        
+        compressed_bytes = buffer.getvalue()
+        original_size = len(file_bytes)
+        new_size = len(compressed_bytes)
+        
+        logger.info(f"Image compressed: {original_size/1024:.1f}KB → {new_size/1024:.1f}KB ({100-new_size*100/original_size:.0f}% reduction)")
+        
+        return base64.b64encode(compressed_bytes).decode('utf-8')
+    except Exception as e:
+        logger.error(f"Compression error: {e}")
+        return base64.b64encode(file_bytes).decode('utf-8')
 
 
 def clean_fca_price(raw_value: str) -> int:
