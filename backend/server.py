@@ -3904,26 +3904,29 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                 # OPTIMISATION 1: Compression image (réduction tokens mais qualité préservée)
                 compressed_base64 = compress_image_for_vision(file_bytes, max_size=1536, quality=82)
                 
-                # OPTIMISATION 2: Prompt ultra-compact JSON strict
+                # OPTIMISATION 2: Prompt compact mais clair
                 chat = LlmChat(
                     api_key=api_key,
                     session_id=f"fca-{uuid.uuid4().hex[:8]}",
-                    system_message="""Extracteur factures FCA Canada. JSON strict uniquement.
+                    system_message="""Extracteur de factures FCA Canada. Retourne JSON uniquement.
 
+Format de sortie:
 {
-  "s": "stock manuscrit",
-  "v": "VIN 17 chars sans tirets",
-  "m": "code modèle 6 chars",
-  "d": "description véhicule",
-  "e": "E.P. 8 chiffres",
-  "p": "PDCO 8 chiffres",
-  "r": "PREF 8 chiffres",
-  "h": "holdback 6 chiffres",
-  "t": "subtotal nombre",
-  "f": "total facture nombre",
-  "c": "code couleur 3 chars",
-  "o": [["code","desc","montant"]]
-}"""
+  "stock_no": "numéro manuscrit bas de page",
+  "vin": "VIN 17 caractères sans tirets",
+  "model_code": "code modèle 5-7 chars (ex: JTJL98)",
+  "description": "description véhicule",
+  "ep": "E.P. 8 chiffres brut",
+  "pdco": "PDCO 8 chiffres brut",
+  "pref": "PREF 8 chiffres brut",
+  "holdback": "holdback 6 chiffres brut",
+  "subtotal": nombre,
+  "total": nombre,
+  "color": "code couleur 3 chars",
+  "options": [{"c":"code","d":"description","a":"montant brut"}]
+}
+
+Règle: Extrais les valeurs EXACTEMENT comme écrites sur la facture."""
                 ).with_model("openai", "gpt-4o")
                 
                 image_content = ImageContent(image_base64=compressed_base64)
