@@ -153,10 +153,18 @@ def parse_financial_data(text: str) -> Dict[str, Optional[int]]:
             data["pref"] = clean_fca_price(match.group(1))
             break
     
-    # Holdback (généralement 6 chiffres commençant par 0)
-    holdback_match = re.search(r'\b(0[3-9]\d{4})\b', text)
-    if holdback_match:
-        data["holdback"] = clean_fca_price(holdback_match.group(1))
+    # Holdback: chercher près de PREF pour éviter faux positifs
+    # Pattern amélioré: holdback apparaît généralement après PREF sur la facture
+    holdback_patterns = [
+        r"PREF[^\d]*\d{7,8}[^\d]*(\b0\d{5}\b)",  # Holdback après PREF
+        r"HOLDBACK\s*[:\s]*(\d{3,6})",           # Label explicite
+        r"HB\s*[:\s]*(\d{3,6})"                  # Abréviation
+    ]
+    for pattern in holdback_patterns:
+        holdback_match = re.search(pattern, text, re.IGNORECASE)
+        if holdback_match:
+            data["holdback"] = clean_fca_price(holdback_match.group(1))
+            break
     
     return data
 
