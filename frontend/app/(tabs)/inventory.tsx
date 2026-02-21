@@ -235,7 +235,7 @@ export default function InventoryScreen() {
       }
 
       if (!result.canceled && result.assets[0].base64) {
-        await scanInvoice(result.assets[0].base64);
+        await scanInvoice(result.assets[0].base64, false);
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -245,7 +245,38 @@ export default function InventoryScreen() {
     }
   };
 
-  const scanInvoice = async (base64Image: string) => {
+  // Upload PDF file (web only)
+  const pickPdfFile = async () => {
+    if (Platform.OS !== 'web') {
+      Alert.alert('Info', 'Upload PDF disponible uniquement sur le web');
+      return;
+    }
+    
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,application/pdf';
+    
+    input.onchange = async (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      
+      try {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const base64 = (reader.result as string).split(',')[1];
+          await scanInvoice(base64, true);
+        };
+        reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error reading PDF:', error);
+        alert('Erreur lors de la lecture du PDF');
+      }
+    };
+    
+    input.click();
+  };
+
+  const scanInvoice = async (base64Data: string, isPdf: boolean = false) => {
     setScanning(true);
     setScannedData(null);
     
