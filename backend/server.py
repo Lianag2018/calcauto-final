@@ -4708,6 +4708,140 @@ async def scan_and_save_invoice(request: InvoiceScanRequest, authorization: Opti
 
 # ============ Admin Endpoints ============
 
+# ============ Parsing Metrics & Monitoring ============
+
+@api_router.get("/admin/parsing-stats")
+async def get_parsing_stats(authorization: Optional[str] = Header(None)):
+    """
+    Statistiques de parsing en temps réel (admin seulement)
+    
+    Retourne:
+    - total_scans: nombre total de scans
+    - auto_rate: % auto-approved (score >= 85)
+    - review_rate: % review required (60-84)
+    - vision_rate: % vision fallback (< 60)
+    - avg_score: score moyen
+    - avg_time_sec: temps moyen de traitement
+    - quality_alert: True si qualité en baisse
+    """
+    await require_admin(authorization)
+    
+    try:
+        total = await db.parsing_metrics.count_documents({})
+        
+        if total == 0:
+            return {
+                "total_scans": 0,
+                "auto_rate": 0,
+                "review_rate": 0,
+                "vision_rate": 0,
+                "avg_score": 0,
+                "avg_time_sec": 0,
+                "quality_alert": False,
+                "message": "Aucun scan enregistré"
+            }
+        
+        auto = await db.parsing_metrics.count_documents({"status": "auto"})
+        review = await db.parsing_metrics.count_documents({"status": "review"})
+        vision = await db.parsing_metrics.count_documents({"status": "vision"})
+        
+        # Aggregations pour moyennes
+        avg_score_result = await db.parsing_metrics.aggregate([
+            {"$group": {"_id": None, "avg": {"$avg": "$score"}}}
+        ]).to_list(1)
+        
+        avg_time_result = await db.parsing_metrics.aggregate([
+            {"$group": {"_id": None, "avg": {"$avg": "$duration_sec"}}}
+        ]).to_list(1)
+        
+        avg_score = round(avg_score_result[0]["avg"], 2) if avg_score_result else 0
+        avg_time = round(avg_time_result[0]["avg"], 2) if avg_time_result else 0
+        
+        auto_rate = round(auto / total * 100, 2)
+        review_rate = round(review / total * 100, 2)
+        vision_rate = round(vision / total * 100, 2)
+        
+        # Détection dérive qualité
+        quality_alert = auto_rate < 70 or avg_score < 80
+        
+        return {
+            "total_scans": total,
+            "auto_rate": auto_rate,
+            "review_rate": review_rate,
+            "vision_rate": vision_rate,
+            "avg_score": avg_score,
+            "avg_time_sec": avg_time,
+            "quality_alert": quality_alert,
+            "breakdown": {
+                "auto_approved": auto,
+                "review_required": review,
+                "vision_fallback": vision
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting parsing stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/admin/parsing-history")
+async def get_parsing_history(
+    days: int = 7,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Historique des métriques de parsing sur N jours (admin seulement)
+    
+    Retourne les stats agrégées par jour
+    """
+    await require_admin(authorization)
+    
+    try:
+        from_date = datetime.now() - timedelta(days=days)
+        
+        pipeline = [
+            {"$match": {"timestamp": {"$gte": from_date}}},
+            {"$group": {
+                "_id": {
+                    "year": {"$year": "$timestamp"},
+                    "month": {"$month": "$timestamp"},
+                    "day": {"$dayOfMonth": "$timestamp"}
+                },
+                "total": {"$sum": 1},
+                "avg_score": {"$avg": "$score"},
+                "avg_duration": {"$avg": "$duration_sec"},
+                "auto_count": {"$sum": {"$cond": [{"$eq": ["$status", "auto"]}, 1, 0]}},
+                "review_count": {"$sum": {"$cond": [{"$eq": ["$status", "review"]}, 1, 0]}},
+                "vision_count": {"$sum": {"$cond": [{"$eq": ["$status", "vision"]}, 1, 0]}}
+            }},
+            {"$sort": {"_id.year": 1, "_id.month": 1, "_id.day": 1}}
+        ]
+        
+        results = await db.parsing_metrics.aggregate(pipeline).to_list(100)
+        
+        history = []
+        for r in results:
+            date_str = f"{r['_id']['year']}-{r['_id']['month']:02d}-{r['_id']['day']:02d}"
+            history.append({
+                "date": date_str,
+                "total": r["total"],
+                "avg_score": round(r["avg_score"], 2) if r["avg_score"] else 0,
+                "avg_duration_sec": round(r["avg_duration"], 2) if r["avg_duration"] else 0,
+                "auto_rate": round(r["auto_count"] / r["total"] * 100, 2) if r["total"] else 0,
+                "review_rate": round(r["review_count"] / r["total"] * 100, 2) if r["total"] else 0,
+                "vision_rate": round(r["vision_count"] / r["total"] * 100, 2) if r["total"] else 0
+            })
+        
+        return {
+            "period_days": days,
+            "history": history
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting parsing history: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 class AdminUserResponse(BaseModel):
     id: str
     name: str
