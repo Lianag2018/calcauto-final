@@ -3294,17 +3294,6 @@ def auto_correct_vin(vin: str) -> tuple:
             return test, True
     
     return vin, False
-            return corrected, True
-    
-    # Stratégie 5: Essayer P/J + recalculer check digit
-    if vin[3] == "J":
-        test = vin[:3] + "P" + vin[4:]
-        check = compute_vin_check_digit(test)
-        test = test[:8] + check + test[9:]
-        if validate_vin_checksum(test):
-            return test, True
-    
-    return vin, False
 
 
 def decode_vin_year(vin: str) -> int:
