@@ -3312,25 +3312,6 @@ def decode_vin(vin: str) -> dict:
     result["serial"] = vin_corrected[11:17]
     
     return result
-            # Jeep
-            "1J4": {"manufacturer": "Jeep", "country": "USA"},
-            "1J8": {"manufacturer": "Jeep", "country": "USA"},
-            # Fiat
-            "3FA": {"manufacturer": "Fiat", "country": "Mexico"},
-            "ZFA": {"manufacturer": "Fiat", "country": "Italy"},
-        }
-        
-        if wmi in wmi_manufacturers:
-            result["manufacturer"] = wmi_manufacturers[wmi]["manufacturer"]
-            result["country"] = wmi_manufacturers[wmi]["country"]
-    
-    # Position 11: Plant code
-    result["plant"] = vin[10]
-    
-    # Positions 12-17: Serial number
-    result["serial"] = vin[11:17]
-    
-    return result
 
 # ============ FCA Product Code Database ============
 
