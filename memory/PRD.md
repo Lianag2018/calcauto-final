@@ -1,120 +1,112 @@
 # CalcAuto AiPro - Product Requirements Document
 
-## Original Problem Statement
-Application mobile iOS/Android "CalcAuto AiPro" - Calculateur de financement automobile complet avec gestion d'inventaire et scan de factures FCA.
+## Overview
+Application mobile iOS/Android pour calculateur de financement véhicule avec système de gestion d'inventaire et scan de factures FCA.
 
-## CHANGELOG
+## Architecture Backend - Pipeline OCR Multi-Niveaux
 
-### 2026-02-21 - Parser V5 Industriel avec VIN Auto-Correction
-
-**Architecture V5 finale:**
+### Structure Modulaire Implémentée
 ```
-PDF natif → Parser structuré (pdfplumber + regex) → $0
-IMAGE     → GPT-4 Vision (image originale) → ~$0.03-0.05
-           ↓
-      Extraction JSON
-           ↓
-      Auto-correction VIN (checksum + OCR fixes)
-           ↓
-      Validation (score 0-100)
-           ↓
-      Retour avec flags
+/app/backend/
+├── server.py         # API FastAPI principale (4400+ lignes)
+├── ocr.py            # Pipeline OpenCV + Tesseract (NOUVEAU)
+├── parser.py         # Parser regex structuré (NOUVEAU)
+├── vin_utils.py      # Validation VIN industrielle (NOUVEAU)
+├── validation.py     # Règles métier FCA + scoring (NOUVEAU)
+├── fca_parser.py     # Legacy parser (conservé)
+├── ocr_zones.py      # Legacy OCR (conservé)
+└── tests/
+    └── test_parser.py  # Tests unitaires (15/15 passent)
 ```
 
-**Fonctionnalités VIN:**
-- ✅ Validation checksum ISO 3779
-- ✅ Auto-correction erreurs OCR (O→0, I→1, P↔J, etc.)
-- ✅ Décodage année (10e caractère)
-- ✅ Décodage constructeur (WMI 3 premiers chars)
-- ✅ Validation cohérence VIN ↔ marque
-- ✅ Flag si VIN corrigé ou incohérent
-
-**Réponse API enrichie:**
-```json
-{
-  "vehicle": {
-    "vin": "1C6PJTAGXTL160857",
-    "vin_valid": true,
-    "vin_corrected": true,
-    "vin_original": "1C6JJTAG7LL160857",
-    "vin_brand": "Jeep",
-    "vin_consistent": true,
-    "ep_cost": 56620,
-    "pdco": 59995
-  },
-  "validation": {
-    "score": 95,
-    "errors": ["VIN auto-corrigé"],
-    "is_valid": true
-  }
-}
+### Pipeline de Scan Facture
+```
+Niveau 1: PDF natif → pdfplumber + regex (100% précision, $0)
+    ↓ (si échec)
+Niveau 2: Image → OpenCV ROI + Tesseract (85-92%, $0)
+    ↓ (si score < 70)
+Niveau 3: Fallback → GPT-4 Vision (~$0.02-0.03)
 ```
 
-## Statut des Fonctionnalités
+### Endpoints Principaux
+- `POST /api/inventory/scan-invoice` - Scan facture multi-niveaux
+- `GET /api/inventory` - Liste véhicules
+- `POST /api/auth/login` - Authentification
+- `GET /api/programs` - Programmes financement
 
-### P0 - Complété ✅
-- [x] Authentification utilisateur
-- [x] Data isolation (multi-tenancy)
-- [x] Admin Panel
-- [x] **Parser V5 de factures FCA**
-- [x] **Auto-correction VIN avec validation checksum**
+## Fonctionnalités Complétées
 
-### P1 - En cours
-- [ ] Finaliser intégration Calculateur-Inventaire
-- [ ] Intégrer programmes de financement automatiques
+### ✅ Phase 1 - Fondations
+- [x] Authentification utilisateur (JWT)
+- [x] Multi-tenancy (isolation données par utilisateur)
+- [x] Sauvegarde soumissions serveur
+- [x] Gestion contacts intelligente (upsert)
+- [x] Déconnexion
 
-### P2/P3 - Backlog
+### ✅ Phase 2 - Admin & Infrastructure
+- [x] Panneau admin complet
+- [x] Déploiement production (Render + Vercel)
+- [x] Base de données MongoDB Atlas
+
+### ✅ Phase 3 - Inventaire (Partiel)
+- [x] CRUD inventaire véhicules
+- [x] Scanner facture PDF (pdfplumber)
+- [x] Scanner facture image (GPT-4 Vision fallback)
+- [x] **Pipeline OCR par zones OpenCV + Tesseract** (NOUVEAU)
+- [x] **Validation VIN industrielle avec auto-correction** (NOUVEAU)
+- [x] **Règles métier FCA + scoring** (NOUVEAU)
+- [x] Anti-doublon (VIN + hash fichier)
+- [ ] Modal de révision et correction (UI)
+- [ ] Intégration calculateur-inventaire
+
+## Backlog Priorisé
+
+### P0 - Critique
+- [ ] Stabiliser environnement frontend Expo
+- [ ] Tester pipeline OCR avec factures réelles
+
+### P1 - Important
+- [ ] Intégration calculateur ↔ inventaire
+- [ ] Avertissement visuel VINs auto-corrigés
+
+### P2 - Amélioration
+- [ ] Programmes financement par véhicule
+- [ ] Dashboard métriques parsing (admin)
+
+### P3 - Backlog
 - [ ] Refactoriser index.tsx (1800+ lignes)
 - [ ] Builds App Store / Play Store
-- [ ] Dashboard métriques parsing
 
-## Architecture Technique
+## Intégrations Tierces
+- **MongoDB Atlas**: Base de données
+- **OpenAI GPT-4o**: Fallback Vision (demote)
+- **Tesseract OCR**: Engine OCR open-source
+- **OpenCV**: Prétraitement image
+- **pdfplumber**: Extraction PDF
 
-### Backend
-```
-/app/backend/server.py
-├── VIN Validation (lignes 3170-3320)
-│   ├── validate_vin_checksum()
-│   ├── auto_correct_vin()
-│   ├── decode_vin_year()
-│   ├── decode_vin_brand()
-│   └── validate_vin_brand_consistency()
-│
-├── Parser FCA (lignes 3470-3700)
-│   ├── clean_fca_price()
-│   ├── parse_fca_invoice_structured()
-│   └── validate_invoice_data()
-│
-└── Endpoint scan-invoice (lignes 3980-4250)
-    ├── PDF → structured parser
-    └── IMAGE → GPT-4 Vision + VIN correction
-```
+## Schéma Base de Données
 
-### Dependencies
-```
-pdfplumber==0.11.9
-pytesseract==0.3.13
-opencv-python-headless==4.10.0.84
-Pillow==10.4.0
+### Collection: inventory
+```json
+{
+  "_id": ObjectId,
+  "owner_id": "user_id",
+  "stock_no": "12345",
+  "vin": "1C4RJKBG5S8806267",
+  "brand": "Jeep",
+  "model": "Grand Cherokee",
+  "year": 2025,
+  "ep_cost": 55000,
+  "pdco": 65000,
+  "parse_method": "ocr_zones",
+  "vin_valid": true,
+  "validation_score": 85
+}
 ```
 
 ## Credentials Test
 - Email: `danielgiroux007@gmail.com`
 - Password: `Liana2018$`
 
-## Résultats Tests
-
-### Facture Gladiator (1C6PJTAGXTL160857)
-| Champ | Attendu | Obtenu | Status |
-|-------|---------|--------|--------|
-| E.P. | 56620 | 56620 | ✅ |
-| PDCO | 59995 | 59995 | ✅ |
-| PREF | 57145 | 57145 | ✅ |
-| Holdback | 500 | 500 | ✅ |
-| VIN Valid | - | True | ✅ |
-| VIN Corrected | - | True | ✅ |
-
-## Prochaines Étapes
-1. Intégrer calculateur-inventaire (sélection véhicule → remplir prix)
-2. Dashboard métriques parsing (optionnel)
-3. Tests avec plus de factures pour affiner les patterns OCR
+---
+*Dernière mise à jour: 21 Février 2025*
