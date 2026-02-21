@@ -204,6 +204,8 @@ def process_image_ocr_pipeline(file_bytes: bytes) -> Dict[str, str]:
     
     Image → Load → Resize → Warp → Zones → OCR ciblé
     
+    Si les zones échouent, fallback sur OCR global.
+    
     Returns: Dict avec le texte de chaque zone
     """
     result = {
@@ -222,39 +224,48 @@ def process_image_ocr_pipeline(file_bytes: bytes) -> Dict[str, str]:
         logger.error("Failed to decode image")
         return result
     
-    # 2. Redimensionner si nécessaire
-    image = resize_if_needed(image)
+    # 2. Redimensionner - taille optimale pour OCR
+    image = resize_if_needed(image, max_dim=1800)
     
     # 3. Correction perspective (redresser le document)
-    image = auto_warp_document(image)
+    warped = auto_warp_document(image)
     
     # 4. Extraire les zones
-    zones = extract_zones(image)
+    zones = extract_zones(warped)
     
     # 5. OCR sur chaque zone
     result["vin_text"] = ocr_zone(zones["vin"], psm=6)
-    if result["vin_text"]:
+    if result["vin_text"] and len(result["vin_text"]) > 10:
         result["zones_processed"] += 1
     
     result["finance_text"] = ocr_zone(zones["finance"], psm=6)
-    if result["finance_text"]:
+    if result["finance_text"] and len(result["finance_text"]) > 10:
         result["zones_processed"] += 1
     
     result["options_text"] = ocr_zone(zones["options"], psm=6)
-    if result["options_text"]:
+    if result["options_text"] and len(result["options_text"]) > 10:
         result["zones_processed"] += 1
     
     result["totals_text"] = ocr_zone(zones["totals"], psm=6)
-    if result["totals_text"]:
+    if result["totals_text"] and len(result["totals_text"]) > 10:
         result["zones_processed"] += 1
     
-    # Texte complet combiné
-    result["full_text"] = "\n".join([
-        result["vin_text"],
-        result["finance_text"],
-        result["options_text"],
-        result["totals_text"]
-    ])
+    # 6. OCR global comme backup/complément
+    global_text = process_image_global_ocr(file_bytes)
+    
+    # 7. Combiner: utiliser global_text comme full_text principal si zones pauvres
+    if result["zones_processed"] < 2 and len(global_text) > 200:
+        result["full_text"] = global_text
+        result["parse_method"] = "ocr_global"
+        logger.info(f"Using global OCR (zones={result['zones_processed']}, global_len={len(global_text)})")
+    else:
+        result["full_text"] = "\n".join([
+            result["vin_text"],
+            result["finance_text"],
+            result["options_text"],
+            result["totals_text"],
+            global_text  # Ajouter aussi le global pour plus de couverture
+        ])
     
     logger.info(f"OCR Pipeline: {result['zones_processed']}/4 zones processed")
     
