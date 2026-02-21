@@ -4041,12 +4041,12 @@ Règle: Extrais les valeurs EXACTEMENT comme écrites sur la facture."""
                 }
                 
                 vehicle_data = {
-                    "stock_no": str(raw.get("s", "")).strip(),
+                    "stock_no": str(raw.get("stock_no", raw.get("s", ""))).strip(),
                     "vin": vin_raw,
                     "model_code": model_code,
                     "year": vin_info.get("year") or datetime.now().year,
                     "brand": product_info.get("brand") or vin_info.get("manufacturer") or "Stellantis",
-                    "model": product_info.get("model") or str(raw.get("d", "")).split()[0] if raw.get("d") else "",
+                    "model": product_info.get("model") or str(raw.get("description", raw.get("d", ""))).split()[0] if raw.get("description") or raw.get("d") else "",
                     "trim": product_info.get("trim") or "",
                     "ep_cost": ep_cost,
                     "pdco": pdco,
