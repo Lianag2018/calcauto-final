@@ -3902,7 +3902,7 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                     raise HTTPException(status_code=500, detail="Clé API Vision non configurée")
                 
                 # OPTIMISATION 1: Compression image (réduction tokens mais qualité préservée)
-                compressed_base64 = compress_image_for_vision(file_bytes, max_size=1536, quality=82)
+                compressed_base64 = compress_image_for_vision(file_bytes, max_size=2048, quality=85)
                 
                 # OPTIMISATION 2: Prompt compact mais clair
                 chat = LlmChat(
