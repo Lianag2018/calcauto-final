@@ -4172,9 +4172,9 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
             parse_method = "ocr_auto_approved"
             logger.info(f"OCR Auto-Approved: VIN={vin_corrected}, EP={vehicle_data['ep_cost']}, Score={ocr_score}")
         
-        # ===== NIVEAU 3: FALLBACK → GPT-4 VISION (SI SCORE < 70) =====
-        if vehicle_data is None:
-            logger.info("Fallback → GPT-4 Vision (OCR insuffisant ou échec)")
+        # ===== NIVEAU 3: FALLBACK → GPT-4 VISION (SEULEMENT SI decision == vision_required) =====
+        if decision == "vision_required" or vehicle_data is None:
+            logger.info("Fallback → GPT-4 Vision (score < 60 ou échec OCR)")
             
             try:
                 import openai
