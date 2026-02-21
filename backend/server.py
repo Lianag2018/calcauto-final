@@ -4173,10 +4173,22 @@ Règle: Extrais les valeurs EXACTEMENT comme écrites sur la facture."""
                 validation_errors = []
                 validation_score = 0
                 
-                if len(vin_raw) == 17:
+                # Validation VIN améliorée
+                if vin_valid:
                     validation_score += 25
+                    if vin_was_corrected:
+                        validation_errors.append("VIN auto-corrigé")
+                elif len(vin_corrected) == 17:
+                    validation_score += 10
+                    validation_errors.append("VIN checksum invalide")
                 else:
                     validation_errors.append("VIN invalide")
+                
+                # Bonus cohérence VIN/marque
+                if vin_consistent:
+                    validation_score += 5
+                else:
+                    validation_errors.append("VIN incohérent avec marque")
                 
                 if ep_cost > 10000:
                     validation_score += 25
@@ -4190,26 +4202,31 @@ Règle: Extrais les valeurs EXACTEMENT comme écrites sur la facture."""
                     validation_errors.append("PDCO <= E.P.")
                 
                 if subtotal > 0:
-                    validation_score += 15
+                    validation_score += 10
                 
                 if invoice_total > 0:
-                    validation_score += 10
+                    validation_score += 5
                 
                 if len(options) >= 3:
                     validation_score += 5
                 
                 validation = {
-                    "score": validation_score,
+                    "score": min(validation_score, 100),
                     "errors": validation_errors,
                     "is_valid": validation_score >= 60
                 }
                 
                 vehicle_data = {
                     "stock_no": str(raw.get("stock_no", raw.get("s", ""))).strip(),
-                    "vin": vin_raw,
+                    "vin": vin_corrected,  # VIN corrigé
+                    "vin_original": vin_raw if vin_was_corrected else None,
+                    "vin_valid": vin_valid,
+                    "vin_corrected": vin_was_corrected,
+                    "vin_brand": vin_brand,
+                    "vin_consistent": vin_consistent,
                     "model_code": model_code,
                     "year": vin_info.get("year") or datetime.now().year,
-                    "brand": product_info.get("brand") or vin_info.get("manufacturer") or "Stellantis",
+                    "brand": product_info.get("brand") or vin_brand or "Stellantis",
                     "model": product_info.get("model") or str(raw.get("description", raw.get("d", ""))).split()[0] if raw.get("description") or raw.get("d") else "",
                     "trim": product_info.get("trim") or "",
                     "ep_cost": ep_cost,
