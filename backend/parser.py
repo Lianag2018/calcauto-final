@@ -46,19 +46,29 @@ def parse_vin(text: str) -> Optional[str]:
     
     Formats supportés:
     - VIN standard 17 caractères
-    - VIN FCA avec tirets: XXXXX-XX-XXXXXX (format 5-2-10)
+    - VIN FCA avec tirets: XXXXX-XX-XXXXXX (format 5-2-X)
+    - VIN avec erreurs OCR courantes (I/1, O/0, K/J)
     """
     text = text.upper()
     
-    # VIN avec tirets FCA (format exact: 5-2-X chars)
-    # Exemple: 1C4RJKBG5-S8-806267
+    # Pattern VIN FCA spécifique (1C4R... avec tirets)
+    # Tolère K au lieu de J (erreur OCR courante)
+    vin_fca_pattern = r'1C4R[IJKL][JK]AG[0-9][-\s]*[A-Z0-9]{2}[-\s]*[A-Z0-9]{6}'
+    vin_match = re.search(vin_fca_pattern, text)
+    if vin_match:
+        vin = re.sub(r'[-\s]', '', vin_match.group())
+        # Corriger K→J si nécessaire (position 5 devrait être J)
+        if len(vin) >= 5 and vin[4] == 'K':
+            vin = vin[:4] + 'J' + vin[5:]
+        return vin[:17] if len(vin) >= 17 else vin
+    
+    # VIN avec tirets FCA générique (5-2-X chars)
     vin_dash_match = re.search(
         r'([0-9A-HJ-NPR-Z]{5,9})[-\s]([A-HJ-NPR-Z0-9]{2})[-\s]([A-HJ-NPR-Z0-9]{6,10})',
         text
     )
     if vin_dash_match:
         vin = vin_dash_match.group(1) + vin_dash_match.group(2) + vin_dash_match.group(3)
-        # Garder seulement 17 caractères
         if len(vin) >= 17:
             return vin[:17]
     
