@@ -4284,7 +4284,7 @@ Retourne UNIQUEMENT ce JSON:
                             logger.error(f"JSON parse failed. Error: {je}. Response: {response[:500]}")
                             raise HTTPException(status_code=400, detail="Extraction JSON échouée")
                     else:
-                        logger.error(f"JSON parse failed. Error: {je}. Response: {response[:500]}")
+                        logger.error(f"JSON parse failed. Error: {je}. Response: {json_str[:500]}")
                         raise HTTPException(status_code=400, detail="Extraction JSON échouée")
                 
                 # Décoder les valeurs (supporte les deux formats de clés)
