@@ -85,6 +85,12 @@ RÈGLE D'OR: Bloquer si VIN/EP/PDCO invalides
 ### 🔧 PATCH 4: Seuil validation relevé
 - `score >= 50` → `score >= 85` dans validation.py
 
+### 🔧 PATCH 5: Monitoring Production (Décembre 2025)
+- Logging structuré MongoDB (`parsing_metrics`)
+- Endpoints admin: `/api/admin/parsing-stats`, `/api/admin/parsing-history`
+- Détection dérive automatique (`quality_alert`)
+- Script stress test parallèle
+
 ## Backlog Priorisé
 
 ### P0 - Critique
