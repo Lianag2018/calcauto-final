@@ -838,6 +838,19 @@ export default function InventoryScreen() {
                   <Ionicons name="chevron-forward" size={24} color="#666" />
                 </TouchableOpacity>
 
+                {Platform.OS === 'web' && (
+                  <TouchableOpacity style={[styles.scanOptionBtn, styles.pdfOptionBtn]} onPress={pickPdfFile}>
+                    <View style={[styles.scanOptionIcon, styles.pdfIcon]}>
+                      <Ionicons name="document-text" size={32} color="#FF6B6B" />
+                    </View>
+                    <View style={styles.scanOptionText}>
+                      <Text style={styles.scanOptionTitle}>Importer un PDF</Text>
+                      <Text style={styles.scanOptionDesc}>Parser structuré rapide</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={24} color="#666" />
+                  </TouchableOpacity>
+                )}
+
                 <View style={styles.scanTips}>
                   <Text style={styles.scanTipsTitle}>💡 Conseils pour un meilleur scan:</Text>
                   <Text style={styles.scanTip}>• Photo bien éclairée</Text>
