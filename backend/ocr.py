@@ -98,8 +98,8 @@ def preprocess_for_ocr(zone_img: np.ndarray) -> np.ndarray:
     """
     Prétraitement intelligent avant OCR:
     - Conversion grayscale
-    - Augmentation contraste
-    - Seuillage adaptatif (supprime ombres)
+    - Débruitage
+    - Binarisation Otsu
     
     Tesseract est mauvais avec colonnes multiples,
     mais bon avec texte isolé + prétraité.
@@ -109,21 +109,13 @@ def preprocess_for_ocr(zone_img: np.ndarray) -> np.ndarray:
     else:
         gray = zone_img.copy()
     
-    # Égalisation histogramme pour contraste
-    gray = cv2.equalizeHist(gray)
+    # Débruitage léger
+    denoised = cv2.fastNlMeansDenoising(gray, h=10)
     
-    # Augmenter contraste
-    gray = cv2.convertScaleAbs(gray, alpha=1.5, beta=20)
+    # Binarisation avec Otsu (meilleur que seuillage adaptatif pour photos)
+    _, binary = cv2.threshold(denoised, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     
-    # Seuillage adaptatif (supprime les ombres)
-    thresh = cv2.adaptiveThreshold(
-        gray, 255,
-        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY,
-        11, 2
-    )
-    
-    return thresh
+    return binary
 
 
 # ============ SEGMENTATION ROI ============
