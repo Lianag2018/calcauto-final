@@ -3954,19 +3954,20 @@ Règle: Extrais les valeurs EXACTEMENT comme écrites sur la facture."""
                     if match:
                         raw = json.loads(match.group())
                     else:
+                        logger.error(f"JSON parse failed. Response: {response[:500]}")
                         raise HTTPException(status_code=400, detail="Extraction JSON échouée")
                 
-                # Décoder les valeurs
-                vin_raw = str(raw.get("v", "")).replace("-", "").replace(" ", "").upper()[:17]
+                # Décoder les valeurs (supporte les deux formats de clés)
+                vin_raw = str(raw.get("vin", raw.get("v", ""))).replace("-", "").replace(" ", "").upper()[:17]
                 vin_info = decode_vin(vin_raw) if len(vin_raw) == 17 else {}
                 
-                model_code = str(raw.get("m", "")).upper().strip()[:7]
+                model_code = str(raw.get("model_code", raw.get("m", ""))).upper().strip()[:7]
                 product_info = decode_product_code(model_code) if model_code else {}
                 
-                ep_cost = clean_fca_price(str(raw.get("e", "")))
-                pdco = clean_fca_price(str(raw.get("p", "")))
-                pref = clean_fca_price(str(raw.get("r", "")))
-                holdback = clean_fca_price(str(raw.get("h", "")))
+                ep_cost = clean_fca_price(str(raw.get("ep", raw.get("e", ""))))
+                pdco = clean_fca_price(str(raw.get("pdco", raw.get("p", ""))))
+                pref = clean_fca_price(str(raw.get("pref", raw.get("r", ""))))
+                holdback = clean_fca_price(str(raw.get("holdback", raw.get("h", ""))))
                 
                 # Décoder options (format compact)
                 options = []
