@@ -3935,7 +3935,7 @@ Règle: Extrais les valeurs EXACTEMENT comme écrites sur la facture."""
                     file_contents=[image_content]
                 ))
                 
-                # Parse JSON compact
+                # Parse JSON avec nettoyage
                 json_str = response.strip()
                 if "```" in json_str:
                     for part in json_str.split("```"):
@@ -3947,14 +3947,25 @@ Règle: Extrais les valeurs EXACTEMENT comme écrites sur la facture."""
                             json_str = clean
                             break
                 
+                # Nettoyer les caractères problématiques
+                json_str = json_str.replace('\\"', '"').replace("\\'", "'")
+                json_str = re.sub(r'\\(?!["\\/bfnrt])', r'', json_str)  # Remove invalid escapes
+                
                 try:
                     raw = json.loads(json_str)
-                except:
-                    match = re.search(r'\{[\s\S]*\}', response)
+                except json.JSONDecodeError as je:
+                    # Essayer d'extraire juste le JSON
+                    match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response, re.DOTALL)
                     if match:
-                        raw = json.loads(match.group())
+                        try:
+                            clean_json = match.group()
+                            clean_json = re.sub(r'\\(?!["\\/bfnrt])', r'', clean_json)
+                            raw = json.loads(clean_json)
+                        except:
+                            logger.error(f"JSON parse failed. Error: {je}. Response: {response[:500]}")
+                            raise HTTPException(status_code=400, detail="Extraction JSON échouée")
                     else:
-                        logger.error(f"JSON parse failed. Response: {response[:500]}")
+                        logger.error(f"JSON parse failed. Error: {je}. Response: {response[:500]}")
                         raise HTTPException(status_code=400, detail="Extraction JSON échouée")
                 
                 # Décoder les valeurs (supporte les deux formats de clés)
