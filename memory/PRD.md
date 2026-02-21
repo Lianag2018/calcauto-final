@@ -1,129 +1,125 @@
 # CalcAuto AiPro - Product Requirements Document
 
 ## Original Problem Statement
-Application mobile iOS/Android de calculateur de financement automobile pour concessionnaires FCA/Stellantis (Chrysler, Dodge, Jeep, Ram, Fiat).
+Application mobile iOS/Android "CalcAuto AiPro" - Calculateur de financement automobile complet avec gestion d'inventaire et scan de factures FCA.
 
-## Core Features Implemented
+## User Personas
+- **Concessionnaires automobiles FCA** (Stellantis: Ram, Jeep, Chrysler, Dodge)
+- Besoin de calculer rapidement les paiements de financement
+- Gestion d'inventaire avec coûts réels extraits des factures FCA
 
-### 1. Calculateur de Financement ✅
-- Sélection véhicule par année/marque/modèle
-- Calcul paiements (mensuel, bi-mensuel, hebdo)
-- Application des programmes/primes FCA
-- Envoi par email au client
+## Core Requirements
 
-### 2. CRM / Gestion Clients ✅
-- Import/Export contacts
-- Suivi des soumissions
-- Rappels automatiques
-- Better Offers
+### P0 - Complété
+- [x] Authentification utilisateur (login/register)
+- [x] Data isolation (multi-tenancy)
+- [x] Save submissions to server
+- [x] Smart Contact Management (Upsert)
+- [x] Logout functionality
+- [x] Admin Panel (gestion des utilisateurs)
+- [x] **Parser structuré de factures FCA (regex + pdfplumber)** - IMPLÉMENTÉ 2026-02-21
 
-### 3. Multi-Tenancy (Isolation Données) ✅
-- Chaque utilisateur a ses propres données
-- `owner_id` sur contacts, submissions, inventory
-- Endpoints sécurisés par token
+### P1 - En cours
+- [ ] Finaliser intégration Calculateur-Inventaire
+- [ ] Intégrer programmes de financement automatiques
 
-### 4. Panneau Administrateur ✅ (NEW)
-- Vue de tous les utilisateurs
-- Bloquer/Débloquer comptes
-- Statistiques globales
-- Visible uniquement pour admin
+### P2/P3 - Backlog
+- [ ] Refactoriser index.tsx (1800+ lignes)
+- [ ] Builds App Store / Play Store
 
-### 5. Module Inventaire ✅ (NEW)
-- Structure FCA complète:
-  - Stock#, VIN, Marque, Modèle, Trim
-  - PDCO, EP Cost, Holdback, Net Cost
-  - PDSF, Prix affiché, Prix vendu
-  - Statut: Disponible/Réservé/Vendu
-- Calcul automatique: net_cost = ep_cost - holdback
-- Filtres et recherche
+## Implemented Features (2026-02-21)
 
-### 6. Scanner de Factures FCA ✅ (COMPLETED)
-- GPT-4o Vision via emergentintegrations (EMERGENT_LLM_KEY)
-- Règle de décodage FCA (enlever 1er 0 + 2 derniers)
-- Extraction: VIN, Modèle, E.P., PDCO, PREF, Options
-- Sauvegarde automatique dans l'inventaire
-- Interface utilisateur complète:
-  - Bouton caméra (orange) dans l'en-tête Inventaire
-  - Modal avec options "Prendre une photo" / "Importer une image"
-  - Conseils pour un meilleur scan
-  - Affichage des résultats avec véhicule ajouté
+### Parser Structuré de Factures FCA
+**Fichier:** `backend/server.py`
+
+**Fonctions ajoutées:**
+- `clean_fca_price(raw_value)` - Décode prix FCA (enlève premier 0 + 2 derniers chiffres)
+- `clean_decimal_price(raw_value)` - Nettoie montants décimaux
+- `extract_pdf_text(file_bytes)` - Extrait texte PDF avec pdfplumber
+- `parse_fca_invoice_structured(text)` - Parser regex principal
+
+**Logique métier:**
+- `E.P.` = Coût du véhicule (Employee Price)
+- `PDCO` = PDSF/MSRP
+- `Holdback` = Informatif seulement, pas de calcul
+- `Net Cost` = E.P. directement
+
+**Endpoints mis à jour:**
+- `POST /api/inventory/scan-invoice` - Utilise parser structuré pour PDFs, fallback IA pour images
+- `POST /api/inventory/scan-invoice-file` - Upload direct de fichiers PDF
+
+**Frontend updates:**
+- Ajout bouton "Importer un PDF" dans le modal de scan
+- Support base64 avec paramètre `is_pdf`
+- Affichage `parse_method` dans les données de review
+
+### Dependencies ajoutées
+- `pdfplumber==0.11.9` dans requirements.txt
 
 ## Technical Architecture
 
-### Backend (FastAPI)
-- `/app/backend/server.py` - 3000+ lignes
-- MongoDB avec Motor (async)
-- JWT Authentication
-- Deployed on Render: `calcauto-final-backend.onrender.com`
-
-### Frontend (Expo/React Native)
-- `/app/frontend/app/(tabs)/`
-  - `index.tsx` - Calculateur
-  - `inventory.tsx` - Inventaire
-  - `clients.tsx` - CRM
-  - `admin.tsx` - Administration
-- Deployed on Vercel: `calcauto-final.vercel.app`
-
-### Database (MongoDB Atlas)
-- Collections: users, contacts, submissions, inventory, vehicle_options, programs, better_offers
+```
+/app
+├── backend/
+│   ├── server.py          # FastAPI avec parser FCA structuré
+│   ├── requirements.txt   # + pdfplumber
+│   └── .env               # MONGO_URL, EMERGENT_LLM_KEY, etc.
+└── frontend/
+    └── app/
+        ├── (tabs)/
+        │   ├── index.tsx       # Calculateur principal
+        │   └── inventory.tsx   # Inventaire + scan factures
+        └── contexts/
+            └── AuthContext.tsx
+```
 
 ## API Endpoints
 
-### Authentication
-- POST /api/auth/login
-- POST /api/auth/register
+### Invoice Scanning
+- `POST /api/inventory/scan-invoice` - Scanner facture (base64)
+  - Input: `{ image_base64: string, is_pdf?: boolean }`
+  - Output: `{ success: true, vehicle: {...}, parse_method: "structured_regex" | "ai_fallback" }`
 
-### Inventory (NEW)
-- GET /api/inventory
-- POST /api/inventory
-- POST /api/inventory/bulk
-- PUT /api/inventory/{stock_no}
-- DELETE /api/inventory/{stock_no}
-- PUT /api/inventory/{stock_no}/status
-- GET /api/inventory/stats/summary
-- POST /api/inventory/scan-invoice
-- POST /api/inventory/scan-and-save
+- `POST /api/inventory/scan-invoice-file` - Upload fichier direct
+  - Input: multipart/form-data avec field `file`
+  - Output: même format que scan-invoice
 
-### Admin (NEW)
-- GET /api/admin/users
-- PUT /api/admin/users/{user_id}/block
-- PUT /api/admin/users/{user_id}/unblock
-- GET /api/admin/stats
+### Inventory
+- `GET /api/inventory` - Liste véhicules de l'utilisateur
+- `POST /api/inventory` - Ajouter véhicule (avec validation duplicat VIN/stock_no)
+- `PUT /api/inventory/{item_id}` - Modifier véhicule
+- `DELETE /api/inventory/{stock_no}` - Supprimer véhicule
 
-## Backlog (P0/P1/P2)
+## Data Models
 
-### P0 - Critical
-- [x] Fix production login
-- [x] Data migration to Atlas
-- [x] Admin panel
-- [x] Inventory module
+### Inventory Vehicle
+```python
+{
+  stock_no: str,
+  vin: str,
+  brand: str,
+  model: str,
+  trim: str,
+  year: int,
+  ep_cost: float,    # Employee Price = Coût
+  pdco: float,       # Prix dealer
+  holdback: float,   # Informatif
+  net_cost: float,   # = ep_cost
+  msrp: float,       # = pdco
+  asking_price: float,
+  status: "disponible" | "réservé" | "vendu"
+}
+```
 
-### P1 - High Priority
-- [ ] Inventory selector in calculator
-- [ ] Bulk import CSV/Excel
-- [ ] Native PDF parser (no AI)
+## Credentials Test
+- Email: `danielgiroux007@gmail.com`
+- Password: `Liana2018$`
 
-### P2 - Medium Priority
-- [ ] App Store / Play Store builds
-- [ ] Refactor index.tsx (1800+ lines)
-- [ ] Profit history per vehicle
-- [ ] Export reports
+## Known Issues
+- Frontend tunnel ngrok en conflit (ERR_NGROK_334) - problème infrastructure temporaire
+- Le backend fonctionne parfaitement
 
-### P3 - Future
-- [ ] Multi-language support
-- [ ] Offline mode
-- [ ] Push notifications
-
-## Credentials
-- Admin: danielgiroux007@gmail.com
-- Production URL: https://calcauto-final.vercel.app
-- Backend URL: https://calcauto-final-backend.onrender.com
-
-## Latest Changes (Feb 20, 2026)
-- ✅ Fixed invoice scan integration (ImageContent → file_contents parameter)
-- ✅ Switched from OPENAI_API_KEY to EMERGENT_LLM_KEY for reliability
-- ✅ Added testID attributes for scan/add buttons
-- ✅ All frontend tests passed (6/6)
-
-## Last Updated
-February 20, 2026
+## Next Steps
+1. Tester le parser avec des factures FCA réelles (images et PDFs)
+2. Finaliser intégration calculateur-inventaire
+3. Refactoriser index.tsx
