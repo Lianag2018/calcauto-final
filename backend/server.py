@@ -4708,6 +4708,25 @@ async def scan_and_save_invoice(request: InvoiceScanRequest, authorization: Opti
 
 # ============ Admin Endpoints ============
 
+class AdminUserResponse(BaseModel):
+    id: str
+    name: str
+    email: str
+    created_at: datetime
+    last_login: Optional[datetime] = None
+    is_blocked: bool = False
+    is_admin: bool = False
+    contacts_count: int = 0
+    submissions_count: int = 0
+
+async def require_admin(authorization: Optional[str] = Header(None)):
+    """Vérifie que l'utilisateur est admin"""
+    user = await get_current_user(authorization)
+    is_admin = user.get("is_admin", False) or user.get("email") == ADMIN_EMAIL
+    if not is_admin:
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    return user
+
 # ============ Parsing Metrics & Monitoring ============
 
 @api_router.get("/admin/parsing-stats")
