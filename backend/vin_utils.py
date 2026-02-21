@@ -218,29 +218,14 @@ def smart_vin_correction(vin: str) -> Dict[str, any]:
                             result["correction_type"] = f"char_swap_pos_{pos}"
                             return result
     
-    # Stratégie 3: Forcer le check digit SEULEMENT si WMI et année sont valides
-    # Cela évite de valider une mauvaise lecture
-    wmi = corrected[:3] if len(corrected) >= 3 else ""
-    year_char = corrected[9] if len(corrected) >= 10 else ""
-    
-    wmi_valid = wmi in WMI_BRANDS
-    year_valid = year_char in YEAR_CODES
-    
-    if wmi_valid and year_valid:
-        correct_check = calculate_check_digit(corrected)
-        forced_vin = corrected[:8] + correct_check + corrected[9:]
-        result["corrected"] = forced_vin
-        result["is_valid"] = True
-        result["correction_applied"] = True
-        result["correction_type"] = "check_digit_forced"
-        logger.warning(f"VIN check digit forced (WMI/Year valid): {vin} → {forced_vin}")
-    else:
-        # WMI ou année invalide, ne pas forcer - marquer comme invalide
-        result["corrected"] = corrected
-        result["is_valid"] = False
-        result["correction_applied"] = False
-        result["correction_type"] = "invalid_wmi_or_year"
-        logger.warning(f"VIN correction refused (WMI={wmi_valid}, Year={year_valid}): {vin}")
+    # STRATÉGIE 3: NE JAMAIS FORCER LE CHECK DIGIT
+    # Si le VIN est toujours invalide après corrections OCR → marquer comme invalide
+    # L'utilisateur devra vérifier manuellement (review_required)
+    result["corrected"] = corrected
+    result["is_valid"] = False
+    result["correction_applied"] = False
+    result["correction_type"] = "checksum_invalid_review_required"
+    logger.warning(f"VIN checksum invalide, révision requise: {vin}")
     
     return result
 
