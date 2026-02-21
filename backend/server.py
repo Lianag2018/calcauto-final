@@ -4068,11 +4068,18 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                     session_id=f"fca-{uuid.uuid4().hex[:8]}",
                     system_message="""Extracteur de factures FCA Canada. Retourne JSON uniquement.
 
+IMPORTANT pour le VIN:
+- Le VIN FCA est affiché avec tirets: XXXXX-XX-XXXXXX (5-2-6 format)
+- Exemple: 1C4RJKBG5-S8-806267
+- Extrais EXACTEMENT les 17 caractères (sans tirets)
+- Position 10 = année: R=2024, S=2025, T=2026
+- Ne confonds pas: K/F, S/5, 8/B, 7/T
+
 Format de sortie:
 {
   "stock_no": "numéro manuscrit bas de page",
-  "vin": "VIN 17 caractères sans tirets",
-  "model_code": "code modèle 5-7 chars (ex: JTJL98)",
+  "vin": "VIN 17 caractères EXACT sans tirets",
+  "model_code": "code modèle 5-7 chars (ex: WLJP75)",
   "description": "description véhicule",
   "ep": "E.P. 8 chiffres brut",
   "pdco": "PDCO 8 chiffres brut",
@@ -4082,9 +4089,7 @@ Format de sortie:
   "total": nombre,
   "color": "code couleur 3 chars",
   "options": [{"c":"code","d":"description","a":"montant brut"}]
-}
-
-Règle: Extrais les valeurs EXACTEMENT comme écrites sur la facture."""
+}"""
                 ).with_model("openai", "gpt-4o")
                 
                 image_content = ImageContent(image_base64=compressed_base64)
