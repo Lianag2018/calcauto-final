@@ -3215,30 +3215,60 @@ def validate_vin_checksum(vin: str) -> bool:
 def auto_correct_vin(vin: str) -> tuple:
     """
     Corrige automatiquement les erreurs OCR communes dans un VIN.
+    Essaie plusieurs stratégies de correction.
     
     Returns: (vin_corrigé, was_corrected)
     """
     vin = vin.upper().replace("-", "").replace(" ", "")
     
+    if len(vin) != 17:
+        return vin, False
+    
     # Déjà valide ?
     if validate_vin_checksum(vin):
         return vin, False
     
-    # Tester corrections simples caractère par caractère
+    # Stratégie 1: Corrections simples caractère par caractère
     for i, char in enumerate(vin):
         if char in VIN_OCR_CORRECTIONS:
             corrected = vin[:i] + VIN_OCR_CORRECTIONS[char] + vin[i+1:]
             if validate_vin_checksum(corrected):
                 return corrected, True
     
-    # Tester permutations communes (P↔J, 7↔T, etc.)
-    common_swaps = [("P", "J"), ("J", "P"), ("7", "T"), ("T", "7"), ("6", "G"), ("G", "6")]
+    # Stratégie 2: Permutations communes FCA (P↔J, 7↔T, X↔K, etc.)
+    common_swaps = [
+        ("P", "J"), ("J", "P"),
+        ("7", "T"), ("T", "7"),
+        ("X", "K"), ("K", "X"),
+        ("6", "G"), ("G", "6"),
+        ("Y", "T"), ("T", "Y"),
+        ("0", "D"), ("D", "0"),
+    ]
     for old, new in common_swaps:
         for i, char in enumerate(vin):
             if char == old:
                 corrected = vin[:i] + new + vin[i+1:]
                 if validate_vin_checksum(corrected):
                     return corrected, True
+    
+    # Stratégie 3: Essayer combinaisons doubles pour VINs FCA
+    # Position 4: souvent P ou J pour Jeep
+    if vin[3] == "J":
+        test = vin[:3] + "P" + vin[4:]
+        if validate_vin_checksum(test):
+            return test, True
+    
+    # Positions multiples: essayer T au lieu de 7 ou Y
+    for pos in [9, 10]:  # Position année et plant
+        if vin[pos] in ["7", "Y"]:
+            test = vin[:pos] + "T" + vin[pos+1:]
+            if validate_vin_checksum(test):
+                return test, True
+        if vin[pos] == "T":
+            for repl in ["7", "S", "R"]:
+                test = vin[:pos] + repl + vin[pos+1:]
+                if validate_vin_checksum(test):
+                    return test, True
     
     return vin, False
 
