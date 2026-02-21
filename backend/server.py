@@ -4124,7 +4124,7 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                     parse_method = "ocr_zones"
                     logger.info(f"OCR Zones réussi: VIN={vin_corrected}, EP={vehicle_data['ep_cost']}, Score={ocr_score}")
                 else:
-                    logger.info(f"OCR Zones score insuffisant ({ocr_score}), passage au fallback Vision")
+                    logger.info(f"OCR Zones score insuffisant ({ocr_score} < 60), passage au fallback Vision")
                     
             except Exception as ocr_err:
                 logger.warning(f"OCR Zones échoué: {ocr_err}, passage au fallback Vision")
