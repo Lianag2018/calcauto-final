@@ -1,7 +1,7 @@
 <analysis>**original_problem_statement:**
 The user wants to continue developing a mobile application for iOS and Android named CalcAuto AiPro, which functions as a comprehensive vehicle financing calculator.
 
-The primary goal is to build an advanced inventory management system featuring automated invoice scanning. The user has rejected a simple AI-centric approach and provided detailed, evolving technical specifications for a robust, multi-layered parsing system. The latest requirement is to build a high-precision, open-source parser using computer vision techniques to avoid reliance on paid APIs.
+The primary goal is to build an advanced inventory management system featuring automated invoice scanning. The user has rejected a simple AI-centric approach and provided detailed, evolving technical specifications for a robust, multi-layered parsing system.
 
 **PRODUCT REQUIREMENTS:**
 *   **Data Isolation (Multi-Tenancy):** Completed.
@@ -12,8 +12,8 @@ The primary goal is to build an advanced inventory management system featuring a
 *   **Admin Panel (P0):** Completed.
 *   **Inventory Management (P0):** Partially Implemented.
     *   Database and basic API/UI: Completed.
-*   **Invoice Scanning (P0):** The core task, which has undergone multiple architectural shifts. The current and final specification is:
-    *   **Architecture:** A multi-layered, open-source pipeline.
+*   **Invoice Scanning (P0):** The core task, which has undergone multiple architectural shifts and is now implemented and hardened.
+    *   **Architecture:** A multi-layered, open-source pipeline with an AI fallback.
     *   **Level 1 (PDFs):** Use usage: pdfplumber [-h] [--structure | --structure-text]
                   [--format {csv,json,text}] [--types TYPES [TYPES ...]]
                   [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
@@ -42,230 +42,263 @@ options:
   --laparams LAPARAMS
   --precision PRECISION
   --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing. +  for native PDF files. (Implemented)
-    *   **Level 2 (Images):** Use an  +  pipeline. This involves:
-        1.  Pre-processing: Automatic perspective correction (warp).
-        2.  Segmentation: Detect and crop the invoice into key Regions of Interest (ROI) like VIN area, financials area, and options area.
-        3.  OCR: Run  OCR on each small, clean zone individually.
-        4.  Parsing: Apply the structured  parser to the combined, cleaned text.
-    *   **Level 3 (Fallback):** An optimized GPT-4 Vision model should ONLY be used as a last resort if the open-source pipeline fails and produces a low confidence score.
-    *   **Validation:** All parsed data must pass through a strict validation layer, including an industrial-grade VIN checksum/auto-correction module and business logic checks (e.g., ).
-    *   **Review & Correct:** The final parsed data must be presented in an editable modal for user review before saving.
+  --indent INDENT       Indent level for JSON pretty-printing. + . (Implemented)
+    *   **Level 2 (Images):** Use a simplified  +  global OCR pipeline. (Implemented)
+    *   **Level 3 (Fallback):** An optimized GPT-4 Vision model is used if the open-source pipeline's confidence score is below 60. (Implemented)
+    *   **Validation & Decision Logic:**
+        *   Score >= 85: Auto-approved.
+        *   60 <= Score < 85: Requires user review in the frontend modal.
+        *   Score < 60: Triggers Vision fallback.
+        *   Golden Rule: The system blocks any save if critical data (VIN, EP, PDCO) is invalid, regardless of score. (Implemented)
+    *   **Review & Correct:** The final parsed data is presented in an editable modal for user review before saving. (Frontend part exists, integration needs verification).
 *   **Calculator & Inventory Integration (P1):** Partially Implemented.
 
-**User's preferred language**: French (fr). The next agent MUST respond in French.
+**User's preferred language**: French. The next agent MUST respond in French.
 
 **what currently exists?**
-A full-stack application with a React Native (Expo) frontend and a FastAPI backend using MongoDB. User authentication, an admin panel, and basic inventory management are functional.
+A full-stack application with a React Native (Expo) frontend and a FastAPI backend using MongoDB. The backend has been significantly refactored from a monolithic  into a modular architecture (, , , ).
 
-The backend  contains a mix of parsing strategies from previous iterations, including a functional usage: pdfplumber [-h] [--structure | --structure-text]
-                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
-                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
-                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
-                  [--laparams LAPARAMS] [--precision PRECISION]
-                  [--pages PAGES [PAGES ...]] [--indent INDENT]
-                  [infile]
+The core invoice scanning feature is now implemented with a robust, multi-layered pipeline that prioritizes a free, open-source OCR process and uses GPT-4 Vision as a last-resort fallback. This pipeline has been extensively tested, debugged, and hardened based on multiple expert audits provided by the user (impersonating ChatGPT), focusing on a zero error policy.
+
+Production deployment issues on Render related to OpenAI API keys and private library dependencies () have been resolved. The code now uses the standard usage: openai [-h] [-v] [-b API_BASE] [-k API_KEY] [-p PROXY [PROXY ...]]
+              [-o ORGANIZATION] [-t {openai,azure}]
+              [--api-version API_VERSION] [--azure-endpoint AZURE_ENDPOINT]
+              [--azure-ad-token AZURE_AD_TOKEN] [-V]
+              {api,tools,migrate,grit} ...
 
 positional arguments:
-  infile
+  {api,tools,migrate,grit}
+    api                 Direct API calls
+    tools               Client side tools for convenience
 
 options:
   -h, --help            show this help message and exit
-  --structure           Write the structure tree as JSON. All other arguments
-                        except --pages, --laparams, and --indent will be
-                        ignored
-  --structure-text      Write the structure tree as JSON including text
-                        contents. All other arguments except --pages,
-                        --laparams, and --indent will be ignored
-  --format {csv,json,text}
-  --types TYPES [TYPES ...]
-  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
-                        Include *only* these object attributes in output.
-  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
-                        Exclude these object attributes from output.
-  --laparams LAPARAMS
-  --precision PRECISION
-  --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing. parser, a highly-optimized GPT-4 Vision parser, and a sophisticated VIN validation/auto-correction module. The agent had *started* implementing the user's latest request for an -based ROI (Region of Interest) pipeline but did not finish.
-
-The frontend has the UI for uploading files and the review and correct modal. However, the development environment for the frontend has been unstable, frequently crashing or failing to connect.
+  -v, --verbose         Set verbosity.
+  -b API_BASE, --api-base API_BASE
+                        What API base url to use.
+  -k API_KEY, --api-key API_KEY
+                        What API key to use.
+  -p PROXY [PROXY ...], --proxy PROXY [PROXY ...]
+                        What proxy to use.
+  -o ORGANIZATION, --organization ORGANIZATION
+                        Which organization to run as (will use your default
+                        organization if not specified)
+  -t {openai,azure}, --api-type {openai,azure}
+                        The backend API to call, must be `openai` or `azure`
+  --api-version API_VERSION
+                        The Azure API version, e.g.
+                        'https://learn.microsoft.com/en-us/azure/ai-
+                        services/openai/reference#rest-api-versioning'
+  --azure-endpoint AZURE_ENDPOINT
+                        The Azure endpoint, e.g.
+                        'https://endpoint.openai.azure.com'
+  --azure-ad-token AZURE_AD_TOKEN
+                        A token from Azure Active Directory,
+                        https://www.microsoft.com/en-
+                        us/security/business/identity-access/microsoft-entra-
+                        id
+  -V, --version         show program's version number and exit library directly with a user-provided API key.
 
 **Last working item**:
-*   Last item agent was working: Implementing the new, 100% open-source invoice parsing pipeline based on the user's latest, expert-level instructions. This pipeline uses  for image pre-processing (perspective correction) and segmentation (Region of Interest - ROI), followed by targeted  OCR on each zone, effectively replacing the direct GPT-4 Vision approach for images.
-*   Status: IN PROGRESS
-*   Agent Testing Done: N
-*   Which testing method agent to use? both. First, the backend changes are significant. The agent should create a test script (e.g., in ) to validate the new OpenCV/Tesseract pipeline against the user-provided invoice images. Once the backend returns accurate JSON, the frontend flow (upload -> review modal) must be verified, which may require stabilizing the frontend environment first.
-*   User Testing Done: N
+*   Last item agent was working: The user provided a comprehensive 20-point test checklist to validate the invoice scanning pipeline against the zero error principle. The agent was tasked with creating an automated test suite based on this checklist.
+*   Status: NOT STARTED
+*   Agent Testing Done: Y (The agent performed extensive manual  tests and debugging cycles on the endpoint with user-provided invoices throughout the session, successfully validating the final patched logic).
+*   Which testing method agent to use? backend testing agent. The next step is to create a ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0
+rootdir: /app/frontend
+plugins: anyio-4.12.1
+collected 0 items
+
+============================ no tests ran in 0.01s ============================= suite in a new file under  to automate the user's checklist.
+*   User Testing Done: Y (User tested on their production app, which led to the discovery and resolution of key bugs related to API keys and parsing accuracy).
 
 **All Pending/In progress Issue list**:
-*   **Issue 1: Invoice Parsing logic is incomplete and needs a full rewrite to the new Open-Source ROI architecture (P0)**
-    *   **Attempted fixes:** The agent has built and tested several architectures (AI-only, regex-for-PDF, AI-for-image, advanced VIN correction). The last action was starting to build the OpenCV-based pipeline, but it is unfinished.
+*   **Issue 1: Large Monolithic Files (P2)**
+    *   **Description**: The main backend file  is still very large (~4800 lines), and the main frontend calculator file  is over 3000 lines. Both were flagged in audits as needing to be broken down for long-term stability and maintainability.
     *   **Next debug checklist**:
-        1.  Review the user's detailed specification in messages #359 and #163. This is the blueprint.
-        2.  Structure the backend code into a modular format as suggested: , , , , and a main .
-        3.  In , implement the full pipeline:
-            *   Function to load image from bytes.
-            *   Function for perspective correction ( using ).
-            *   Function to segment the warped image into zones ().
-            *   Function to run pre-processed Tesseract OCR on each zone ().
-        4.  In , orchestrate the new flow: Check if PDF -> if yes, use usage: pdfplumber [-h] [--structure | --structure-text]
-                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
-                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
-                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
-                  [--laparams LAPARAMS] [--precision PRECISION]
-                  [--pages PAGES [PAGES ...]] [--indent INDENT]
-                  [infile]
-
-positional arguments:
-  infile
-
-options:
-  -h, --help            show this help message and exit
-  --structure           Write the structure tree as JSON. All other arguments
-                        except --pages, --laparams, and --indent will be
-                        ignored
-  --structure-text      Write the structure tree as JSON including text
-                        contents. All other arguments except --pages,
-                        --laparams, and --indent will be ignored
-  --format {csv,json,text}
-  --types TYPES [TYPES ...]
-  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
-                        Include *only* these object attributes in output.
-  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
-                        Exclude these object attributes from output.
-  --laparams LAPARAMS
-  --precision PRECISION
-  --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing.. If no (image) -> run the full OpenCV ROI pipeline.
-        5.  The existing regex parser logic should be applied to the text extracted from the ROI pipeline.
-        6.  The advanced VIN validation module must be applied to the parsed VIN.
-        7.  The GPT-4 Vision code should be kept only as a final fallback.
-    *   **Why fix this issue and what will be achieved with the fix?**: This will deliver the user's ultimate requirement: a highly accurate, robust, and free-to-operate invoice parser that doesn't rely on paid APIs for standard image processing.
-    *   **Status**: IN PROGRESS
+        *   For backend: Create a  directory and move the scan invoice endpoint logic out of  into .
+        *   For frontend: Break down  into smaller, reusable React components (e.g., , , ).
+    *   **Why fix this issue and what will be achieved with the fix?**: Improve code readability, maintainability, and reduce the risk of introducing bugs.
+    *   **Status**: NOT STARTED
     *   **Is recurring issue?**: Y
     *   **Should Test frontend/backend/both after fix?**: both
-    *   **Blocked on other issue**: None
 
-*   **Issue 2: Frontend Development Environment is Unstable (P1)**
-    *   **Attempted fixes:** The agent encountered multiple  and ngrok tunnel issues, identifying them as infrastructure problems but never fully resolving them.
+*   **Issue 2: Frontend Development Environment Unstable (P2)**
+    *   **Description**: The initial handoff mentioned recurring  and ngrok tunnel issues with the Expo development environment. This was not addressed as the focus was on the backend.
     *   **Next debug checklist**:
-        1.  Check the supervisor logs for the frontend: .
-        2.  Verify the  file and its  variable.
-        3.  If tunnel issues persist, try restarting the supervisor for the frontend: frontend: ERROR (no such process)
+        1.  Check supervisor logs: .
+        2.  Verify the  file and its variables.
+        3.  If issues persist, restart the supervisor: frontend: ERROR (no such process)
 frontend: ERROR (no such process).
-        4.  Investigate any errors shown in the browser console if the app loads partially.
-    *   **Why fix this issue and what will be achieved with the fix?**: A stable frontend is required to test the end-to-end invoice scanning flow and any future UI work.
+    *   **Why fix this issue and what will be achieved with the fix?**: A stable frontend is required to test the end-to-end flow and implement future UI work.
     *   **Status**: NOT STARTED
     *   **Is recurring issue?**: Y
     *   **Should Test frontend/backend/both after fix?**: frontend
-    *   **Blocked on other issue**: None
 
 **In progress Task List**:
-*   **Task 1: Implement and Integrate the OpenCV ROI-based OCR Pipeline (P0)**
-    *   **Where to resume**: Refactor  into modules, then build out the functions for perspective correction, zone segmentation, and targeted OCR as per the user's specification. Integrate this new pipeline into the  endpoint.
-    *   **What will be achieved with this?**: A robust, open-source invoice parser that can handle photographed invoices with ~85-92% accuracy without API costs.
-    *   **Status**: IN PROGRESS
-    *   **Should Test frontend/backend/both after fix?**: both
+*   **Task 1: Create Comprehensive Automated Test Suite (P0)**
+    *   **Where to resume**: Create a new test file (e.g., ) and implement the 20+ test cases from the user's checklist (Message #393). The tests should cover valid/invalid PDFs, good/bad images, various VIN/financial data scenarios, and edge cases. Use mock invoices where necessary.
+    *   **What will be achieved with this?**: A robust test suite that guarantees the zero error requirement, prevents regressions, and validates the complex decision logic.
+    *   **Status**: NOT STARTED
+    *   **Should Test frontend/backend/both after fix?**: backend
     *   **Blocked on something**: None
 
 **Upcoming and Future Tasks**
-*   **(P1) Finalize Calculator-Inventory Integration:** After the parser is stable, test that selecting a vehicle from the inventory list in the calculator correctly populates its price into the form.
-*   **(P2) Add Frontend Warning for VINs:** Implement a visual indicator in the review modal to highlight when a VIN has been auto-corrected or has a low validation score, prompting the user to double-check it.
-*   **(P2) Integrate Financing Programs:** When a vehicle is selected, suggest relevant financing programs.
-*   **(P3) Refactor :** Break down the massive  file (1800+ lines) into smaller, manageable components.
-*   **(P3) Admin Dashboard for Parsing Metrics:** As a pro feature, create a dashboard for the admin to see parsing performance metrics (e.g., success rate of ROI vs. fallback, average confidence scores).
-*   **(P3) Finalize App Store / Play Store Build Process:** Prepare native mobile builds.
+*   **(P1) Finalize Calculator-Inventory Integration:** After the test suite is built, verify on the frontend that selecting a vehicle from the inventory correctly populates its financial data (PDCO, etc.) into the calculator form in .
+*   **(P2) Add Frontend Warning for VINs:** Implement a visual indicator in the review modal to highlight when a VIN has been auto-corrected or has a low validation score.
+*   **(P2) Integrate Financing Programs:** Suggest relevant financing programs when a vehicle is selected from the inventory.
+*   **(P3) Refactor  and :** Address Issue #1 from the pending list.
+*   **(P3) Admin Dashboard for Parsing Metrics:** Create a dashboard for the admin to see parsing performance metrics (e.g., success rate, average scores, Vision fallback rate).
+*   **(P3) Finalize App Store / Play Store Build Process.**
 
 **Completed work in this session**
-- Implemented and validated a structured parser for native PDF invoices using usage: pdfplumber [-h] [--structure | --structure-text]
-                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
-                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
-                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
-                  [--laparams LAPARAMS] [--precision PRECISION]
-                  [--pages PAGES [PAGES ...]] [--indent INDENT]
-                  [infile]
-
-positional arguments:
-  infile
-
-options:
-  -h, --help            show this help message and exit
-  --structure           Write the structure tree as JSON. All other arguments
-                        except --pages, --laparams, and --indent will be
-                        ignored
-  --structure-text      Write the structure tree as JSON including text
-                        contents. All other arguments except --pages,
-                        --laparams, and --indent will be ignored
-  --format {csv,json,text}
-  --types TYPES [TYPES ...]
-  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
-                        Include *only* these object attributes in output.
-  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
-                        Exclude these object attributes from output.
-  --laparams LAPARAMS
-  --precision PRECISION
-  --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing. and .
-- Built and refined an industrial-grade VIN validation module with check-digit calculation, auto-correction for common OCR errors, and decoding of year/manufacturer.
-- Prototyped and tested a GPT-4 Vision-based parser, optimizing it with image compression and specific prompts. This now serves as the last-resort fallback.
-- Updated the  database to correctly decode more vehicle trims (e.g., Grand Cherokee Limited).
-- Began the initial implementation of the user's final requested architecture: an open-source pipeline using OpenCV and Tesseract.
+- **Full Backend Refactoring:** The monolithic  was broken down into a modular architecture: , , , .
+- **Implemented and Hardened Multi-Layered Parsing Pipeline:** The  endpoint was completely rewritten and then patched multiple times to implement a zero error policy with a sophisticated decision engine (PDF -> OCR -> Vision fallback) based on confidence scores (85/60 thresholds).
+- **Hardened Validation Rules:** Implemented a Golden Rule to block saves if critical data is invalid. Removed aggressive VIN auto-correction (forced check-digit).
+- **Resolved Production Deployment Blockers:** Successfully debugged and fixed critical issues on the user's Render production environment, including invalid API keys, environment variable conflicts, and removing a private library dependency () that was causing build failures.
+- **Improved GPT-4 Vision Prompt:** Optimized the prompt for higher accuracy, correcting previous data extraction errors.
+- **Passed Multiple Expert Audits:** Applied numerous line-by-line patches based on detailed audits from the user's ChatGPT persona, resulting in a significantly more robust and stable system.
 
 **Earlier issues found/mentioned but not fixed**
-*   The frontend development environment's instability (ngrok tunnel errors, 520 errors) was noted multiple times but never fully resolved, preventing UI testing.
+*   The frontend development environment's instability.
+*   The need to refactor the massive  file.
 
 **Known issue recurrence from previous fork**
-*   Not applicable.
+*   None.
 
 **Code Architecture**
 
-**Recommended New Backend Structure:**
-
 
 **Key Technical Concepts**
-- **Computer Vision Pipeline:** The new core concept is a multi-step image processing pipeline using  for geometric correction and segmentation (ROI), and  for targeted OCR.
-- **Region of Interest (ROI):** The strategy of breaking a document image into smaller, specific zones for more accurate, targeted processing, rather than global processing.
-- **Modular Refactoring:** The need to break the monolithic  into feature-specific modules (, , etc.) for maintainability.
-- **Defense in Depth:** Using a multi-layered approach to parsing (PDF-native, then ROI-open-source, then AI-fallback) to balance cost and accuracy.
+- **Computer Vision Pipeline:** A multi-step image processing pipeline using  and .
+- **Modular Refactoring:** The backend monolith was successfully broken down into feature-specific modules.
+- **Defense in Depth / Multi-Layered Logic:** Using a tiered approach (PDF-native, then open-source OCR, then AI-fallback) to balance cost and accuracy.
+- **Score-based Decision Logic:** A system that uses a confidence score to decide whether to auto-approve data, flag it for user review, or escalate to a more powerful (and costly) AI model.
 
 **key DB schema**
-- **inventory**: . A unique index on  and  is required.
-- **fca_product_codes**: . Has been updated with new codes.
+- **inventory**: .
+- **fca_product_codes**: .
 
 **All files of reference**
-- : The primary file that needs to be refactored.
-- **User Message #359 (and #163):** These are the **CRITICAL** blueprints provided by the user (via ChatGPT) that detail the exact architecture, code snippets, and strategy for the new open-source ROI pipeline.
+- : The main orchestrator, heavily modified.
+- : Created and modified.
+- : Created and modified.
+- : Created and modified.
+- : Created and modified.
+- **User Message #393:** Contains the critical test checklist that must be implemented next.
 
 **Areas that need refactoring**:
-- ****: Must be broken down into the modular structure (, , etc.) to manage complexity and align with the user's latest direction.
-- ****: Remains a very large file that is difficult to maintain and should be broken into smaller components.
+- ****: The file is still over 4800 lines. The main scan endpoint logic should be moved to a separate file in a  directory.
+- ****: A 3000+ line React Native component that is difficult to maintain.
 
 **key api endpoints**
-- : The endpoint at the heart of the project. It needs to be rewritten to orchestrate the new multi-layered parsing pipeline (PDF check, then OpenCV ROI flow, then AI fallback).
+- : The core endpoint. It has been completely rewritten and hardened. It now accepts a file and returns a JSON object with a status (, ), the parsed vehicle data, and validation results.
 
 **Critical Info for New Agent**
-1.  **IMPLEMENT THE OPENCV PIPELINE:** Your absolute top priority is to build the open-source invoice parser using the  +  ROI strategy. The user has provided the exact architecture in messages #359 and #163. This replaces the previous GPT-4 Vision approach for images.
-2.  **REFACTOR THE BACKEND:** As you build the new pipeline, refactor the monolithic  into the recommended modular structure (, , etc.). This is a direct, expert-level instruction from the user.
-3.  **INTEGRATE EXISTING LOGIC:** The new pipeline's output must be processed by the **existing, approved** modules for regex parsing and advanced VIN validation/correction. Do not reinvent them.
-4.  **STABILIZE THE FRONTEND:** The frontend dev environment has been unreliable. You will likely need to diagnose and fix it before you can perform end-to-end testing. Check supervisor logs first.
-5.  **TRUST THE USER'S SPECIFICATIONS:** The user has demonstrated deep technical expertise and provided a clear, industrial-grade blueprint. Follow their final specification for the ROI pipeline precisely.
+1.  **Parlez Français:** The user is a native French speaker. All communication MUST be in French.
+2.  **Implement the Test Checklist:** Your absolute top priority is to build the automated ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0
+rootdir: /app/frontend
+plugins: anyio-4.12.1
+collected 0 items
+
+============================ no tests ran in 0.01s ============================= suite based on the user's detailed checklist in **Message #393**. This is non-negotiable and validates the zero error requirement.
+3.  **Do Not Change Backend Logic Casually:** The backend parsing and validation pipeline has been through numerous expert audits and is considered stable. Do not alter the core decision logic (e.g., scoring thresholds, validation rules) without a very strong reason and user approval.
+4.  **Production is Configured:** The agent has already debugged and configured the production environment on Render. The code uses the usage: openai [-h] [-v] [-b API_BASE] [-k API_KEY] [-p PROXY [PROXY ...]]
+              [-o ORGANIZATION] [-t {openai,azure}]
+              [--api-version API_VERSION] [--azure-endpoint AZURE_ENDPOINT]
+              [--azure-ad-token AZURE_AD_TOKEN] [-V]
+              {api,tools,migrate,grit} ...
+
+positional arguments:
+  {api,tools,migrate,grit}
+    api                 Direct API calls
+    tools               Client side tools for convenience
+
+options:
+  -h, --help            show this help message and exit
+  -v, --verbose         Set verbosity.
+  -b API_BASE, --api-base API_BASE
+                        What API base url to use.
+  -k API_KEY, --api-key API_KEY
+                        What API key to use.
+  -p PROXY [PROXY ...], --proxy PROXY [PROXY ...]
+                        What proxy to use.
+  -o ORGANIZATION, --organization ORGANIZATION
+                        Which organization to run as (will use your default
+                        organization if not specified)
+  -t {openai,azure}, --api-type {openai,azure}
+                        The backend API to call, must be `openai` or `azure`
+  --api-version API_VERSION
+                        The Azure API version, e.g.
+                        'https://learn.microsoft.com/en-us/azure/ai-
+                        services/openai/reference#rest-api-versioning'
+  --azure-endpoint AZURE_ENDPOINT
+                        The Azure endpoint, e.g.
+                        'https://endpoint.openai.azure.com'
+  --azure-ad-token AZURE_AD_TOKEN
+                        A token from Azure Active Directory,
+                        https://www.microsoft.com/en-
+                        us/security/business/identity-access/microsoft-entra-
+                        id
+  -V, --version         show program's version number and exit library directly, and the user has provided a working API key. Be aware of the  environment variable.
+5.  **Focus Shifts to Frontend Next:** After the backend test suite is complete, the focus should shift to the frontend tasks: verifying calculator integration and addressing the known refactoring needs ().
 
 **documents and test reports created in this job**
-- None mentioned.
+- : A zip file of the backend modules was created for the user but is now outdated due to subsequent patches.
 
 **Last 10 User Messages and any pending HUMAN messages**
-- The user provided extremely detailed, expert-level feedback (via ChatGPT) on how to build a production-ready, open-source OCR pipeline using OpenCV for Region-of-Interest segmentation, completely changing the technical strategy.
-- The user then asked for progress updates (have you finished?, where are you at?, do you have a problem?), indicating they are waiting for the agent to complete this new implementation. The agent confirmed they had started but not finished.
-- **Pending:** The user is waiting for the agent to complete and demonstrate the new OpenCV-based parsing pipeline.
+- The user, acting as an expert auditor (ChatGPT), provided multiple, increasingly detailed sets of patches to fix structural problems and logical inconsistencies in the invoice scanning pipeline.
+- The agent applied all the recommended patches, including setting stricter validation thresholds (85 for auto-approval, 60-84 for review), unifying VIN and validation logic, and fixing bugs.
+- The user confirmed the agent should apply the patches.
+- After all patches were applied and tested successfully, the user provided a final, comprehensive 20-point test checklist to be implemented.
+- **Pending:** The user is waiting for the agent to create the automated test suite based on the provided checklist.
 
 **Project Health Check:**
 *   **Broken:**
-    *   The core invoice parsing logic is in the middle of a major architectural rewrite and is currently incomplete.
-    *   The frontend development environment is unstable, frequently preventing the application from running.
+    *   The frontend development environment is still reported as unstable.
+    *   The frontend has extremely large, hard-to-maintain files (, ).
 *   **Mocked:** None.
 
 **3rd Party Integrations**
-*   **OpenAI GPT-4o / Vision**: Demoted to a last-resort fallback for invoice parsing.
+*   **OpenAI GPT-4 Vision**: Used as a fallback parser. Integrated directly via the usage: openai [-h] [-v] [-b API_BASE] [-k API_KEY] [-p PROXY [PROXY ...]]
+              [-o ORGANIZATION] [-t {openai,azure}]
+              [--api-version API_VERSION] [--azure-endpoint AZURE_ENDPOINT]
+              [--azure-ad-token AZURE_AD_TOKEN] [-V]
+              {api,tools,migrate,grit} ...
+
+positional arguments:
+  {api,tools,migrate,grit}
+    api                 Direct API calls
+    tools               Client side tools for convenience
+
+options:
+  -h, --help            show this help message and exit
+  -v, --verbose         Set verbosity.
+  -b API_BASE, --api-base API_BASE
+                        What API base url to use.
+  -k API_KEY, --api-key API_KEY
+                        What API key to use.
+  -p PROXY [PROXY ...], --proxy PROXY [PROXY ...]
+                        What proxy to use.
+  -o ORGANIZATION, --organization ORGANIZATION
+                        Which organization to run as (will use your default
+                        organization if not specified)
+  -t {openai,azure}, --api-type {openai,azure}
+                        The backend API to call, must be `openai` or `azure`
+  --api-version API_VERSION
+                        The Azure API version, e.g.
+                        'https://learn.microsoft.com/en-us/azure/ai-
+                        services/openai/reference#rest-api-versioning'
+  --azure-endpoint AZURE_ENDPOINT
+                        The Azure endpoint, e.g.
+                        'https://endpoint.openai.azure.com'
+  --azure-ad-token AZURE_AD_TOKEN
+                        A token from Azure Active Directory,
+                        https://www.microsoft.com/en-
+                        us/security/business/identity-access/microsoft-entra-
+                        id
+  -V, --version         show program's version number and exit library. The user provides their own API key, which has been configured in the production environment.
 *   **usage: pdfplumber [-h] [--structure | --structure-text]
                   [--format {csv,json,text}] [--types TYPES [TYPES ...]]
                   [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
@@ -294,24 +327,23 @@ options:
   --laparams LAPARAMS
   --precision PRECISION
   --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing.**: Required primary parser for native PDF files.
-*   **** (+  system package): Required for the new open-source OCR engine.
-*   ****: Required for the new image pre-processing and ROI pipeline.
-*   **Render**: Hosts the FastAPI backend.
-*   **Vercel**: Hosts the Expo web frontend.
-*   **MongoDB Atlas**: Hosts the production database.
+  --indent INDENT       Indent level for JSON pretty-printing.**: Primary parser for native PDF files.
+*   **** (+  system package): Core open-source OCR engine.
+*   ****: Used for image pre-processing.
 
 **Testing status**
-- Testing agent used after significant changes: NO (not for the latest architectural changes).
+- Testing agent used after significant changes: NO
 - Troubleshoot agent used after agent stuck in loop: NO
-- Test files created: None. It is highly recommended to create .
+- Test files created:
+    -  (exists but is basic).
+    -  (created for user, now outdated).
 - Known regressions: None.
 
 **Credentials to test flow:**
 - **User:** 
 - **Password:** 
+- **OpenAI API Key**: The user provided a working key (). It is configured on Render, but the agent may need to ask for it again for local testing.
 
 **What agent forgot to execute**
-- The agent has not completed the user's most recent and critical request: to build and integrate the  ROI-based open-source parsing pipeline.
-- The agent has not refactored the monolithic  into a modular structure as suggested.
-- The agent has not resolved the recurring instability of the frontend development environment.</analysis>
+- The agent was about to begin the primary task requested by the user: creating an automated test suite based on a detailed checklist. This is the immediate next step.
+- The agent did not address the known frontend instability or refactoring tasks, as the focus was entirely on the backend pipeline.</analysis>
