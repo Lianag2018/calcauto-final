@@ -46,20 +46,24 @@ def parse_vin(text: str) -> Optional[str]:
     
     Formats supportés:
     - VIN standard 17 caractères
-    - VIN FCA avec tirets: XXXXX-XX-XXXXXX
+    - VIN FCA avec tirets: XXXXX-XX-XXXXXX (format 5-2-10)
     """
-    # VIN avec tirets FCA
-    vin_match = re.search(
-        r'([0-9A-HJ-NPR-Z]{5})[-\s]?([A-HJ-NPR-Z0-9]{2})[-\s]?([A-HJ-NPR-Z0-9]{6,10})',
-        text.upper()
-    )
-    if vin_match:
-        vin = vin_match.group(1) + vin_match.group(2) + vin_match.group(3)
-        # Prendre seulement 17 caractères
-        return vin[:17] if len(vin) >= 17 else None
+    text = text.upper()
     
-    # VIN standard 17 caractères
-    vin_match = re.search(r'\b([0-9A-HJ-NPR-Z]{17})\b', text.upper())
+    # VIN avec tirets FCA (format exact: 5-2-X chars)
+    # Exemple: 1C4RJKBG5-S8-806267
+    vin_dash_match = re.search(
+        r'([0-9A-HJ-NPR-Z]{5,9})[-\s]([A-HJ-NPR-Z0-9]{2})[-\s]([A-HJ-NPR-Z0-9]{6,10})',
+        text
+    )
+    if vin_dash_match:
+        vin = vin_dash_match.group(1) + vin_dash_match.group(2) + vin_dash_match.group(3)
+        # Garder seulement 17 caractères
+        if len(vin) >= 17:
+            return vin[:17]
+    
+    # VIN standard 17 caractères (sans tirets)
+    vin_match = re.search(r'\b([0-9A-HJ-NPR-Z]{17})\b', text)
     if vin_match:
         return vin_match.group(1)
     
