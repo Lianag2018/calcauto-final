@@ -4054,9 +4054,11 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                     parse_method = "pdf_native"
                     logger.info(f"Parser PDF réussi: VIN={vin}, EP={vehicle_data['ep_cost']}")
         
-        # ===== NIVEAU 2: IMAGE → OCR PAR ZONES (100% GRATUIT) =====
+        # ===== NIVEAU 2: IMAGE → OCR SIMPLIFIÉ STABLE (ZÉRO ERREUR) =====
+        decision = None
+        
         if vehicle_data is None and not is_pdf:
-            logger.info("Image détectée → Pipeline OCR par zones (OpenCV + Tesseract)")
+            logger.info("Image détectée → OCR Global simplifié")
             
             try:
                 # 1. Pipeline OCR par zones
@@ -4065,7 +4067,7 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                 # 2. Parser structuré sur le texte OCR
                 parsed = parse_invoice_text(ocr_result)
                 
-                # 3. Validation et correction VIN industrielle
+                # 3. Validation et correction VIN centralisée (UNE SEULE FONCTION)
                 vin_raw = parsed.get("vin", "")
                 vin_result = validate_and_correct_vin(vin_raw) if vin_raw else {}
                 
@@ -4079,55 +4081,96 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                 validation_result = validate_invoice_full(parsed)
                 
                 ocr_score = validation_result["score"]
-                logger.info(f"OCR Zones: score={ocr_score}, VIN={vin_corrected}, EP={parsed.get('ep_cost')}")
+                logger.info(f"OCR: score={ocr_score}, VIN={vin_corrected}, EP={parsed.get('ep_cost')}")
                 
-                # AMÉLIORATION: Seuil abaissé à 60 pour réduire coût IA
-                # Score 60+ = OCR acceptable, pas besoin de fallback Vision
-                if ocr_score >= 60:
-                    vin_info = decode_vin(vin_corrected) if len(vin_corrected) == 17 else {}
-                    model_code = parsed.get("model_code", "")
-                    product_info = decode_product_code(model_code) if model_code else {}
-                    vin_brand = decode_vin_brand(vin_corrected)
-                    
-                    vehicle_data = {
-                        "stock_no": parsed.get("stock_no", ""),
-                        "vin": vin_corrected,
-                        "vin_original": vin_raw if vin_was_corrected else None,
-                        "vin_valid": vin_valid,
-                        "vin_corrected": vin_was_corrected,
-                        "vin_brand": vin_brand,
-                        "model_code": model_code,
-                        "year": vin_info.get("year") or datetime.now().year,
-                        "brand": product_info.get("brand") or vin_brand or "Stellantis",
-                        "model": product_info.get("model") or "",
-                        "trim": product_info.get("trim") or "",
-                        "ep_cost": parsed.get("ep_cost") or 0,
-                        "pdco": parsed.get("pdco") or 0,
-                        "pref": parsed.get("pref") or 0,
-                        "holdback": parsed.get("holdback") or 0,
-                        "msrp": parsed.get("pdco") or 0,
-                        "net_cost": parsed.get("ep_cost") or 0,
-                        "subtotal": parsed.get("subtotal") or 0,
-                        "invoice_total": parsed.get("invoice_total") or 0,
-                        "options": parsed.get("options", []),
-                        "file_hash": file_hash,
-                        "parse_method": "ocr_zones",
-                        "cost_estimate": "$0.00",
-                        "metrics": {
-                            "zones_processed": ocr_result.get("zones_processed", 0),
-                            "validation_score": ocr_score,
-                            "parse_duration_sec": round(time.time() - start_time, 3)
-                        }
-                    }
-                    
-                    validation = validation_result
-                    parse_method = "ocr_zones"
-                    logger.info(f"OCR Zones réussi: VIN={vin_corrected}, EP={vehicle_data['ep_cost']}, Score={ocr_score}")
+                # ----------- NOUVELLE LOGIQUE ZÉRO ERREUR -----------
+                if ocr_score >= 85:
+                    decision = "auto_approved"
+                elif 60 <= ocr_score < 85:
+                    decision = "review_required"
                 else:
-                    logger.info(f"OCR Zones score insuffisant ({ocr_score} < 60), passage au fallback Vision")
+                    decision = "vision_required"
+                    
+                logger.info(f"Décision OCR: {decision} (score={ocr_score})")
                     
             except Exception as ocr_err:
-                logger.warning(f"OCR Zones échoué: {ocr_err}, passage au fallback Vision")
+                logger.warning(f"OCR échoué: {ocr_err}, passage au fallback Vision")
+                decision = "vision_required"
+        
+        # ===== GESTION DES DÉCISIONS =====
+        
+        # REVIEW REQUIRED (60-84) → Retourner pour révision humaine
+        if decision == "review_required":
+            vin_info = decode_vin(vin_corrected) if vin_corrected and len(vin_corrected) == 17 else {}
+            model_code = parsed.get("model_code", "")
+            product_info = decode_product_code(model_code) if model_code else {}
+            
+            return {
+                "success": True,
+                "review_required": True,
+                "vehicle": {
+                    "stock_no": parsed.get("stock_no", ""),
+                    "vin": vin_corrected,
+                    "vin_valid": vin_valid,
+                    "vin_corrected": vin_was_corrected,
+                    "model_code": model_code,
+                    "year": vin_info.get("year") or datetime.now().year,
+                    "brand": product_info.get("brand") or "Stellantis",
+                    "model": product_info.get("model") or "",
+                    "ep_cost": parsed.get("ep_cost") or 0,
+                    "pdco": parsed.get("pdco") or 0,
+                    "pref": parsed.get("pref") or 0,
+                    "holdback": parsed.get("holdback") or 0,
+                    "subtotal": parsed.get("subtotal_excl_tax") or parsed.get("subtotal") or 0,
+                    "invoice_total": parsed.get("invoice_total") or 0,
+                    "options": parsed.get("options", []),
+                },
+                "validation": validation_result,
+                "parse_method": "ocr_review",
+                "message": "Score entre 60-84. Révision humaine recommandée."
+            }
+        
+        # AUTO APPROVED (85+) → Accepter directement
+        if decision == "auto_approved":
+            vin_info = decode_vin(vin_corrected) if vin_corrected and len(vin_corrected) == 17 else {}
+            model_code = parsed.get("model_code", "")
+            product_info = decode_product_code(model_code) if model_code else {}
+            vin_brand = decode_vin_brand(vin_corrected) if vin_corrected else None
+            
+            vehicle_data = {
+                "stock_no": parsed.get("stock_no", ""),
+                "vin": vin_corrected,
+                "vin_original": vin_raw if vin_was_corrected else None,
+                "vin_valid": vin_valid,
+                "vin_corrected": vin_was_corrected,
+                "vin_brand": vin_brand,
+                "model_code": model_code,
+                "year": vin_info.get("year") or datetime.now().year,
+                "brand": product_info.get("brand") or vin_brand or "Stellantis",
+                "model": product_info.get("model") or "",
+                "trim": product_info.get("trim") or "",
+                "ep_cost": parsed.get("ep_cost") or 0,
+                "pdco": parsed.get("pdco") or 0,
+                "pref": parsed.get("pref") or 0,
+                "holdback": parsed.get("holdback") or 0,
+                "msrp": parsed.get("pdco") or 0,
+                "net_cost": parsed.get("ep_cost") or 0,
+                "subtotal": parsed.get("subtotal_excl_tax") or parsed.get("subtotal") or 0,
+                "invoice_total": parsed.get("invoice_total") or 0,
+                "options": parsed.get("options", []),
+                "file_hash": file_hash,
+                "parse_method": "ocr_auto_approved",
+                "cost_estimate": "$0.00",
+                "metrics": {
+                    "zones_processed": ocr_result.get("zones_processed", 0),
+                    "validation_score": ocr_score,
+                    "parse_duration_sec": round(time.time() - start_time, 3)
+                }
+            }
+            
+            validation = validation_result
+            parse_method = "ocr_auto_approved"
+            logger.info(f"OCR Auto-Approved: VIN={vin_corrected}, EP={vehicle_data['ep_cost']}, Score={ocr_score}")
         
         # ===== NIVEAU 3: FALLBACK → GPT-4 VISION (SI SCORE < 70) =====
         if vehicle_data is None:
