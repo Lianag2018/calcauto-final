@@ -3969,9 +3969,10 @@ Règle: Extrais les valeurs EXACTEMENT comme écrites sur la facture."""
                 pref = clean_fca_price(str(raw.get("pref", raw.get("r", ""))))
                 holdback = clean_fca_price(str(raw.get("holdback", raw.get("h", ""))))
                 
-                # Décoder options (format compact)
+                # Décoder options (supporte formats: liste ou dict)
                 options = []
-                for opt in raw.get("o", []):
+                options_raw = raw.get("options", raw.get("o", []))
+                for opt in options_raw:
                     if isinstance(opt, list) and len(opt) >= 2:
                         options.append({
                             "product_code": str(opt[0]).upper(),
@@ -3982,11 +3983,11 @@ Règle: Extrais les valeurs EXACTEMENT comme écrites sur la facture."""
                         options.append({
                             "product_code": str(opt.get("code", opt.get("c", ""))).upper(),
                             "description": str(opt.get("description", opt.get("d", "")))[:80],
-                            "amount": clean_fca_price(str(opt.get("amount", opt.get("a", "0"))))
+                            "amount": clean_fca_price(str(opt.get("a", opt.get("amount", "0"))))
                         })
                 
                 # Couleur
-                color_code = str(raw.get("c", "")).upper()[:3]
+                color_code = str(raw.get("color", raw.get("c", ""))).upper()[:3]
                 color_map = {
                     "PW7": "Blanc Vif", "PXJ": "Noir Cristal", "PX8": "Noir Diamant",
                     "PAU": "Rouge Flamme", "PSC": "Gris Destroyer", "PWL": "Blanc Perle",
@@ -3994,11 +3995,11 @@ Règle: Extrais les valeurs EXACTEMENT comme écrites sur la facture."""
                 }
                 
                 # Subtotal et total
-                subtotal = raw.get("t", 0)
+                subtotal = raw.get("subtotal", raw.get("t", 0))
                 if isinstance(subtotal, str):
                     subtotal = float(subtotal.replace(",", "").replace("$", "")) if subtotal else 0
                 
-                invoice_total = raw.get("f", 0)
+                invoice_total = raw.get("total", raw.get("f", 0))
                 if isinstance(invoice_total, str):
                     invoice_total = float(invoice_total.replace(",", "").replace("$", "")) if invoice_total else 0
                 
