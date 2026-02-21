@@ -285,7 +285,7 @@ export default function InventoryScreen() {
       // Appeler scan-invoice (SANS sauvegarde) pour obtenir les données à réviser
       const response = await axios.post(
         `${API_URL}/api/inventory/scan-invoice`,
-        { image_base64: base64Image },
+        { image_base64: base64Data, is_pdf: isPdf },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -307,7 +307,8 @@ export default function InventoryScreen() {
           msrp: vehicle.msrp || 0,
           asking_price: vehicle.asking_price || vehicle.msrp || 0,
           color: vehicle.color || '',
-          options: vehicle.options || []
+          options: vehicle.options || [],
+          parse_method: response.data.parse_method || 'unknown'
         });
         setShowScanModal(false);
         setShowReviewModal(true);
