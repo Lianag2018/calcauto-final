@@ -3134,70 +3134,184 @@ async def add_product_code(code: ProductCode, authorization: Optional[str] = Hea
 import re
 import base64
 
-# ============ VIN Decoder ============
+# ============ VIN Validation & Auto-Correction ============
+
+# Table de translittération VIN (ISO 3779)
+VIN_TRANSLATION = {
+    **{str(i): i for i in range(10)},
+    "A":1,"B":2,"C":3,"D":4,"E":5,"F":6,"G":7,"H":8,
+    "J":1,"K":2,"L":3,"M":4,"N":5,"P":7,"R":9,
+    "S":2,"T":3,"U":4,"V":5,"W":6,"X":7,"Y":8,"Z":9
+}
+
+# Poids par position pour calcul check digit
+VIN_WEIGHTS = [8,7,6,5,4,3,2,10,0,9,8,7,6,5,4,3,2]
+
+# Corrections OCR communes
+VIN_OCR_CORRECTIONS = {
+    "O": "0",  # O ressemble à 0
+    "I": "1",  # I ressemble à 1
+    "Q": "0",  # Q ressemble à 0
+    "L": "1",  # L ressemble à 1
+    "Z": "2",  # Z peut ressembler à 2
+    "S": "5",  # S peut ressembler à 5
+    "B": "8",  # B peut ressembler à 8
+}
+
+# Codes année (10e caractère)
+VIN_YEAR_CODES = {
+    'A': 2010, 'B': 2011, 'C': 2012, 'D': 2013, 'E': 2014,
+    'F': 2015, 'G': 2016, 'H': 2017, 'J': 2018, 'K': 2019,
+    'L': 2020, 'M': 2021, 'N': 2022, 'P': 2023, 'R': 2024,
+    'S': 2025, 'T': 2026, 'V': 2027, 'W': 2028, 'X': 2029,
+    'Y': 2030, '1': 2031, '2': 2032, '3': 2033, '4': 2034,
+    '5': 2035, '6': 2036, '7': 2037, '8': 2038, '9': 2039
+}
+
+# WMI (World Manufacturer Identifier) - 3 premiers caractères
+VIN_WMI_MAP = {
+    "1C4": "Jeep",
+    "1C6": "Ram",
+    "1C3": "Chrysler",
+    "2C3": "Chrysler",
+    "2C4": "Chrysler",
+    "3C4": "Chrysler",
+    "3C6": "Ram",
+    "3C3": "Chrysler",
+    "1B3": "Dodge",
+    "2B3": "Dodge",
+    "3D4": "Dodge",
+}
+
+
+def compute_vin_check_digit(vin: str) -> str:
+    """Calcule le check digit (9e caractère) d'un VIN"""
+    total = 0
+    for i, char in enumerate(vin.upper()):
+        if i == 8:  # Skip position du check digit
+            continue
+        value = VIN_TRANSLATION.get(char, 0)
+        total += value * VIN_WEIGHTS[i]
+    
+    remainder = total % 11
+    return "X" if remainder == 10 else str(remainder)
+
+
+def validate_vin_checksum(vin: str) -> bool:
+    """Valide le check digit d'un VIN"""
+    vin = vin.upper()
+    
+    if len(vin) != 17:
+        return False
+    
+    # VIN ne peut pas contenir I, O, Q
+    if any(c in "IOQ" for c in vin):
+        return False
+    
+    expected = compute_vin_check_digit(vin)
+    return vin[8] == expected
+
+
+def auto_correct_vin(vin: str) -> tuple:
+    """
+    Corrige automatiquement les erreurs OCR communes dans un VIN.
+    
+    Returns: (vin_corrigé, was_corrected)
+    """
+    vin = vin.upper().replace("-", "").replace(" ", "")
+    
+    # Déjà valide ?
+    if validate_vin_checksum(vin):
+        return vin, False
+    
+    # Tester corrections simples caractère par caractère
+    for i, char in enumerate(vin):
+        if char in VIN_OCR_CORRECTIONS:
+            corrected = vin[:i] + VIN_OCR_CORRECTIONS[char] + vin[i+1:]
+            if validate_vin_checksum(corrected):
+                return corrected, True
+    
+    # Tester permutations communes (P↔J, 7↔T, etc.)
+    common_swaps = [("P", "J"), ("J", "P"), ("7", "T"), ("T", "7"), ("6", "G"), ("G", "6")]
+    for old, new in common_swaps:
+        for i, char in enumerate(vin):
+            if char == old:
+                corrected = vin[:i] + new + vin[i+1:]
+                if validate_vin_checksum(corrected):
+                    return corrected, True
+    
+    return vin, False
+
+
+def decode_vin_year(vin: str) -> int:
+    """Décode l'année à partir du 10e caractère"""
+    if len(vin) < 10:
+        return None
+    return VIN_YEAR_CODES.get(vin[9].upper())
+
+
+def decode_vin_brand(vin: str) -> str:
+    """Décode le constructeur à partir du WMI (3 premiers caractères)"""
+    if len(vin) < 3:
+        return None
+    wmi = vin[:3].upper()
+    
+    # Cas spécial: Jeep Gladiator (1C6PJ...)
+    if vin.upper().startswith("1C6PJ"):
+        return "Jeep"
+    
+    return VIN_WMI_MAP.get(wmi)
+
+
+def validate_vin_brand_consistency(vin: str, expected_brand: str) -> bool:
+    """Vérifie que le VIN correspond à la marque attendue"""
+    vin_brand = decode_vin_brand(vin)
+    if not vin_brand or not expected_brand:
+        return True  # Pas de vérification possible
+    return vin_brand.lower() == expected_brand.lower()
+
 
 def decode_vin(vin: str) -> dict:
-    """Décode un VIN et extrait les informations du véhicule
+    """
+    Décode un VIN complet avec validation et auto-correction.
     
-    Structure VIN (17 caractères):
-    - Position 1-3: WMI (World Manufacturer Identifier)
-    - Position 4-8: VDS (Vehicle Descriptor Section)
-    - Position 9: Check digit
-    - Position 10: Model year
-    - Position 11: Plant code
-    - Position 12-17: Serial number
+    Returns:
+        dict avec: vin, valid, corrected, year, manufacturer, checksum_valid
     """
     result = {
         "vin": vin,
         "valid": False,
+        "corrected": False,
+        "checksum_valid": False,
         "year": None,
         "manufacturer": None,
         "plant": None,
         "serial": None
     }
     
-    # Clean VIN
+    # Nettoyer
     vin = vin.upper().replace("-", "").replace(" ", "")
     
     if len(vin) != 17:
         return result
     
-    result["valid"] = True
-    result["vin"] = vin
+    # Auto-correction
+    vin_corrected, was_corrected = auto_correct_vin(vin)
+    result["vin"] = vin_corrected
+    result["corrected"] = was_corrected
+    result["checksum_valid"] = validate_vin_checksum(vin_corrected)
+    result["valid"] = result["checksum_valid"]
     
-    # Position 10: Model Year (1980-2039 cycle)
-    year_codes = {
-        'A': 2010, 'B': 2011, 'C': 2012, 'D': 2013, 'E': 2014,
-        'F': 2015, 'G': 2016, 'H': 2017, 'J': 2018, 'K': 2019,
-        'L': 2020, 'M': 2021, 'N': 2022, 'P': 2023, 'R': 2024,
-        'S': 2025, 'T': 2026, 'V': 2027, 'W': 2028, 'X': 2029,
-        'Y': 2030, '1': 2031, '2': 2032, '3': 2033, '4': 2034,
-        '5': 2035, '6': 2036, '7': 2037, '8': 2038, '9': 2039
-    }
-    year_char = vin[9]
-    result["year"] = year_codes.get(year_char)
+    # Année (10e caractère)
+    result["year"] = decode_vin_year(vin_corrected)
     
-    # WMI (positions 1-3): Manufacturer
-    wmi = vin[0:3]
+    # Constructeur (WMI)
+    result["manufacturer"] = decode_vin_brand(vin_corrected)
     
-    # Check for Jeep Gladiator (VIN starts with 1C6PJ or 1C6PJTAG)
-    if vin.startswith("1C6PJ") or vin.startswith("1C6PJTAG"):
-        result["manufacturer"] = "Jeep"
-        result["country"] = "USA (Toledo)"
-        result["model_hint"] = "Gladiator"
-    else:
-        wmi_manufacturers = {
-            # Ram / Chrysler
-            "3C6": {"manufacturer": "Ram", "country": "Mexico (Toluca)"},
-            "3C4": {"manufacturer": "Chrysler", "country": "Mexico"},
-            "3C3": {"manufacturer": "Chrysler", "country": "Mexico"},
-            "1C4": {"manufacturer": "Jeep", "country": "USA"},
-            "1C6": {"manufacturer": "Ram", "country": "USA"},
-            "2C3": {"manufacturer": "Chrysler", "country": "Canada"},
-            # Dodge
-            "1B3": {"manufacturer": "Dodge", "country": "USA"},
-            "2B3": {"manufacturer": "Dodge", "country": "Canada"},
-            "3D4": {"manufacturer": "Dodge", "country": "Mexico"},
+    # Serial (positions 12-17)
+    result["serial"] = vin_corrected[11:17]
+    
+    return result
             # Jeep
             "1J4": {"manufacturer": "Jeep", "country": "USA"},
             "1J8": {"manufacturer": "Jeep", "country": "USA"},
