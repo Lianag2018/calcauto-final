@@ -3451,170 +3451,231 @@ def decode_fca_holdback(raw_value: str) -> float:
             return 0
     return 0
 
-def parse_fca_invoice_text(text: str) -> dict:
-    """Parser automatique pour factures FCA Canada - Format standard
-    
-    Structure FCA:
-    - Header: Dealer, VIN, Order Number
-    - Options: CODE + DESCRIPTION + MONTANT
-    - Footer: E.P., PDCO, PREF + Totaux
+# =========================
+# PARSER STRUCTURÉ FCA - VERSION PRODUCTION
+# =========================
+
+def clean_fca_price(raw_value: str) -> int:
     """
-    result = {
-        "stock_no": None,
+    Règle FCA pour décoder les prix:
+    - Enlever le premier 0
+    - Enlever les deux derniers chiffres
+    Exemple: 05662000 -> 56620
+    """
+    raw_value = str(raw_value).strip()
+    
+    # Remove any non-numeric characters
+    raw_value = re.sub(r'[^\d]', '', raw_value)
+    
+    if not raw_value:
+        return 0
+    
+    # Remove leading 0 if present
+    if raw_value.startswith("0"):
+        raw_value = raw_value[1:]
+    
+    # Remove last 2 digits
+    if len(raw_value) >= 2:
+        raw_value = raw_value[:-2]
+    
+    try:
+        return int(raw_value)
+    except:
+        return 0
+
+
+def clean_decimal_price(raw_value: str) -> float:
+    """
+    Nettoie les montants format décimal: 57,120.00 -> 57120.00
+    """
+    raw_value = str(raw_value).replace(",", "").strip()
+    try:
+        return float(raw_value)
+    except:
+        return 0.0
+
+
+def extract_pdf_text(file_bytes: bytes) -> str:
+    """Extrait le texte d'un PDF avec pdfplumber"""
+    text = ""
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+            tmp.write(file_bytes)
+            tmp_path = tmp.name
+        
+        with pdfplumber.open(tmp_path) as pdf:
+            for page in pdf.pages:
+                extracted = page.extract_text()
+                if extracted:
+                    text += extracted + "\n"
+        
+        os.unlink(tmp_path)
+    except Exception as e:
+        logger.error(f"Error extracting PDF text: {e}")
+    
+    return text
+
+
+def parse_fca_invoice_structured(text: str) -> dict:
+    """
+    Parser structuré pour factures FCA Canada.
+    Utilise regex pour extraire les données de manière fiable.
+    
+    Extrait: VIN, Model Code, EP, PDCO, PREF, Holdback, Subtotal, Total, Options
+    """
+    data = {
         "vin": None,
-        "brand": "Ram",  # Default pour FCA
-        "model": None,
-        "trim": None,
-        "year": None,
-        "pdco": None,
+        "model_code": None,
         "ep_cost": None,
+        "pdco": None,
         "pref": None,
         "holdback": None,
-        "msrp": None,
-        "subtotal": None,
+        "subtotal_excl_tax": None,
         "invoice_total": None,
         "options": [],
-        "parse_confidence": 0
+        "parse_method": "structured_regex"
     }
     
-    confidence = 0
-    
-    # VIN pattern (17 characters, peut avoir des tirets)
-    # Format FCA: 3C6UR5CLX-TG-270712
-    vin_match = re.search(r'\b([A-HJ-NPR-Z0-9]{3,}[-]?[A-HJ-NPR-Z0-9]{2,}[-]?[A-HJ-NPR-Z0-9]{5,})\b', text)
+    # -------------------------
+    # VIN (17 caractères)
+    # -------------------------
+    vin_match = re.search(r"\b[0-9A-HJ-NPR-Z]{17}\b", text)
     if vin_match:
-        result["vin"] = vin_match.group(1).replace("-", "")
-        confidence += 20
+        data["vin"] = vin_match.group(0)
     
-    # Alternative VIN pattern sans tirets
-    if not result["vin"]:
-        vin_match = re.search(r'\b([A-HJ-NPR-Z0-9]{17})\b', text)
-        if vin_match:
-            result["vin"] = vin_match.group(1)
-            confidence += 20
+    # -------------------------
+    # Model Code (ex: WLJP74, JTJL98, DT6P98)
+    # -------------------------
+    model_code_match = re.search(r"\b[A-Z]{2,4}\d{2}\b", text)
+    if model_code_match:
+        data["model_code"] = model_code_match.group(0)
     
-    # Year detection from VIN (10th character = year code)
-    if result["vin"] and len(result["vin"]) == 17:
-        year_code = result["vin"][9]
-        year_map = {'R': 2024, 'S': 2025, 'T': 2026, 'V': 2027, 'W': 2028}
-        result["year"] = year_map.get(year_code, 2025)
-        confidence += 5
+    # -------------------------
+    # E.P. (Employee Price / Coût)
+    # Pattern: E.P. 08663000
+    # -------------------------
+    ep_match = re.search(r"E\.P\.?\s*(\d{7,10})", text)
+    if ep_match:
+        data["ep_cost"] = clean_fca_price(ep_match.group(1))
     
-    # Model detection - Ram trucks
-    model_patterns = [
-        (r'[Rr]am\s*(1500|2500|3500)', 'Ram'),
-        (r'(1500|2500|3500)\s*([A-Za-z]+)', 'Ram'),
-        (r'(EXPRESS|LARAMIE|LIMITED|BIG HORN|TRADESMAN|REBEL)', None),
-    ]
+    # -------------------------
+    # PDCO (Prix dealer / PDSF base)
+    # Pattern: PDCO 09430500
+    # -------------------------
+    pdco_match = re.search(r"PDCO\s*(\d{7,10})", text)
+    if pdco_match:
+        data["pdco"] = clean_fca_price(pdco_match.group(1))
     
-    for pattern, brand in model_patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            if brand:
-                result["brand"] = brand
-            model_num = re.search(r'(1500|2500|3500)', match.group(0))
-            if model_num:
-                result["model"] = model_num.group(1)
-            trim_match = re.search(r'(EXPRESS|LARAMIE|LIMITED|BIG HORN|TRADESMAN|REBEL)', text, re.IGNORECASE)
-            if trim_match:
-                result["trim"] = trim_match.group(1).title()
-            confidence += 15
-            break
+    # -------------------------
+    # PREF (Prix de référence)
+    # Pattern: PREF* 08735500 ou PREF 08735500
+    # -------------------------
+    pref_match = re.search(r"PREF\*?\s*(\d{7,10})", text)
+    if pref_match:
+        data["pref"] = clean_fca_price(pref_match.group(1))
     
-    # E.P. (Employee Price / Cost) - Format: E.P. 08663000
-    ep_patterns = [
-        r'E\.P\.?\s*(\d{7,10})',
-        r'E\.P\.\s+(\d{7,10})',
-        r'EP\s+(\d{7,10})',
-    ]
-    for pattern in ep_patterns:
-        ep_match = re.search(pattern, text)
-        if ep_match:
-            result["ep_cost"] = decode_fca_price(ep_match.group(1))
-            confidence += 20
-            break
+    # -------------------------
+    # HOLDBACK (généralement 6 chiffres en bas à gauche)
+    # Pattern: 050000 = 500$
+    # Chercher un pattern de holdback spécifique
+    # -------------------------
+    # Chercher un nombre de 6 chiffres commençant par 0 qui n'est pas un autre code
+    holdback_match = re.search(r"\b(0\d{5})\b", text)
+    if holdback_match:
+        data["holdback"] = clean_fca_price(holdback_match.group(1))
     
-    # PDCO (Dealer Price) - Format: PDCO 09430500
-    pdco_patterns = [
-        r'PDCO\s*(\d{7,10})',
-        r'PDCO\s+(\d{7,10})',
-    ]
-    for pattern in pdco_patterns:
-        pdco_match = re.search(pattern, text)
-        if pdco_match:
-            result["pdco"] = decode_fca_price(pdco_match.group(1))
-            confidence += 20
-            break
-    
-    # PREF - Format: PREF*08735500 ou PREF 08735500
-    pref_patterns = [
-        r'PREF\*?\s*(\d{7,10})',
-        r'PREF\s+(\d{7,10})',
-    ]
-    for pattern in pref_patterns:
-        pref_match = re.search(pattern, text)
-        if pref_match:
-            result["pref"] = decode_fca_price(pref_match.group(1))
-            confidence += 10
-            break
-    
-    # Sub Total - Format: SUB TOTAL... 87,330.00
-    subtotal_match = re.search(r'SUB\s*TOTAL[^0-9]*(\d{1,3}(?:[,.\s]\d{3})*(?:[.,]\d{2})?)', text, re.IGNORECASE)
-    if subtotal_match:
-        result["subtotal"] = float(subtotal_match.group(1).replace(',', '').replace(' ', ''))
-        confidence += 5
-    
-    # Invoice Total
-    total_match = re.search(r'(?:INVOICE\s*)?TOTAL[^0-9]*(\d{1,3}(?:[,.\s]\d{3})*(?:[.,]\d{2})?)', text, re.IGNORECASE)
-    if total_match:
-        result["invoice_total"] = float(total_match.group(1).replace(',', '').replace(' ', ''))
-    
-    # Calculate holdback (usually ~3% of PDCO, but should be read from invoice if present)
-    if result["pdco"] and result["ep_cost"]:
-        # Standard holdback calculation as fallback
-        result["holdback"] = round(result["pdco"] * 0.03, 2)
-        confidence += 5
-    
-    # MSRP approximation (usually close to PDCO or subtotal)
-    if result["pdco"]:
-        result["msrp"] = result["pdco"]
-    elif result["subtotal"]:
-        result["msrp"] = result["subtotal"]
-    
-    # Extract options - Format: CODE  DESCRIPTION  AMOUNT
-    # Pattern: 2-6 alphanumeric code, description, optional price
-    option_lines = re.findall(
-        r'\b([A-Z0-9]{2,6})\s+([A-Z][A-Z0-9\s/\-\.,\']+?)\s+(\d{1,3}(?:[,.\s]\d{3})*(?:[.,]\d{2})?|\*|SANS\s*FRAIS)',
+    # -------------------------
+    # SUBTOTAL EXCLUDING TAXES
+    # Pattern FCA:
+    # SUB TOTAL EXCLUDING TAXES
+    # SOMME PARTIELLE SANS TAXES
+    # 57,120.00
+    # -------------------------
+    subtotal_match = re.search(
+        r"SUB\s*TOTAL\s*EXCLUDING\s*TAXES.*?\n.*?([\d,]+\.\d{2})",
         text,
         re.IGNORECASE
     )
+    if subtotal_match:
+        data["subtotal_excl_tax"] = clean_decimal_price(subtotal_match.group(1))
     
-    for code, desc, amount in option_lines:
+    # -------------------------
+    # INVOICE TOTAL / TOTAL DE LA FACTURE
+    # -------------------------
+    total_match = re.search(
+        r"TOTAL\s+DE\s+LA\s+FACTURE\s+([\d,]+\.\d{2})",
+        text
+    )
+    if not total_match:
+        # Alternative: INVOICE TOTAL format
+        total_match = re.search(
+            r"INVOICE\s*TOTAL\s*([\d,]+\.\d{2})",
+            text,
+            re.IGNORECASE
+        )
+    if total_match:
+        data["invoice_total"] = clean_decimal_price(total_match.group(1))
+    
+    # -------------------------
+    # OPTIONS
+    # Pattern: CODE  DESCRIPTION  000000 (8 chiffres FCA)
+    # -------------------------
+    option_pattern = re.findall(
+        r"\b([A-Z0-9]{2,6})\s+(.+?)\s+(\d{6,10})\b",
+        text
+    )
+    
+    for code, desc, amount in option_pattern:
         # Skip certain codes that aren't real options
-        if code in ['VIN', 'GST', 'TPS', 'QUE', 'INC']:
+        if code.upper() in ['VIN', 'GST', 'TPS', 'QUE', 'INC', 'PDCO', 'PREF', 'MSRP']:
             continue
-        
-        amount_float = 0
-        if amount and amount not in ['*', 'SANS FRAIS']:
-            try:
-                amount_float = float(amount.replace(',', '').replace(' ', ''))
-            except:
-                amount_float = 0
-        
-        result["options"].append({
-            "code": code.upper(),
-            "description": desc.strip()[:100],  # Limit description length
-            "amount": amount_float
-        })
+        try:
+            data["options"].append({
+                "product_code": code.upper(),
+                "description": desc.strip()[:100],
+                "amount": clean_fca_price(amount)
+            })
+        except:
+            continue
     
-    if len(result["options"]) > 3:
-        confidence += 10
+    return data
+
+
+def parse_fca_invoice_text(text: str) -> dict:
+    """Wrapper pour compatibilité - utilise le parser structuré"""
+    structured = parse_fca_invoice_structured(text)
+    
+    # Convertir au format attendu par l'ancien code
+    result = {
+        "vin": structured.get("vin"),
+        "model_code": structured.get("model_code"),
+        "ep_cost": structured.get("ep_cost"),
+        "pdco": structured.get("pdco"),
+        "pref": structured.get("pref"),
+        "holdback": structured.get("holdback") or 0,
+        "msrp": structured.get("pdco"),  # PDCO = PDSF
+        "subtotal": structured.get("subtotal_excl_tax"),
+        "invoice_total": structured.get("invoice_total"),
+        "options": structured.get("options", []),
+        "parse_method": "structured_regex"
+    }
+    
+    # Calculer confidence basé sur les champs trouvés
+    confidence = 0
+    if result["vin"]: confidence += 25
+    if result["ep_cost"]: confidence += 25
+    if result["pdco"]: confidence += 20
+    if result["model_code"]: confidence += 15
+    if len(result["options"]) > 2: confidence += 15
     
     result["parse_confidence"] = min(confidence, 100)
     return result
 
+
 class InvoiceScanRequest(BaseModel):
     image_base64: str
+    is_pdf: bool = False
+
 
 @api_router.post("/inventory/scan-invoice")
 async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str] = Header(None)):
