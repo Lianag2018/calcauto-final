@@ -275,20 +275,30 @@ def process_image_ocr_pipeline(file_bytes: bytes) -> Dict[str, str]:
 def process_image_global_ocr(file_bytes: bytes) -> str:
     """
     OCR global sur toute l'image (fallback si ROI ne fonctionne pas)
-    Moins précis que ROI mais peut attraper des cas edge
+    Utilise un prétraitement optimisé pour les photos de factures
     """
     try:
         image = load_image_from_bytes(file_bytes)
         if image is None:
             return ""
         
-        image = resize_if_needed(image)
-        processed = preprocess_for_ocr(image)
+        # Redimensionner à taille optimale pour OCR
+        image = resize_if_needed(image, max_dim=1800)
         
+        # Convertir en grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Débruitage
+        denoised = cv2.fastNlMeansDenoising(gray, h=10)
+        
+        # Binarisation Otsu
+        _, binary = cv2.threshold(denoised, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        
+        # OCR avec config optimisée pour documents
         text = pytesseract.image_to_string(
-            processed,
+            binary,
             lang="eng+fra",
-            config="--psm 6 --oem 3"
+            config="--oem 3 --psm 6"
         )
         
         return text.strip()
