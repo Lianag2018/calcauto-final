@@ -8,24 +8,34 @@ Application mobile iOS/Android pour calculateur de financement véhicule avec sy
 ### Structure Modulaire Implémentée
 ```
 /app/backend/
-├── server.py         # API FastAPI principale (4400+ lignes)
-├── ocr.py            # Pipeline OpenCV + Tesseract (NOUVEAU)
-├── parser.py         # Parser regex structuré (NOUVEAU)
-├── vin_utils.py      # Validation VIN industrielle (NOUVEAU)
-├── validation.py     # Règles métier FCA + scoring (NOUVEAU)
+├── server.py         # API FastAPI principale (4800+ lignes)
+├── ocr.py            # Pipeline OpenCV + Tesseract
+├── parser.py         # Parser regex structuré
+├── vin_utils.py      # Validation VIN industrielle
+├── validation.py     # Règles métier FCA + scoring (seuil 85)
 ├── fca_parser.py     # Legacy parser (conservé)
 ├── ocr_zones.py      # Legacy OCR (conservé)
 └── tests/
-    └── test_parser.py  # Tests unitaires (15/15 passent)
+    ├── test_parser.py       # Tests VIN/Parser (15 tests)
+    ├── test_checklist.py    # Tests Règle d'Or (20 tests)
+    ├── test_integration.py  # Tests Pipeline Complet (57 tests)
+    └── test_scan_batch.py   # Tests Batch + Stats (3 tests)
 ```
 
-### Pipeline de Scan Facture
+### Pipeline de Scan Facture - RÈGLE ZÉRO ERREUR
 ```
 Niveau 1: PDF natif → pdfplumber + regex (100% précision, $0)
     ↓ (si échec)
 Niveau 2: Image → OpenCV ROI + Tesseract (85-92%, $0)
-    ↓ (si score < 70)
+    ↓ (si score < 60)
 Niveau 3: Fallback → GPT-4 Vision (~$0.02-0.03)
+
+DÉCISION:
+- Score >= 85: AUTO_APPROVED (sauvegarde directe)
+- Score 60-84: REVIEW_REQUIRED (modal révision)
+- Score < 60: VISION_REQUIRED (fallback AI)
+
+RÈGLE D'OR: Bloquer si VIN/EP/PDCO invalides
 ```
 
 ### Endpoints Principaux
@@ -45,19 +55,35 @@ Niveau 3: Fallback → GPT-4 Vision (~$0.02-0.03)
 
 ### ✅ Phase 2 - Admin & Infrastructure
 - [x] Panneau admin complet
-- [x] Déploiement production (Render + Vercel)
+- [x] Déploiement production (Render)
 - [x] Base de données MongoDB Atlas
 
-### ✅ Phase 3 - Inventaire (Partiel)
+### ✅ Phase 3 - Inventaire & Scan (Décembre 2025)
 - [x] CRUD inventaire véhicules
 - [x] Scanner facture PDF (pdfplumber)
 - [x] Scanner facture image (GPT-4 Vision fallback)
-- [x] **Pipeline OCR par zones OpenCV + Tesseract** (NOUVEAU)
-- [x] **Validation VIN industrielle avec auto-correction** (NOUVEAU)
-- [x] **Règles métier FCA + scoring** (NOUVEAU)
+- [x] **Pipeline OCR par zones OpenCV + Tesseract**
+- [x] **Validation VIN industrielle avec auto-correction**
+- [x] **Règles métier FCA + scoring (seuil 85)**
 - [x] Anti-doublon (VIN + hash fichier)
-- [ ] Modal de révision et correction (UI)
+- [x] **Suite de tests pytest complète (95 tests)**
+- [x] **Script batch test avec statistiques**
+- [ ] Modal de révision et correction (UI frontend)
 - [ ] Intégration calculateur-inventaire
+
+## Patchs Appliqués - Décembre 2025
+
+### 🔧 PATCH 1: Clé option cohérente
+- `first_option.get("code")` → `first_option.get("product_code", first_option.get("code"))`
+
+### 🔧 PATCH 2: VIN regex strict
+- Pattern permissif → `\b[0-9A-HJ-NPR-Z]{17}\b` (17 chars exacts)
+
+### 🔧 PATCH 3: Suppression decode_fca_price() dupliqué
+- Utiliser uniquement `clean_fca_price()`
+
+### 🔧 PATCH 4: Seuil validation relevé
+- `score >= 50` → `score >= 85` dans validation.py
 
 ## Backlog Priorisé
 
@@ -74,7 +100,7 @@ Niveau 3: Fallback → GPT-4 Vision (~$0.02-0.03)
 - [ ] Dashboard métriques parsing (admin)
 
 ### P3 - Backlog
-- [ ] Refactoriser index.tsx (1800+ lignes)
+- [ ] Refactoriser index.tsx (3000+ lignes)
 - [ ] Builds App Store / Play Store
 
 ## Intégrations Tierces
