@@ -15,6 +15,8 @@ import json
 import re
 import io
 import pypdf
+import pdfplumber
+import tempfile
 
 # For Excel generation
 try:
