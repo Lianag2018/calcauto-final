@@ -4143,33 +4143,53 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                 # Pour économiser: compress_image_for_vision(file_bytes, max_size=2048, quality=90)
                 compressed_base64 = request.image_base64  # Image originale pour précision maximale
                 
-                # OPTIMISATION 2: Prompt compact mais clair
+                # OPTIMISATION 2: Prompt ultra-précis pour factures FCA
                 chat = LlmChat(
                     api_key=api_key,
                     session_id=f"fca-{uuid.uuid4().hex[:8]}",
-                    system_message="""Extracteur de factures FCA Canada. Retourne JSON uniquement.
+                    system_message="""Tu es un extracteur EXPERT de factures FCA Canada. Tu dois extraire les données avec une précision de 100%.
 
-IMPORTANT pour le VIN:
-- Le VIN FCA est affiché avec tirets: XXXXX-XX-XXXXXX (5-2-6 format)
-- Exemple: 1C4RJKBG5-S8-806267
-- Extrais EXACTEMENT les 17 caractères (sans tirets)
-- Position 10 = année: R=2024, S=2025, T=2026
-- Ne confonds pas: K/F, S/5, 8/B, 7/T
+RÈGLES CRITIQUES:
 
-Format de sortie:
+1. STOCK NUMBER:
+- Cherche le numéro ÉCRIT À LA MAIN en bas de page (5 chiffres, ex: 45237)
+- NE PAS utiliser R100963941 (c'est le numéro TPS/GST)
+- NE PAS utiliser C16-625740 (c'est le numéro de commande)
+
+2. VIN (VEHICLE IDENTIFICATION NUMBER):
+- Situé en haut à droite, sous "VEHICLE IDENTIFICATION NUMBER"
+- Format FCA avec tirets: 1C4RJHBG6-S8-806264
+- RETIRE les tirets pour obtenir 17 caractères: 1C4RJHBG6S8806264
+- Attention confusions OCR: 0/O, 1/I, 8/B, 5/S, 6/G
+- Le 10ème caractère = année: R=2024, S=2025, T=2026
+
+3. CODES FINANCIERS (en bas à gauche):
+- E.P. = 8 chiffres (ex: 06997900 = $69,979)
+- PDCO = 8 chiffres (ex: 07544500 = $75,445)  
+- PREF* = 8 chiffres (ex: 07070400 = $70,704)
+- Format: enlever premier 0, enlever 2 derniers chiffres
+
+4. TOTAUX (en bas à droite):
+- SUB TOTAL EXCLUDING TAXES = subtotal
+- TOTAL DE LA FACTURE = total avec taxes
+
+5. MODEL CODE:
+- En haut de la liste des options (ex: WLJP74, WLJH75)
+
+Retourne UNIQUEMENT ce JSON:
 {
-  "stock_no": "numéro manuscrit bas de page",
-  "vin": "VIN 17 caractères EXACT sans tirets",
-  "model_code": "code modèle 5-7 chars (ex: WLJP75)",
-  "description": "description véhicule",
-  "ep": "E.P. 8 chiffres brut",
-  "pdco": "PDCO 8 chiffres brut",
-  "pref": "PREF 8 chiffres brut",
-  "holdback": "holdback 6 chiffres brut",
-  "subtotal": nombre,
-  "total": nombre,
-  "color": "code couleur 3 chars",
-  "options": [{"c":"code","d":"description","a":"montant brut"}]
+  "stock_no": "5 chiffres manuscrits",
+  "vin": "17 caractères EXACTS sans tirets",
+  "model_code": "code 5-6 chars",
+  "description": "description modèle",
+  "ep": "8 chiffres brut comme écrit",
+  "pdco": "8 chiffres brut comme écrit",
+  "pref": "8 chiffres brut comme écrit",
+  "holdback": "6 chiffres si présent",
+  "subtotal": nombre décimal,
+  "total": nombre décimal,
+  "color": "description couleur",
+  "options": [{"c":"code 2-5 chars","d":"description","a":"montant brut ou 0"}]
 }"""
                 ).with_model("openai", "gpt-4o")
                 
