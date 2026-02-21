@@ -1,155 +1,310 @@
 <analysis>**original_problem_statement:**
 The user wants to continue developing a mobile application for iOS and Android named CalcAuto AiPro, which functions as a comprehensive vehicle financing calculator.
 
-The initial scope was to fix backend crashes and deploy the application. This has since expanded to include several critical features requested by the user, most importantly an advanced inventory management system with automated invoice scanning.
+The primary goal is to build an advanced inventory management system featuring automated invoice scanning. The user has rejected a simple AI-centric approach and provided detailed, evolving technical specifications for a robust, multi-layered parsing system. The latest requirement is to build a high-precision, open-source parser using computer vision techniques to avoid reliance on paid APIs.
 
 **PRODUCT REQUIREMENTS:**
-*   **Data Isolation (Multi-Tenancy):** Each user must only have access to their own data. (Completed)
-*   **Save Submissions to Server:** Calculator submissions must be saved to the user's account. (Completed)
-*   **Smart Contact Management (Upsert):** Avoid creating duplicate contacts. (Completed)
-*   **Logout Functionality:** Provide a clear logout option. (Completed)
-*   **Production Deployment:** Deploy the application to a live environment. (Completed)
-*   **Admin Panel (P0):** An administration panel for the super-user to view all registered users and manage their access. (Completed)
-*   **Inventory Management (P0):** A system to manage vehicle inventory. (Partially Implemented)
-    *   Create a database and API to store detailed vehicle information. (Completed)
-    *   Build a UI to view, filter, and manage the inventory. (Completed)
-*   **Invoice Scanning (P0):** A feature to scan a vehicle invoice (photo or PDF) and automatically populate the inventory. The user has explicitly rejected a pure AI approach and has provided a detailed specification for a structured parser. (In Progress)
-    *   **Methodology:** The system MUST use a structured parser ( + ) as the primary method for extracting data from FCA invoices.
-    *   **Fallback:** An AI Vision model (GPT-4o) should ONLY be used as a fallback if the structured parser fails.
-    *   **Data Enrichment:** The system must decode the VIN (for year/brand) and the FCA product code (for model/trim) to enrich the data.
-    *   **Review & Correct:** After parsing, the user must be shown a review modal with all extracted data in editable fields, allowing them to correct any errors before saving to the database.
-*   **Calculator & Inventory Integration (P1):** In the main calculator, allow the user to select a vehicle from their inventory (filtered by brand), which should automatically fill in the vehicle's price and suggest applicable financing programs. (Partially Implemented)
+*   **Data Isolation (Multi-Tenancy):** Completed.
+*   **Save Submissions to Server:** Completed.
+*   **Smart Contact Management (Upsert):** Completed.
+*   **Logout Functionality:** Completed.
+*   **Production Deployment:** Completed.
+*   **Admin Panel (P0):** Completed.
+*   **Inventory Management (P0):** Partially Implemented.
+    *   Database and basic API/UI: Completed.
+*   **Invoice Scanning (P0):** The core task, which has undergone multiple architectural shifts. The current and final specification is:
+    *   **Architecture:** A multi-layered, open-source pipeline.
+    *   **Level 1 (PDFs):** Use usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing. +  for native PDF files. (Implemented)
+    *   **Level 2 (Images):** Use an  +  pipeline. This involves:
+        1.  Pre-processing: Automatic perspective correction (warp).
+        2.  Segmentation: Detect and crop the invoice into key Regions of Interest (ROI) like VIN area, financials area, and options area.
+        3.  OCR: Run  OCR on each small, clean zone individually.
+        4.  Parsing: Apply the structured  parser to the combined, cleaned text.
+    *   **Level 3 (Fallback):** An optimized GPT-4 Vision model should ONLY be used as a last resort if the open-source pipeline fails and produces a low confidence score.
+    *   **Validation:** All parsed data must pass through a strict validation layer, including an industrial-grade VIN checksum/auto-correction module and business logic checks (e.g., ).
+    *   **Review & Correct:** The final parsed data must be presented in an editable modal for user review before saving.
+*   **Calculator & Inventory Integration (P1):** Partially Implemented.
 
 **User's preferred language**: French (fr). The next agent MUST respond in French.
 
 **what currently exists?**
-A full-stack application with a React Native (Expo) frontend deployed on Vercel and a FastAPI backend deployed on Render, connected to a MongoDB Atlas database. The Admin Panel, basic Inventory Management (view/add/delete), and user authentication are complete.
+A full-stack application with a React Native (Expo) frontend and a FastAPI backend using MongoDB. User authentication, an admin panel, and basic inventory management are functional.
 
-The invoice scanning feature has a complete frontend flow, including an upload button and a detailed review and correct modal. The backend contains an **incorrect, AI-first** implementation that the user has rejected. The user has provided a superior, detailed code example for a **structured, regex-based parser** that must be implemented.
+The backend  contains a mix of parsing strategies from previous iterations, including a functional usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
 
-The calculator screen has been updated to show a list of available inventory vehicles, filtered by the selected brand.
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing. parser, a highly-optimized GPT-4 Vision parser, and a sophisticated VIN validation/auto-correction module. The agent had *started* implementing the user's latest request for an -based ROI (Region of Interest) pipeline but did not finish.
+
+The frontend has the UI for uploading files and the review and correct modal. However, the development environment for the frontend has been unstable, frequently crashing or failing to connect.
 
 **Last working item**:
-*   Last item agent was working: The agent acknowledged their flawed AI-first approach to invoice parsing after the user provided a detailed explanation and Python code for a much better structured (regex-based) parser. The agent's last action was to agree to rewrite the parsing logic using this correct, user-specified method.
+*   Last item agent was working: Implementing the new, 100% open-source invoice parsing pipeline based on the user's latest, expert-level instructions. This pipeline uses  for image pre-processing (perspective correction) and segmentation (Region of Interest - ROI), followed by targeted  OCR on each zone, effectively replacing the direct GPT-4 Vision approach for images.
 *   Status: IN PROGRESS
 *   Agent Testing Done: N
-*   Which testing method agent to use? both. First, use a backend testing method (e.g.,  script) to validate the new structured parser endpoint in  against the invoice images the user has provided. Once the backend logic is confirmed to be accurate, use the frontend testing agent to verify the end-to-end flow: uploading an invoice, seeing the correct data in the review modal, and saving it to the inventory.
+*   Which testing method agent to use? both. First, the backend changes are significant. The agent should create a test script (e.g., in ) to validate the new OpenCV/Tesseract pipeline against the user-provided invoice images. Once the backend returns accurate JSON, the frontend flow (upload -> review modal) must be verified, which may require stabilizing the frontend environment first.
 *   User Testing Done: N
 
 **All Pending/In progress Issue list**:
-*   **Issue 1: Invoice Parser is Inefficient and Incorrect (P0)**
-    *   **Attempted fixes:** The agent first built a slow and inaccurate parser relying solely on GPT-4 Vision. After multiple user corrections, the agent finally understood that a structured, regex-based approach is required.
+*   **Issue 1: Invoice Parsing logic is incomplete and needs a full rewrite to the new Open-Source ROI architecture (P0)**
+    *   **Attempted fixes:** The agent has built and tested several architectures (AI-only, regex-for-PDF, AI-for-image, advanced VIN correction). The last action was starting to build the OpenCV-based pipeline, but it is unfinished.
     *   **Next debug checklist**:
-        1.  Open .
-        2.  Locate the  endpoint and its related functions.
-        3.  Completely **replace the current logic with the structured parser code** provided by the user in chat message #360. This involves using  to extract text and  to find specific fields (VIN, E.P., PDCO, PREF, Holdback, options).
-        4.  Implement the  function exactly as specified by the user (remove the first '0' and the last two digits). Apply this to all financial fields.
-        5.  Ensure the business logic is correct:  is  directly, and  is  directly.  is extracted but not used in cost calculations.
-        6.  The new endpoint should first attempt this structured parsing. Only if it fails should it fall back to the AI model.
-    *   **Why fix this issue and what will be achieved with the fix?**: This is the most critical feature for the user. Fixing it will deliver a fast, accurate, and low-cost method for automating inventory entry, which was the user's original vision.
+        1.  Review the user's detailed specification in messages #359 and #163. This is the blueprint.
+        2.  Structure the backend code into a modular format as suggested: , , , , and a main .
+        3.  In , implement the full pipeline:
+            *   Function to load image from bytes.
+            *   Function for perspective correction ( using ).
+            *   Function to segment the warped image into zones ().
+            *   Function to run pre-processed Tesseract OCR on each zone ().
+        4.  In , orchestrate the new flow: Check if PDF -> if yes, use usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing.. If no (image) -> run the full OpenCV ROI pipeline.
+        5.  The existing regex parser logic should be applied to the text extracted from the ROI pipeline.
+        6.  The advanced VIN validation module must be applied to the parsed VIN.
+        7.  The GPT-4 Vision code should be kept only as a final fallback.
+    *   **Why fix this issue and what will be achieved with the fix?**: This will deliver the user's ultimate requirement: a highly accurate, robust, and free-to-operate invoice parser that doesn't rely on paid APIs for standard image processing.
     *   **Status**: IN PROGRESS
     *   **Is recurring issue?**: Y
     *   **Should Test frontend/backend/both after fix?**: both
     *   **Blocked on other issue**: None
 
+*   **Issue 2: Frontend Development Environment is Unstable (P1)**
+    *   **Attempted fixes:** The agent encountered multiple  and ngrok tunnel issues, identifying them as infrastructure problems but never fully resolving them.
+    *   **Next debug checklist**:
+        1.  Check the supervisor logs for the frontend: .
+        2.  Verify the  file and its  variable.
+        3.  If tunnel issues persist, try restarting the supervisor for the frontend: frontend: ERROR (no such process)
+frontend: ERROR (no such process).
+        4.  Investigate any errors shown in the browser console if the app loads partially.
+    *   **Why fix this issue and what will be achieved with the fix?**: A stable frontend is required to test the end-to-end invoice scanning flow and any future UI work.
+    *   **Status**: NOT STARTED
+    *   **Is recurring issue?**: Y
+    *   **Should Test frontend/backend/both after fix?**: frontend
+    *   **Blocked on other issue**: None
+
 **In progress Task List**:
-*   **Task 1: Implement the Structured (Regex-based) Invoice Parser (P0)**
-    *   **Where to resume**: In , using the complete Python code example provided by the user in message #360 to rewrite the invoice parsing functionality.
-    *   **What will be achieved with this?**: A fast, accurate, and cheap invoice parsing system that meets the user's explicit and repeated requirements.
-    *   **Status**: NOT STARTED (The agent acknowledged the need but hasn't written the code yet).
-    *   **Should Test frontend/backend/both after fix?**: backend
+*   **Task 1: Implement and Integrate the OpenCV ROI-based OCR Pipeline (P0)**
+    *   **Where to resume**: Refactor  into modules, then build out the functions for perspective correction, zone segmentation, and targeted OCR as per the user's specification. Integrate this new pipeline into the  endpoint.
+    *   **What will be achieved with this?**: A robust, open-source invoice parser that can handle photographed invoices with ~85-92% accuracy without API costs.
+    *   **Status**: IN PROGRESS
+    *   **Should Test frontend/backend/both after fix?**: both
     *   **Blocked on something**: None
 
 **Upcoming and Future Tasks**
-*   **(P1) Finalize Calculator-Inventory Integration:** The UI is built. The final step is to test and ensure that clicking a vehicle in the calculator's inventory list correctly populates its  into the Prix du véhicule form field.
-*   **(P2) Integrate Financing Programs:** When a vehicle is selected in the calculator, automatically suggest or apply the relevant financing programs (e.g., consumer cash, special interest rates) that have been pre-loaded.
-*   **(P3) Refactor :** The main calculator file () is over 1800 lines and should be broken down into smaller, reusable components.
-*   **(P3) Finalize App Store / Play Store Build Process:** Prepare the app for native mobile deployment by creating build configurations and binaries (/).
+*   **(P1) Finalize Calculator-Inventory Integration:** After the parser is stable, test that selecting a vehicle from the inventory list in the calculator correctly populates its price into the form.
+*   **(P2) Add Frontend Warning for VINs:** Implement a visual indicator in the review modal to highlight when a VIN has been auto-corrected or has a low validation score, prompting the user to double-check it.
+*   **(P2) Integrate Financing Programs:** When a vehicle is selected, suggest relevant financing programs.
+*   **(P3) Refactor :** Break down the massive  file (1800+ lines) into smaller, manageable components.
+*   **(P3) Admin Dashboard for Parsing Metrics:** As a pro feature, create a dashboard for the admin to see parsing performance metrics (e.g., success rate of ROI vs. fallback, average confidence scores).
+*   **(P3) Finalize App Store / Play Store Build Process:** Prepare native mobile builds.
 
 **Completed work in this session**
-- **Frontend Crash Resolved:** Fixed the Expo development server crash loop.
-- **Invoice Review Modal:** Implemented a crucial UI modal that allows the user to review and correct all data parsed from an invoice before saving it. Made the  field editable for manual adjustments.
-- **Duplicate Vehicle Prevention:** Added backend validation to block the creation of new inventory items if the  or  already exists.
-- **Calculator-Inventory UI:** Successfully integrated a filterable inventory list into the calculator screen, allowing users to see available vehicles of a selected brand.
-- **Corrected Business Logic:** Refined the backend logic to use  as the vehicle's cost and  as the , and to extract  as an informational field rather than using it in calculations.
-- **Improved Data Decoding:** Enhanced the VIN and product code lookup tables to correctly identify Jeep Gladiator models.
-- **UI Cleanup:** Removed the confusing Total Potential Profit aggregation from the inventory screen, as requested by the user.
+- Implemented and validated a structured parser for native PDF invoices using usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing. and .
+- Built and refined an industrial-grade VIN validation module with check-digit calculation, auto-correction for common OCR errors, and decoding of year/manufacturer.
+- Prototyped and tested a GPT-4 Vision-based parser, optimizing it with image compression and specific prompts. This now serves as the last-resort fallback.
+- Updated the  database to correctly decode more vehicle trims (e.g., Grand Cherokee Limited).
+- Began the initial implementation of the user's final requested architecture: an open-source pipeline using OpenCV and Tesseract.
 
 **Earlier issues found/mentioned but not fixed**
-*   None, all have been captured in the pending/upcoming lists.
+*   The frontend development environment's instability (ngrok tunnel errors, 520 errors) was noted multiple times but never fully resolved, preventing UI testing.
 
 **Known issue recurrence from previous fork**
 *   Not applicable.
 
 **Code Architecture**
-scan-invoice
+
+**Recommended New Backend Structure:**
+
 
 **Key Technical Concepts**
-- **Frontend:** React Native (Expo), Expo Router, , React Context API.
-- **Backend:** Python, FastAPI, Motor (async MongoDB), .
-- **Parsing:** **The key challenge is shifting from a failed AI-first approach to a structured, regex-based parser using , as mandated by the user.** AI should only be a fallback.
-- **Authentication:** JWT-based.
-- **Deployment:** Render (Backend), Vercel (Frontend), MongoDB Atlas (DB).
+- **Computer Vision Pipeline:** The new core concept is a multi-step image processing pipeline using  for geometric correction and segmentation (ROI), and  for targeted OCR.
+- **Region of Interest (ROI):** The strategy of breaking a document image into smaller, specific zones for more accurate, targeted processing, rather than global processing.
+- **Modular Refactoring:** The need to break the monolithic  into feature-specific modules (, , etc.) for maintainability.
+- **Defense in Depth:** Using a multi-layered approach to parsing (PDF-native, then ROI-open-source, then AI-fallback) to balance cost and accuracy.
 
 **key DB schema**
-- **users**: 
-- **inventory**: 
-- **vehicle_options**: 
-- **fca_product_codes**: 
-
-**changes in tech stack**
-- The use of  is now required for the backend parser.
+- **inventory**: . A unique index on  and  is required.
+- **fca_product_codes**: . Has been updated with new codes.
 
 **All files of reference**
-- : The file requiring the most critical change (implementing the new regex parser).
-- : Contains the completed UI for the invoice review modal.
-- : Contains the calculator-inventory integration UI.
-- The user's chat message #360, which contains the complete and correct Python code for the structured invoice parser.
+- : The primary file that needs to be refactored.
+- **User Message #359 (and #163):** These are the **CRITICAL** blueprints provided by the user (via ChatGPT) that detail the exact architecture, code snippets, and strategy for the new open-source ROI pipeline.
 
 **Areas that need refactoring**:
-- : The invoice scanning logic must be completely rewritten.
-- : This file is over 1800 lines long and is difficult to maintain. It should be broken down into smaller components.
+- ****: Must be broken down into the modular structure (, , etc.) to manage complexity and align with the user's latest direction.
+- ****: Remains a very large file that is difficult to maintain and should be broken into smaller components.
 
 **key api endpoints**
-- : The endpoint that needs to be rewritten to use the new structured parser. It should take an image/PDF file and return the parsed JSON data for the review modal, without saving to the DB.
-- : The endpoint that saves the (user-reviewed and corrected) vehicle data to the database. It already has duplicate prevention logic.
-- : Used to update existing inventory items.
-- : Fetches the list of all inventory items for the current user.
+- : The endpoint at the heart of the project. It needs to be rewritten to orchestrate the new multi-layered parsing pipeline (PDF check, then OpenCV ROI flow, then AI fallback).
 
 **Critical Info for New Agent**
-1.  **IMPLEMENT THE REGEX PARSER:** Your absolute first priority is to implement the structured, regex-based invoice parser in . The user has provided the exact Python code to use in message #360. Do not use the old, flawed GPT-4 Vision approach. Your job is to integrate the user's proven code into the FastAPI endpoint.
-2.  **SIMPLE BUSINESS LOGIC:** Do not overcomplicate calculations. . .  is for information only. The user must be able to edit these values in the review modal before saving.
-3.  **FOLLOW THE USER'S LEAD:** The user has demonstrated deep technical knowledge and a clear vision for the parsing logic. Trust their specifications and the code they provided. Do not deviate.
+1.  **IMPLEMENT THE OPENCV PIPELINE:** Your absolute top priority is to build the open-source invoice parser using the  +  ROI strategy. The user has provided the exact architecture in messages #359 and #163. This replaces the previous GPT-4 Vision approach for images.
+2.  **REFACTOR THE BACKEND:** As you build the new pipeline, refactor the monolithic  into the recommended modular structure (, , etc.). This is a direct, expert-level instruction from the user.
+3.  **INTEGRATE EXISTING LOGIC:** The new pipeline's output must be processed by the **existing, approved** modules for regex parsing and advanced VIN validation/correction. Do not reinvent them.
+4.  **STABILIZE THE FRONTEND:** The frontend dev environment has been unreliable. You will likely need to diagnose and fix it before you can perform end-to-end testing. Check supervisor logs first.
+5.  **TRUST THE USER'S SPECIFICATIONS:** The user has demonstrated deep technical expertise and provided a clear, industrial-grade blueprint. Follow their final specification for the ROI pipeline precisely.
 
 **documents and test reports created in this job**
-- 
+- None mentioned.
 
 **Last 10 User Messages and any pending HUMAN messages**
-- The last 10+ messages consist of the user expressing frustration with the agent's flawed AI parser, and then providing a detailed, correct solution via a ChatGPT transcript. The user is waiting for the agent to implement this correct solution.
-- : Provides an image snippet showing the Subtotal Excluding Taxes line to add to the parser's patterns. (PENDING)
-- : Asks if the agent can restart/re-run now. (PENDING)
-- : go - instructing the agent to proceed with the correct implementation. (PENDING)
-- : **(CRITICAL)** Provides the full ChatGPT conversation transcript that explains exactly how to build a robust, regex-based parser, including full Python code. This is the blueprint for the next step. (PENDING IMPLEMENTATION)
-- : Clarifies that  for holdback means .
-- : Confirms the universal decoding rule for financial numbers on the invoice.
-- : Criticizes the agent's complex calculations and simplifies the logic:  is the cost, period.
-- : Provides an annotated invoice image to show the agent it was calculating  incorrectly instead of extracting the written value.
+- The user provided extremely detailed, expert-level feedback (via ChatGPT) on how to build a production-ready, open-source OCR pipeline using OpenCV for Region-of-Interest segmentation, completely changing the technical strategy.
+- The user then asked for progress updates (have you finished?, where are you at?, do you have a problem?), indicating they are waiting for the agent to complete this new implementation. The agent confirmed they had started but not finished.
+- **Pending:** The user is waiting for the agent to complete and demonstrate the new OpenCV-based parsing pipeline.
 
 **Project Health Check:**
-*   **Broken:** The core backend invoice parsing logic in  is fundamentally incorrect and does not meet user requirements. It must be replaced with the user-provided regex solution.
+*   **Broken:**
+    *   The core invoice parsing logic is in the middle of a major architectural rewrite and is currently incomplete.
+    *   The frontend development environment is unstable, frequently preventing the application from running.
 *   **Mocked:** None.
 
 **3rd Party Integrations**
-*   **OpenAI GPT-4o / Vision**: Should be demoted to a **fallback** mechanism for invoice parsing, used only when the primary regex parser fails.
-*   **pdfplumber**: A required dependency for the new structured parser.
+*   **OpenAI GPT-4o / Vision**: Demoted to a last-resort fallback for invoice parsing.
+*   **usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing.**: Required primary parser for native PDF files.
+*   **** (+  system package): Required for the new open-source OCR engine.
+*   ****: Required for the new image pre-processing and ROI pipeline.
 *   **Render**: Hosts the FastAPI backend.
 *   **Vercel**: Hosts the Expo web frontend.
 *   **MongoDB Atlas**: Hosts the production database.
 
 **Testing status**
-- Testing agent used after significant changes: YES (but for UI validation, not the flawed backend logic).
+- Testing agent used after significant changes: NO (not for the latest architectural changes).
 - Troubleshoot agent used after agent stuck in loop: NO
-- Test files created: []
+- Test files created: None. It is highly recommended to create .
 - Known regressions: None.
 
 **Credentials to test flow:**
@@ -157,4 +312,6 @@ scan-invoice
 - **Password:** 
 
 **What agent forgot to execute**
-The agent repeatedly failed to adopt the user's clear and correct specification for a structured, regex-based parser. Instead, the agent wasted significant time trying to patch a flawed AI-first approach, leading to user frustration. The primary task of implementing the user's provided Python code for the parser remains un-executed.</analysis>
+- The agent has not completed the user's most recent and critical request: to build and integrate the  ROI-based open-source parsing pipeline.
+- The agent has not refactored the monolithic  into a modular structure as suggested.
+- The agent has not resolved the recurring instability of the frontend development environment.</analysis>

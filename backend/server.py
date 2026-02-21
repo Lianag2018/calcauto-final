@@ -2619,7 +2619,7 @@ def send_better_offers_notification(offers: List[dict]):
                     Ouvrez l'application pour approuver l'envoi des emails aux clients.
                 </div>
                 
-                <a href="https://fca-invoice-parser.preview.emergentagent.com" style="display: inline-block; background: #4ECDC4; color: #1a1a2e; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+                <a href="https://auto-vehicle-scan.preview.emergentagent.com" style="display: inline-block; background: #4ECDC4; color: #1a1a2e; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
                     Ouvrir l'application
                 </a>
             </div>
