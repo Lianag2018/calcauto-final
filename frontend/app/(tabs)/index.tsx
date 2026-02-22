@@ -1066,7 +1066,7 @@ export default function HomeScreen() {
             )}
           </View>
 
-          {/* Inventory Selection - Filtered by selected brand */}
+          {/* Inventory Selection - Show all vehicles with compatibility indicator */}
           {selectedProgram && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>
@@ -1074,45 +1074,59 @@ export default function HomeScreen() {
               </Text>
               <Text style={styles.inventorySubtitle}>
                 {lang === 'fr' 
-                  ? `Véhicules ${selectedProgram.brand} en stock`
-                  : `${selectedProgram.brand} vehicles in stock`}
+                  ? `Programme sélectionné: ${selectedProgram.brand} ${selectedProgram.model}`
+                  : `Selected program: ${selectedProgram.brand} ${selectedProgram.model}`}
               </Text>
               {inventoryList.length > 0 ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.inventoryScroll}>
                   {inventoryList
-                    .filter(v => v.brand?.toLowerCase() === selectedProgram.brand?.toLowerCase())
-                    .map((vehicle) => (
-                      <TouchableOpacity
-                        key={vehicle.id}
-                        style={[
-                          styles.inventoryCard,
-                          selectedInventory?.id === vehicle.id && styles.inventoryCardSelected
-                        ]}
-                        onPress={() => {
-                          setSelectedInventory(vehicle);
-                          setVehiclePrice(String(vehicle.asking_price || vehicle.msrp || ''));
-                        }}
-                      >
-                        <Text style={styles.inventoryStock}>#{vehicle.stock_no}</Text>
-                        <Text style={styles.inventoryModel}>
-                          {vehicle.year} {vehicle.model}
-                        </Text>
-                        <Text style={styles.inventoryTrim}>{vehicle.trim}</Text>
-                        <Text style={styles.inventoryPrice}>
-                          {formatCurrency(vehicle.asking_price || vehicle.msrp)}
-                        </Text>
-                        {vehicle.net_cost && (
-                          <Text style={styles.inventoryProfit}>
-                            Profit: {formatCurrency((vehicle.asking_price || vehicle.msrp) - vehicle.net_cost)}
+                    .map((vehicle) => {
+                      const isCompatible = vehicle.brand?.toLowerCase() === selectedProgram.brand?.toLowerCase();
+                      return (
+                        <TouchableOpacity
+                          key={vehicle.id}
+                          style={[
+                            styles.inventoryCard,
+                            selectedInventory?.id === vehicle.id && styles.inventoryCardSelected,
+                            !isCompatible && { opacity: 0.5, borderColor: '#666' }
+                          ]}
+                          onPress={() => {
+                            setSelectedInventory(vehicle);
+                            setVehiclePrice(String(vehicle.asking_price || vehicle.msrp || ''));
+                            if (!isCompatible) {
+                              // Alert user that vehicle brand doesn't match program
+                              alert(lang === 'fr' 
+                                ? `Attention: Ce véhicule est un ${vehicle.brand}, mais le programme sélectionné est ${selectedProgram.brand}`
+                                : `Warning: This vehicle is a ${vehicle.brand}, but selected program is ${selectedProgram.brand}`);
+                            }
+                          }}
+                        >
+                          {!isCompatible && (
+                            <View style={{ position: 'absolute', top: 5, right: 5, backgroundColor: '#FF6B6B', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 }}>
+                              <Text style={{ color: 'white', fontSize: 10 }}>{vehicle.brand}</Text>
+                            </View>
+                          )}
+                          <Text style={styles.inventoryStock}>#{vehicle.stock_no}</Text>
+                          <Text style={styles.inventoryModel}>
+                            {vehicle.year} {vehicle.model}
                           </Text>
-                        )}
-                      </TouchableOpacity>
-                    ))}
-                  {inventoryList.filter(v => v.brand?.toLowerCase() === selectedProgram.brand?.toLowerCase()).length === 0 && (
+                          <Text style={styles.inventoryTrim}>{vehicle.trim}</Text>
+                          <Text style={styles.inventoryPrice}>
+                            {formatCurrency(vehicle.asking_price || vehicle.msrp)}
+                          </Text>
+                          {vehicle.net_cost && (
+                            <Text style={styles.inventoryProfit}>
+                              Profit: {formatCurrency((vehicle.asking_price || vehicle.msrp) - vehicle.net_cost)}
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  {inventoryList.length === 0 && (
                     <Text style={styles.noInventoryText}>
                       {lang === 'fr' 
-                        ? `Aucun véhicule ${selectedProgram.brand} en inventaire`
-                        : `No ${selectedProgram.brand} vehicles in inventory`}
+                        ? 'Aucun véhicule en inventaire'
+                        : 'No vehicles in inventory'}
                     </Text>
                   )}
                 </ScrollView>
