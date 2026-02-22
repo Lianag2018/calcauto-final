@@ -4244,7 +4244,6 @@ Retourne UNIQUEMENT ce JSON:
                     max_tokens=2000,
                     temperature=0.1
                 )
-                                        "url": f"data:image/jpeg;base64,{compressed_base64}",
                 
                 json_str = response.choices[0].message.content.strip()
                 if "```" in json_str:
