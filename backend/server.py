@@ -5099,6 +5099,25 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Endpoint pour servir les images de test CamScanner
+@api_router.get("/debug/camscanner-preview")
+async def get_camscanner_preview():
+    """Retourne l'image prétraitée par CamScanner"""
+    file_path = Path(__file__).parent / "static" / "facture_camscanner.jpg"
+    if file_path.exists():
+        return FileResponse(file_path, media_type="image/jpeg")
+    raise HTTPException(status_code=404, detail="Image not found")
+
+@api_router.get("/debug/original-preview")
+async def get_original_preview():
+    """Retourne l'image originale"""
+    file_path = Path(__file__).parent / "static" / "facture_originale.jpg"
+    if file_path.exists():
+        return FileResponse(file_path, media_type="image/jpeg")
+    raise HTTPException(status_code=404, detail="Image not found")
+
+
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
