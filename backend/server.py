@@ -4180,8 +4180,15 @@ RÈGLES CRITIQUES:
 
 1. STOCK NUMBER (TRÈS IMPORTANT):
 - C'est le numéro ÉCRIT À LA MAIN en bas de page (5 chiffres)
-- Cherche une écriture manuscrite, souvent en bleu ou noir
-- ⚠️ Attention: 3 vs 8 - Le 3 a deux courbes ouvertes à droite, le 8 est fermé
+- Cherche une écriture manuscrite, souvent au stylo bleu ou noir
+- Le stock # est souvent encerclé ou souligné
+
+⚠️ CONFUSIONS MANUSCRITES FRÉQUENTES:
+- 3 vs 8: Le 3 manuscrit a deux courbes OUVERTES à droite (comme un E retourné), le 8 est FERMÉ (deux boucles complètes)
+- 7 vs 1: Le 7 a une barre horizontale en haut
+- 4 vs 9: Le 4 est angulaire, le 9 est rond en haut
+- 5 vs 6: Le 5 a une barre horizontale en haut
+
 - NE PAS utiliser R100963941 (c'est le numéro TPS/GST)
 - NE PAS utiliser C08-625829-40 (c'est le numéro de commande)
 
