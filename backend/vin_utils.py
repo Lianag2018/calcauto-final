@@ -72,7 +72,7 @@ def validate_vin_checksum(vin: str) -> bool:
 
 # ============ AUTO-CORRECTION OCR ============
 
-# Erreurs OCR courantes
+# Erreurs OCR courantes - caractères qui n'existent pas dans un VIN
 OCR_CORRECTIONS = {
     'O': '0',  # O → 0
     'I': '1',  # I → 1
@@ -85,6 +85,29 @@ OCR_CORRECTIONS = {
 
 # Caractères invalides dans un VIN (I, O, Q)
 INVALID_VIN_CHARS = set('IOQ')
+
+# NOUVEAU: Paires de confusion OCR fréquentes (source → destinations possibles)
+# Utilisé pour correction intelligente quand le checksum échoue
+OCR_CONFUSION_PAIRS = {
+    # Chiffres similaires
+    '8': ['9', 'B', '6'],      # 8 souvent confondu avec 9, B, 6
+    '9': ['8', 'G', '0'],      # 9 souvent confondu avec 8, G, 0
+    '6': ['8', 'G', 'B'],      # 6 souvent confondu avec 8, G
+    '0': ['8', 'D', 'G'],      # 0 souvent confondu avec 8, D
+    '5': ['S', '6'],           # 5 souvent confondu avec S
+    '1': ['7', 'L'],           # 1 souvent confondu avec 7, L
+    '2': ['Z'],                # 2 souvent confondu avec Z
+    '7': ['1', 'T'],           # 7 souvent confondu avec 1
+    # Lettres similaires
+    'S': ['5', '8'],           # S souvent confondu avec 5, 8
+    'B': ['8', '6'],           # B souvent confondu avec 8
+    'G': ['6', '9', 'C'],      # G souvent confondu avec 6, 9
+    'Z': ['2'],                # Z souvent confondu avec 2
+    'D': ['0'],                # D souvent confondu avec 0
+    'L': ['1'],                # L souvent confondu avec 1
+    'T': ['7'],                # T souvent confondu avec 7
+    'C': ['G'],                # C souvent confondu avec G
+}
 
 
 def correct_vin_ocr_errors(vin: str) -> str:
