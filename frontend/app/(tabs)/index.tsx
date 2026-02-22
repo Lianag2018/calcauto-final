@@ -1139,12 +1139,6 @@ export default function HomeScreen() {
           )}
 
           {/* Price Input and Calculation */}
-                </Text>
-              )}
-            </View>
-          )}
-
-          {/* Price Input and Calculation */}
           {selectedProgram && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{t.vehicle.vehiclePrice}</Text>
