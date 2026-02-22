@@ -4111,12 +4111,13 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
             parse_method = "ocr_auto_approved"
             logger.info(f"OCR Auto-Approved: VIN={vin_corrected}, EP={vehicle_data['ep_cost']}, Score={ocr_score}")
         
-        # ===== NIVEAU 3: FALLBACK → GPT-4 VISION (SEULEMENT SI decision == vision_required) =====
+        # ===== NIVEAU 3: FALLBACK → GPT-4 VISION AVEC ZONES ZOOMÉES =====
         if decision == "vision_required" or vehicle_data is None:
-            logger.info("Fallback → GPT-4 Vision (score < 60 ou échec OCR)")
+            logger.info("Fallback → GPT-4 Vision avec zones zoomées")
             
             try:
                 import openai
+                from PIL import Image as PILImage
                 
                 api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
                 if not api_key:
@@ -4124,8 +4125,29 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                 
                 client = openai.OpenAI(api_key=api_key)
                 
-                # Image en base64 pour Vision
+                # Décoder l'image pour extraire les zones
                 compressed_base64 = request.image_base64
+                img_data = base64.b64decode(compressed_base64)
+                pil_img = PILImage.open(io.BytesIO(img_data))
+                width, height = pil_img.size
+                
+                # Extraire les zones critiques avec zoom
+                zones_to_extract = {
+                    "vin_zone": (int(width * 0.35), 0, width, int(height * 0.25)),  # Haut droite - VIN
+                    "color_zone": (0, int(height * 0.15), int(width * 0.6), int(height * 0.5)),  # Centre gauche - Options/Couleur
+                    "finance_zone": (0, int(height * 0.65), int(width * 0.5), height),  # Bas gauche - EP/PDCO
+                }
+                
+                zone_images = {}
+                for zone_name, (x1, y1, x2, y2) in zones_to_extract.items():
+                    zone_crop = pil_img.crop((x1, y1, x2, y2))
+                    # Agrandir la zone pour meilleure lisibilité
+                    zone_crop = zone_crop.resize((zone_crop.width * 2, zone_crop.height * 2), PILImage.Resampling.LANCZOS)
+                    buffered = io.BytesIO()
+                    zone_crop.save(buffered, format="JPEG", quality=90)
+                    zone_images[zone_name] = base64.b64encode(buffered.getvalue()).decode()
+                    logger.info(f"Zone {zone_name} extraite: {zone_crop.width}x{zone_crop.height}")
+                
                 
                 # Prompt ultra-précis pour factures FCA
                 system_prompt = """Tu es un extracteur EXPERT de factures FCA Canada. Tu dois extraire les données avec une précision de 100%.
