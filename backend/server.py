@@ -4186,11 +4186,12 @@ Le 10ème caractère = année: R=2024, S=2025, T=2026
 - NE PAS extraire les montants des options - mettre 0 pour tous
 - Extraire seulement le code et la description
 
-5. CODES FINANCIERS (en bas à gauche):
+5. CODES FINANCIERS (en bas à gauche) - TRÈS IMPORTANT:
 - E.P. = 8 chiffres (ex: 06534500 = $65,345)
 - PDCO = 8 chiffres (ex: 07035500 = $70,355)
-- PREF* = 8 chiffres
-- HOLDBACK = 6 chiffres (ex: 021350 = $2,135) - CHERCHE BIEN CE CHAMP
+- PREF* = 8 chiffres (ex: 06607000 = $66,070)
+- HOLDBACK = 6 chiffres JUSTE EN DESSOUS de PREF*, AVANT "GVW:" (ex: 070000 = $700)
+- Le HOLDBACK est souvent écrit seul sans label, juste un nombre à 6 chiffres avant GVW
 
 Retourne UNIQUEMENT ce JSON:
 {
@@ -4201,7 +4202,7 @@ Retourne UNIQUEMENT ce JSON:
   "ep": "8 chiffres brut",
   "pdco": "8 chiffres brut",
   "pref": "8 chiffres brut",
-  "holdback": "6 chiffres - IMPORTANT cherche ce champ dans la zone financière",
+  "holdback": "6 chiffres - CHERCHE EN DESSOUS DE PREF*, AVANT GVW",
   "subtotal": nombre décimal,
   "total": nombre décimal,
   "color": "CODE 3 chars (ex: PW7) - PAS la description",
