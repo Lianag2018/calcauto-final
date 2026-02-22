@@ -94,6 +94,214 @@ def auto_warp_document(image: np.ndarray) -> np.ndarray:
 
 # ============ PREPROCESSING OCR ============
 
+def remove_shadows(image: np.ndarray) -> np.ndarray:
+    """
+    Suppression des ombres - Technique CamScanner
+    
+    Divise l'image en blocs et normalise l'éclairage local
+    pour obtenir un fond blanc uniforme.
+    """
+    if len(image.shape) == 3:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = image.copy()
+    
+    # Créer un fond estimé avec un gros flou
+    # Plus le kernel est grand, plus les ombres larges sont supprimées
+    kernel_size = max(gray.shape[0], gray.shape[1]) // 8
+    if kernel_size % 2 == 0:
+        kernel_size += 1
+    kernel_size = max(kernel_size, 51)  # Minimum 51
+    
+    # Filtre morphologique pour estimer le fond
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
+    background = cv2.morphologyEx(gray, cv2.MORPH_DILATE, kernel)
+    
+    # Diviser l'image par le fond pour normaliser l'éclairage
+    # Éviter division par zéro
+    background = np.maximum(background, 1)
+    normalized = cv2.divide(gray, background, scale=255)
+    
+    return normalized
+
+
+def enhance_contrast_adaptive(image: np.ndarray) -> np.ndarray:
+    """
+    Amélioration du contraste avec CLAHE
+    (Contrast Limited Adaptive Histogram Equalization)
+    
+    Meilleur que l'égalisation standard car évite la sur-amplification.
+    """
+    if len(image.shape) == 3:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = image.copy()
+    
+    # CLAHE avec clip limit modéré
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    enhanced = clahe.apply(gray)
+    
+    return enhanced
+
+
+def adaptive_binarization(image: np.ndarray) -> np.ndarray:
+    """
+    Binarisation adaptative - Texte noir, fond blanc
+    
+    Utilise le seuillage adaptatif gaussien qui est
+    meilleur que Otsu pour les documents avec éclairage inégal.
+    """
+    if len(image.shape) == 3:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = image.copy()
+    
+    # Seuillage adaptatif - meilleur pour documents
+    binary = cv2.adaptiveThreshold(
+        gray, 
+        255, 
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+        cv2.THRESH_BINARY,
+        blockSize=21,  # Taille du bloc local
+        C=10  # Constante soustraite de la moyenne
+    )
+    
+    return binary
+
+
+def clean_document_edges(image: np.ndarray) -> np.ndarray:
+    """
+    Nettoie les bords du document (supprime le bruit de bordure)
+    """
+    h, w = image.shape[:2]
+    
+    # Créer un masque avec bordure noire (5% de chaque côté)
+    border = int(min(h, w) * 0.02)
+    mask = np.zeros((h, w), dtype=np.uint8)
+    mask[border:h-border, border:w-border] = 255
+    
+    # Appliquer le masque (fond blanc à l'extérieur)
+    if len(image.shape) == 3:
+        result = cv2.bitwise_and(image, image, mask=mask)
+        result[mask == 0] = 255
+    else:
+        result = image.copy()
+        result[mask == 0] = 255
+    
+    return result
+
+
+def camscanner_preprocess(image: np.ndarray) -> np.ndarray:
+    """
+    🎯 PRÉTRAITEMENT STYLE CAMSCANNER - Pipeline complet
+    
+    Transforme une photo de document en scan propre:
+    1. Détection et correction de perspective
+    2. Suppression des ombres
+    3. Amélioration du contraste
+    4. Binarisation adaptative
+    5. Nettoyage final
+    
+    Input: Image BGR (photo de document)
+    Output: Image binaire optimisée pour OCR (noir sur blanc)
+    """
+    logger.info("CamScanner preprocess: Démarrage du pipeline")
+    
+    # Étape 1: Redimensionner si trop grand
+    h, w = image.shape[:2]
+    max_dim = 2000
+    if max(h, w) > max_dim:
+        scale = max_dim / max(h, w)
+        image = cv2.resize(image, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+        logger.info(f"  Redimensionné: {w}x{h} → {image.shape[1]}x{image.shape[0]}")
+    
+    # Étape 2: Correction de perspective (redressement)
+    warped = auto_warp_document(image)
+    logger.info(f"  Perspective corrigée: {warped.shape[1]}x{warped.shape[0]}")
+    
+    # Étape 3: Conversion en niveaux de gris
+    if len(warped.shape) == 3:
+        gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = warped.copy()
+    
+    # Étape 4: Suppression des ombres
+    no_shadows = remove_shadows(gray)
+    logger.info("  Ombres supprimées")
+    
+    # Étape 5: Amélioration du contraste (CLAHE)
+    enhanced = enhance_contrast_adaptive(no_shadows)
+    logger.info("  Contraste amélioré")
+    
+    # Étape 6: Débruitage léger
+    denoised = cv2.fastNlMeansDenoising(enhanced, h=8)
+    
+    # Étape 7: Binarisation adaptative (texte noir, fond blanc)
+    binary = adaptive_binarization(denoised)
+    logger.info("  Binarisation appliquée")
+    
+    # Étape 8: Nettoyage morphologique (supprime petits bruits)
+    kernel = np.ones((2, 2), np.uint8)
+    cleaned = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+    cleaned = cv2.morphologyEx(cleaned, cv2.MORPH_OPEN, kernel)
+    
+    # Étape 9: Nettoyage des bords
+    final = clean_document_edges(cleaned)
+    logger.info("  Nettoyage terminé")
+    
+    logger.info("CamScanner preprocess: Pipeline terminé avec succès")
+    
+    return final
+
+
+def camscanner_preprocess_for_vision(image: np.ndarray) -> np.ndarray:
+    """
+    Version du prétraitement optimisée pour GPT-4 Vision.
+    
+    GPT-4 Vision préfère des images avec un peu de contexte,
+    donc on garde les niveaux de gris au lieu de binaire pur.
+    """
+    logger.info("CamScanner preprocess (Vision): Démarrage")
+    
+    # Redimensionner si trop grand
+    h, w = image.shape[:2]
+    max_dim = 2000
+    if max(h, w) > max_dim:
+        scale = max_dim / max(h, w)
+        image = cv2.resize(image, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+    
+    # Correction de perspective
+    warped = auto_warp_document(image)
+    
+    # Conversion en niveaux de gris
+    if len(warped.shape) == 3:
+        gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = warped.copy()
+    
+    # Suppression des ombres
+    no_shadows = remove_shadows(gray)
+    
+    # Amélioration du contraste
+    enhanced = enhance_contrast_adaptive(no_shadows)
+    
+    # Débruitage
+    denoised = cv2.fastNlMeansDenoising(enhanced, h=8)
+    
+    # Pour Vision: on garde en niveaux de gris avec contraste amélioré
+    # (pas de binarisation complète)
+    
+    # Augmenter le contraste final
+    # Étirer l'histogramme pour maximiser le contraste
+    min_val = np.percentile(denoised, 2)
+    max_val = np.percentile(denoised, 98)
+    stretched = np.clip((denoised - min_val) * 255 / (max_val - min_val), 0, 255).astype(np.uint8)
+    
+    logger.info("CamScanner preprocess (Vision): Terminé")
+    
+    return stretched
+
+
 def preprocess_for_ocr(zone_img: np.ndarray) -> np.ndarray:
     """
     Prétraitement intelligent avant OCR:
