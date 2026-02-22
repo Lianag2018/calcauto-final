@@ -352,6 +352,14 @@ def decode_vin_year(vin: str) -> Optional[int]:
     return YEAR_CODES.get(year_char)
 
 
+def is_year_plausible(year: int) -> bool:
+    """Vérifie si l'année du VIN est plausible (véhicules actuels)"""
+    from datetime import datetime
+    current_year = datetime.now().year
+    # Plausible: année actuelle -5 à +2 (véhicules neufs et récents)
+    return (current_year - 5) <= year <= (current_year + 2)
+
+
 def decode_vin_brand(vin: str) -> Optional[str]:
     """Décode la marque depuis le VIN (positions 1-3)"""
     if not vin or len(vin) < 3:
