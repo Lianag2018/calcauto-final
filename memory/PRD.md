@@ -94,7 +94,10 @@ RÈGLE D'OR: Bloquer si VIN/EP/PDCO invalides
   - 7 tests getRateForTerm
   - 6 tests edge cases
   - 5 tests régression
-- [ ] Remplacer blocs UI par composants (migration progressive)
+- [ ] Remplacer blocs UI par composants (BLOQUÉ: environnement Expo instable - ngrok errors)
+
+**⚠️ NOTE: Migration UI bloquée**
+L'environnement Expo ne démarre pas (erreurs ngrok tunnel). La migration UI doit être faite quand l'environnement sera stable. Tous les composants et tests sont prêts.
 
 **📌 Guide Migration `index.tsx`:**
 ```tsx
