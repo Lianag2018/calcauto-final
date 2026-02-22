@@ -91,10 +91,10 @@ INVALID_VIN_CHARS = set('IOQ')
 OCR_CONFUSION_PAIRS = {
     # Chiffres similaires
     '8': ['9', 'B', '6'],      # 8 souvent confondu avec 9, B, 6
-    '9': ['8', 'G', '0'],      # 9 souvent confondu avec 8, G, 0
+    '9': ['8', 'G', '0', '5'], # 9 souvent confondu avec 8, G, 0, 5
     '6': ['8', 'G', 'B'],      # 6 souvent confondu avec 8, G
     '0': ['8', 'D', 'G'],      # 0 souvent confondu avec 8, D
-    '5': ['S', '6'],           # 5 souvent confondu avec S
+    '5': ['S', '6', '9'],      # 5 souvent confondu avec S, 9
     '1': ['7', 'L'],           # 1 souvent confondu avec 7, L
     '2': ['Z'],                # 2 souvent confondu avec Z
     '7': ['1', 'T'],           # 7 souvent confondu avec 1
@@ -107,6 +107,8 @@ OCR_CONFUSION_PAIRS = {
     'L': ['1'],                # L souvent confondu avec 1
     'T': ['7'],                # T souvent confondu avec 7
     'C': ['G'],                # C souvent confondu avec G
+    'X': ['K'],                # X souvent confondu avec K (erreur GPT fréquente)
+    'K': ['X'],                # K souvent confondu avec X
 }
 
 
@@ -116,6 +118,7 @@ def correct_vin_ocr_errors(vin: str) -> str:
     - O → 0
     - I → 1
     - Q → 0
+    - Correction spécifique Jeep: 1C4RJX → 1C4RJK (X→K en position 5)
     """
     if not vin:
         return vin
@@ -127,7 +130,15 @@ def correct_vin_ocr_errors(vin: str) -> str:
         else:
             corrected.append(char)
     
-    return ''.join(corrected)
+    result = ''.join(corrected)
+    
+    # Correction spécifique Jeep: position 5 devrait être K, pas X
+    # Les VIN Jeep commencent par 1C4RJK, pas 1C4RJX
+    if result.startswith('1C4RJX'):
+        result = '1C4RJK' + result[6:]
+        logger.info(f"VIN Jeep corrigé: X→K en position 5")
+    
+    return result
 
 
 def try_fix_check_digit(vin: str) -> Tuple[str, bool]:
