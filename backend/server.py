@@ -4150,11 +4150,14 @@ RÈGLES CRITIQUES:
 
 Le 10ème caractère = année: R=2024, S=2025, T=2026
 
-3. CODE COULEUR - IMPORTANT:
+3. CODE COULEUR - ULTRA IMPORTANT:
 - C'est le CODE à 3 caractères, PAS la description
-- Exemples: PW7, PWZ, PXJ, PAU, PSC
-- Si tu vois "PW7 BLANC ECLATANT", retourne "PW7" (pas "BLA" ni "BLANC")
-- Le code couleur est dans la colonne de gauche, la description à droite
+- Le code est dans la colonne de GAUCHE, la description à droite
+- Exemples de codes: PW7, PWZ, PWL, PXJ, PX8, PAU, PSC, PGG
+- ⚠️ BLANC a plusieurs codes (PW7, PWZ, PWL) - retourne le code EXACT vu sur la facture
+- ⚠️ NOIR a plusieurs codes (PXJ, PX8) - retourne le code EXACT vu sur la facture
+- NE JAMAIS retourner la description (BLANC ECLATANT, NOIR CRISTAL)
+- TOUJOURS retourner le code P suivi de 2 caractères
 
 4. OPTIONS AVEC PRIX:
 - Chaque option a un code (ex: ABR, GWA, 23B) et un montant
