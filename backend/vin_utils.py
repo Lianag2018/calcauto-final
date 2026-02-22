@@ -166,6 +166,13 @@ def smart_vin_correction(vin: str) -> Dict[str, any]:
     """
     Correction intelligente du VIN avec plusieurs stratégies.
     
+    Stratégies (dans l'ordre):
+    1. Vérifier si déjà valide
+    2. Corrections OCR simples (I→1, O→0, Q→0)
+    3. Correction single-char avec paires de confusion OCR
+    4. Correction double-char (2 positions problématiques)
+    5. Si toujours invalide → marquer pour révision manuelle
+    
     Returns:
         {
             "original": VIN original
@@ -195,7 +202,7 @@ def smart_vin_correction(vin: str) -> Dict[str, any]:
         result["is_valid"] = True
         return result
     
-    # Stratégie 1: Corrections OCR simples
+    # Stratégie 1: Corrections OCR simples (caractères invalides dans VIN)
     corrected = correct_vin_ocr_errors(vin)
     if validate_vin_checksum(corrected):
         result["corrected"] = corrected
@@ -204,51 +211,83 @@ def smart_vin_correction(vin: str) -> Dict[str, any]:
         result["correction_type"] = "ocr_simple"
         return result
     
-    # Stratégie 2: Tester chaque position avec caractères similaires
-    similar_chars = {
-        '0': ['O', 'Q', 'D'],
-        '1': ['I', 'L', '7'],
-        '8': ['B', '6'],
-        '5': ['S'],
-        '2': ['Z'],
-        '6': ['G', 'B'],
-    }
-    
+    # Stratégie 2: Correction single-char avec OCR_CONFUSION_PAIRS
+    # Essayer de remplacer un caractère à la fois
     for pos in range(17):
         if pos == 8:  # Skip check digit position
             continue
         
         current_char = corrected[pos]
         
-        # Essayer les caractères similaires
-        for original, replacements in similar_chars.items():
-            if current_char in replacements:
-                test_vin = corrected[:pos] + original + corrected[pos+1:]
-                if validate_vin_checksum(test_vin):
-                    result["corrected"] = test_vin
-                    result["is_valid"] = True
-                    result["correction_applied"] = True
-                    result["correction_type"] = f"char_swap_pos_{pos}"
-                    return result
-            elif current_char == original:
-                for replacement in replacements:
-                    if replacement not in INVALID_VIN_CHARS:
-                        test_vin = corrected[:pos] + replacement + corrected[pos+1:]
-                        if validate_vin_checksum(test_vin):
-                            result["corrected"] = test_vin
-                            result["is_valid"] = True
-                            result["correction_applied"] = True
-                            result["correction_type"] = f"char_swap_pos_{pos}"
-                            return result
+        # Obtenir les alternatives possibles pour ce caractère
+        alternatives = OCR_CONFUSION_PAIRS.get(current_char, [])
+        
+        for alt_char in alternatives:
+            if alt_char in INVALID_VIN_CHARS:
+                continue  # Ignorer I, O, Q
+            
+            test_vin = corrected[:pos] + alt_char + corrected[pos+1:]
+            if validate_vin_checksum(test_vin):
+                result["corrected"] = test_vin
+                result["is_valid"] = True
+                result["correction_applied"] = True
+                result["correction_type"] = f"single_char_pos_{pos}_{current_char}→{alt_char}"
+                logger.info(f"VIN corrigé par single-char: position {pos}, {current_char}→{alt_char}")
+                return result
     
-    # STRATÉGIE 3: NE JAMAIS FORCER LE CHECK DIGIT
-    # Si le VIN est toujours invalide après corrections OCR → marquer comme invalide
-    # L'utilisateur devra vérifier manuellement (review_required)
+    # Stratégie 3: Correction double-char (2 erreurs simultanées)
+    # Ceci couvre le cas typique: 8→9 et S→5 en même temps
+    # Limiter aux positions connues pour être problématiques (sauf position 8)
+    problem_positions = [i for i in range(17) if i != 8]
+    
+    for pos1 in problem_positions:
+        char1 = corrected[pos1]
+        alts1 = OCR_CONFUSION_PAIRS.get(char1, [])
+        
+        for alt1 in alts1:
+            if alt1 in INVALID_VIN_CHARS:
+                continue
+            
+            # Premier remplacement
+            test_vin1 = corrected[:pos1] + alt1 + corrected[pos1+1:]
+            
+            # Vérifier si déjà valide
+            if validate_vin_checksum(test_vin1):
+                result["corrected"] = test_vin1
+                result["is_valid"] = True
+                result["correction_applied"] = True
+                result["correction_type"] = f"double_char_pos_{pos1}_{char1}→{alt1}"
+                logger.info(f"VIN corrigé par double-char (1er): position {pos1}, {char1}→{alt1}")
+                return result
+            
+            # Essayer une deuxième correction
+            for pos2 in problem_positions:
+                if pos2 <= pos1:
+                    continue  # Éviter les doublons
+                
+                char2 = test_vin1[pos2]
+                alts2 = OCR_CONFUSION_PAIRS.get(char2, [])
+                
+                for alt2 in alts2:
+                    if alt2 in INVALID_VIN_CHARS:
+                        continue
+                    
+                    test_vin2 = test_vin1[:pos2] + alt2 + test_vin1[pos2+1:]
+                    if validate_vin_checksum(test_vin2):
+                        result["corrected"] = test_vin2
+                        result["is_valid"] = True
+                        result["correction_applied"] = True
+                        result["correction_type"] = f"double_char_pos_{pos1}_{pos2}"
+                        logger.info(f"VIN corrigé par double-char: {pos1}:{char1}→{alt1}, {pos2}:{char2}→{alt2}")
+                        return result
+    
+    # STRATÉGIE 4: NE JAMAIS FORCER LE CHECK DIGIT
+    # Si le VIN est toujours invalide après corrections → révision manuelle requise
     result["corrected"] = corrected
     result["is_valid"] = False
     result["correction_applied"] = False
     result["correction_type"] = "checksum_invalid_review_required"
-    logger.warning(f"VIN checksum invalide, révision requise: {vin}")
+    logger.warning(f"VIN checksum invalide après toutes corrections, révision requise: {vin}")
     
     return result
 
