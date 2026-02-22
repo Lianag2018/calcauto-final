@@ -149,6 +149,18 @@ def correct_vin_ocr_errors(vin: str) -> str:
             result = result[:9] + 'R' + result[10:]
             logger.info(f"VIN année corrigé: {pos10}→R en position 10 (2024)")
     
+    # Correction spécifique FCA: "88" en positions 9-10 devrait être "S8" (année 2025 + usine 8)
+    # Format VIN FCA: XXXXXXXXX-S8-XXXXXX où S=année 2025, 8=usine Windsor
+    if len(result) >= 11 and result[9:11] == '88':
+        result = result[:9] + 'S8' + result[11:]
+        logger.info(f"VIN FCA corrigé: 88→S8 en positions 10-11 (2025 + usine)")
+    elif len(result) >= 11 and result[9:11] == '58':
+        result = result[:9] + 'S8' + result[11:]
+        logger.info(f"VIN FCA corrigé: 58→S8 en positions 10-11 (2025 + usine)")
+    elif len(result) >= 11 and result[9:11] == '55':
+        result = result[:9] + 'S5' + result[11:]
+        logger.info(f"VIN FCA corrigé: 55→S5 en positions 10-11")
+    
     return result
 
 
