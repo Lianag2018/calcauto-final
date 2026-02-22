@@ -30,6 +30,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import frTranslations from '../../locales/fr.json';
 import enTranslations from '../../locales/en.json';
 
+// Import refactored components
+import { CalculatorInputs } from '../../components/calculator/CalculatorInputs';
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // Force the production backend URL for Vercel deployments (evaluated at runtime)
