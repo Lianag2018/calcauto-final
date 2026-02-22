@@ -323,7 +323,10 @@ export default function InventoryScreen() {
   };
 
   const saveReviewedVehicle = async () => {
+    console.log('saveReviewedVehicle called with:', reviewData);
+    
     if (!reviewData.stock_no || !reviewData.brand || !reviewData.model) {
+      console.log('Validation failed:', { stock_no: reviewData.stock_no, brand: reviewData.brand, model: reviewData.model });
       Platform.OS === 'web'
         ? alert('Stock #, Marque et Modèle sont requis')
         : Alert.alert('Erreur', 'Stock #, Marque et Modèle sont requis');
@@ -339,7 +342,7 @@ export default function InventoryScreen() {
       // Utiliser le net_cost édité par l'utilisateur, sinon calculer
       const netCost = reviewData.net_cost ? parseFloat(reviewData.net_cost) : (ep - hb);
 
-      await axios.post(`${API_URL}/api/inventory`, {
+      const payload = {
         stock_no: reviewData.stock_no,
         vin: reviewData.vin,
         brand: reviewData.brand,
@@ -355,7 +358,15 @@ export default function InventoryScreen() {
         asking_price: parseFloat(reviewData.asking_price) || 0,
         km: 0,
         color: reviewData.color,
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      };
+      
+      console.log('Sending to API:', payload);
+      
+      const response = await axios.post(`${API_URL}/api/inventory`, payload, { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+      
+      console.log('API response:', response.data);
 
       setShowReviewModal(false);
       setReviewData(null);
@@ -364,6 +375,7 @@ export default function InventoryScreen() {
         ? alert('Véhicule ajouté avec succès!')
         : Alert.alert('Succès', 'Véhicule ajouté avec succès!');
     } catch (error: any) {
+      console.error('Save error:', error.response?.data || error);
       const msg = error.response?.data?.detail || 'Erreur lors de la sauvegarde';
       Platform.OS === 'web' ? alert(msg) : Alert.alert('Erreur', msg);
     } finally {
