@@ -4309,13 +4309,13 @@ Retourne UNIQUEMENT ce JSON:
                         options.append({
                             "product_code": str(opt[0]).upper(),
                             "description": str(opt[1])[:80],
-                            "amount": clean_fca_price(str(opt[2])) if len(opt) > 2 else 0
+                            "amount": 0  # Pas de prix accessoires
                         })
                     elif isinstance(opt, dict):
                         options.append({
                             "product_code": str(opt.get("code", opt.get("c", ""))).upper(),
                             "description": str(opt.get("description", opt.get("d", "")))[:80],
-                            "amount": clean_fca_price(str(opt.get("a", opt.get("amount", "0"))))
+                            "amount": 0  # Pas de prix accessoires
                         })
                 
                 # Couleur - Amélioration extraction
