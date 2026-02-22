@@ -4203,6 +4203,15 @@ POSITION 10 = ANNÉE (TRÈS IMPORTANT):
 - T = 2026
 - Le 10ème caractère est une LETTRE (R, S, T), PAS un chiffre
 - Si tu lis 5 ou 8 en position 10, c'est probablement S
+- POUR 2025, la partie après le tiret est toujours "-S8-" (lettre S puis chiffre 8)
+
+EXEMPLE VIN FCA 2025:
+- Facture: 1C4RJHBG6-S8-806264
+- Sans tirets: 1C4RJHBG6S8806264
+- Position 9: checksum (6)
+- Position 10: S (année 2025)
+- Position 11: 8 (usine)
+- LES 6 DERNIERS = numéro série: 806264
 
 3. CODE COULEUR - ULTRA IMPORTANT:
 - C'est le CODE à 3 caractères, PAS la description
