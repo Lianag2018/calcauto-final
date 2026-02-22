@@ -4296,7 +4296,6 @@ Retourne UNIQUEMENT ce JSON:
                     color_code = raw_color
                 else:
                     # Chercher un code couleur dans la chaîne (ex: "PW7 BLANC ECLATANT")
-                    import re
                     code_match = re.search(r'\b(P[A-Z0-9]{2})\b', raw_color)
                     if code_match:
                         color_code = code_match.group(1)
