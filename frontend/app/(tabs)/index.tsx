@@ -1066,7 +1066,7 @@ export default function HomeScreen() {
             )}
           </View>
 
-          {/* Inventory Selection - Show ALL vehicles */}
+          {/* Inventory Selection - Filtered by selected brand */}
           {selectedProgram && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>
@@ -1074,65 +1074,51 @@ export default function HomeScreen() {
               </Text>
               <Text style={styles.inventorySubtitle}>
                 {lang === 'fr' 
-                  ? `Cliquez sur un véhicule pour le sélectionner`
-                  : `Tap a vehicle to select it`}
+                  ? `Véhicules ${selectedProgram.brand} en stock`
+                  : `${selectedProgram.brand} vehicles in stock`}
               </Text>
               {inventoryList.length > 0 ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.inventoryScroll}>
-                  {inventoryList.map((vehicle) => {
-                    const isCompatible = vehicle.brand?.toLowerCase() === selectedProgram.brand?.toLowerCase();
-                    const isSelected = selectedInventory?.id === vehicle.id;
-                    return (
+                  {inventoryList
+                    .filter(v => v.brand?.toLowerCase() === selectedProgram.brand?.toLowerCase())
+                    .map((vehicle) => (
                       <TouchableOpacity
                         key={vehicle.id}
-                        activeOpacity={0.7}
-                        testID={`inventory-card-${vehicle.stock_no}`}
                         style={[
                           styles.inventoryCard,
-                          isSelected && styles.inventoryCardSelected,
-                          !isCompatible && { opacity: 0.6, borderColor: '#FF6B6B', borderWidth: 1 }
+                          selectedInventory?.id === vehicle.id && styles.inventoryCardSelected
                         ]}
                         onPress={() => {
-                          console.log('Inventory card pressed:', vehicle.stock_no);
                           setSelectedInventory(vehicle);
                           setVehiclePrice(String(vehicle.asking_price || vehicle.msrp || ''));
                         }}
                       >
-                        {/* Badge marque si différente */}
-                        {!isCompatible && (
-                          <View style={{ 
-                            position: 'absolute', 
-                            top: -8, 
-                            right: -8, 
-                            backgroundColor: '#FF6B6B', 
-                            borderRadius: 12, 
-                            paddingHorizontal: 8, 
-                            paddingVertical: 3,
-                            zIndex: 10
-                          }}>
-                            <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>{vehicle.brand}</Text>
-                          </View>
-                        )}
                         <Text style={styles.inventoryStock}>#{vehicle.stock_no}</Text>
                         <Text style={styles.inventoryModel}>
-                          {vehicle.year} {vehicle.brand} {vehicle.model}
+                          {vehicle.year} {vehicle.model}
                         </Text>
-                        <Text style={styles.inventoryTrim}>{vehicle.trim || ''}</Text>
+                        <Text style={styles.inventoryTrim}>{vehicle.trim}</Text>
                         <Text style={styles.inventoryPrice}>
                           {formatCurrency(vehicle.asking_price || vehicle.msrp)}
                         </Text>
-                        {vehicle.net_cost > 0 && (
+                        {vehicle.net_cost && (
                           <Text style={styles.inventoryProfit}>
                             Profit: {formatCurrency((vehicle.asking_price || vehicle.msrp) - vehicle.net_cost)}
                           </Text>
                         )}
                       </TouchableOpacity>
-                    );
-                  })}
+                    ))}
+                  {inventoryList.filter(v => v.brand?.toLowerCase() === selectedProgram.brand?.toLowerCase()).length === 0 && (
+                    <Text style={styles.noInventoryText}>
+                      {lang === 'fr' 
+                        ? `Aucun véhicule ${selectedProgram.brand} en inventaire`
+                        : `No ${selectedProgram.brand} vehicles in inventory`}
+                    </Text>
+                  )}
                 </ScrollView>
               ) : (
                 <Text style={styles.noInventoryText}>
-                  {lang === 'fr' ? 'Aucun véhicule en inventaire' : 'No vehicles in inventory'}
+                  {lang === 'fr' ? 'Chargement de l\'inventaire...' : 'Loading inventory...'}
                 </Text>
               )}
             </View>
