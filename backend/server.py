@@ -4221,7 +4221,7 @@ Retourne UNIQUEMENT ce JSON:
                 zone_descriptions = {
                     "vin_zone": "ZOOM sur zone VIN (haut droite) - Lis le VIN caractère par caractère, attention K pas X, 9 pas 5",
                     "color_zone": "ZOOM sur zone OPTIONS/COULEUR - Cherche le CODE couleur (PW7, PWZ, PXJ...) pas la description",
-                    "finance_zone": "ZOOM sur zone FINANCIÈRE (bas gauche) - Lis EP et PDCO (8 chiffres chacun)"
+                    "finance_zone": "ZOOM sur zone FINANCIÈRE (bas gauche) - Lis EP, PDCO et HOLDBACK (6 chiffres). Le HOLDBACK est souvent noté 'RETENUE' ou 'H.B.'"
                 }
                 
                 for zone_name, zone_base64 in zone_images.items():
