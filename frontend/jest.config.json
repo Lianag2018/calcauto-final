@@ -1,0 +1,24 @@
+{
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "roots": ["<rootDir>/tests"],
+  "moduleFileExtensions": ["ts", "tsx", "js", "jsx"],
+  "transform": {
+    "^.+\\.tsx?$": ["ts-jest", {
+      "tsconfig": {
+        "jsx": "react",
+        "esModuleInterop": true,
+        "moduleResolution": "node"
+      }
+    }]
+  },
+  "moduleNameMapper": {
+    "^@/(.*)$": "<rootDir>/$1"
+  },
+  "testMatch": ["**/*.test.ts", "**/*.test.tsx"],
+  "collectCoverageFrom": [
+    "hooks/**/*.ts",
+    "hooks/**/*.tsx"
+  ],
+  "verbose": true
+}
