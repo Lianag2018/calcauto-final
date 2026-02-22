@@ -4270,9 +4270,10 @@ Retourne UNIQUEMENT ce JSON:
                 
                 # Ajouter les zones zoomées
                 zone_descriptions = {
-                    "vin_zone": "ZOOM sur zone VIN (haut droite) - Lis le VIN caractère par caractère, attention K pas X, 9 pas 5",
+                    "vin_zone": "ZOOM sur zone VIN (haut droite) - Lis le VIN caractère par caractère. Format: 1C4RJHBG6-S8-806264. La partie '-S8-' c'est LETTRE S puis chiffre 8, pas '88' ou '58'",
                     "color_zone": "ZOOM sur zone OPTIONS/COULEUR - Cherche le CODE couleur (PW7, PWZ, PXJ...) pas la description",
-                    "finance_zone": "ZOOM sur zone FINANCIÈRE (bas gauche) - Cherche: E.P. (8 chiffres), PDCO (8 chiffres), PREF* (8 chiffres), et HOLDBACK (6 chiffres AVANT GVW:)"
+                    "finance_zone": "ZOOM sur zone FINANCIÈRE (bas gauche) - Cherche: E.P. (8 chiffres), PDCO (8 chiffres), PREF* (8 chiffres), et HOLDBACK (6 chiffres AVANT GVW:)",
+                    "stock_zone": "ZOOM sur STOCK # MANUSCRIT (bas de page) - C'est un nombre de 5 chiffres ÉCRIT À LA MAIN. Attention: le 3 manuscrit ressemble parfois à 8 mais le 3 est OUVERT à gauche, le 8 est FERMÉ. Lis chaque chiffre attentivement."
                 }
                 
                 for zone_name, zone_base64 in zone_images.items():
