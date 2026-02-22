@@ -1127,22 +1127,70 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Price Input and Calculation */}
+          {/* Price Input and Calculation - MIGRÉ vers CalculatorInputs */}
           {selectedProgram && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{t.vehicle.vehiclePrice}</Text>
-              
-              {/* Selected inventory info */}
-              {selectedInventory && (
-                <View style={styles.selectedInventoryBanner}>
-                  <View style={styles.selectedInventoryInfo}>
-                    <Ionicons name="car-sport" size={20} color="#4ECDC4" />
-                    <Text style={styles.selectedInventoryText}>
-                      Stock #{selectedInventory.stock_no} - {selectedInventory.year} {selectedInventory.brand} {selectedInventory.model} {selectedInventory.trim}
-                    </Text>
-                  </View>
-                  <TouchableOpacity onPress={() => { setSelectedInventory(null); setVehiclePrice(''); }}>
-                    <Ionicons name="close-circle" size={22} color="#FF6B6B" />
+              <CalculatorInputs
+                vehiclePrice={vehiclePrice}
+                customBonusCash={customBonusCash}
+                comptantTxInclus={comptantTxInclus}
+                fraisDossier={fraisDossier}
+                taxePneus={taxePneus}
+                fraisRDPRM={fraisRDPRM}
+                prixEchange={prixEchange}
+                montantDuEchange={montantDuEchange}
+                selectedTerm={selectedTerm}
+                paymentFrequency={paymentFrequency}
+                selectedOption={selectedOption}
+                onVehiclePriceChange={setVehiclePrice}
+                onBonusCashChange={setCustomBonusCash}
+                onComptantChange={setComptantTxInclus}
+                onFraisDossierChange={setFraisDossier}
+                onTaxePneusChange={setTaxePneus}
+                onFraisRDPRMChange={setFraisRDPRM}
+                onPrixEchangeChange={setPrixEchange}
+                onMontantDuEchangeChange={setMontantDuEchange}
+                onTermChange={setSelectedTerm}
+                onFrequencyChange={setPaymentFrequency}
+                onOptionChange={setSelectedOption}
+                defaultBonusCash={selectedProgram.bonus_cash || 0}
+                consumerCash={selectedProgram.consumer_cash || 0}
+                option1Rates={selectedProgram.option1_rates}
+                option2Rates={selectedProgram.option2_rates}
+                currentOption1Rate={getRateForTerm(selectedProgram.option1_rates, selectedTerm)}
+                currentOption2Rate={selectedProgram.option2_rates ? getRateForTerm(selectedProgram.option2_rates, selectedTerm) : null}
+                selectedInventory={selectedInventory}
+                onClearInventory={() => { setSelectedInventory(null); setVehiclePrice(''); }}
+                labels={{
+                  vehiclePrice: t.vehicle.vehiclePrice,
+                  bonusCash: t.results.bonusCash,
+                  afterTax: t.results.afterTax,
+                  cashDown: t.fees.cashDown || 'Comptant (tx incluses)',
+                  feesTitle: t.fees.title,
+                  dossier: t.fees.dossier,
+                  tires: t.fees.tires,
+                  rdprm: t.fees.rdprm,
+                  exchangeTitle: t.exchange.title,
+                  exchangeValue: t.exchange.value,
+                  exchangeOwed: t.exchange.owed,
+                  reducesAmount: t.exchange.reducesAmount,
+                  addedToFinancing: t.exchange.addedToFinancing,
+                  selectTerm: t.term.selectTerm,
+                  months: t.term.months,
+                  frequencyTitle: t.frequency.title,
+                  monthly: t.frequency.monthly,
+                  biweekly: t.frequency.biweekly,
+                  weekly: t.frequency.weekly,
+                  chooseOption: t.options.chooseOption,
+                  option1: t.options.option1,
+                  option2: t.options.option2,
+                  notAvailable: t.options.notAvailable,
+                }}
+                formatCurrency={(v) => new Intl.NumberFormat('fr-CA', {style: 'currency', currency: 'CAD', minimumFractionDigits: 0}).format(v)}
+              />
+            </View>
+          )}
                   </TouchableOpacity>
                 </View>
               )}
