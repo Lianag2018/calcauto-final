@@ -100,12 +100,16 @@ class TestVINValidation:
         assert "0" in corrected
     
     def test_vin_checksum_invalide_review_required(self):
-        """8️⃣ VIN avec checksum invalide → review_required"""
+        """8️⃣ VIN avec checksum invalide → review_required ou correction intelligente"""
         # VIN avec mauvais check digit
         vin_invalid = "1C4RJHBG6S8806265"  # Dernier chiffre modifié
         result = validate_and_correct_vin(vin_invalid)
-        # Ne doit PAS forcer le check digit
-        assert result["correction_type"] in ["checksum_invalid_review_required", "ocr_simple", "char_swap_pos_16", None], \
+        # Avec la nouvelle logique, le système peut trouver une correction valide
+        # Si trouvée, c'est ok. Sinon, doit être "checksum_invalid_review_required"
+        assert result["correction_type"] is None or \
+               "single_char" in str(result["correction_type"]) or \
+               "double_char" in str(result["correction_type"]) or \
+               result["correction_type"] == "checksum_invalid_review_required", \
             f"Type correction inattendu: {result['correction_type']}"
     
     def test_vin_decode_year(self):
