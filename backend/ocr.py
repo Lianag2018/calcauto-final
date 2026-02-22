@@ -295,7 +295,12 @@ def camscanner_preprocess_for_vision(image: np.ndarray) -> np.ndarray:
     # Étirer l'histogramme pour maximiser le contraste
     min_val = np.percentile(denoised, 2)
     max_val = np.percentile(denoised, 98)
-    stretched = np.clip((denoised - min_val) * 255 / (max_val - min_val), 0, 255).astype(np.uint8)
+    
+    # Éviter division par zéro
+    if max_val - min_val < 1:
+        stretched = denoised
+    else:
+        stretched = np.clip((denoised.astype(np.float32) - min_val) * 255 / (max_val - min_val), 0, 255).astype(np.uint8)
     
     logger.info("CamScanner preprocess (Vision): Terminé")
     
