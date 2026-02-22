@@ -66,25 +66,50 @@ def auto_warp_document(image: np.ndarray) -> np.ndarray:
     
     90% des échecs OCR viennent de la perspective.
     Cette fonction corrige automatiquement l'angle.
+    
+    AMÉLIORÉ: Vérifie que le contour détecté représente au moins 30% de l'image
     """
     try:
+        h, w = image.shape[:2]
+        image_area = h * w
+        min_contour_area = image_area * 0.3  # Le document doit faire au moins 30% de l'image
+        
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         blur = cv2.GaussianBlur(gray, (5, 5), 0)
-        edged = cv2.Canny(blur, 75, 200)
         
-        contours, _ = cv2.findContours(edged, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-        contours = sorted(contours, key=cv2.contourArea, reverse=True)[:5]
+        # Essayer plusieurs seuils Canny pour trouver le meilleur contour
+        best_contour = None
+        best_area = 0
         
-        for c in contours:
-            peri = cv2.arcLength(c, True)
-            approx = cv2.approxPolyDP(c, 0.02 * peri, True)
+        for low_thresh in [30, 50, 75, 100]:
+            high_thresh = low_thresh * 2.5
+            edged = cv2.Canny(blur, low_thresh, high_thresh)
             
-            if len(approx) == 4:
-                pts = approx.reshape(4, 2).astype("float32")
-                logger.info("Document contour detected, applying perspective correction")
-                return four_point_transform(image, pts)
+            # Dilater pour connecter les lignes brisées
+            kernel = np.ones((3, 3), np.uint8)
+            edged = cv2.dilate(edged, kernel, iterations=1)
+            
+            contours, _ = cv2.findContours(edged, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+            contours = sorted(contours, key=cv2.contourArea, reverse=True)[:10]
+            
+            for c in contours:
+                area = cv2.contourArea(c)
+                if area < min_contour_area:
+                    continue
+                    
+                peri = cv2.arcLength(c, True)
+                approx = cv2.approxPolyDP(c, 0.02 * peri, True)
+                
+                if len(approx) == 4 and area > best_area:
+                    best_contour = approx
+                    best_area = area
         
-        logger.info("No document contour found, using original image")
+        if best_contour is not None:
+            pts = best_contour.reshape(4, 2).astype("float32")
+            logger.info(f"Document contour detected (area={best_area/image_area*100:.1f}%), applying perspective correction")
+            return four_point_transform(image, pts)
+        
+        logger.info("No valid document contour found, using original image (no perspective correction)")
         return image
         
     except Exception as e:
