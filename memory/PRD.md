@@ -71,6 +71,17 @@ RÈGLE D'OR: Bloquer si VIN/EP/PDCO invalides
 - [ ] Modal de révision et correction (UI frontend)
 - [ ] Intégration calculateur-inventaire
 
+### ✅ Phase 4 - Refactorisation Frontend (Décembre 2025)
+- [x] **Hooks modulaires créés** (582 lignes)
+  - `useFinancingCalculation.ts` - Calculs paiement/amortissement
+  - `usePrograms.ts` - Gestion programmes API
+  - `useNetCost.ts` - Calcul EP/PDCO/marge
+- [x] **Composants Calculator créés** (959 lignes)
+  - `PaymentResult.tsx` - Affichage résultats paiement
+  - `ProgramSelector.tsx` - Sélecteur programmes filtrable
+  - `CostBreakdown.tsx` - Ventilation des coûts
+- [ ] Migrer `index.tsx` vers composants (3091 → ~1000 lignes)
+
 ## Patchs Appliqués - Décembre 2025
 
 ### 🔧 PATCH 1: Clé option cohérente
@@ -91,11 +102,17 @@ RÈGLE D'OR: Bloquer si VIN/EP/PDCO invalides
 - Détection dérive automatique (`quality_alert`)
 - Script stress test parallèle
 
+### 🔧 PATCH 6: Refactorisation Frontend (Décembre 2025)
+- Structure hooks: `/frontend/hooks/`
+- Structure composants: `/frontend/components/calculator/`
+- Total: 1541 lignes de code modulaire
+
 ## Backlog Priorisé
 
 ### P0 - Critique
 - [ ] Stabiliser environnement frontend Expo
 - [ ] Tester pipeline OCR avec factures réelles
+- [ ] Migrer index.tsx vers nouveaux composants
 
 ### P1 - Important
 - [ ] Intégration calculateur ↔ inventaire
@@ -106,7 +123,7 @@ RÈGLE D'OR: Bloquer si VIN/EP/PDCO invalides
 - [ ] Dashboard métriques parsing (admin)
 
 ### P3 - Backlog
-- [ ] Refactoriser index.tsx (3000+ lignes)
+- [x] ~~Refactoriser index.tsx (3000+ lignes)~~ → Hooks/Composants créés
 - [ ] Builds App Store / Play Store
 
 ## Intégrations Tierces
