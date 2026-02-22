@@ -4137,30 +4137,44 @@ RÈGLES CRITIQUES:
 - NE PAS utiliser R100963941 (c'est le numéro TPS/GST)
 - NE PAS utiliser C16-625740 (c'est le numéro de commande)
 
-2. VIN (VEHICLE IDENTIFICATION NUMBER):
-- Situé en haut à droite, sous "VEHICLE IDENTIFICATION NUMBER"
-- Format FCA avec tirets: 1C4RJHBG6-S8-806264
-- RETIRE les tirets pour obtenir 17 caractères: 1C4RJHBG6S8806264
-- Attention confusions OCR: 0/O, 1/I, 8/B, 5/S, 6/G
-- Le 10ème caractère = année: R=2024, S=2025, T=2026
+2. VIN (VEHICLE IDENTIFICATION NUMBER) - TRÈS IMPORTANT:
+- Situé en haut à droite, sous "VEHICLE IDENTIFICATION NUMBER" ou "N° DE COMMANDE DU VÉHICULE"
+- Format FCA avec tirets: 1C4RJKAG9-S8-804569
+- RETIRE les tirets pour obtenir 17 caractères: 1C4RJKAG9S8804569
 
-3. CODES FINANCIERS (en bas à gauche):
+⚠️ CONFUSIONS CARACTÈRES CRITIQUES - REGARDER ATTENTIVEMENT:
+- Position 9 (check digit): Différencie bien 8 et 9 (regarder la boucle supérieure)
+- 5 vs S: Le 5 a une barre horizontale en haut, le S est arrondi
+- 8 vs 9: Le 8 a deux boucles fermées, le 9 n'a qu'une boucle en haut
+- 8 vs B: Le 8 a deux boucles symétriques, le B a une barre verticale à gauche
+- 0 vs O vs D: Le 0 est plus étroit, le O est rond, le D a une barre verticale
+- 6 vs G: Le 6 a une boucle fermée en bas, le G est ouvert en bas
+- 1 vs I vs L vs 7: Le 1 n'a pas de barre en haut, I est vertical pur
+
+Le 10ème caractère = année: R=2024, S=2025, T=2026
+
+3. CODE COULEUR:
+- Chercher dans la liste des options un code à 3 caractères (ex: PW7, PWZ, PXJ)
+- PW7 = Blanc Vif/Bright White, PWZ aussi, PXJ = Noir Cristal
+- ⚠️ Différencier 7 vs Z: Le 7 a une barre horizontale, le Z a deux barres horizontales
+
+4. CODES FINANCIERS (en bas à gauche):
 - E.P. = 8 chiffres (ex: 06997900 = $69,979)
 - PDCO = 8 chiffres (ex: 07544500 = $75,445)  
 - PREF* = 8 chiffres (ex: 07070400 = $70,704)
 - Format: enlever premier 0, enlever 2 derniers chiffres
 
-4. TOTAUX (en bas à droite):
+5. TOTAUX (en bas à droite):
 - SUB TOTAL EXCLUDING TAXES = subtotal
 - TOTAL DE LA FACTURE = total avec taxes
 
-5. MODEL CODE:
+6. MODEL CODE:
 - En haut de la liste des options (ex: WLJP74, WLJH75)
 
 Retourne UNIQUEMENT ce JSON:
 {
   "stock_no": "5 chiffres manuscrits",
-  "vin": "17 caractères EXACTS sans tirets",
+  "vin": "17 caractères EXACTS sans tirets - VÉRIFIE CHAQUE CARACTÈRE",
   "model_code": "code 5-6 chars",
   "description": "description modèle",
   "ep": "8 chiffres brut comme écrit",
@@ -4169,7 +4183,7 @@ Retourne UNIQUEMENT ce JSON:
   "holdback": "6 chiffres si présent",
   "subtotal": nombre décimal,
   "total": nombre décimal,
-  "color": "description couleur",
+  "color": "code couleur 3 chars (ex: PW7, PWZ, PXJ)",
   "options": [{"c":"code 2-5 chars","d":"description","a":"montant brut ou 0"}]
 }"""
                 
