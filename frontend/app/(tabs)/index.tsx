@@ -1191,13 +1191,8 @@ export default function HomeScreen() {
               />
             </View>
           )}
-                  </TouchableOpacity>
-                </View>
-              )}
-              
-              {/* Prix du véhicule */}
-              <View style={styles.inputRow}>
-                <Text style={styles.inputLabel}>{t.vehicle.vehiclePrice}</Text>
+
+          {/* Results - Real-time calculation */}
                 <View style={styles.inputContainer}>
                   <Text style={styles.currencySymbol}>$</Text>
                   <TextInput
