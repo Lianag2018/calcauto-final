@@ -4207,17 +4207,43 @@ Retourne UNIQUEMENT ce JSON:
   "options": [{"c":"code","d":"description","a":"montant ou 0 si SANS FRAIS"}]
 }"""
                 
+                # Construire le message avec l'image complète + zones zoomées
+                image_content = [
+                    {"type": "text", "text": "Extrait JSON de cette facture FCA. Je t'envoie l'image complète + 3 zooms sur les zones critiques (VIN, couleur/options, codes financiers)."},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{compressed_base64}", "detail": "high"}
+                    }
+                ]
+                
+                # Ajouter les zones zoomées
+                zone_descriptions = {
+                    "vin_zone": "ZOOM sur zone VIN (haut droite) - Lis le VIN caractère par caractère, attention K pas X, 9 pas 5",
+                    "color_zone": "ZOOM sur zone OPTIONS/COULEUR - Cherche le CODE couleur (PW7, PWZ, PXJ...) pas la description",
+                    "finance_zone": "ZOOM sur zone FINANCIÈRE (bas gauche) - Lis EP et PDCO (8 chiffres chacun)"
+                }
+                
+                for zone_name, zone_base64 in zone_images.items():
+                    image_content.append({
+                        "type": "text", 
+                        "text": zone_descriptions.get(zone_name, f"Zone {zone_name}")
+                    })
+                    image_content.append({
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{zone_base64}", "detail": "high"}
+                    })
+                
+                logger.info(f"Envoi GPT-4 Vision: 1 image complète + {len(zone_images)} zones zoomées")
+                
                 response = client.chat.completions.create(
                     model="gpt-4o",
                     messages=[
                         {"role": "system", "content": system_prompt},
-                        {
-                            "role": "user",
-                            "content": [
-                                {"type": "text", "text": "Extrait JSON facture FCA."},
-                                {
-                                    "type": "image_url",
-                                    "image_url": {
+                        {"role": "user", "content": image_content}
+                    ],
+                    max_tokens=2000,
+                    temperature=0.1
+                )
                                         "url": f"data:image/jpeg;base64,{compressed_base64}",
                                         "detail": "high"
                                     }
