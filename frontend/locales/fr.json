@@ -21,7 +21,8 @@
     "title": "Frais additionnels (taxables)",
     "dossier": "Frais dossier",
     "tires": "Taxe pneus",
-    "rdprm": "Frais RDPRM"
+    "rdprm": "Frais RDPRM",
+    "cashDown": "Comptant (tx incluses)"
   },
   
   "exchange": {
