@@ -76,11 +76,38 @@ RÈGLE D'OR: Bloquer si VIN/EP/PDCO invalides
   - `useFinancingCalculation.ts` - Calculs paiement/amortissement
   - `usePrograms.ts` - Gestion programmes API
   - `useNetCost.ts` - Calcul EP/PDCO/marge
-- [x] **Composants Calculator créés** (959 lignes)
+- [x] **Composants Calculator créés** (1539 lignes)
   - `PaymentResult.tsx` - Affichage résultats paiement
   - `ProgramSelector.tsx` - Sélecteur programmes filtrable
   - `CostBreakdown.tsx` - Ventilation des coûts
-- [ ] Migrer `index.tsx` vers composants (3091 → ~1000 lignes)
+  - `CalculatorInputs.tsx` - Tous les inputs regroupés
+- [x] **Backup créé** - `index_legacy.tsx` (3091 lignes)
+- [x] **Import ajouté** dans `index.tsx`
+- [ ] Remplacer blocs UI par composants (migration progressive)
+
+**📌 Guide Migration `index.tsx`:**
+```tsx
+// 1. Import ajouté en ligne 34:
+import { CalculatorInputs } from '../../components/calculator/CalculatorInputs';
+
+// 2. Pour migrer le bloc d'inputs (lignes 1128-1414), remplacer par:
+<CalculatorInputs
+  vehiclePrice={vehiclePrice}
+  customBonusCash={customBonusCash}
+  comptantTxInclus={comptantTxInclus}
+  fraisDossier={fraisDossier}
+  taxePneus={taxePneus}
+  fraisRDPRM={fraisRDPRM}
+  prixEchange={prixEchange}
+  montantDuEchange={montantDuEchange}
+  selectedTerm={selectedTerm}
+  paymentFrequency={paymentFrequency}
+  selectedOption={selectedOption}
+  // ... setters et autres props
+/>
+
+// 3. La logique de calcul reste dans calculateForTerm() - NE PAS MODIFIER
+```
 
 ## Patchs Appliqués - Décembre 2025
 
