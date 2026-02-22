@@ -4220,7 +4220,7 @@ Retourne UNIQUEMENT ce JSON:
                             clean_json = re.sub(r'\\(?!["\\/bfnrt])', r'', clean_json)
                             raw = json.loads(clean_json)
                         except:
-                            logger.error(f"JSON parse failed. Error: {je}. Response: {response[:500]}")
+                            logger.error(f"JSON parse failed. Error: {je}. Response: {json_str[:500]}")
                             raise HTTPException(status_code=400, detail="Extraction JSON échouée")
                     else:
                         logger.error(f"JSON parse failed. Error: {je}. Response: {json_str[:500]}")
