@@ -4182,14 +4182,15 @@ Le 10ème caractère = année: R=2024, S=2025, T=2026
 - TOUJOURS retourner le code P suivi de 2 caractères
 
 4. OPTIONS AVEC PRIX:
-- Chaque option a un code (ex: ABR, GWA, 23B) et un montant
-- "SANS FRAIS" ou "*" = montant 0
-- Extraire le montant EXACT (ex: 871.00, 1308.00, 3500.00)
+- Chaque option a un code (ex: ABR, GWA, 23B) et une description
+- NE PAS extraire les montants des options - mettre 0 pour tous
+- Extraire seulement le code et la description
 
 5. CODES FINANCIERS (en bas à gauche):
 - E.P. = 8 chiffres (ex: 06534500 = $65,345)
 - PDCO = 8 chiffres (ex: 07035500 = $70,355)
 - PREF* = 8 chiffres
+- HOLDBACK = 6 chiffres (ex: 021350 = $2,135) - CHERCHE BIEN CE CHAMP
 
 Retourne UNIQUEMENT ce JSON:
 {
@@ -4200,11 +4201,11 @@ Retourne UNIQUEMENT ce JSON:
   "ep": "8 chiffres brut",
   "pdco": "8 chiffres brut",
   "pref": "8 chiffres brut",
-  "holdback": "6 chiffres si présent",
+  "holdback": "6 chiffres - IMPORTANT cherche ce champ dans la zone financière",
   "subtotal": nombre décimal,
   "total": nombre décimal,
   "color": "CODE 3 chars (ex: PW7) - PAS la description",
-  "options": [{"c":"code","d":"description","a":"montant ou 0 si SANS FRAIS"}]
+  "options": [{"c":"code","d":"description","a":0}]
 }"""
                 
                 # Construire le message avec l'image complète + zones zoomées
