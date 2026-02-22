@@ -1193,11 +1193,7 @@ export default function HomeScreen() {
           )}
 
           {/* Results - Real-time calculation */}
-                <View style={styles.inputContainer}>
-                  <Text style={styles.currencySymbol}>$</Text>
-                  <TextInput
-                    style={styles.priceInput}
-                    placeholder="55000"
+          {selectedProgram && localResult && vehiclePrice && (
                     placeholderTextColor="#666"
                     keyboardType="numeric"
                     value={vehiclePrice}
