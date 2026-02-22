@@ -83,6 +83,17 @@ RÈGLE D'OR: Bloquer si VIN/EP/PDCO invalides
   - `CalculatorInputs.tsx` - Tous les inputs regroupés
 - [x] **Backup créé** - `index_legacy.tsx` (3091 lignes)
 - [x] **Import ajouté** dans `index.tsx`
+- [x] **Tests unitaires créés** - 44/44 passent ✅
+  - 10 tests formule de base
+  - 4 tests fréquences (mensuel/bi-hebdo/hebdo)
+  - 3 tests taxes Québec
+  - 4 tests bonus cash
+  - 4 tests échange véhicule
+  - 4 tests comptant
+  - 3 tests comparaison Option 1 vs 2
+  - 7 tests getRateForTerm
+  - 6 tests edge cases
+  - 5 tests régression
 - [ ] Remplacer blocs UI par composants (migration progressive)
 
 **📌 Guide Migration `index.tsx`:**
