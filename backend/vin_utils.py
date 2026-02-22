@@ -138,6 +138,17 @@ def correct_vin_ocr_errors(vin: str) -> str:
         result = '1C4RJK' + result[6:]
         logger.info(f"VIN Jeep corrigé: X→K en position 5")
     
+    # Correction position 10 (année): doit être une lettre (R, S, T), pas un chiffre
+    # Si position 10 est 5 ou 8, c'est probablement S (2025)
+    if len(result) >= 10:
+        pos10 = result[9]
+        if pos10 in '58':
+            result = result[:9] + 'S' + result[10:]
+            logger.info(f"VIN année corrigé: {pos10}→S en position 10 (2025)")
+        elif pos10 == '4':
+            result = result[:9] + 'R' + result[10:]
+            logger.info(f"VIN année corrigé: {pos10}→R en position 10 (2024)")
+    
     return result
 
 
