@@ -4275,8 +4275,10 @@ Retourne UNIQUEMENT ce JSON:
                             "amount": clean_fca_price(str(opt.get("a", opt.get("amount", "0"))))
                         })
                 
-                # Couleur
-                color_code = str(raw.get("color", raw.get("c", ""))).upper()[:3]
+                # Couleur - Amélioration extraction
+                raw_color = str(raw.get("color", raw.get("c", ""))).upper().strip()
+                
+                # Mapping des codes couleur FCA
                 color_map = {
                     "PW7": "Blanc Vif", "PWZ": "Blanc Vif", "PXJ": "Noir Cristal", 
                     "PX8": "Noir Diamant", "PAU": "Rouge Flamme", "PSC": "Gris Destroyer", 
@@ -4284,6 +4286,36 @@ Retourne UNIQUEMENT ce JSON:
                     "PGE": "Vert Sarge", "PRM": "Rouge Velours", "PAR": "Argent Billet",
                     "PYB": "Jaune Stinger", "PBJ": "Bleu Hydro", "PFQ": "Granite Cristal"
                 }
+                
+                # Extraire le code couleur (3 caractères commençant par P)
+                color_code = ""
+                # Si c'est déjà un code valide (3 chars commençant par P)
+                if len(raw_color) >= 3 and raw_color[:3] in color_map:
+                    color_code = raw_color[:3]
+                elif raw_color.startswith("P") and len(raw_color) == 3:
+                    color_code = raw_color
+                else:
+                    # Chercher un code couleur dans la chaîne (ex: "PW7 BLANC ECLATANT")
+                    import re
+                    code_match = re.search(r'\b(P[A-Z0-9]{2})\b', raw_color)
+                    if code_match:
+                        color_code = code_match.group(1)
+                    else:
+                        # Essayer de mapper la description vers un code
+                        desc_to_code = {
+                            "BLANC": "PW7", "WHITE": "PW7", "BRIGHT WHITE": "PW7",
+                            "NOIR": "PXJ", "BLACK": "PXJ", "CRYSTAL BLACK": "PXJ",
+                            "ROUGE": "PAU", "RED": "PAU",
+                            "GRIS": "PSC", "GREY": "PSC", "DESTROYER GREY": "PSC",
+                        }
+                        for desc_key, code_val in desc_to_code.items():
+                            if desc_key in raw_color:
+                                color_code = code_val
+                                break
+                        if not color_code:
+                            color_code = raw_color[:3] if raw_color else ""
+                
+                logger.info(f"Couleur: raw='{raw_color}' → code='{color_code}'")
                 
                 # Subtotal et total
                 subtotal = raw.get("subtotal", raw.get("t", 0))
