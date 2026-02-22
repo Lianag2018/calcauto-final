@@ -1137,11 +1137,8 @@ export default function HomeScreen() {
               )}
             </View>
           )}
-                  )}
-                </ScrollView>
-              ) : (
-                <Text style={styles.noInventoryText}>
-                  {lang === 'fr' ? 'Chargement de l\'inventaire...' : 'Loading inventory...'}
+
+          {/* Price Input and Calculation */}
                 </Text>
               )}
             </View>
