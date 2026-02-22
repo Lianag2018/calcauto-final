@@ -4111,13 +4111,14 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
             parse_method = "ocr_auto_approved"
             logger.info(f"OCR Auto-Approved: VIN={vin_corrected}, EP={vehicle_data['ep_cost']}, Score={ocr_score}")
         
-        # ===== NIVEAU 3: FALLBACK → GPT-4 VISION AVEC ZONES ZOOMÉES =====
+        # ===== NIVEAU 3: FALLBACK → GPT-4 VISION AVEC PRÉTRAITEMENT CAMSCANNER =====
         if decision == "vision_required" or vehicle_data is None:
-            logger.info("Fallback → GPT-4 Vision avec zones zoomées")
+            logger.info("Fallback → GPT-4 Vision avec prétraitement CamScanner")
             
             try:
                 import openai
                 from PIL import Image as PILImage
+                from ocr import camscanner_preprocess_for_vision, load_image_from_bytes
                 
                 api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
                 if not api_key:
@@ -4125,13 +4126,36 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                 
                 client = openai.OpenAI(api_key=api_key)
                 
-                # Décoder l'image pour extraire les zones
+                # Décoder l'image
                 compressed_base64 = request.image_base64
                 img_data = base64.b64decode(compressed_base64)
-                pil_img = PILImage.open(io.BytesIO(img_data))
+                
+                # ====== PRÉTRAITEMENT CAMSCANNER ======
+                # Convertir en array numpy pour OpenCV
+                cv_image = load_image_from_bytes(img_data)
+                
+                if cv_image is not None:
+                    # Appliquer le prétraitement style CamScanner
+                    logger.info("Applying CamScanner preprocessing...")
+                    preprocessed = camscanner_preprocess_for_vision(cv_image)
+                    
+                    # Convertir le résultat en image PIL
+                    pil_img = PILImage.fromarray(preprocessed)
+                    
+                    # Reconvertir en base64 pour GPT-4 Vision
+                    buffered = io.BytesIO()
+                    pil_img.save(buffered, format="JPEG", quality=95)
+                    compressed_base64 = base64.b64encode(buffered.getvalue()).decode()
+                    
+                    logger.info(f"CamScanner preprocessing complete: {pil_img.width}x{pil_img.height}")
+                else:
+                    # Fallback: utiliser l'image originale
+                    pil_img = PILImage.open(io.BytesIO(img_data))
+                    logger.warning("CamScanner preprocessing failed, using original image")
+                
                 width, height = pil_img.size
                 
-                # Extraire les zones critiques avec zoom
+                # Extraire les zones critiques avec zoom (sur l'image prétraitée)
                 zones_to_extract = {
                     "vin_zone": (int(width * 0.35), 0, width, int(height * 0.25)),  # Haut droite - VIN
                     "color_zone": (0, int(height * 0.15), int(width * 0.6), int(height * 0.5)),  # Centre gauche - Options/Couleur
