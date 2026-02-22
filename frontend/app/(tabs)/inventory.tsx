@@ -292,9 +292,7 @@ export default function InventoryScreen() {
       if (response.data.success) {
         // Préparer les données pour révision/correction
         const vehicle = response.data.vehicle || {};
-        console.log('Scan successful, vehicle data:', vehicle);
-        
-        const reviewDataToSet = {
+        setReviewData({
           stock_no: vehicle.stock_no || '',
           vin: vehicle.vin || '',
           brand: vehicle.brand || 'Ram',
@@ -311,18 +309,9 @@ export default function InventoryScreen() {
           color: vehicle.color || '',
           options: vehicle.options || [],
           parse_method: response.data.parse_method || 'unknown'
-        };
-        
-        console.log('Setting reviewData:', reviewDataToSet);
-        setReviewData(reviewDataToSet);
-        
-        console.log('Closing scan modal, opening review modal');
+        });
         setShowScanModal(false);
         setShowReviewModal(true);
-      } else {
-        console.log('Scan response not successful:', response.data);
-        const msg = response.data.detail || response.data.error || 'Erreur inconnue';
-        Platform.OS === 'web' ? alert(msg) : Alert.alert('Erreur', msg);
       }
     } catch (error: any) {
       const msg = error.response?.data?.detail || 'Erreur lors du scan';
@@ -334,10 +323,7 @@ export default function InventoryScreen() {
   };
 
   const saveReviewedVehicle = async () => {
-    console.log('saveReviewedVehicle called with:', reviewData);
-    
     if (!reviewData.stock_no || !reviewData.brand || !reviewData.model) {
-      console.log('Validation failed:', { stock_no: reviewData.stock_no, brand: reviewData.brand, model: reviewData.model });
       Platform.OS === 'web'
         ? alert('Stock #, Marque et Modèle sont requis')
         : Alert.alert('Erreur', 'Stock #, Marque et Modèle sont requis');
@@ -353,7 +339,7 @@ export default function InventoryScreen() {
       // Utiliser le net_cost édité par l'utilisateur, sinon calculer
       const netCost = reviewData.net_cost ? parseFloat(reviewData.net_cost) : (ep - hb);
 
-      const payload = {
+      await axios.post(`${API_URL}/api/inventory`, {
         stock_no: reviewData.stock_no,
         vin: reviewData.vin,
         brand: reviewData.brand,
@@ -369,15 +355,7 @@ export default function InventoryScreen() {
         asking_price: parseFloat(reviewData.asking_price) || 0,
         km: 0,
         color: reviewData.color,
-      };
-      
-      console.log('Sending to API:', payload);
-      
-      const response = await axios.post(`${API_URL}/api/inventory`, payload, { 
-        headers: { Authorization: `Bearer ${token}` } 
-      });
-      
-      console.log('API response:', response.data);
+      }, { headers: { Authorization: `Bearer ${token}` } });
 
       setShowReviewModal(false);
       setReviewData(null);
@@ -386,7 +364,6 @@ export default function InventoryScreen() {
         ? alert('Véhicule ajouté avec succès!')
         : Alert.alert('Succès', 'Véhicule ajouté avec succès!');
     } catch (error: any) {
-      console.error('Save error:', error.response?.data || error);
       const msg = error.response?.data?.detail || 'Erreur lors de la sauvegarde';
       Platform.OS === 'web' ? alert(msg) : Alert.alert('Erreur', msg);
     } finally {
