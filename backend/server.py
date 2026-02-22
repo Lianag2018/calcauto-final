@@ -4178,23 +4178,31 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
 
 RÈGLES CRITIQUES:
 
-1. STOCK NUMBER:
-- Cherche le numéro ÉCRIT À LA MAIN en bas de page (5 chiffres, ex: 45244)
+1. STOCK NUMBER (TRÈS IMPORTANT):
+- C'est le numéro ÉCRIT À LA MAIN en bas de page (5 chiffres)
+- Cherche une écriture manuscrite, souvent en bleu ou noir
+- ⚠️ Attention: 3 vs 8 - Le 3 a deux courbes ouvertes à droite, le 8 est fermé
 - NE PAS utiliser R100963941 (c'est le numéro TPS/GST)
-- NE PAS utiliser C16-625740 (c'est le numéro de commande)
+- NE PAS utiliser C08-625829-40 (c'est le numéro de commande)
 
 2. VIN (VEHICLE IDENTIFICATION NUMBER) - ULTRA CRITIQUE:
-- Situé en haut à droite, format: 1C4RJKAG9-S8-804569
-- RETIRE les tirets pour obtenir 17 caractères: 1C4RJKAG9S8804569
+- Situé en haut à droite, sous "VEHICLE IDENTIFICATION NUMBER"
+- Format FCA avec tirets: 1C4RJHBG6-S8-806264
+- RETIRE les tirets pour obtenir 17 caractères: 1C4RJHBG6S8806264
 
 ⚠️ ERREURS FRÉQUENTES À ÉVITER ABSOLUMENT:
-- K vs X: Le K a deux diagonales, le X est symétrique - Position 5 est souvent K pas X
-- 9 vs 5: Le 9 a une boucle fermée en haut, le 5 a une barre horizontale
-- 6 vs G: Le 6 est un chiffre rond fermé, le G est une lettre ouverte  
-- 8 vs B: Le 8 n'a pas de barre verticale, le B en a une à gauche
-- Le VIN Jeep commence TOUJOURS par 1C4RJK (pas 1C4RJX)
+- 6 vs 5: Le 6 a une boucle en bas fermée, le 5 a une barre horizontale en haut
+- S vs 5 vs 8: Le S est une lettre courbe, le 5 a une barre horizontale, le 8 a deux boucles
+- 3 vs 8: Le 3 est ouvert à gauche, le 8 est complètement fermé
+- K vs X: Le K a deux diagonales partant d'une barre verticale
+- 9 vs 8: Le 9 a une boucle en HAUT seulement, le 8 a deux boucles
 
-Le 10ème caractère = année: R=2024, S=2025, T=2026
+POSITION 10 = ANNÉE (TRÈS IMPORTANT):
+- R = 2024
+- S = 2025  
+- T = 2026
+- Le 10ème caractère est une LETTRE (R, S, T), PAS un chiffre
+- Si tu lis 5 ou 8 en position 10, c'est probablement S
 
 3. CODE COULEUR - ULTRA IMPORTANT:
 - C'est le CODE à 3 caractères, PAS la description
