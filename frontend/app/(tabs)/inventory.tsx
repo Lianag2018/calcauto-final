@@ -292,7 +292,9 @@ export default function InventoryScreen() {
       if (response.data.success) {
         // Préparer les données pour révision/correction
         const vehicle = response.data.vehicle || {};
-        setReviewData({
+        console.log('Scan successful, vehicle data:', vehicle);
+        
+        const reviewDataToSet = {
           stock_no: vehicle.stock_no || '',
           vin: vehicle.vin || '',
           brand: vehicle.brand || 'Ram',
@@ -309,9 +311,18 @@ export default function InventoryScreen() {
           color: vehicle.color || '',
           options: vehicle.options || [],
           parse_method: response.data.parse_method || 'unknown'
-        });
+        };
+        
+        console.log('Setting reviewData:', reviewDataToSet);
+        setReviewData(reviewDataToSet);
+        
+        console.log('Closing scan modal, opening review modal');
         setShowScanModal(false);
         setShowReviewModal(true);
+      } else {
+        console.log('Scan response not successful:', response.data);
+        const msg = response.data.detail || response.data.error || 'Erreur inconnue';
+        Platform.OS === 'web' ? alert(msg) : Alert.alert('Erreur', msg);
       }
     } catch (error: any) {
       const msg = error.response?.data?.detail || 'Erreur lors du scan';
