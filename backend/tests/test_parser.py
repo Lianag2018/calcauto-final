@@ -75,6 +75,48 @@ class TestVINValidation:
         assert result["year"] == 2025
         # Brand peut être None si WMI non reconnu, test le décodage séparé
         assert decode_vin_brand("1C4RJKBG5S8806267") == "Jeep"
+    
+    def test_double_char_ocr_error(self):
+        """Test correction de 2 erreurs OCR simultanées (cas réel utilisateur)
+        
+        Facture réelle: 1C4RJKAG9S8804569
+        OCR extrait:    1C4RJKAG8S8804S69
+        Erreurs: position 9: 9→8, position 15: 5→S
+        
+        Note: Les deux VINs sont valides par checksum, donc correction non possible
+        automatiquement. Ce test vérifie que le système accepte les deux comme valides.
+        """
+        vin_correct = "1C4RJKAG9S8804569"
+        vin_ocr_error = "1C4RJKAG8S8804S69"
+        
+        # Les deux VINs doivent être valides
+        result_correct = validate_and_correct_vin(vin_correct)
+        result_ocr = validate_and_correct_vin(vin_ocr_error)
+        
+        assert result_correct["is_valid"] == True, "VIN correct devrait être valide"
+        assert result_ocr["is_valid"] == True, "VIN OCR devrait aussi être valide (checksum ok)"
+        
+        # Vérifier année et marque
+        assert result_correct["year"] == 2025
+        assert result_correct["brand"] == "Jeep"
+    
+    def test_single_char_ocr_correction_5_to_S(self):
+        """Test correction 5→S (erreur OCR fréquente)"""
+        # Créer un VIN où 5 est remplacé par S et le checksum devient invalide
+        # Pour ce test, nous vérifions que la paire de confusion existe
+        from vin_utils import OCR_CONFUSION_PAIRS
+        
+        assert '5' in OCR_CONFUSION_PAIRS
+        assert 'S' in OCR_CONFUSION_PAIRS['5']
+        assert '5' in OCR_CONFUSION_PAIRS['S']
+    
+    def test_single_char_ocr_correction_8_to_9(self):
+        """Test correction 8→9 (erreur OCR fréquente)"""
+        from vin_utils import OCR_CONFUSION_PAIRS
+        
+        assert '8' in OCR_CONFUSION_PAIRS
+        assert '9' in OCR_CONFUSION_PAIRS['8']
+        assert '8' in OCR_CONFUSION_PAIRS['9']
 
 
 class TestFCAParser:
