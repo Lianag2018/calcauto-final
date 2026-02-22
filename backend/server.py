@@ -4283,9 +4283,11 @@ Retourne UNIQUEMENT ce JSON:
                 # Couleur
                 color_code = str(raw.get("color", raw.get("c", ""))).upper()[:3]
                 color_map = {
-                    "PW7": "Blanc Vif", "PXJ": "Noir Cristal", "PX8": "Noir Diamant",
-                    "PAU": "Rouge Flamme", "PSC": "Gris Destroyer", "PWL": "Blanc Perle",
-                    "PGG": "Gris Granit", "PBF": "Bleu Patriote", "PGE": "Vert Sarge"
+                    "PW7": "Blanc Vif", "PWZ": "Blanc Vif", "PXJ": "Noir Cristal", 
+                    "PX8": "Noir Diamant", "PAU": "Rouge Flamme", "PSC": "Gris Destroyer", 
+                    "PWL": "Blanc Perle", "PGG": "Gris Granit", "PBF": "Bleu Patriote", 
+                    "PGE": "Vert Sarge", "PRM": "Rouge Velours", "PAR": "Argent Billet",
+                    "PYB": "Jaune Stinger", "PBJ": "Bleu Hydro", "PFQ": "Granite Cristal"
                 }
                 
                 # Subtotal et total
