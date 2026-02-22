@@ -4300,19 +4300,11 @@ Retourne UNIQUEMENT ce JSON:
                     if code_match:
                         color_code = code_match.group(1)
                     else:
-                        # Essayer de mapper la description vers un code
-                        desc_to_code = {
-                            "BLANC": "PW7", "WHITE": "PW7", "BRIGHT WHITE": "PW7",
-                            "NOIR": "PXJ", "BLACK": "PXJ", "CRYSTAL BLACK": "PXJ",
-                            "ROUGE": "PAU", "RED": "PAU",
-                            "GRIS": "PSC", "GREY": "PSC", "DESTROYER GREY": "PSC",
-                        }
-                        for desc_key, code_val in desc_to_code.items():
-                            if desc_key in raw_color:
-                                color_code = code_val
-                                break
-                        if not color_code:
-                            color_code = raw_color[:3] if raw_color else ""
+                        # PAS de mapping description → code car ambigü
+                        # (BLANC peut être PW7, PWZ, PWL; NOIR peut être PXJ, PX8)
+                        # Retourner la description brute pour révision manuelle
+                        color_code = raw_color[:15] if raw_color else ""
+                        logger.warning(f"Code couleur non trouvé, description brute: {raw_color}")
                 
                 logger.info(f"Couleur: raw='{raw_color}' → code='{color_code}'")
                 
