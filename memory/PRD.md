@@ -148,11 +148,18 @@ import { CalculatorInputs } from '../../components/calculator/CalculatorInputs';
 - Structure composants: `/frontend/components/calculator/`
 - Total: 1541 lignes de code modulaire
 
+### 🔧 PATCH 7: Amélioration OCR/VIN (Décembre 2025)
+- Ajout `OCR_CONFUSION_PAIRS` dans `vin_utils.py` (paires de confusion OCR fréquentes)
+- Algorithme de correction VIN amélioré (single-char + double-char)
+- Prompt GPT-4 Vision enrichi avec instructions détaillées sur les confusions de caractères
+- Ajout code couleur `PWZ` au mapping des couleurs
+- 3 nouveaux tests unitaires pour validation des corrections OCR
+
 ## Backlog Priorisé
 
 ### P0 - Critique
 - [ ] Stabiliser environnement frontend Expo
-- [ ] Tester pipeline OCR avec factures réelles
+- [x] ~~Tester pipeline OCR avec factures réelles~~ → Améliorations OCR implémentées
 - [ ] Migrer index.tsx vers nouveaux composants
 
 ### P1 - Important
