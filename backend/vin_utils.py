@@ -450,12 +450,37 @@ def validate_and_correct_vin(vin: str) -> Dict[str, any]:
     result["year"] = decode_vin_year(final_vin)
     result["brand"] = decode_vin_brand(final_vin)
     
+    # Vérification année plausible - si l'année est impossible (ex: 2038), essayer de corriger position 10
+    if result["year"] and not is_year_plausible(result["year"]):
+        logger.warning(f"Année {result['year']} non plausible pour VIN {final_vin}")
+        
+        # Essayer de remplacer position 10 par des alternatives probables
+        # 5 ou 8 sont souvent confondus avec S (2025)
+        pos10 = final_vin[9]
+        alternatives = {'5': 'S', '8': 'S', '3': 'R', '4': 'R'}
+        
+        if pos10 in alternatives:
+            new_pos10 = alternatives[pos10]
+            test_vin = final_vin[:9] + new_pos10 + final_vin[10:]
+            
+            # Vérifier si le nouveau VIN est valide
+            if validate_vin_checksum(test_vin):
+                new_year = decode_vin_year(test_vin)
+                if new_year and is_year_plausible(new_year):
+                    logger.info(f"Année corrigée: {pos10}→{new_pos10}, {result['year']}→{new_year}")
+                    result["corrected"] = test_vin
+                    result["year"] = new_year
+                    result["was_corrected"] = True
+                    result["correction_type"] = f"year_fix_{pos10}→{new_pos10}"
+    
     # Calcul confiance
     confidence = 50  # Base
     if result["is_valid"]:
         confidence += 30
-    if result["year"]:
+    if result["year"] and is_year_plausible(result["year"]):
         confidence += 10
+    elif result["year"]:
+        confidence -= 10  # Pénalité si année non plausible
     if result["brand"]:
         confidence += 10
     if result["was_corrected"]:
