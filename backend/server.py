@@ -4160,15 +4160,17 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                     "vin_zone": (int(width * 0.35), 0, width, int(height * 0.25)),  # Haut droite - VIN
                     "color_zone": (0, int(height * 0.15), int(width * 0.6), int(height * 0.5)),  # Centre gauche - Options/Couleur
                     "finance_zone": (0, int(height * 0.65), int(width * 0.5), height),  # Bas gauche - EP/PDCO
+                    "stock_zone": (int(width * 0.3), int(height * 0.85), int(width * 0.7), height),  # Bas centre - Stock manuscrit
                 }
                 
                 zone_images = {}
                 for zone_name, (x1, y1, x2, y2) in zones_to_extract.items():
                     zone_crop = pil_img.crop((x1, y1, x2, y2))
-                    # Agrandir la zone pour meilleure lisibilité
-                    zone_crop = zone_crop.resize((zone_crop.width * 2, zone_crop.height * 2), PILImage.Resampling.LANCZOS)
+                    # Agrandir la zone pour meilleure lisibilité (x3 pour le stock manuscrit)
+                    scale = 3 if zone_name == "stock_zone" else 2
+                    zone_crop = zone_crop.resize((zone_crop.width * scale, zone_crop.height * scale), PILImage.Resampling.LANCZOS)
                     buffered = io.BytesIO()
-                    zone_crop.save(buffered, format="JPEG", quality=90)
+                    zone_crop.save(buffered, format="JPEG", quality=95)
                     zone_images[zone_name] = base64.b64encode(buffered.getvalue()).decode()
                     logger.info(f"Zone {zone_name} extraite: {zone_crop.width}x{zone_crop.height}")
                 
