@@ -52,6 +52,52 @@ WINDOW_STICKER_URLS = {
     "alfa": "https://www.alfaromeousa.com/hostd/windowsticker/getWindowStickerPdf.do?vin=",
 }
 
+
+def convert_pdf_to_images(pdf_bytes: bytes, max_pages: int = 2, dpi: int = 150) -> list:
+    """
+    Convertit un PDF en images JPEG.
+    
+    Args:
+        pdf_bytes: PDF en bytes
+        max_pages: Nombre max de pages à convertir
+        dpi: Résolution (150 = bon équilibre qualité/taille)
+    
+    Returns:
+        Liste de tuples (image_base64, width, height)
+    """
+    try:
+        import fitz  # PyMuPDF
+        
+        images = []
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        
+        for page_num in range(min(len(doc), max_pages)):
+            page = doc[page_num]
+            
+            # Convertir en image avec le DPI spécifié
+            zoom = dpi / 72  # 72 est le DPI par défaut des PDF
+            mat = fitz.Matrix(zoom, zoom)
+            pix = page.get_pixmap(matrix=mat)
+            
+            # Convertir en JPEG
+            img_bytes = pix.tobytes("jpeg")
+            img_base64 = base64.b64encode(img_bytes).decode("utf-8")
+            
+            images.append({
+                "base64": img_base64,
+                "width": pix.width,
+                "height": pix.height,
+                "page": page_num + 1
+            })
+        
+        doc.close()
+        return images
+        
+    except Exception as e:
+        logger.error(f"Erreur conversion PDF→Image: {e}")
+        return []
+
+
 async def fetch_window_sticker(vin: str, brand: str = None) -> dict:
     """
     Télécharge le Window Sticker PDF pour un VIN donné.
