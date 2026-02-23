@@ -4195,6 +4195,44 @@ def _build_trim_string(product_info: dict) -> str:
     else:
         return ""
 
+def calculate_holdback(brand: str, pdco: float, parsed_holdback: float = None) -> float:
+    """
+    Calcule le holdback pour un véhicule Stellantis/FCA.
+    
+    Si le holdback a été extrait de la facture (parsed_holdback), on l'utilise.
+    Sinon, on calcule 3% du PDCO (standard FCA/Stellantis).
+    
+    Args:
+        brand: Marque du véhicule (Ram, Jeep, Dodge, Chrysler)
+        pdco: Prix Dealer (MSRP)
+        parsed_holdback: Holdback extrait de la facture (optionnel)
+    
+    Returns:
+        Holdback en dollars
+    """
+    # Si le holdback a été extrait de la facture et est valide, l'utiliser
+    if parsed_holdback and parsed_holdback > 0:
+        return parsed_holdback
+    
+    # Sinon, calculer automatiquement à 3% du PDCO
+    if pdco and pdco > 0:
+        # Taux de holdback par marque (tous Stellantis = 3%)
+        holdback_rates = {
+            "ram": 0.03,
+            "jeep": 0.03,
+            "dodge": 0.03,
+            "chrysler": 0.03,
+            "fiat": 0.03,
+            "alfa romeo": 0.03,
+        }
+        
+        brand_lower = (brand or "").lower()
+        rate = holdback_rates.get(brand_lower, 0.03)  # Default 3%
+        
+        return round(pdco * rate, 2)
+    
+    return 0
+
 def decode_product_code(code: str) -> dict:
     """Décode un code produit FCA et retourne les informations du véhicule"""
     code = code.upper().strip()
