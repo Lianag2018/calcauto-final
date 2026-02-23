@@ -4959,9 +4959,15 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                 vin_was_corrected = vin_result.get("was_corrected", False)
                 vin_info = decode_vin(vin_corrected) if len(vin_corrected) == 17 else {}
                 
-                # Parser le code modèle
+                # Parser le code modèle + DOUBLE VÉRIFICATION MASTER
                 model_code = parse_model_code(full_text) or ""
-                product_info = decode_product_code(model_code) if model_code else {}
+                master_lookup = lookup_product_code(model_code) if model_code else None
+                product_info = master_lookup or (decode_product_code(model_code) if model_code else {})
+                
+                if master_lookup:
+                    logger.info(f"[GV - MASTER OK] Code {model_code} validé: {master_lookup.get('full_description')}")
+                elif model_code:
+                    logger.warning(f"[GV - MASTER MISS] Code {model_code} non trouvé dans la base master")
                 
                 # Validation cohérence VIN ↔ marque
                 vin_brand = decode_vin_brand(vin_corrected)
