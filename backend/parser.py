@@ -420,50 +420,96 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
     
     text_upper = text.upper()
     
-    # Chercher UNIQUEMENT les codes connus (plus fiable, évite les faux positifs)
-    found_codes = set()
-    for code in fca_descriptions.keys():
-        if re.search(rf'\b{re.escape(code)}\b', text_upper):
-            found_codes.add(code)
+    # ====== NOUVELLE LOGIQUE: EXTRAIRE TOUTES LES OPTIONS DANS L'ORDRE DE LA FACTURE ======
+    # 
+    # Les options sur une facture FCA apparaissent sous MODEL/OPT avec ce format:
+    # CODE    DESCRIPTION                              MONTANT
+    # PW7     BLANC ECLATANT                           SANS FRAIS
+    # TXX8    BANQ AVANT 40-20-40 VINYLE RENFORCE      
+    # ETM     6 CYL LI TURB DIESEL HR CUMMINS 6,7L    8,800.00
     
-    # Construire la liste d'options avec CODE + DESCRIPTION (format facture)
-    for code in found_codes:
-        if code in invalid_codes:
-            continue
-        
-        # Format: "CODE - Description" comme sur la facture
-        base_description = fca_descriptions.get(code, "")
-        formatted_description = f"{code} - {base_description}" if base_description else code
-        
-        options.append({
-            "product_code": code,
-            "description": formatted_description[:60],
-            "amount": 0  # Prix à 0 comme demandé
-        })
+    # Pattern pour extraire les codes d'options FCA (2-5 caractères alphanumériques)
+    # Format: CODE suivi d'une description ou d'un montant
+    option_pattern = r'^([A-Z0-9]{2,5})\s+([A-Z][A-Z0-9\s\-,\.\(\)\/\']+?)(?:\s+[\d,]+\.\d{2}|\s+SANS\s+FRAIS|\s*\*|\s*$)'
     
-    # Définir l'ordre de priorité (comme sur la facture FCA)
-    # 1. Couleurs, 2. Intérieur, 3. Équipements, 4. Packages, 5. Taxes/Frais
-    priority_order = {
-        # Couleurs (en premier)
-        'PXJ': 1, 'PW7': 1, 'PWZ': 1, 'PWL': 1, 'PX8': 1, 'PAU': 1, 
-        'PSC': 1, 'PGG': 1, 'PBF': 1, 'PGE': 1, 'PRM': 1, 'PAR': 1,
-        'PYB': 1, 'PBJ': 1, 'PFQ': 1,
-        # Intérieur
-        'B6W7': 2, 'CLX9': 2,
-        # Équipements
-        'ABR': 3, 'ALC': 3, 'DFW': 3, 'ERC': 3, 'GWJ': 3, 'YGW': 3,
-        'ADE': 3, 'ADG': 3, 'UAQ': 3, 'RSD': 3, 'DMC': 3, 'AJK': 3, 'AHR': 3, 'AWL': 3,
-        # Packages
-        '2TE': 4, '23E': 4, '2BZ': 4, '2BX': 4, '21D': 4, '22B': 4, '27A': 4, '3CC': 4,
-        # Taxes/Frais (en dernier)
-        '4CP': 5, '801': 5, '999': 5, '92HC1': 5, '92HC2': 5,
+    lines = text_upper.split('\n')
+    found_options = []
+    seen_codes = set()
+    
+    # Codes qui ne sont PAS des options (à ignorer)
+    skip_codes = {
+        'VIN', 'GST', 'TPS', 'QUE', 'INC', 'PDCO', 'PREF', 'MODEL', 'MODELE',
+        'TOTAL', 'MSRP', 'SUB', 'EP', 'HST', 'TVQ', 'GVW', 'KG', 'FCA', 'RAM',
+        'DIST', 'DEALER', 'SHIP', 'TERMS', 'KEY', 'OPT', 'SOLD', 'DATE', 'JEEP',
+        'INVOICE', 'VEHICLE', 'NUMBER', 'FACTURE', 'AMOUNT', 'MONTANT', 'DODGE',
+        'CE', 'DU', 'DE', 'LA', 'LE', 'AU', 'EN', 'ET', 'OU', 'UN', 'IF', 'NO',
+        'SEE', 'PAGE', 'VOIR', 'PAS', 'SHOWN', 'CANADA', 'FOR', 'ORIGINAL', 'NI',
+        'WINDSOR', 'ONTARIO', 'BOULEVARD', 'STREET', 'SOMME', 'TAXES', 'TPS',
+        'TVH', 'PROV', 'NET', 'PRIX', 'SANS', 'CHRYSLER', 'GFBR', 'KENNEBEC'
     }
     
-    # Trier par priorité (ordre facture), puis par code
-    options.sort(key=lambda x: (priority_order.get(x['product_code'], 3), x['product_code']))
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        
+        # Chercher un code au début de la ligne
+        # Format: CODE + espace + description
+        match = re.match(r'^([A-Z0-9]{2,5})\s+(.+)$', line)
+        if match:
+            code = match.group(1)
+            description_raw = match.group(2).strip()
+            
+            # Ignorer les codes dans la liste skip
+            if code in skip_codes:
+                continue
+            
+            # Ignorer les codes déjà vus
+            if code in seen_codes:
+                continue
+            
+            # Ignorer si la description ressemble à un header ou adresse
+            if any(x in description_raw for x in ['SOLD TO', 'SHIP TO', 'TERMS', 'DEALER NO', 'INVOICE DATE']):
+                continue
+            
+            # Nettoyer la description (enlever montants à la fin)
+            description_clean = re.sub(r'\s+[\d,]+\.\d{2}\s*\*?$', '', description_raw)
+            description_clean = re.sub(r'\s+SANS\s+FRAIS\s*$', '', description_clean)
+            description_clean = description_clean.strip()
+            
+            # Vérifier que c'est un code d'option valide (pas trop long de description)
+            if len(description_clean) > 2 and len(description_clean) < 80:
+                seen_codes.add(code)
+                
+                # Format: "CODE - Description"
+                formatted = f"{code} - {description_clean.title()}"
+                
+                found_options.append({
+                    "product_code": code,
+                    "description": formatted[:60],
+                    "amount": 0
+                })
     
-    # Limiter à 20 options max
-    return options[:20]
+    # Si on n'a pas trouvé assez d'options, fallback sur les codes connus
+    if len(found_options) < 3:
+        # Chercher les codes connus dans le texte
+        for code, desc in fca_descriptions.items():
+            if code in seen_codes:
+                continue
+            if re.search(rf'\b{re.escape(code)}\b', text_upper):
+                if code not in invalid_codes:
+                    seen_codes.add(code)
+                    found_options.append({
+                        "product_code": code,
+                        "description": f"{code} - {desc}",
+                        "amount": 0
+                    })
+    
+    # ====== LES OPTIONS SONT DÉJÀ DANS L'ORDRE DE LA FACTURE ======
+    # Pas de tri! On garde l'ordre d'apparition
+    
+    # Limiter à 25 options max
+    return found_options[:25]
 
 
 def parse_stock_number(text: str) -> Optional[str]:
