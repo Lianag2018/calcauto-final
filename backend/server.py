@@ -3625,6 +3625,136 @@ async def add_product_code(code: ProductCode, authorization: Optional[str] = Hea
     )
     return {"success": True, "message": f"Code {code.code} ajouté"}
 
+@api_router.get("/product-codes/{code}/financing")
+async def get_product_code_financing(code: str):
+    """
+    Récupère les informations de financement pour un code produit.
+    Retourne: consumer cash, bonus cash, taux Option 1 et Option 2.
+    """
+    code = code.upper().strip()
+    
+    # Obtenir les infos complètes (véhicule + financement)
+    full_info = get_full_vehicle_info(code)
+    
+    if not full_info:
+        raise HTTPException(status_code=404, detail=f"Code produit '{code}' non trouvé")
+    
+    return {
+        "success": True,
+        "code": code,
+        "vehicle": full_info.get("vehicle", {}),
+        "financing": full_info.get("financing"),
+        "has_financing": full_info.get("financing") is not None
+    }
+
+@api_router.get("/financing/lookup")
+async def lookup_financing_by_vehicle(
+    brand: Optional[str] = None,
+    model: Optional[str] = None,
+    trim: Optional[str] = None,
+    year: Optional[str] = None
+):
+    """
+    Recherche les programmes de financement par marque/modèle/trim/année.
+    Retourne tous les codes produits correspondants avec leurs promotions.
+    """
+    results = []
+    
+    for code, data in _CODE_PROGRAM_MAPPING.items():
+        vehicle = data.get("vehicle", {})
+        financing = data.get("financing", {})
+        
+        # Filtrer par critères
+        if brand and vehicle.get("brand", "").lower() != brand.lower():
+            continue
+        if model and model.lower() not in vehicle.get("model", "").lower():
+            continue
+        if trim and trim.lower() not in vehicle.get("trim", "").lower():
+            continue
+        if year and vehicle.get("year") != year:
+            continue
+        
+        results.append({
+            "code": code,
+            "vehicle": vehicle,
+            "financing": {
+                "consumer_cash": financing.get("consumer_cash", 0),
+                "bonus_cash": financing.get("bonus_cash", 0),
+                "total_rebates": financing.get("consumer_cash", 0) + financing.get("bonus_cash", 0),
+                "option1_available": any(v for v in financing.get("option1_rates", {}).values() if v is not None),
+                "option2_available": any(v for v in financing.get("option2_rates", {}).values() if v is not None)
+            }
+        })
+    
+    # Trier par total rebates (descending)
+    results.sort(key=lambda x: x["financing"]["total_rebates"], reverse=True)
+    
+    return {
+        "success": True,
+        "count": len(results),
+        "results": results[:50]  # Limiter à 50 résultats
+    }
+
+@api_router.get("/financing/summary")
+async def get_financing_summary():
+    """
+    Retourne un résumé des programmes de financement disponibles.
+    Utile pour afficher les meilleures offres.
+    """
+    by_brand = {}
+    best_deals = []
+    
+    for code, data in _CODE_PROGRAM_MAPPING.items():
+        vehicle = data.get("vehicle", {})
+        financing = data.get("financing", {})
+        brand = vehicle.get("brand", "Unknown")
+        
+        if brand not in by_brand:
+            by_brand[brand] = {
+                "count": 0,
+                "max_consumer_cash": 0,
+                "max_bonus_cash": 0,
+                "models": set()
+            }
+        
+        by_brand[brand]["count"] += 1
+        by_brand[brand]["max_consumer_cash"] = max(
+            by_brand[brand]["max_consumer_cash"],
+            financing.get("consumer_cash", 0)
+        )
+        by_brand[brand]["max_bonus_cash"] = max(
+            by_brand[brand]["max_bonus_cash"],
+            financing.get("bonus_cash", 0)
+        )
+        by_brand[brand]["models"].add(vehicle.get("model", ""))
+        
+        # Collecter les meilleures offres
+        total_rebate = financing.get("consumer_cash", 0) + financing.get("bonus_cash", 0)
+        if total_rebate > 5000:
+            best_deals.append({
+                "code": code,
+                "brand": brand,
+                "model": vehicle.get("model", ""),
+                "trim": vehicle.get("trim", ""),
+                "total_rebate": total_rebate,
+                "consumer_cash": financing.get("consumer_cash", 0),
+                "bonus_cash": financing.get("bonus_cash", 0)
+            })
+    
+    # Convertir les sets en listes
+    for brand in by_brand:
+        by_brand[brand]["models"] = list(by_brand[brand]["models"])
+    
+    # Trier les meilleures offres
+    best_deals.sort(key=lambda x: x["total_rebate"], reverse=True)
+    
+    return {
+        "success": True,
+        "total_codes": len(_CODE_PROGRAM_MAPPING),
+        "by_brand": by_brand,
+        "best_deals": best_deals[:10]
+    }
+
 # ============ Invoice Scanner with AI ============
 
 import re
