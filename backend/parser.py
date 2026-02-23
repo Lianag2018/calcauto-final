@@ -358,9 +358,10 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
 def parse_stock_number(text: str) -> Optional[str]:
     """
     Extrait le numéro de stock (souvent écrit à la main, 5 chiffres)
-    Amélioré pour supporter les différents formats et positions
+    Le stock manuscrit est généralement le DERNIER nombre de 5 chiffres sur la facture
+    (écrit en bas, au centre ou à droite)
     """
-    # Patterns avec label explicite
+    # Patterns avec label explicite (priorité haute)
     patterns = [
         r"STOCK\s*#?\s*(\d{5})",
         r"INV\s*#?\s*(\d{5})",
@@ -373,32 +374,43 @@ def parse_stock_number(text: str) -> Optional[str]:
         if match:
             return match.group(1)
     
-    # Si pas trouvé avec label, chercher un nombre de 5 chiffres isolé
-    # Le stock manuscrit est souvent sur sa propre ligne
+    # Codes à exclure (adresses, montants partiels, etc.)
+    exclude_patterns = {
+        '10240',  # Adresse dealer
+        '07544', '07774', '06997', '07205', '07070', '07277',  # Codes financiers
+        '72752', '76389', '64951',  # Montants
+    }
+    
+    # Trouver TOUS les nombres de 5 chiffres isolés sur leur propre ligne
+    # Le stock manuscrit est généralement le DERNIER (tout en bas de la facture)
     lines = text.split('\n')
+    stock_candidates = []
+    
     for line in lines:
         line = line.strip()
         # Ligne contenant uniquement un nombre de 5 chiffres
         if re.match(r'^\d{5}$', line):
-            # Éviter les faux positifs (codes postaux, etc.)
-            num = int(line)
-            # Les numéros de stock FCA sont généralement entre 10000 et 99999
-            # et ne ressemblent pas à des codes postaux canadiens
-            if 10000 <= num <= 99999:
-                # Exclure les codes connus (adresses, etc.)
-                if line not in ['10240']:  # Exclure adresse connue du dealer
-                    return line
+            num = line
+            if num not in exclude_patterns and not num.startswith('0'):
+                stock_candidates.append(num)
     
-    # Fallback: chercher parmi tous les nombres de 5 chiffres
-    # en excluant ceux qui ressemblent à des montants ou codes connus
+    # Prendre le DERNIER candidat (le plus en bas de la facture)
+    if stock_candidates:
+        return stock_candidates[-1]
+    
+    # Fallback: chercher le dernier nombre de 5 chiffres valide dans le texte
     all_five_digits = re.findall(r'\b(\d{5})\b', text)
-    exclude_patterns = ['10240', '07544', '06997', '07070']  # Adresses et codes financiers partiels
     
+    # Filtrer et prendre le dernier
+    valid_candidates = []
     for num in all_five_digits:
         if num not in exclude_patterns and not num.startswith('0'):
-            # Vérifier que ce n'est pas un montant (pas précédé de $ ou suivi de .00)
-            if not re.search(rf'\${num}|{num}\.00', text):
-                return num
+            # Vérifier que ce n'est pas un montant
+            if not re.search(rf'\${num}|{num}\.00|{num}\.60', text):
+                valid_candidates.append(num)
+    
+    if valid_candidates:
+        return valid_candidates[-1]  # Retourner le DERNIER
     
     return None
 
