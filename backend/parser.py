@@ -333,8 +333,8 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
     # Trier par code pour cohérence
     options.sort(key=lambda x: x['product_code'])
     
-    # Limiter à 15 options max
-    return options[:15]
+    # Limiter à 20 options max
+    return options[:20]
 
 
 def parse_stock_number(text: str) -> Optional[str]:
