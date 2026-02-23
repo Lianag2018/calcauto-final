@@ -1,0 +1,1146 @@
+{
+  "LBEL29": {
+    "brand": "Dodge",
+    "model": "Charger",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "DOORAWD"
+  },
+  "LBEL49": {
+    "brand": "Dodge",
+    "model": "Charger",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "DOORAWD"
+  },
+  "LBEP29": {
+    "brand": "Dodge",
+    "model": "Charger",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "DOORAWD"
+  },
+  "LBEP49": {
+    "brand": "Dodge",
+    "model": "Charger",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "DOORAWD"
+  },
+  "KMJL74": {
+    "brand": "Jeep",
+    "model": "Cherokee",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "CHEROKEE4X4"
+  },
+  "KMJM74": {
+    "brand": "Jeep",
+    "model": "Cherokee",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "",
+    "raw": "LIMITED4X4"
+  },
+  "KMJP74": {
+    "brand": "Jeep",
+    "model": "Cherokee",
+    "trim": "Overland",
+    "cab": "",
+    "drive": "",
+    "raw": "CHEROKEEOVERLAND4X4"
+  },
+  "RUCL53": {
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "GRANDCARAVANCANADAVALUEPACKAGE"
+  },
+  "RUCH53": {
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Select",
+    "cab": "",
+    "drive": "",
+    "raw": "PACIFICASELECTFWD"
+  },
+  "RUCT53": {
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "",
+    "raw": "PACIFICALIMITEDFWD"
+  },
+  "RUFH53": {
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Select",
+    "cab": "",
+    "drive": "",
+    "raw": "PACIFICASELECTAWD"
+  },
+  "RUFT53": {
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "",
+    "raw": "PACIFICALIMITEDAWD"
+  },
+  "RUFS53": {
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Pinnacle",
+    "cab": "",
+    "drive": "",
+    "raw": "PACIFICAPINNACLEAWD"
+  },
+  "RUET53": {
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Select",
+    "cab": "",
+    "drive": "",
+    "raw": "PACIFICASELECTHYBRIDERECHARGEABLE"
+  },
+  "RUES53": {
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Pinnacle",
+    "cab": "",
+    "drive": "",
+    "raw": "PACIFICAPINNACLEHYBRIDERECHARGEABLE"
+  },
+  "MPJL74": {
+    "brand": "Jeep",
+    "model": "Compass",
+    "trim": "Sport",
+    "cab": "",
+    "drive": "",
+    "raw": "COMPASSSPORT4X4"
+  },
+  "MPJM74": {
+    "brand": "Jeep",
+    "model": "Compass",
+    "trim": "North",
+    "cab": "",
+    "drive": "",
+    "raw": "COMPASSNORTH4X4"
+  },
+  "MPJH74": {
+    "brand": "Jeep",
+    "model": "Compass",
+    "trim": "Trailhawk",
+    "cab": "",
+    "drive": "",
+    "raw": "COMPASSTRAILHAWK4X4"
+  },
+  "MPJP74": {
+    "brand": "Jeep",
+    "model": "Compass",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "",
+    "raw": "COMPASSLIMITED4X4"
+  },
+  "WDEE75": {
+    "brand": "Dodge",
+    "model": "Durango",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "DURANGOENFORCERAWD"
+  },
+  "WDEH75": {
+    "brand": "Dodge",
+    "model": "Durango",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "DURANGOAWD"
+  },
+  "WDES75": {
+    "brand": "Dodge",
+    "model": "Durango",
+    "trim": "Gt",
+    "cab": "",
+    "drive": "",
+    "raw": "DURANGOGTHEMIV8AWD"
+  },
+  "WDEM75": {
+    "brand": "Dodge",
+    "model": "Durango",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "DURANGOSRTHELLCATAWD"
+  },
+  "BLEUB5": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "PW7"
+  },
+  "FGEP24": {
+    "brand": "Fiat",
+    "model": "500e",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "500ECOUPE"
+  },
+  "ORROSE": {
+    "brand": "Fiat",
+    "model": "500e",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "PXN"
+  },
+  "JTJL98": {
+    "brand": "Jeep",
+    "model": "Gladiator",
+    "trim": "Sport",
+    "cab": "",
+    "drive": "",
+    "raw": "GLADIATORSPORT4X4"
+  },
+  "JTJH98": {
+    "brand": "Jeep",
+    "model": "Gladiator",
+    "trim": "Mojave",
+    "cab": "",
+    "drive": "",
+    "raw": "GLADIATORMOJAVE4X4"
+  },
+  "JTJS98": {
+    "brand": "Jeep",
+    "model": "Gladiator",
+    "trim": "Rubicon",
+    "cab": "",
+    "drive": "",
+    "raw": "GLADIATORRUBICON4X4"
+  },
+  "WLJH74": {
+    "brand": "Jeep",
+    "model": "Grand Cherokee",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "ROW)4X4"
+  },
+  "WLJH75": {
+    "brand": "Jeep",
+    "model": "Grand Cherokee",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "ROW)4X4"
+  },
+  "SUMMIT": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "RESERVE"
+  },
+  "WSJM76": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "GRANDWAGONEERL4X4"
+  },
+  "WSJH76": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "",
+    "raw": "GRANDWAGONEERLLIMITED4X4"
+  },
+  "WSJR76": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "Summit",
+    "cab": "",
+    "drive": "",
+    "raw": "GRANDWAGONEERLSUMMIT4X4"
+  },
+  "WSJM75": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "GRANDWAGONEER4X4"
+  },
+  "WSJH75": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "",
+    "raw": "GRANDWAGONEERLIMITED4X4"
+  },
+  "WSJR75": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "Summit",
+    "cab": "",
+    "drive": "",
+    "raw": "GRANDWAGONEERSUMMIT4X4"
+  },
+  "GGEH49": {
+    "brand": "Dodge",
+    "model": "Hornet",
+    "trim": "Gt",
+    "cab": "",
+    "drive": "",
+    "raw": "HORNETGTAWD"
+  },
+  "GG7P49": {
+    "brand": "Dodge",
+    "model": "Hornet",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "INHYBRIDAWD"
+  },
+  "VF1L11": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "1500PROMASTERCARGOVANLOWROOF(118WB)"
+  },
+  "VF1L12": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "1500PROMASTERCARGOVANLOWROOF(136WB)"
+  },
+  "VF1L13": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "1500PROMASTERCARGOVANHIGHROOF(136WB)"
+  },
+  "VF2L12": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "2500PROMASTERCARGOVANLOWROOF(136WB)"
+  },
+  "VF2L13": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "2500PROMASTERCARGOVANHIGHROOF(136WB)"
+  },
+  "VF2L16": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "2500PROMASTERCARGOVANHIGHROOF(159WB)"
+  },
+  "VF3L12": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "3500PROMASTERCARGOVANLOWROOF(136WB)"
+  },
+  "VF3L13": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "3500PROMASTERCARGOVANHIGHROOF(136WB)"
+  },
+  "VF3L16": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "3500PROMASTERCARGOVANHIGHROOF(159WB)"
+  },
+  "VF3L17": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "3500PROMASTERCARGOVANHIGHROOF(159WBEXT)"
+  },
+  "VF3L19": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "3500PROMASTERCARGOVANSUPERHIGHROOF(159WBEXT)"
+  },
+  "VFLL16": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "3500PROMASTEREVCARGOVANHIGHROOF(159WB)"
+  },
+  "VFLL17": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "3500PROMASTEREVCARGOVANHIGHROOF(159WBEXT)"
+  },
+  "DT6L98": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "5INWB5FT7INBOX)"
+  },
+  "DT6L91": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "Tradesman",
+    "cab": "Crew Cab",
+    "drive": "",
+    "raw": "1500TRADESMANCREWCAB4X4"
+  },
+  "DT6H98": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "5INWB5FT7INBOX)"
+  },
+  "DT6H91": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "Bighorn",
+    "cab": "Crew Cab",
+    "drive": "",
+    "raw": "1500BIGHORNCREWCAB4X4"
+  },
+  "DT6T98": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "5INWB5FT7INBOX)"
+  },
+  "DT6T91": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "5INWB6FT4INBOX)"
+  },
+  "DT6X98": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "5INWB5FT7INBOX)"
+  },
+  "DT6P98": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "5INWB5FT7INBOX)"
+  },
+  "DT6P91": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "5INWB6FT4INBOX)"
+  },
+  "DT6M98": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "Longhorn",
+    "cab": "Crew Cab",
+    "drive": "",
+    "raw": "LONGHORNCREW4X4"
+  },
+  "DT6M91": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "Longhorn",
+    "cab": "",
+    "drive": "",
+    "raw": "LONGHORNCAB4X4"
+  },
+  "DT6L41": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "Tradesman",
+    "cab": "Quad Cab",
+    "drive": "",
+    "raw": "1500TRADESMANQUADCAB4X4(140INWB6FT4INBOX)"
+  },
+  "DT6H41": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "Bighorn",
+    "cab": "Quad Cab",
+    "drive": "",
+    "raw": "1500BIGHORNQUADCAB4X4(140INWB6FT4INBOX)"
+  },
+  "DT6S98": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "5INWB5FT7INBOX)"
+  },
+  "DT6R98": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "5INWB5FT7INBOX)"
+  },
+  "DJ2L91": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DJ2L92": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DJ2H91": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DJ2H92": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DJ7L91": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DJ7L92": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DJ7H91": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DJ7H92": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DJ7X91": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "Powerwagon",
+    "cab": "Crew Cab",
+    "drive": "",
+    "raw": "POWERWAGONCREWCAB"
+  },
+  "DJ7P91": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DJ7P92": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DJ7M91": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DJ7M92": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DJ7P81": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DJ7M81": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DJ2L62": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DJ2H62": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DJ7L62": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DJ7H62": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DD3L63": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DD3L64": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DD3L93": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DD8L63": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DD8L64": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "DD8L93": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": ")"
+  },
+  "D23L91": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "",
+    "drive": "4x2",
+    "raw": ")"
+  },
+  "D23L92": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "",
+    "drive": "4x2",
+    "raw": ")"
+  },
+  "D23H91": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "",
+    "drive": "4x2",
+    "raw": ")"
+  },
+  "D23H92": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "",
+    "drive": "4x2",
+    "raw": ")"
+  },
+  "D28L91": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "raw": ")"
+  },
+  "D28L92": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "raw": ")"
+  },
+  "D28H91": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "raw": ")"
+  },
+  "D28H92": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "raw": ")"
+  },
+  "D28P91": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "raw": ")"
+  },
+  "D28P92": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "raw": ")"
+  },
+  "D28M91": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "raw": ")"
+  },
+  "D28M92": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "raw": ")"
+  },
+  "D28P81": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "raw": ")"
+  },
+  "D28M81": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "raw": ")"
+  },
+  "D23L62": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "Tradesman",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "raw": "3500TRADESMANREGCAB4X2(140INWB8FTBOX)"
+  },
+  "D23H62": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "Bighorn",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "raw": "3500BIGHORNREGCAB4X2(140INWB8FTBOX)"
+  },
+  "D28L62": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "raw": ")"
+  },
+  "D28H62": {
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "raw": ")"
+  },
+  "DP4L93": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "60IN)"
+  },
+  "DP4L94": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "84IN)"
+  },
+  "DP9L93": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "60IN)"
+  },
+  "DP9L94": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "84IN)"
+  },
+  "DP4L63": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "60IN)"
+  },
+  "DP4L64": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "84IN)"
+  },
+  "DP4L65": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "108IN)"
+  },
+  "DP4L66": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "120IN)"
+  },
+  "DP9L63": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "60IN)"
+  },
+  "DP9L64": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "84IN)"
+  },
+  "DP9L65": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "108IN)"
+  },
+  "DP9L66": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "120IN)"
+  },
+  "DP5L93": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "60IN)"
+  },
+  "DP5L94": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "84IN)"
+  },
+  "DP0L93": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "60IN)"
+  },
+  "DP0L94": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "84IN)"
+  },
+  "DP5L63": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "60IN)"
+  },
+  "DP5L64": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "84IN)"
+  },
+  "DP5L65": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "108IN)"
+  },
+  "DP5L66": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "120IN)"
+  },
+  "DP0L63": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "60IN)"
+  },
+  "DP0L64": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "84IN)"
+  },
+  "DP0L65": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "108IN)"
+  },
+  "DP0L66": {
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "120IN)"
+  },
+  "EJXM74": {
+    "brand": "Unknown",
+    "model": "",
+    "trim": "Willys",
+    "cab": "",
+    "drive": "",
+    "raw": "WILLYSBEV"
+  },
+  "JLJL72": {
+    "brand": "Jeep",
+    "model": "Gladiator",
+    "trim": "Sport",
+    "cab": "",
+    "drive": "",
+    "raw": "WRANGLERSPORT"
+  },
+  "JLJL74": {
+    "brand": "Jeep",
+    "model": "Gladiator",
+    "trim": "Sport",
+    "cab": "",
+    "drive": "",
+    "raw": "DOORSPORT"
+  },
+  "JLJP74": {
+    "brand": "Jeep",
+    "model": "Gladiator",
+    "trim": "Sahara",
+    "cab": "",
+    "drive": "",
+    "raw": "DOORSAHARA"
+  },
+  "JLJS72": {
+    "brand": "Jeep",
+    "model": "Gladiator",
+    "trim": "Rubicon",
+    "cab": "",
+    "drive": "",
+    "raw": "WRANGLERRUBICON"
+  },
+  "JLJS74": {
+    "brand": "Jeep",
+    "model": "Gladiator",
+    "trim": "Rubicon",
+    "cab": "",
+    "drive": "",
+    "raw": "DOORRUBICON"
+  },
+  "JLJX74": {
+    "brand": "Jeep",
+    "model": "Gladiator",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "DOOR392(4WD)"
+  },
+  "WILLYS": {
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "Sport",
+    "cab": "",
+    "drive": "",
+    "raw": "SPORTS"
+  }
+}
