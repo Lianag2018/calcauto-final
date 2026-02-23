@@ -301,6 +301,8 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'HORS', 'LIMITED', 'DESCRIPTION', 'CONC', 'VENDU', 'KENNEBEC',
         'DODGE', 'CHRYSLER', 'LACROIX', 'GEORGES', 'REG', 'INS', 'AUTOMOTIVE',
         'LEE', 'HIM', 'WELLINGTON', 'TORONTO', 'ORDER', 'COMMANDE', 'CLEF',
+        'COUCHE', 'C08', 'C4564', 'G5Y', '1K1', 'M5J', '1J1', 'FL', 'ON',
+        '1C4', 'S8', '806264', 'R100963941', 'GFBR', 'RETING',
     }
     
     text_upper = text.upper()
@@ -308,9 +310,9 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
     # Chercher tous les codes d'options connus dans le texte
     found_codes = set()
     
-    # Méthode 1: Chercher les codes connus
+    # Méthode 1: Chercher UNIQUEMENT les codes connus (plus fiable)
     for code in fca_descriptions.keys():
-        if code in text_upper:
+        if re.search(rf'\b{re.escape(code)}\b', text_upper):
             found_codes.add(code)
     
     # Méthode 2: Pattern pour codes FCA génériques (2-5 chars alphanumériques)
