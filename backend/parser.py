@@ -466,7 +466,14 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'CE', 'DU', 'DE', 'LA', 'LE', 'AU', 'EN', 'ET', 'OU', 'UN', 'IF', 'NO',
         'SEE', 'PAGE', 'VOIR', 'PAS', 'SHOWN', 'CANADA', 'FOR', 'ORIGINAL', 'NI',
         'WINDSOR', 'ONTARIO', 'BOULEVARD', 'STREET', 'SOMME', 'TAXES', 'TPS',
-        'TVH', 'PROV', 'NET', 'PRIX', 'SANS', 'CHRYSLER', 'GFBR', 'KENNEBEC'
+        'TVH', 'PROV', 'NET', 'PRIX', 'SANS', 'CHRYSLER', 'GFBR', 'KENNEBEC',
+        # Villes québécoises et canadiennes courantes
+        'LAVAL', 'QUEBEC', 'MONTREAL', 'TORONTO', 'OTTAWA', 'CALGARY', 'VANCOUVER',
+        'LONGUEUIL', 'GATINEAU', 'SHERBROOKE', 'LEVIS', 'TROIS', 'SAGUENAY',
+        'DRUMMONDVILLE', 'RIMOUSKI', 'CHICOUTIMI', 'GRANBY', 'SAINT', 'SAINTE',
+        # Autres mots à ignorer
+        'SOLD', 'SHIP', 'BILL', 'ATTN', 'PHONE', 'FAX', 'EMAIL', 'WWW', 'HTTP',
+        'LTEE', 'LTD', 'ENRG', 'INC', 'CORP', 'AUTO', 'AUTOS'
     }
     
     # Mots-clés d'adresse à ignorer dans la description
