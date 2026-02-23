@@ -1187,11 +1187,37 @@ export default function HomeScreen() {
                       </TouchableOpacity>
                     ))}
                   {inventoryList.filter(v => v.brand?.toLowerCase() === selectedProgram.brand?.toLowerCase()).length === 0 && (
-                    <Text style={styles.noInventoryText}>
-                      {lang === 'fr' 
-                        ? `Aucun véhicule ${selectedProgram.brand} en inventaire`
-                        : `No ${selectedProgram.brand} vehicles in inventory`}
-                    </Text>
+                    <View style={styles.noInventoryContainer}>
+                      <Text style={styles.noInventoryText}>
+                        {lang === 'fr' 
+                          ? `Aucun véhicule ${selectedProgram.brand} en inventaire`
+                          : `No ${selectedProgram.brand} vehicles in inventory`}
+                      </Text>
+                      <View style={styles.manualVinContainer}>
+                        <Text style={styles.manualVinLabel}>
+                          {lang === 'fr' ? 'VIN manuel (optionnel):' : 'Manual VIN (optional):'}
+                        </Text>
+                        <TextInput
+                          style={styles.manualVinInput}
+                          value={manualVin}
+                          onChangeText={(text) => setManualVin(text.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                          placeholder="Ex: 1C4RJKBG5S8806267"
+                          placeholderTextColor="#666"
+                          maxLength={17}
+                          autoCapitalize="characters"
+                        />
+                        {manualVin.length > 0 && manualVin.length !== 17 && (
+                          <Text style={styles.manualVinError}>
+                            {lang === 'fr' ? `${manualVin.length}/17 caractères` : `${manualVin.length}/17 characters`}
+                          </Text>
+                        )}
+                        {manualVin.length === 17 && (
+                          <Text style={styles.manualVinSuccess}>
+                            ✓ {lang === 'fr' ? 'VIN valide - Window Sticker sera inclus' : 'Valid VIN - Window Sticker will be included'}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
                   )}
                 </ScrollView>
               ) : (
