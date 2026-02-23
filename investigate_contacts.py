@@ -6,7 +6,7 @@ Detailed investigation of contact data isolation issue
 import requests
 import json
 
-BACKEND_URL = "https://window-sticker-embed.preview.emergentagent.com/api"
+BACKEND_URL = "https://vin-scanner-1.preview.emergentagent.com/api"
 
 def investigate_contacts():
     # Login first
