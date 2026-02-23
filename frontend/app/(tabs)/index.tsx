@@ -3162,5 +3162,58 @@ const styles = StyleSheet.create({
     color: '#4ECDC4',
     flex: 1,
   },
+  // Styles Accessoires
+  accessoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  accessoryDescInput: {
+    flex: 2,
+  },
+  accessoryPriceInput: {
+    flex: 1,
+    textAlign: 'right',
+  },
+  removeAccessoryBtn: {
+    padding: 4,
+  },
+  addAccessoryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+    borderStyle: 'dashed',
+    gap: 6,
+  },
+  addAccessoryText: {
+    color: '#4CAF50',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  accessoriesTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+  },
+  accessoriesTotalLabel: {
+    color: '#aaa',
+    fontSize: 14,
+  },
+  accessoriesTotalValue: {
+    color: '#4CAF50',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });
 // Last update: Thu Feb 19 19:47:53 UTC 2026
