@@ -4306,9 +4306,9 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                 
             except HTTPException:
                 raise
-            except Exception as ai_err:
-                logger.error(f"Erreur Vision: {ai_err}")
-                raise HTTPException(status_code=500, detail=f"Erreur analyse: {str(ai_err)}")
+            except Exception as vision_err:
+                logger.error(f"Erreur Google Vision: {vision_err}")
+                raise HTTPException(status_code=500, detail=f"Erreur analyse OCR: {str(vision_err)}")
         
         # ===== RÈGLE D'OR : JAMAIS ENREGISTRER SI INVALIDE =====
         # Le système n'enregistre jamais si :
