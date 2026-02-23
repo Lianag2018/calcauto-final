@@ -1066,17 +1066,14 @@ export default function InventoryScreen() {
                 {reviewData.options && reviewData.options.length > 0 && (
                   <>
                     <Text style={styles.sectionTitle}>📦 Options extraites ({reviewData.options.length})</Text>
-                    <View style={styles.optionsList}>
-                      {reviewData.options.slice(0, 5).map((opt: any, idx: number) => (
-                        <View key={idx} style={styles.optionItem}>
-                          <Text style={styles.optionCode}>{opt.code}</Text>
-                          <Text style={styles.optionDesc} numberOfLines={1}>{opt.description}</Text>
-                          <Text style={styles.optionAmount}>{opt.amount ? formatPrice(opt.amount) : '-'}</Text>
-                        </View>
-                      ))}
-                      {reviewData.options.length > 5 && (
-                        <Text style={styles.moreOptions}>+ {reviewData.options.length - 5} autres options</Text>
-                      )}
+                    <View style={[styles.optionsList, { maxHeight: 300 }]}>
+                      <ScrollView nestedScrollEnabled={true}>
+                        {reviewData.options.map((opt: any, idx: number) => (
+                          <View key={idx} style={styles.optionItem}>
+                            <Text style={styles.optionDesc} numberOfLines={2}>{opt.description}</Text>
+                          </View>
+                        ))}
+                      </ScrollView>
                     </View>
                   </>
                 )}
