@@ -118,15 +118,15 @@ def convert_pdf_to_images(pdf_bytes: bytes, max_pages: int = 2, dpi: int = 100) 
 def generate_window_sticker_html(vin: str, images: list, pdf_url: str, pdf_bytes: bytes = None) -> str:
     """
     Génère le HTML pour afficher le Window Sticker avec l'image du PDF.
-    L'image est intégrée directement dans l'email (base64).
+    L'image utilise CID (Content-ID) pour un meilleur support Gmail.
     """
     if not vin or len(vin) != 17:
         return ""
     
-    # Si on a des images converties du PDF, les afficher
+    # Si on a des images converties du PDF, les afficher avec CID
     if images and len(images) > 0:
-        # Prendre la première page (principale)
-        img = images[0]
+        # Utiliser CID au lieu de data: pour Gmail compatibility
+        cid = f"windowsticker_{vin}"
         
         return f'''
             <div style="margin-top: 25px; page-break-inside: avoid;">
@@ -136,7 +136,7 @@ def generate_window_sticker_html(vin: str, images: list, pdf_url: str, pdf_bytes
                     <span style="font-size: 12px; color: #666;">VIN: {vin}</span>
                 </div>
                 <div style="text-align: center; border: 1px solid #ddd; border-radius: 8px; padding: 10px; background: #fff;">
-                    <img src="data:image/jpeg;base64,{img['base64']}" 
+                    <img src="cid:{cid}" 
                          alt="Window Sticker {vin}" 
                          style="max-width: 100%; height: auto; border-radius: 4px;" />
                 </div>
