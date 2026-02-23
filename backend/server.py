@@ -2647,17 +2647,29 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
         subject = f"Soumission - {vehicle.get('brand', '')} {vehicle.get('model', '')} {vehicle.get('year', '')}"
         
         # Envoyer l'email avec ou sans Window Sticker en pièce jointe
+        # Préparer les images inline pour CID
+        inline_images = []
+        if window_sticker_images and len(window_sticker_images) > 0:
+            img = window_sticker_images[0]
+            inline_images.append({
+                'cid': f'windowsticker_{vin}',
+                'data': base64.b64decode(img['base64']),
+                'subtype': 'jpeg',
+                'filename': f'WindowSticker_{vin}.jpg'
+            })
+        
         if window_sticker_pdf:
             send_email(
                 request.client_email, 
                 subject, 
                 html_body, 
                 attachment_data=window_sticker_pdf,
-                attachment_name=f"WindowSticker_{vin}.pdf"
+                attachment_name=f"WindowSticker_{vin}.pdf",
+                inline_images=inline_images
             )
             return {"success": True, "message": f"Email envoyé à {request.client_email} avec Window Sticker"}
         else:
-            send_email(request.client_email, subject, html_body)
+            send_email(request.client_email, subject, html_body, inline_images=inline_images if inline_images else None)
             return {"success": True, "message": f"Email envoyé à {request.client_email}"}
         
     except Exception as e:
