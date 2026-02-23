@@ -220,44 +220,121 @@ def parse_totals(text: str) -> Dict[str, Optional[float]]:
 
 def parse_options(text: str) -> List[Dict[str, Any]]:
     """
-    Extrait la liste des options depuis le texte.
+    Extrait la liste des options depuis le texte OCR.
     
-    Pattern: CODE (2-6 chars) + DESCRIPTION + MONTANT (7-8 chiffres)
+    Format FCA Canada:
+    - CODE (2-5 chars alphanumériques) + DESCRIPTION + [MONTANT ou * ou SANS FRAIS]
+    
+    Codes d'options FCA typiques:
+    - PXJ, PWZ, PW7 (couleurs)
+    - ABR, ALC, GWJ, YGW, DFW, ERC (équipements)
+    - 2TE, 23E, 3CC, 4CP (packages)
+    - B6W7 (intérieur)
     """
     options = []
     
-    # Codes à ignorer (déjà extraits ailleurs ou invalides)
-    invalid_codes = {
-        'VIN', 'GST', 'TPS', 'QUE', 'INC', 'PDCO', 'PREF', 
-        'MODEL', 'TOTAL', 'MSRP', 'SUB', 'EP', 'HST', 'TVQ'
+    # Codes connus FCA Canada (équipements, couleurs, packages)
+    known_fca_codes = {
+        # Couleurs
+        'PXJ', 'PW7', 'PWZ', 'PWL', 'PX8', 'PAU', 'PSC', 'PGG', 'PBF', 'PGE',
+        'PRM', 'PAR', 'PYB', 'PBJ', 'PFQ', 'PR4', 'PBK', 'PWD',
+        # Intérieur
+        'B6W7', 'CLX9', 'X9', 'TL', 'TX', 'T9',
+        # Équipements
+        'ABR', 'ALC', 'DFW', 'ERC', 'GWJ', 'YGW', 'ADE', 'ADG', 'APA', 'XAC',
+        'UAQ', 'UAM', 'RSD', 'RSB', 'GCD', 'AAN', 'AAM', 'NHK', 'LNJ', 'XR',
+        'DMC', 'AJK', 'AJV', 'AHR', 'RC3', 'RC4', 'AH6', 'AFG', 'AWB', 'AWL',
+        # Packages / Groupes
+        '2TE', '23E', '2BZ', '2BX', '2BY', '21D', '22B', '22D', '22G', '22J',
+        '27A', '27D', '29K', '29N', '27J', '21B', '21F', '25A', '26A', '25F',
+        '3CC', '4CP',
+        # Taxes / Frais
+        '801', '999', '92HC1', '92HC2',
     }
     
-    # Pattern: CODE + DESCRIPTION + MONTANT
-    option_pattern = re.findall(
-        r'\b([A-Z0-9]{2,6})\s+([A-Z][A-Z0-9\s,\-\'/\.]{4,50}?)\s+(\d{6,10}|\*|SANS)',
-        text.upper()
-    )
+    # Codes à ignorer (pas des options)
+    invalid_codes = {
+        'VIN', 'GST', 'TPS', 'QUE', 'INC', 'PDCO', 'PREF', 'MODEL', 'MODELE',
+        'TOTAL', 'MSRP', 'SUB', 'EP', 'HST', 'TVQ', 'GVW', 'KG', 'FCA',
+        'DIST', 'DEALER', 'SHIP', 'TERMS', 'KEY', 'OPT', 'SOLD', 'DATE',
+        'INVOICE', 'VEHICLE', 'NUMBER', 'FACTURE', 'AMOUNT', 'MONTANT',
+        'CE', 'DU', 'DE', 'LA', 'LE', 'AU', 'EN', 'ET', 'OU', 'UN', 'IF',
+        'NO', 'SEE', 'PAGE', 'VOIR', 'PAS', 'SHOWN', 'CANADA', 'FOR',
+        'ORIGINAL', 'WINDSOR', 'ONTARIO', 'BOULEVARD', 'STREET',
+    }
     
-    for code, desc, amount in option_pattern:
+    # Nettoyer et normaliser le texte
+    text_upper = text.upper()
+    lines = text_upper.split('\n')
+    
+    # Méthode 1: Chercher les codes connus directement
+    for code in known_fca_codes:
+        # Chercher le code suivi d'une description
+        pattern = rf'\b{re.escape(code)}\s+([A-Z][A-Z0-9\s,\-\'/\.]+?)(?:\s+(\d{{1,3}}[,\.]?\d{{3}}[,\.]?\d{{2}}|\d+\.\d{2}|SANS\s*FRAIS|\*))?(?:\n|$)'
+        matches = re.findall(pattern, text_upper, re.MULTILINE)
+        
+        for match in matches:
+            desc = match[0].strip() if match[0] else ""
+            amount_str = match[1] if len(match) > 1 and match[1] else ""
+            
+            # Nettoyer la description
+            desc = re.sub(r'\s+', ' ', desc)[:60]
+            
+            # Filtrer les descriptions invalides
+            if len(desc) < 3 or desc.startswith('AMOUNT') or desc.startswith('MONTANT'):
+                continue
+            
+            # Calculer le montant
+            if 'SANS' in amount_str or amount_str == '*' or not amount_str:
+                amount_value = 0
+            else:
+                # Convertir montant (format: 1,658.00 ou 871.00)
+                clean_amount = re.sub(r'[^\d]', '', amount_str)
+                if len(clean_amount) >= 3:
+                    try:
+                        amount_value = int(clean_amount[:-2]) if len(clean_amount) > 2 else int(clean_amount)
+                    except:
+                        amount_value = 0
+                else:
+                    amount_value = 0
+            
+            # Éviter les doublons
+            if not any(o['product_code'] == code for o in options):
+                options.append({
+                    "product_code": code,
+                    "description": desc,
+                    "amount": 0  # On met 0 comme demandé par l'utilisateur
+                })
+    
+    # Méthode 2: Chercher les codes avec pattern générique (2-5 chars)
+    # Pattern: CODE au début de ligne ou après espace, suivi de description
+    generic_pattern = r'(?:^|\n)\s*([A-Z0-9]{2,5})\s+([A-Z][A-Z\s]{5,40}?)(?:\s+\d|$|\n)'
+    generic_matches = re.findall(generic_pattern, text_upper, re.MULTILINE)
+    
+    for code, desc in generic_matches:
+        # Filtrer les codes invalides
         if code in invalid_codes:
             continue
+        if len(code) < 2 or code.isdigit():
+            continue
         
-        # Nettoyer la description
-        desc_clean = re.sub(r'\s+', ' ', desc.strip())[:80]
+        # Filtrer les descriptions invalides
+        desc = re.sub(r'\s+', ' ', desc.strip())[:60]
+        if len(desc) < 5:
+            continue
+        if any(invalid in desc for invalid in ['AMOUNT', 'MONTANT', 'TOTAL', 'FACTURE', 'INVOICE']):
+            continue
         
-        # Calculer le montant
-        if amount in ['*', 'SANS']:
-            amount_value = 0
-        else:
-            amount_value = clean_fca_price(amount)
-        
-        options.append({
-            "product_code": code,
-            "description": desc_clean,
-            "amount": amount_value
-        })
+        # Éviter les doublons
+        if not any(o['product_code'] == code for o in options):
+            options.append({
+                "product_code": code,
+                "description": desc,
+                "amount": 0
+            })
     
-    return options
+    # Limiter à 20 options max pour éviter le bruit
+    return options[:20]
 
 
 def parse_stock_number(text: str) -> Optional[str]:
