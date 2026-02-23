@@ -1172,6 +1172,9 @@ export default function HomeScreen() {
                           {vehicle.year} {vehicle.model}
                         </Text>
                         <Text style={styles.inventoryTrim}>{vehicle.trim}</Text>
+                        {vehicle.vin && (
+                          <Text style={styles.inventoryVin}>VIN: {vehicle.vin}</Text>
+                        )}
                         <Text style={styles.inventoryPrice}>
                           {formatCurrency(vehicle.asking_price || vehicle.msrp)}
                         </Text>
