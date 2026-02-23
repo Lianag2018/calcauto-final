@@ -578,6 +578,34 @@ export default function HomeScreen() {
     loadInventory();
   }, []);
 
+  // Load auto-financing info when inventory vehicle is selected
+  useEffect(() => {
+    const loadAutoFinancing = async () => {
+      if (!selectedInventory?.model_code) {
+        setAutoFinancing(null);
+        return;
+      }
+      
+      try {
+        const response = await axios.get(
+          `${API_URL}/api/product-codes/${selectedInventory.model_code}/financing`
+        );
+        
+        if (response.data.success && response.data.financing) {
+          setAutoFinancing(response.data.financing);
+          console.log('Auto-financing loaded for code:', selectedInventory.model_code, response.data.financing);
+        } else {
+          setAutoFinancing(null);
+        }
+      } catch (e) {
+        console.log('Could not load auto-financing:', e);
+        setAutoFinancing(null);
+      }
+    };
+    
+    loadAutoFinancing();
+  }, [selectedInventory?.model_code]);
+
   // Filter programs when year or brand changes
   useEffect(() => {
     let filtered = [...programs];
