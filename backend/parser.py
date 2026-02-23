@@ -114,37 +114,78 @@ def parse_trim_from_description(text: str) -> Optional[str]:
     
     La ligne ressemble généralement à:
     MODEL/OPT    Compass    DESCRIPTION    Limited    AMOUNT/MONTANT
+    ou: Ram 3500 Bighorn (manuscrit)
     
     Trims connus Stellantis:
     - Compass: Sport, North, Trailhawk, Limited, Altitude
     - Grand Cherokee: Laredo, Altitude, Limited, Summit, Overland, Trackhawk
-    - Ram: Tradesman, Big Horn, Lone Star, Laramie, Limited, Rebel, TRX
+    - Ram: Tradesman, Big Horn, Bighorn, Lone Star, Laramie, Limited, Rebel, TRX, Express
     - Wrangler: Sport, Willys, Rubicon, Sahara
     - Cherokee: Latitude, Altitude, Trailhawk, Limited, Overland
     """
     # Liste des trims connus (ordre de priorité - du plus spécifique au moins)
     known_trims = [
         # Trims spécifiques longs d'abord
-        "Limited Reserve", "Summit Reserve", "High Altitude",
+        "Limited Reserve", "Summit Reserve", "High Altitude", "Big Horn", "Lone Star",
+        # Trims Ram
+        "Bighorn", "Laramie", "Rebel", "Tradesman", "TRX", "Express", "Night Edition",
         # Trims courants
         "Limited", "Trailhawk", "Altitude", "Summit", "Overland",
         "Laredo", "North", "Sport", "Sahara", "Rubicon", "Willys",
-        "Laramie", "Rebel", "Tradesman", "Big Horn", "Lone Star", "TRX",
         "Latitude", "SXT", "PHEV", "Base"
     ]
     
     text_upper = text.upper()
     
-    # Chercher dans la zone DESCRIPTION
-    # Pattern: après "DESCRIPTION" ou sur la ligne avec le modèle
+    # Chercher dans le texte
     for trim in known_trims:
         # Chercher le trim dans le texte (insensible à la casse)
-        if trim.upper() in text_upper:
-            # Vérifier que ce n'est pas dans un contexte d'adresse ou de code
-            # Ex: éviter de matcher "LIMITED" dans "LIMITED WARRANTY"
-            pattern = rf'\b{trim}\b'
-            if re.search(pattern, text, re.IGNORECASE):
-                return trim
+        pattern = rf'\b{trim}\b'
+        if re.search(pattern, text, re.IGNORECASE):
+            return trim
+    
+    return None
+
+
+def parse_model_from_description(text: str) -> Optional[str]:
+    """
+    Extrait le modèle depuis la ligne DESCRIPTION de la facture FCA.
+    
+    Patterns: "Ram 1500", "Ram 2500", "Ram 3500", "Grand Cherokee", etc.
+    """
+    # Patterns pour les modèles Ram avec numéro
+    ram_patterns = [
+        (r'\bRam\s*3500\b', 'Ram 3500'),
+        (r'\bRam\s*2500\b', 'Ram 2500'),
+        (r'\bRam\s*1500\b', 'Ram 1500'),
+        (r'\b3500\b.*\bRam\b', 'Ram 3500'),
+        (r'\b2500\b.*\bRam\b', 'Ram 2500'),
+        (r'\b1500\b.*\bRam\b', 'Ram 1500'),
+    ]
+    
+    for pattern, model in ram_patterns:
+        if re.search(pattern, text, re.IGNORECASE):
+            return model
+    
+    # Patterns pour autres modèles
+    model_patterns = [
+        (r'\bGrand\s*Cherokee\s*L\b', 'Grand Cherokee L'),
+        (r'\bGrand\s*Cherokee\b', 'Grand Cherokee'),
+        (r'\bCompass\b', 'Compass'),
+        (r'\bWrangler\b', 'Wrangler'),
+        (r'\bGladiator\b', 'Gladiator'),
+        (r'\bCherokee\b', 'Cherokee'),
+        (r'\bDurango\b', 'Durango'),
+        (r'\bCharger\b', 'Charger'),
+        (r'\bChallenger\b', 'Challenger'),
+        (r'\bPacifica\b', 'Pacifica'),
+        (r'\bHornet\b', 'Hornet'),
+        (r'\bProMaster\b', 'ProMaster'),
+    ]
+    
+    for pattern, model in model_patterns:
+        if re.search(pattern, text, re.IGNORECASE):
+            return model
     
     return None
 
