@@ -3146,6 +3146,12 @@ const styles = StyleSheet.create({
   inventoryTrim: {
     fontSize: 12,
     color: '#888',
+    marginBottom: 4,
+  },
+  inventoryVin: {
+    fontSize: 10,
+    color: '#4ECDC4',
+    fontFamily: 'monospace',
     marginBottom: 6,
   },
   inventoryPrice: {
