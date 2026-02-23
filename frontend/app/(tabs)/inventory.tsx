@@ -282,12 +282,23 @@ export default function InventoryScreen() {
     
     try {
       const token = await getToken();
+      if (!token) {
+        throw new Error('Non authentifié - veuillez vous reconnecter');
+      }
+      
+      console.log(`Scanning invoice: ${base64Data.length} chars, isPdf: ${isPdf}`);
+      
       // Appeler scan-invoice (SANS sauvegarde) pour obtenir les données à réviser
       const response = await axios.post(
         `${API_URL}/api/inventory/scan-invoice`,
         { image_base64: base64Data, is_pdf: isPdf },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { 
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 60000  // 60 secondes timeout
+        }
       );
+
+      console.log('Scan response:', response.data);
 
       if (response.data.success) {
         // Préparer les données pour révision/correction
@@ -312,11 +323,13 @@ export default function InventoryScreen() {
         });
         setShowScanModal(false);
         setShowReviewModal(true);
+      } else {
+        throw new Error(response.data.message || 'Scan échoué');
       }
     } catch (error: any) {
-      const msg = error.response?.data?.detail || 'Erreur lors du scan';
       console.error('Scan error:', error);
-      Platform.OS === 'web' ? alert(msg) : Alert.alert('Erreur', msg);
+      const msg = error.response?.data?.detail || error.message || 'Erreur lors du scan';
+      Platform.OS === 'web' ? alert(`Erreur: ${msg}`) : Alert.alert('Erreur', msg);
     } finally {
       setScanning(false);
     }
