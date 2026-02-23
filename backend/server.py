@@ -198,39 +198,39 @@ async def fetch_window_sticker(vin: str, brand: str = None) -> dict:
         response.raise_for_status()
         return response.content
     
-    def download_pdf_playwright(pdf_url: str) -> bytes:
-        """Fallback: télécharge via navigateur headless"""
+    async def download_pdf_playwright(pdf_url: str) -> bytes:
+        """Fallback: télécharge via navigateur headless (async)"""
         try:
-            from playwright.sync_api import sync_playwright
+            from playwright.async_api import async_playwright
         except ImportError:
             raise RuntimeError("Playwright non installé")
         
         pdf_bytes = None
         
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            page = await browser.new_page()
             
-            def on_response(resp):
+            async def on_response(resp):
                 nonlocal pdf_bytes
                 ct = (resp.headers.get("content-type") or "").lower()
                 if "application/pdf" in ct:
                     try:
-                        pdf_bytes = resp.body()
+                        pdf_bytes = await resp.body()
                     except:
                         pass
             
             page.on("response", on_response)
             
             try:
-                page.goto(pdf_url, wait_until="networkidle", timeout=30000)
+                await page.goto(pdf_url, wait_until="networkidle", timeout=30000)
                 # Attendre un peu si le PDF arrive en retard
                 if pdf_bytes is None:
-                    page.wait_for_timeout(3000)
+                    await page.wait_for_timeout(3000)
             except Exception as e:
                 logger.warning(f"Playwright navigation error: {e}")
             
-            browser.close()
+            await browser.close()
         
         if not pdf_bytes:
             raise RuntimeError("PDF non capturé via Playwright")
