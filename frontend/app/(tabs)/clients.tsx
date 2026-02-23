@@ -1372,11 +1372,30 @@ export default function ClientsScreen() {
                 <Text style={styles.clientModalSectionTitle}>{crm.submissions} ({selectedClient.submissions.length})</Text>
                 {selectedClient.submissions.map((sub, idx) => (
                   <TouchableOpacity key={idx} style={styles.submissionCard} onPress={() => { setShowClientModal(false); openFollowUpModal(sub); }}>
-                    <Text style={styles.submissionVehicle}>{sub.vehicle_brand} {sub.vehicle_model} {sub.vehicle_year}</Text>
-                    <Text style={styles.submissionPayment}>{formatCurrency(sub.payment_monthly)}/{crm.months}</Text>
-                    <Text style={styles.submissionDate}>{formatDate(sub.submission_date)}</Text>
+                    <View style={styles.submissionCardRow}>
+                      <View style={styles.submissionCardInfo}>
+                        <Text style={styles.submissionVehicle}>{sub.vehicle_brand} {sub.vehicle_model} {sub.vehicle_year}</Text>
+                        <Text style={styles.submissionPayment}>{formatCurrency(sub.payment_monthly)}/{crm.months}</Text>
+                        <Text style={styles.submissionDate}>{formatDate(sub.submission_date)}</Text>
+                      </View>
+                      <TouchableOpacity 
+                        style={styles.deleteSubmissionBtn} 
+                        onPress={(e) => { e.stopPropagation(); deleteSubmission(sub.id); }}
+                      >
+                        <Ionicons name="trash-outline" size={18} color="#FF6B6B" />
+                      </TouchableOpacity>
+                    </View>
                   </TouchableOpacity>
                 ))}
+                {selectedClient.submissions.length > 0 && (
+                  <TouchableOpacity 
+                    style={styles.deleteHistoryButton} 
+                    onPress={() => { setShowClientModal(false); deleteContactHistory(selectedClient.id); }}
+                  >
+                    <Ionicons name="trash" size={18} color="#FF6B6B" />
+                    <Text style={styles.deleteHistoryButtonText}>Supprimer tout l'historique</Text>
+                  </TouchableOpacity>
+                )}
               </ScrollView>
             )}
           </View>
