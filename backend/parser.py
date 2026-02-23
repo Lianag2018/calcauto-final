@@ -315,17 +315,18 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         if re.search(rf'\b{re.escape(code)}\b', text_upper):
             found_codes.add(code)
     
-    # Construire la liste d'options avec descriptions connues
+    # Construire la liste d'options avec CODE + DESCRIPTION (format facture)
     for code in found_codes:
         if code in invalid_codes:
             continue
         
-        # Utiliser la description du dictionnaire
-        description = fca_descriptions.get(code, f"Option {code}")
+        # Format: "CODE - Description" comme sur la facture
+        base_description = fca_descriptions.get(code, "")
+        formatted_description = f"{code} - {base_description}" if base_description else code
         
         options.append({
             "product_code": code,
-            "description": description[:60],
+            "description": formatted_description[:60],
             "amount": 0  # Prix à 0 comme demandé
         })
     
