@@ -670,11 +670,14 @@ export default function HomeScreen() {
     const detteSurEchange = parseFloat(montantDuEchange) || 0;
     const echangeNet = valeurEchange - detteSurEchange; // Positif = réduction, négatif = ajout
     
-    // Calcul du montant taxable (prix + frais - échange)
+    // Accessoires additionnels (ajoutés au prix avant taxes)
+    const totalAccessoires = accessories.reduce((sum, acc) => sum + (parseFloat(acc.price) || 0), 0);
+    
+    // Calcul du montant taxable (prix + accessoires + frais - échange)
     // Note: Consumer Cash est avant taxes, donc réduit le montant taxable
     
-    // Option 1: Prix - Consumer Cash - valeur échange + frais + dette échange + taxes - comptant - bonus cash
-    const montantAvantTaxesO1 = price - consumerCash - valeurEchange + fraisTaxables;
+    // Option 1: Prix + Accessoires - Consumer Cash - valeur échange + frais + dette échange + taxes - comptant - bonus cash
+    const montantAvantTaxesO1 = price + totalAccessoires - consumerCash - valeurEchange + fraisTaxables;
     const taxesO1 = montantAvantTaxesO1 * tauxTaxe;
     const principalOption1Brut = montantAvantTaxesO1 + taxesO1 + detteSurEchange;
     // Soustraire le comptant et bonus cash (déjà tx inclus)
@@ -685,7 +688,7 @@ export default function HomeScreen() {
     const weekly1 = monthly1 * 12 / 52; // 52 paiements par an
     const total1 = monthly1 * selectedTerm;
     
-    // Option 2: Prix complet - valeur échange + frais + dette échange + taxes - comptant (pas de Consumer Cash ni Bonus)
+    // Option 2: Prix + Accessoires complet - valeur échange + frais + dette échange + taxes - comptant (pas de Consumer Cash ni Bonus)
     let monthly2: number | null = null;
     let biweekly2: number | null = null;
     let weekly2: number | null = null;
@@ -694,7 +697,7 @@ export default function HomeScreen() {
     let bestOption: string | null = null;
     let savings = 0;
     
-    const montantAvantTaxesO2 = price - valeurEchange + fraisTaxables;
+    const montantAvantTaxesO2 = price + totalAccessoires - valeurEchange + fraisTaxables;
     const taxesO2 = montantAvantTaxesO2 * tauxTaxe;
     const principalOption2Brut = montantAvantTaxesO2 + taxesO2 + detteSurEchange;
     // Soustraire seulement le comptant pour l'option 2 (pas de bonus cash)
