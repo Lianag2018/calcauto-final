@@ -4769,9 +4769,17 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
             product_info = decode_product_code(model_code) if model_code else {}
             vin_brand = decode_vin_brand(vin_corrected) if vin_corrected else None
             
-            # Priorité: valeurs du parser > decode_product_code > valeurs VIN
-            extracted_model = parsed.get("model") or product_info.get("model") or ""
-            extracted_trim = parsed.get("trim") or product_info.get("trim") or ""
+            # PRIORITÉ CORRIGÉE: code produit (base de données) > parser > VIN
+            # Le code produit (D28H92, etc.) est la source la plus fiable pour modèle/trim
+            extracted_model = product_info.get("model") or parsed.get("model") or ""
+            extracted_trim = product_info.get("trim") or parsed.get("trim") or ""
+            extracted_body = product_info.get("body") or ""
+            
+            # Construire le trim complet avec cab/drive si disponible
+            if extracted_body and extracted_body not in extracted_trim:
+                extracted_trim = f"{extracted_trim} {extracted_body}".strip() if extracted_trim else extracted_body
+            
+            logger.info(f"Model extraction: code={model_code}, product_info={product_info}, final_model={extracted_model}, final_trim={extracted_trim}")
             
             vehicle_data = {
                 "stock_no": parsed.get("stock_no", ""),
