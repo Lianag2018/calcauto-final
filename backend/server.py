@@ -2432,15 +2432,8 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
                     
                     {f"<div style='background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-top: 15px;'><span style='color: #856404;'>ℹ️ Bonus Cash de {fmt(bonus_cash)} $ sera déduit après taxes (au comptant)</span></div>" if bonus_cash > 0 else ""}
                     
-                    <!-- WINDOW STICKER SECTION -->
-                    {f'''<div class="section" style="margin-top: 20px;">
-                        <div class="section-title">Fiche technique du véhicule</div>
-                        <div style="background: #e8f4fd; border: 1px solid #2196F3; border-radius: 6px; padding: 15px; text-align: center;">
-                            <p style="margin: 0 0 10px 0; color: #1565C0;">📋 <strong>Window Sticker officiel</strong></p>
-                            <p style="margin: 0; font-size: 12px; color: #666;">VIN: {vin}</p>
-                            {"<p style='margin: 10px 0 0 0; font-size: 12px; color: #388E3C;'>✅ Le Window Sticker PDF est joint à cet email</p>" if window_sticker_pdf else f"<a href='{window_sticker_url}' style='display: inline-block; margin-top: 10px; background: #2196F3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Voir le Window Sticker</a>" if window_sticker_url else ""}
-                        </div>
-                    </div>''' if vin and len(vin) == 17 else ""}
+                    <!-- WINDOW STICKER SECTION WITH IMAGES -->
+                    {generate_window_sticker_html(vin, window_sticker_images, window_sticker_url, window_sticker_pdf)}
                 </div>
                 
                 <div class="footer">
