@@ -3170,10 +3170,18 @@ const styles = StyleSheet.create({
   },
   accessoryDescInput: {
     flex: 2,
+    backgroundColor: '#2a2a3e',
+    borderColor: '#4CAF50',
+    color: '#ffffff',
+    fontSize: 16,
   },
   accessoryPriceInput: {
     flex: 1,
     textAlign: 'right',
+    backgroundColor: '#2a2a3e',
+    borderColor: '#4CAF50',
+    color: '#ffffff',
+    fontSize: 16,
   },
   removeAccessoryBtn: {
     padding: 4,
