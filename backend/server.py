@@ -4806,15 +4806,32 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
         if decision == "auto_approved":
             vin_info = decode_vin(vin_corrected) if vin_corrected and len(vin_corrected) == 17 else {}
             model_code = parsed.get("model_code", "")
-            product_info = decode_product_code(model_code) if model_code else {}
+            
+            # ==== DOUBLE VÉRIFICATION AVEC BASE MASTER ====
+            # 1. Lookup dans la base master des 131 codes officiels
+            master_lookup = lookup_product_code(model_code) if model_code else None
+            
+            # 2. Fallback vers decode_product_code si non trouvé dans master
+            product_info = master_lookup or (decode_product_code(model_code) if model_code else {})
+            
             vin_brand = decode_vin_brand(vin_corrected) if vin_corrected else None
             
-            # PRIORITÉ CORRIGÉE: code produit (base de données) > parser > VIN
-            # Le code produit (D28H92, etc.) est la source la plus fiable pour modèle/trim
-            extracted_model = product_info.get("model") or parsed.get("model") or ""
-            extracted_trim = _build_trim_string(product_info) or parsed.get("trim") or ""
+            # PRIORITÉ: master lookup > product_info > parser > VIN
+            if master_lookup:
+                # Code trouvé dans la base master - données GARANTIES
+                extracted_model = master_lookup.get("model") or ""
+                extracted_trim = _build_trim_string(master_lookup)
+                extracted_brand = master_lookup.get("brand") or vin_brand or "Stellantis"
+                logger.info(f"[MASTER LOOKUP OK] Code {model_code} validé: {master_lookup.get('full_description')}")
+            else:
+                # Fallback vers product_info ou parser
+                extracted_model = product_info.get("model") or parsed.get("model") or ""
+                extracted_trim = _build_trim_string(product_info) or parsed.get("trim") or ""
+                extracted_brand = product_info.get("brand") or vin_brand or "Stellantis"
+                if model_code:
+                    logger.warning(f"[MASTER LOOKUP MISS] Code {model_code} non trouvé dans la base master, utilisation fallback")
             
-            logger.info(f"Model extraction: code={model_code}, product_info={product_info}, final_model={extracted_model}, final_trim={extracted_trim}")
+            logger.info(f"Model extraction: code={model_code}, master_found={master_lookup is not None}, final={extracted_brand} {extracted_model} {extracted_trim}")
             
             vehicle_data = {
                 "stock_no": parsed.get("stock_no", ""),
@@ -4824,8 +4841,9 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                 "vin_corrected": vin_was_corrected,
                 "vin_brand": vin_brand,
                 "model_code": model_code,
+                "model_code_validated": master_lookup is not None,  # Flag de validation
                 "year": vin_info.get("year") or datetime.now().year,
-                "brand": product_info.get("brand") or vin_brand or "Stellantis",
+                "brand": extracted_brand,
                 "model": extracted_model,
                 "trim": extracted_trim,
                 "ep_cost": parsed.get("ep_cost") or 0,
