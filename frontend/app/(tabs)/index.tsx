@@ -1165,6 +1165,7 @@ export default function HomeScreen() {
                         ]}
                         onPress={() => {
                           setSelectedInventory(vehicle);
+                          setManualVin('');  // Clear manual VIN when selecting from inventory
                           setVehiclePrice(String(vehicle.asking_price || vehicle.msrp || ''));
                         }}
                       >
