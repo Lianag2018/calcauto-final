@@ -138,26 +138,29 @@ PW7     BLANC ECLATANT                               66,770.00
         assert '-' in options[0]['description']
 
 
-class TestHoldbackCalculation:
-    """Tests pour le calcul du holdback"""
+class TestHoldbackExtraction:
+    """Tests pour l'extraction du holdback depuis la facture"""
     
-    def test_ram_holdback_3_percent(self):
-        """Ram: holdback = 3% du PDCO"""
-        # La fonction est dans server.py
-        pdco = 94295
-        expected = round(pdco * 0.03, 2)  # 2828.85
-        
-        # Calcul direct
-        result = round(pdco * 0.03, 2)
-        assert result == expected
+    def test_holdback_070000(self):
+        """070000 = $700.00"""
+        from parser import parse_financial_data
+        text = "PREF*08731300\n070000  GVW:"
+        result = parse_financial_data(text)
+        assert result.get("holdback") == 700.0
     
-    def test_jeep_holdback_3_percent(self):
-        """Jeep: holdback = 3% du PDCO"""
-        pdco = 60000
-        expected = 1800.00
-        
-        result = round(pdco * 0.03, 2)
-        assert result == expected
+    def test_holdback_0280000(self):
+        """0280000 = $2800.00"""
+        from parser import parse_financial_data
+        text = "PREF*08731300\n0280000  GVW:"
+        result = parse_financial_data(text)
+        assert result.get("holdback") == 2800.0
+    
+    def test_holdback_0120000(self):
+        """0120000 = $1200.00"""
+        from parser import parse_financial_data
+        text = "PREF*08731300\n0120000  GVW:"
+        result = parse_financial_data(text)
+        assert result.get("holdback") == 1200.0
 
 
 class TestTrimBuilding:
