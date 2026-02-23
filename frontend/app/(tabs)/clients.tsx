@@ -1703,6 +1703,7 @@ const styles = StyleSheet.create({
   },
   reminderBtnText: { color: '#4ECDC4', fontSize: 13, fontWeight: '600' },
   reminderBtnDone: { backgroundColor: '#4ECDC4', borderColor: '#4ECDC4' },
+  reminderBtnDelete: { borderColor: '#FF6B6B', paddingHorizontal: 10 },
   reminderBtnTextDone: { color: '#1a1a2e', fontSize: 13, fontWeight: '600' },
   
   // History Card
