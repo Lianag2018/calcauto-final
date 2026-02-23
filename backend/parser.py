@@ -498,8 +498,9 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         if re.match(r'^[A-Z]\d[A-Z]\s*\d[A-Z]\d', line):
             continue
         
-        # Ignorer les lignes qui commencent par un numéro de rue (ex: "123 RUE...")
-        if re.match(r'^\d+\s+[A-Z]', line):
+        # Ignorer les lignes qui commencent par un numéro de rue (ex: "1234 RUE...")
+        # Les codes FCA numériques sont 3 chiffres max (801, 999), les adresses ont 4+ chiffres
+        if re.match(r'^\d{4,}\s+[A-Z]', line):
             continue
         
         # Chercher un code au début de la ligne
