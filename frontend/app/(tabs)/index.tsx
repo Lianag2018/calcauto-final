@@ -3222,7 +3222,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  // Base input style for accessories (was missing)
+  // Base input style for accessories
   input: {
     backgroundColor: '#2d2d44',
     borderRadius: 8,
@@ -3232,6 +3232,13 @@ const styles = StyleSheet.create({
     borderColor: '#444',
     color: '#ffffff',
     fontSize: 15,
+  },
+  // Section header for accessories
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
   },
 });
 // Last update: Thu Feb 19 19:47:53 UTC 2026
