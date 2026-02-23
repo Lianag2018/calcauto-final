@@ -4732,9 +4732,15 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
             model_code = parsed.get("model_code", "")
             product_info = decode_product_code(model_code) if model_code else {}
             
-            # Priorité: valeurs du parser > decode_product_code > valeurs VIN
-            extracted_model = parsed.get("model") or product_info.get("model") or ""
-            extracted_trim = parsed.get("trim") or product_info.get("trim") or ""
+            # PRIORITÉ CORRIGÉE: code produit (base de données) > parser > VIN
+            extracted_model = product_info.get("model") or parsed.get("model") or ""
+            extracted_trim = product_info.get("trim") or parsed.get("trim") or ""
+            extracted_body = product_info.get("body") or ""
+            
+            if extracted_body and extracted_body not in extracted_trim:
+                extracted_trim = f"{extracted_trim} {extracted_body}".strip() if extracted_trim else extracted_body
+            
+            logger.info(f"Review - Model extraction: code={model_code}, product_info={product_info}, final_model={extracted_model}, final_trim={extracted_trim}")
             
             return {
                 "success": True,
