@@ -1,14 +1,14 @@
 """
-OCR Pipeline Industriel - OpenCV + Tesseract
-Version 100% Open Source pour factures FCA Canada
+OCR Pipeline Industriel - OpenCV + Google Cloud Vision
+Version optimisée pour factures FCA Canada
 
 Pipeline:
-Image → Correction Perspective → Segmentation Zones (ROI) → OCR Ciblé → Parsing
+Image → Correction Perspective → Prétraitement CamScanner → OCR Google Vision → Parsing
 
 Architecture:
 - Niveau 1: PDF natif → pdfplumber (100% précision)
-- Niveau 2: Images → OpenCV ROI + Tesseract (85-92% précision)  
-- Niveau 3: Fallback → GPT-4 Vision (si score < 70)
+- Niveau 2: Images → OpenCV prétraitement + Tesseract (85-92% précision)  
+- Niveau 3: Fallback → Google Cloud Vision (si score < 70) - plus précis et moins cher que GPT-4
 """
 
 import cv2
@@ -17,9 +17,201 @@ import pytesseract
 from PIL import Image
 import io
 import logging
+import os
+import base64
+import requests
 from typing import Dict, Tuple, Optional
 
 logger = logging.getLogger(__name__)
+
+# ============ GOOGLE CLOUD VISION OCR ============
+
+GOOGLE_VISION_ENDPOINT = "https://vision.googleapis.com/v1/images:annotate"
+
+
+def google_vision_ocr(image_base64: str, api_key: Optional[str] = None) -> Dict[str, any]:
+    """
+    Appel à Google Cloud Vision API pour OCR.
+    
+    Utilise DOCUMENT_TEXT_DETECTION qui est optimisé pour les documents
+    et l'écriture manuscrite (meilleur que TEXT_DETECTION pour les factures).
+    
+    Args:
+        image_base64: Image encodée en base64
+        api_key: Clé API Google Cloud Vision (optionnelle, prend de l'env si non fournie)
+    
+    Returns:
+        Dict avec:
+        - full_text: Texte complet détecté
+        - success: True si la requête a réussi
+        - confidence: Score de confiance moyen
+        - error: Message d'erreur si échec
+    """
+    if api_key is None:
+        api_key = os.environ.get("GOOGLE_VISION_API_KEY")
+    
+    if not api_key:
+        return {
+            "full_text": "",
+            "success": False,
+            "confidence": 0,
+            "error": "GOOGLE_VISION_API_KEY non configurée"
+        }
+    
+    try:
+        # Construire la requête
+        request_body = {
+            "requests": [
+                {
+                    "image": {
+                        "content": image_base64
+                    },
+                    "features": [
+                        {
+                            "type": "DOCUMENT_TEXT_DETECTION",
+                            "maxResults": 50
+                        }
+                    ],
+                    "imageContext": {
+                        "languageHints": ["en", "fr"]
+                    }
+                }
+            ]
+        }
+        
+        headers = {
+            "Content-Type": "application/json; charset=utf-8"
+        }
+        
+        # Appel API
+        response = requests.post(
+            f"{GOOGLE_VISION_ENDPOINT}?key={api_key}",
+            headers=headers,
+            json=request_body,
+            timeout=30
+        )
+        
+        response.raise_for_status()
+        result = response.json()
+        
+        # Parser la réponse
+        if "responses" not in result or len(result["responses"]) == 0:
+            return {
+                "full_text": "",
+                "success": False,
+                "confidence": 0,
+                "error": "Réponse API vide"
+            }
+        
+        response_data = result["responses"][0]
+        
+        # Vérifier s'il y a une erreur dans la réponse
+        if "error" in response_data:
+            error_msg = response_data["error"].get("message", "Erreur inconnue")
+            return {
+                "full_text": "",
+                "success": False,
+                "confidence": 0,
+                "error": f"Google Vision API error: {error_msg}"
+            }
+        
+        # Extraire le texte complet
+        full_text = ""
+        confidence = 0.0
+        
+        if "fullTextAnnotation" in response_data:
+            full_text = response_data["fullTextAnnotation"].get("text", "")
+            
+            # Calculer la confiance moyenne depuis les pages
+            pages = response_data["fullTextAnnotation"].get("pages", [])
+            total_conf = 0
+            count = 0
+            for page in pages:
+                for block in page.get("blocks", []):
+                    if "confidence" in block:
+                        total_conf += block["confidence"]
+                        count += 1
+            confidence = total_conf / count if count > 0 else 0.9
+        
+        elif "textAnnotations" in response_data and len(response_data["textAnnotations"]) > 0:
+            # Fallback: utiliser la première annotation (texte complet)
+            full_text = response_data["textAnnotations"][0].get("description", "")
+            confidence = 0.85  # Confiance par défaut
+        
+        logger.info(f"Google Vision OCR: {len(full_text)} caractères extraits, confiance={confidence:.2f}")
+        
+        return {
+            "full_text": full_text,
+            "success": True,
+            "confidence": confidence,
+            "error": None
+        }
+        
+    except requests.exceptions.Timeout:
+        logger.error("Google Vision API timeout")
+        return {
+            "full_text": "",
+            "success": False,
+            "confidence": 0,
+            "error": "Timeout - API Google Vision n'a pas répondu"
+        }
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Google Vision API request error: {e}")
+        return {
+            "full_text": "",
+            "success": False,
+            "confidence": 0,
+            "error": f"Erreur réseau: {str(e)}"
+        }
+    except Exception as e:
+        logger.error(f"Google Vision API error: {e}")
+        return {
+            "full_text": "",
+            "success": False,
+            "confidence": 0,
+            "error": f"Erreur inattendue: {str(e)}"
+        }
+
+
+def google_vision_ocr_from_bytes(image_bytes: bytes, api_key: Optional[str] = None) -> Dict[str, any]:
+    """
+    Wrapper pour appeler Google Vision OCR depuis des bytes d'image.
+    
+    Args:
+        image_bytes: Image en bytes (JPEG, PNG, etc.)
+        api_key: Clé API (optionnelle)
+    
+    Returns:
+        Résultat OCR
+    """
+    # Encoder en base64
+    image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+    return google_vision_ocr(image_base64, api_key)
+
+
+def google_vision_ocr_from_numpy(cv_image: np.ndarray, api_key: Optional[str] = None) -> Dict[str, any]:
+    """
+    Wrapper pour appeler Google Vision OCR depuis une image numpy/OpenCV.
+    
+    Convertit l'image en JPEG avant l'envoi pour optimiser la taille.
+    
+    Args:
+        cv_image: Image numpy (BGR ou Grayscale)
+        api_key: Clé API (optionnelle)
+    
+    Returns:
+        Résultat OCR
+    """
+    # Convertir en JPEG
+    if len(cv_image.shape) == 2:
+        # Grayscale - convertir en BGR pour l'encodage
+        cv_image = cv2.cvtColor(cv_image, cv2.COLOR_GRAY2BGR)
+    
+    # Encoder en JPEG avec qualité optimale pour OCR
+    _, buffer = cv2.imencode('.jpg', cv_image, [cv2.IMWRITE_JPEG_QUALITY, 95])
+    image_bytes = buffer.tobytes()
+    
+    return google_vision_ocr_from_bytes(image_bytes, api_key)
 
 
 # ============ CORRECTION PERSPECTIVE ============
