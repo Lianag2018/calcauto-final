@@ -2120,8 +2120,11 @@ async def get_window_sticker_pdf(vin: str):
             "Content-Disposition": f"inline; filename=WindowSticker_{vin}.pdf"
         }
     )
+
+
+@api_router.post("/send-calculation-email")
 async def send_calculation_email(request: SendCalculationEmailRequest):
-    """Envoie un calcul de financement par email - STYLE PDF CLAIR"""
+    """Envoie un calcul de financement par email avec Window Sticker en pièce jointe"""
     try:
         vehicle = request.vehicle_info
         calc = request.calculation_results
@@ -2130,6 +2133,34 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
         rates = request.rates_table
         fees = request.fees
         trade = request.trade_in
+        
+        # ============ WINDOW STICKER ============
+        window_sticker_pdf = None
+        window_sticker_url = None
+        vin = request.vin or vehicle.get("vin", "")
+        
+        if request.include_window_sticker and vin and len(vin) == 17:
+            logger.info(f"Récupération Window Sticker pour VIN={vin}")
+            
+            # Vérifier cache MongoDB
+            cached = await db.window_stickers.find_one({"vin": vin})
+            
+            if cached and "pdf_base64" in cached:
+                window_sticker_pdf = base64.b64decode(cached["pdf_base64"])
+                logger.info(f"Window Sticker trouvé en cache: {len(window_sticker_pdf)} bytes")
+            else:
+                # Télécharger depuis Chrysler/Stellantis
+                ws_result = await fetch_window_sticker(vin, vehicle.get("brand"))
+                if ws_result["success"]:
+                    window_sticker_pdf = base64.b64decode(ws_result["pdf_base64"])
+                    # Sauvegarder dans MongoDB
+                    await save_window_sticker_to_db(vin, ws_result["pdf_base64"], "system")
+                    logger.info(f"Window Sticker téléchargé et sauvegardé: {len(window_sticker_pdf)} bytes")
+                else:
+                    logger.warning(f"Window Sticker non disponible: {ws_result.get('error')}")
+            
+            # Construire l'URL du Window Sticker
+            window_sticker_url = f"https://www.jeep.com/hostd/windowsticker/getWindowStickerPdf.do?vin={vin}"
         
         # Get comparison data
         comparison = None
