@@ -1,1002 +1,398 @@
 {
   "DT6S98": {
-    "code": "DT6S98",
     "brand": "Ram",
-    "model_num": "",
+    "model": "1500",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "5INWB5FT7INBOX)",
-    "source": "ram1500rhocrew-26.pdf"
+    "raw": "5INWB5FT7INBOX)"
   },
   "RUCL53": {
-    "code": "RUCL53",
     "brand": "Chrysler",
-    "model_num": "",
+    "model": "Pacifica",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "GRANDCARAVANCANADAVALUEPACKAGE",
-    "source": "chrysler codeGuidesView.pdf"
+    "raw": "GRANDCARAVANCANADAVALUEPACKAGE"
   },
   "RUCH53": {
-    "code": "RUCH53",
     "brand": "Chrysler",
-    "model_num": "",
+    "model": "Pacifica",
     "trim": "Select",
-    "cab": "",
-    "drive": "",
-    "raw": "PACIFICASELECTFWD",
-    "source": "chrysler codeGuidesView.pdf"
+    "raw": "PACIFICASELECTFWD"
   },
   "RUCT53": {
-    "code": "RUCT53",
     "brand": "Chrysler",
-    "model_num": "",
+    "model": "Pacifica",
     "trim": "Limited",
-    "cab": "",
-    "drive": "",
-    "raw": "PACIFICALIMITEDFWD",
-    "source": "chrysler codeGuidesView.pdf"
+    "raw": "PACIFICALIMITEDFWD"
   },
   "RUFH53": {
-    "code": "RUFH53",
     "brand": "Chrysler",
-    "model_num": "",
+    "model": "Pacifica",
     "trim": "Select",
-    "cab": "",
-    "drive": "AWD",
-    "raw": "PACIFICASELECTAWD",
-    "source": "chrysler codeGuidesView.pdf"
+    "raw": "PACIFICASELECTAWD"
   },
   "RUFT53": {
-    "code": "RUFT53",
     "brand": "Chrysler",
-    "model_num": "",
+    "model": "Pacifica",
     "trim": "Limited",
-    "cab": "",
-    "drive": "AWD",
-    "raw": "PACIFICALIMITEDAWD",
-    "source": "chrysler codeGuidesView.pdf"
+    "raw": "PACIFICALIMITEDAWD"
   },
   "RUFS53": {
-    "code": "RUFS53",
     "brand": "Chrysler",
-    "model_num": "",
+    "model": "Pacifica",
     "trim": "Pinnacle",
-    "cab": "",
-    "drive": "AWD",
-    "raw": "PACIFICAPINNACLEAWD",
-    "source": "chrysler codeGuidesView.pdf"
+    "raw": "PACIFICAPINNACLEAWD"
   },
   "RUET53": {
-    "code": "RUET53",
     "brand": "Chrysler",
-    "model_num": "",
+    "model": "Pacifica",
     "trim": "Select",
-    "cab": "",
-    "drive": "",
-    "raw": "PACIFICASELECTHYBRIDERECHARGEABLE",
-    "source": "chrysler codeGuidesView.pdf"
+    "raw": "PACIFICASELECTHYBRIDERECHARGEABLE"
   },
   "RUES53": {
-    "code": "RUES53",
     "brand": "Chrysler",
-    "model_num": "",
+    "model": "Pacifica",
     "trim": "Pinnacle",
-    "cab": "",
-    "drive": "",
-    "raw": "PACIFICAPINNACLEHYBRIDERECHARGEABLE",
-    "source": "chrysler codeGuidesView.pdf"
+    "raw": "PACIFICAPINNACLEHYBRIDERECHARGEABLE"
   },
   "WDEE75": {
-    "code": "WDEE75",
     "brand": "Dodge",
-    "model_num": "",
+    "model": "Durango",
     "trim": "",
-    "cab": "",
-    "drive": "AWD",
-    "raw": "DURANGOENFORCERAWD",
-    "source": "durango-codeGuidesView.pdf"
+    "raw": "DURANGOENFORCERAWD"
   },
   "WDEH75": {
-    "code": "WDEH75",
     "brand": "Dodge",
-    "model_num": "",
+    "model": "Durango",
     "trim": "",
-    "cab": "",
-    "drive": "AWD",
-    "raw": "DURANGOAWD",
-    "source": "durango-codeGuidesView.pdf"
+    "raw": "DURANGOAWD"
   },
   "WDES75": {
-    "code": "WDES75",
     "brand": "Dodge",
-    "model_num": "",
+    "model": "Durango",
     "trim": "Gt",
-    "cab": "",
-    "drive": "AWD",
-    "raw": "DURANGOGTHEMIV8AWD",
-    "source": "durango-codeGuidesView.pdf"
+    "raw": "DURANGOGTHEMIV8AWD"
   },
   "WDEM75": {
-    "code": "WDEM75",
     "brand": "Dodge",
-    "model_num": "",
+    "model": "Durango",
     "trim": "",
-    "cab": "",
-    "drive": "AWD",
-    "raw": "DURANGOSRTHELLCATAWD",
-    "source": "durango-codeGuidesView.pdf"
+    "raw": "DURANGOSRTHELLCATAWD"
   },
   "D23L62": {
-    "code": "D23L62",
     "brand": "Ram",
-    "model_num": "3500",
+    "model": "3500",
     "trim": "Tradesman",
-    "cab": "Regular Cab",
-    "drive": "4x2",
-    "raw": "3500TRADESMANREGCAB4X2(140INWB8FTBOX)",
-    "source": "ram3500reg-26.pdf"
+    "raw": "3500TRADESMANREGCAB4X2(140INWB8FTBOX)"
   },
   "D23H62": {
-    "code": "D23H62",
     "brand": "Ram",
-    "model_num": "3500",
+    "model": "3500",
     "trim": "Bighorn",
-    "cab": "Regular Cab",
-    "drive": "4x2",
-    "raw": "3500BIGHORNREGCAB4X2(140INWB8FTBOX)",
-    "source": "ram3500reg-26.pdf"
-  },
-  "DP4L63": {
-    "code": "DP4L63",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "60IN)",
-    "source": "ram4500reg-26.pdf"
-  },
-  "DP4L64": {
-    "code": "DP4L64",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "84IN)",
-    "source": "ram4500reg-26.pdf"
-  },
-  "DP4L65": {
-    "code": "DP4L65",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "108IN)",
-    "source": "ram4500reg-26.pdf"
-  },
-  "DP4L66": {
-    "code": "DP4L66",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "120IN)",
-    "source": "ram4500reg-26.pdf"
-  },
-  "DP9L63": {
-    "code": "DP9L63",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "60IN)",
-    "source": "ram4500reg-26.pdf"
-  },
-  "DP9L64": {
-    "code": "DP9L64",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "84IN)",
-    "source": "ram4500reg-26.pdf"
-  },
-  "DP9L65": {
-    "code": "DP9L65",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "108IN)",
-    "source": "ram4500reg-26.pdf"
-  },
-  "DP9L66": {
-    "code": "DP9L66",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "120IN)",
-    "source": "ram4500reg-26.pdf"
+    "raw": "3500BIGHORNREGCAB4X2(140INWB8FTBOX)"
   },
   "DJ7X91": {
-    "code": "DJ7X91",
     "brand": "Ram",
-    "model_num": "",
+    "model": "2500",
     "trim": "Powerwagon",
-    "cab": "Crew Cab",
-    "drive": "",
-    "raw": "POWERWAGONCREWCAB",
-    "source": "ram2500crew-26.pdf"
+    "raw": "POWERWAGONCREWCAB"
   },
   "VFLL16": {
-    "code": "VFLL16",
     "brand": "Ram",
-    "model_num": "3500",
+    "model": "ProMaster",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "3500PROMASTEREVCARGOVANHIGHROOF(159WB)",
-    "source": "promasterev-26.pdf"
+    "raw": "3500PROMASTEREVCARGOVANHIGHROOF(159WB)"
   },
   "VFLL17": {
-    "code": "VFLL17",
     "brand": "Ram",
-    "model_num": "3500",
+    "model": "ProMaster",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "3500PROMASTEREVCARGOVANHIGHROOF(159WBEXT)",
-    "source": "promasterev-26.pdf"
-  },
-  "EJXM74": {
-    "code": "EJXM74",
-    "brand": "Jeep",
-    "model_num": "",
-    "trim": "Willys",
-    "cab": "",
-    "drive": "",
-    "raw": "WILLYSBEV",
-    "source": "recon-26.pdf"
-  },
-  "DP5L93": {
-    "code": "DP5L93",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "60IN)",
-    "source": "ram5500crewchassis-26.pdf"
-  },
-  "DP5L94": {
-    "code": "DP5L94",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "84IN)",
-    "source": "ram5500crewchassis-26.pdf"
-  },
-  "DP0L93": {
-    "code": "DP0L93",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "60IN)",
-    "source": "ram5500crewchassis-26.pdf"
-  },
-  "DP0L94": {
-    "code": "DP0L94",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "84IN)",
-    "source": "ram5500crewchassis-26.pdf"
+    "raw": "3500PROMASTEREVCARGOVANHIGHROOF(159WBEXT)"
   },
   "GGEH49": {
-    "code": "GGEH49",
     "brand": "Dodge",
-    "model_num": "",
+    "model": "Hornet",
     "trim": "Gt",
-    "cab": "",
-    "drive": "AWD",
-    "raw": "HORNETGTAWD",
-    "source": "hornet-codeGuidesView.pdf"
+    "raw": "HORNETGTAWD"
   },
   "GG7P49": {
-    "code": "GG7P49",
     "brand": "Dodge",
-    "model_num": "",
+    "model": "Hornet",
     "trim": "",
-    "cab": "",
-    "drive": "AWD",
-    "raw": "INHYBRIDAWD",
-    "source": "hornet-codeGuidesView.pdf"
+    "raw": "INHYBRIDAWD"
   },
   "VF1L11": {
-    "code": "VF1L11",
     "brand": "Ram",
-    "model_num": "1500",
+    "model": "ProMaster",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "1500PROMASTERCARGOVANLOWROOF(118WB)",
-    "source": "promastercargovan-26.pdf"
+    "raw": "1500PROMASTERCARGOVANLOWROOF(118WB)"
   },
   "VF1L12": {
-    "code": "VF1L12",
     "brand": "Ram",
-    "model_num": "1500",
+    "model": "ProMaster",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "1500PROMASTERCARGOVANLOWROOF(136WB)",
-    "source": "promastercargovan-26.pdf"
+    "raw": "1500PROMASTERCARGOVANLOWROOF(136WB)"
   },
   "VF1L13": {
-    "code": "VF1L13",
     "brand": "Ram",
-    "model_num": "1500",
+    "model": "ProMaster",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "1500PROMASTERCARGOVANHIGHROOF(136WB)",
-    "source": "promastercargovan-26.pdf"
+    "raw": "1500PROMASTERCARGOVANHIGHROOF(136WB)"
   },
   "VF2L12": {
-    "code": "VF2L12",
     "brand": "Ram",
-    "model_num": "2500",
+    "model": "ProMaster",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "2500PROMASTERCARGOVANLOWROOF(136WB)",
-    "source": "promastercargovan-26.pdf"
+    "raw": "2500PROMASTERCARGOVANLOWROOF(136WB)"
   },
   "VF2L13": {
-    "code": "VF2L13",
     "brand": "Ram",
-    "model_num": "2500",
+    "model": "ProMaster",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "2500PROMASTERCARGOVANHIGHROOF(136WB)",
-    "source": "promastercargovan-26.pdf"
+    "raw": "2500PROMASTERCARGOVANHIGHROOF(136WB)"
   },
   "VF2L16": {
-    "code": "VF2L16",
     "brand": "Ram",
-    "model_num": "2500",
+    "model": "ProMaster",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "2500PROMASTERCARGOVANHIGHROOF(159WB)",
-    "source": "promastercargovan-26.pdf"
+    "raw": "2500PROMASTERCARGOVANHIGHROOF(159WB)"
   },
   "VF3L12": {
-    "code": "VF3L12",
     "brand": "Ram",
-    "model_num": "3500",
+    "model": "ProMaster",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "3500PROMASTERCARGOVANLOWROOF(136WB)",
-    "source": "promastercargovan-26.pdf"
+    "raw": "3500PROMASTERCARGOVANLOWROOF(136WB)"
   },
   "VF3L13": {
-    "code": "VF3L13",
     "brand": "Ram",
-    "model_num": "3500",
+    "model": "ProMaster",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "3500PROMASTERCARGOVANHIGHROOF(136WB)",
-    "source": "promastercargovan-26.pdf"
+    "raw": "3500PROMASTERCARGOVANHIGHROOF(136WB)"
   },
   "VF3L16": {
-    "code": "VF3L16",
     "brand": "Ram",
-    "model_num": "3500",
+    "model": "ProMaster",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "3500PROMASTERCARGOVANHIGHROOF(159WB)",
-    "source": "promastercargovan-26.pdf"
+    "raw": "3500PROMASTERCARGOVANHIGHROOF(159WB)"
   },
   "VF3L17": {
-    "code": "VF3L17",
     "brand": "Ram",
-    "model_num": "3500",
+    "model": "ProMaster",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "3500PROMASTERCARGOVANHIGHROOF(159WBEXT)",
-    "source": "promastercargovan-26.pdf"
+    "raw": "3500PROMASTERCARGOVANHIGHROOF(159WBEXT)"
   },
   "VF3L19": {
-    "code": "VF3L19",
     "brand": "Ram",
-    "model_num": "3500",
+    "model": "ProMaster",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "3500PROMASTERCARGOVANSUPERHIGHROOF(159WBEXT)",
-    "source": "promastercargovan-26.pdf"
+    "raw": "3500PROMASTERCARGOVANSUPERHIGHROOF(159WBEXT)"
   },
   "WSJM75": {
-    "code": "WSJM75",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Wagoneer",
     "trim": "",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "GRANDWAGONEER4X4",
-    "source": "grand-wagoneer26.pdf"
+    "raw": "GRANDWAGONEER4X4"
   },
   "WSJH75": {
-    "code": "WSJH75",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Wagoneer",
     "trim": "Limited",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "GRANDWAGONEERLIMITED4X4",
-    "source": "grand-wagoneer26.pdf"
+    "raw": "GRANDWAGONEERLIMITED4X4"
   },
   "WSJR75": {
-    "code": "WSJR75",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Wagoneer",
     "trim": "Summit",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "GRANDWAGONEERSUMMIT4X4",
-    "source": "grand-wagoneer26.pdf"
+    "raw": "GRANDWAGONEERSUMMIT4X4"
   },
   "KMJL74": {
-    "code": "KMJL74",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Cherokee",
     "trim": "",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "CHEROKEE4X4",
-    "source": "cherokee-codeGuidesView.pdf"
+    "raw": "CHEROKEE4X4"
   },
   "KMJM74": {
-    "code": "KMJM74",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Cherokee",
     "trim": "Limited",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "LIMITED4X4",
-    "source": "cherokee-codeGuidesView.pdf"
+    "raw": "LIMITED4X4"
   },
   "KMJP74": {
-    "code": "KMJP74",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Cherokee",
     "trim": "Overland",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "CHEROKEEOVERLAND4X4",
-    "source": "cherokee-codeGuidesView.pdf"
-  },
-  "LBEL29": {
-    "code": "LBEL29",
-    "brand": "Dodge",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "AWD",
-    "raw": "DOORAWD",
-    "source": "charger-codeGuidesView.pdf"
-  },
-  "LBEL49": {
-    "code": "LBEL49",
-    "brand": "Dodge",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "AWD",
-    "raw": "DOORAWD",
-    "source": "charger-codeGuidesView.pdf"
-  },
-  "LBEP29": {
-    "code": "LBEP29",
-    "brand": "Dodge",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "AWD",
-    "raw": "DOORAWD",
-    "source": "charger-codeGuidesView.pdf"
-  },
-  "LBEP49": {
-    "code": "LBEP49",
-    "brand": "Dodge",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "AWD",
-    "raw": "DOORAWD",
-    "source": "charger-codeGuidesView.pdf"
-  },
-  "REDEYE": {
-    "code": "REDEYE",
-    "brand": "Dodge",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "REDEYE",
-    "source": "charger-codeGuidesView.pdf"
+    "raw": "CHEROKEEOVERLAND4X4"
   },
   "WSJM76": {
-    "code": "WSJM76",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Wagoneer",
     "trim": "",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "GRANDWAGONEERL4X4",
-    "source": "grand-wagoneer-l.pdf"
+    "raw": "GRANDWAGONEERL4X4"
   },
   "WSJH76": {
-    "code": "WSJH76",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Wagoneer",
     "trim": "Limited",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "GRANDWAGONEERLLIMITED4X4",
-    "source": "grand-wagoneer-l.pdf"
+    "raw": "GRANDWAGONEERLLIMITED4X4"
   },
   "WSJR76": {
-    "code": "WSJR76",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Wagoneer",
     "trim": "Summit",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "GRANDWAGONEERLSUMMIT4X4",
-    "source": "grand-wagoneer-l.pdf"
-  },
-  "DP4L93": {
-    "code": "DP4L93",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "60IN)",
-    "source": "ram4500crewchassis-26.pdf"
-  },
-  "DP4L94": {
-    "code": "DP4L94",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "84IN)",
-    "source": "ram4500crewchassis-26.pdf"
-  },
-  "DP9L93": {
-    "code": "DP9L93",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "60IN)",
-    "source": "ram4500crewchassis-26.pdf"
-  },
-  "DP9L94": {
-    "code": "DP9L94",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "84IN)",
-    "source": "ram4500crewchassis-26.pdf"
-  },
-  "DP5L63": {
-    "code": "DP5L63",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "60IN)",
-    "source": "ram5500regchassis-26.pdf"
-  },
-  "DP5L64": {
-    "code": "DP5L64",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "84IN)",
-    "source": "ram5500regchassis-26.pdf"
-  },
-  "DP5L65": {
-    "code": "DP5L65",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "108IN)",
-    "source": "ram5500regchassis-26.pdf"
-  },
-  "DP5L66": {
-    "code": "DP5L66",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "120IN)",
-    "source": "ram5500regchassis-26.pdf"
-  },
-  "DP0L63": {
-    "code": "DP0L63",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "60IN)",
-    "source": "ram5500regchassis-26.pdf"
-  },
-  "DP0L64": {
-    "code": "DP0L64",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "84IN)",
-    "source": "ram5500regchassis-26.pdf"
-  },
-  "DP0L65": {
-    "code": "DP0L65",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "108IN)",
-    "source": "ram5500regchassis-26.pdf"
-  },
-  "DP0L66": {
-    "code": "DP0L66",
-    "brand": "Ram",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "120IN)",
-    "source": "ram5500regchassis-26.pdf"
-  },
-  "FGEP24": {
-    "code": "FGEP24",
-    "brand": "Fiat",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "500ECOUPE",
-    "source": "fiat-codeGuidesView.pdf"
+    "raw": "GRANDWAGONEERLSUMMIT4X4"
   },
   "JTJL98": {
-    "code": "JTJL98",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Gladiator",
     "trim": "Sport",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "GLADIATORSPORT4X4",
-    "source": "gladiator-codeGuidesView.pdf"
+    "raw": "GLADIATORSPORT4X4"
   },
   "JTJH98": {
-    "code": "JTJH98",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Gladiator",
     "trim": "Mojave",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "GLADIATORMOJAVE4X4",
-    "source": "gladiator-codeGuidesView.pdf"
+    "raw": "GLADIATORMOJAVE4X4"
   },
   "JTJS98": {
-    "code": "JTJS98",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Gladiator",
     "trim": "Rubicon",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "GLADIATORRUBICON4X4",
-    "source": "gladiator-codeGuidesView.pdf"
+    "raw": "GLADIATORRUBICON4X4"
   },
   "JLJL72": {
-    "code": "JLJL72",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Wrangler",
     "trim": "Sport",
-    "cab": "",
-    "drive": "",
-    "raw": "WRANGLERSPORT",
-    "source": "wrangler-26.pdf"
-  },
-  "JLJL74": {
-    "code": "JLJL74",
-    "brand": "Jeep",
-    "model_num": "",
-    "trim": "Sport",
-    "cab": "",
-    "drive": "",
-    "raw": "DOORSPORT",
-    "source": "wrangler-26.pdf"
+    "raw": "WRANGLERSPORT"
   },
   "JLJP74": {
-    "code": "JLJP74",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Wrangler",
     "trim": "Sahara",
-    "cab": "",
-    "drive": "",
-    "raw": "DOORSAHARA",
-    "source": "wrangler-26.pdf"
+    "raw": "DOORSAHARA"
   },
   "JLJS72": {
-    "code": "JLJS72",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Wrangler",
     "trim": "Rubicon",
-    "cab": "",
-    "drive": "",
-    "raw": "WRANGLERRUBICON",
-    "source": "wrangler-26.pdf"
+    "raw": "WRANGLERRUBICON"
   },
   "JLJS74": {
-    "code": "JLJS74",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Wrangler",
     "trim": "Rubicon",
-    "cab": "",
-    "drive": "",
-    "raw": "DOORRUBICON",
-    "source": "wrangler-26.pdf"
+    "raw": "DOORRUBICON"
   },
   "JLJX74": {
-    "code": "JLJX74",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Wrangler",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "DOOR392(4WD)",
-    "source": "wrangler-26.pdf"
+    "raw": "DOOR392(4WD)"
   },
   "DT6R98": {
-    "code": "DT6R98",
     "brand": "Ram",
-    "model_num": "",
+    "model": "1500",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "5INWB5FT7INBOX)",
-    "source": "ram1500tugstencrew-26.pdf"
+    "raw": "5INWB5FT7INBOX)"
   },
   "MPJL74": {
-    "code": "MPJL74",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Compass",
     "trim": "Sport",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "COMPASSSPORT4X4",
-    "source": "compass-codeGuidesView.pdf"
+    "raw": "COMPASSSPORT4X4"
   },
   "MPJM74": {
-    "code": "MPJM74",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Compass",
     "trim": "North",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "COMPASSNORTH4X4",
-    "source": "compass-codeGuidesView.pdf"
+    "raw": "COMPASSNORTH4X4"
   },
   "MPJH74": {
-    "code": "MPJH74",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Compass",
     "trim": "Trailhawk",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "COMPASSTRAILHAWK4X4",
-    "source": "compass-codeGuidesView.pdf"
+    "raw": "COMPASSTRAILHAWK4X4"
   },
   "MPJP74": {
-    "code": "MPJP74",
     "brand": "Jeep",
-    "model_num": "",
+    "model": "Compass",
     "trim": "Limited",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "COMPASSLIMITED4X4",
-    "source": "compass-codeGuidesView.pdf"
+    "raw": "COMPASSLIMITED4X4"
   },
   "DT6L41": {
-    "code": "DT6L41",
     "brand": "Ram",
-    "model_num": "1500",
+    "model": "1500",
     "trim": "Tradesman",
-    "cab": "Quad Cab",
-    "drive": "4x4",
-    "raw": "1500TRADESMANQUADCAB4X4(140INWB6FT4INBOX)",
-    "source": "ram1500quad-26.pdf"
+    "raw": "1500TRADESMANQUADCAB4X4(140INWB6FT4INBOX)"
   },
   "DT6H41": {
-    "code": "DT6H41",
     "brand": "Ram",
-    "model_num": "1500",
+    "model": "1500",
     "trim": "Bighorn",
-    "cab": "Quad Cab",
-    "drive": "4x4",
-    "raw": "1500BIGHORNQUADCAB4X4(140INWB6FT4INBOX)",
-    "source": "ram1500quad-26.pdf"
-  },
-  "WLJH74": {
-    "code": "WLJH74",
-    "brand": "Jeep",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "ROW)4X4",
-    "source": "grand-cherokeecodeGuidesView.pdf"
-  },
-  "WLJH75": {
-    "code": "WLJH75",
-    "brand": "Jeep",
-    "model_num": "",
-    "trim": "",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "ROW)4X4",
-    "source": "grand-cherokeecodeGuidesView.pdf"
+    "raw": "1500BIGHORNQUADCAB4X4(140INWB6FT4INBOX)"
   },
   "DT6L98": {
-    "code": "DT6L98",
     "brand": "Ram",
-    "model_num": "",
+    "model": "1500",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "5INWB5FT7INBOX)",
-    "source": "ram1500crew-26.pdf"
+    "raw": "5INWB5FT7INBOX)"
   },
   "DT6L91": {
-    "code": "DT6L91",
     "brand": "Ram",
-    "model_num": "1500",
+    "model": "1500",
     "trim": "Tradesman",
-    "cab": "Crew Cab",
-    "drive": "4x4",
-    "raw": "1500TRADESMANCREWCAB4X4",
-    "source": "ram1500crew-26.pdf"
+    "raw": "1500TRADESMANCREWCAB4X4"
   },
   "DT6H98": {
-    "code": "DT6H98",
     "brand": "Ram",
-    "model_num": "",
+    "model": "1500",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "5INWB5FT7INBOX)",
-    "source": "ram1500crew-26.pdf"
+    "raw": "5INWB5FT7INBOX)"
   },
   "DT6H91": {
-    "code": "DT6H91",
     "brand": "Ram",
-    "model_num": "1500",
+    "model": "1500",
     "trim": "Bighorn",
-    "cab": "Crew Cab",
-    "drive": "4x4",
-    "raw": "1500BIGHORNCREWCAB4X4",
-    "source": "ram1500crew-26.pdf"
+    "raw": "1500BIGHORNCREWCAB4X4"
   },
   "DT6T98": {
-    "code": "DT6T98",
     "brand": "Ram",
-    "model_num": "",
+    "model": "1500",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "5INWB5FT7INBOX)",
-    "source": "ram1500crew-26.pdf"
+    "raw": "5INWB5FT7INBOX)"
   },
   "DT6T91": {
-    "code": "DT6T91",
     "brand": "Ram",
-    "model_num": "",
+    "model": "1500",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "5INWB6FT4INBOX)",
-    "source": "ram1500crew-26.pdf"
+    "raw": "5INWB6FT4INBOX)"
   },
   "DT6X98": {
-    "code": "DT6X98",
     "brand": "Ram",
-    "model_num": "",
+    "model": "1500",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "5INWB5FT7INBOX)",
-    "source": "ram1500crew-26.pdf"
+    "raw": "5INWB5FT7INBOX)"
   },
   "DT6P98": {
-    "code": "DT6P98",
     "brand": "Ram",
-    "model_num": "",
+    "model": "1500",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "5INWB5FT7INBOX)",
-    "source": "ram1500crew-26.pdf"
+    "raw": "5INWB5FT7INBOX)"
   },
   "DT6P91": {
-    "code": "DT6P91",
     "brand": "Ram",
-    "model_num": "",
+    "model": "1500",
     "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": "5INWB6FT4INBOX)",
-    "source": "ram1500crew-26.pdf"
+    "raw": "5INWB6FT4INBOX)"
   },
   "DT6M98": {
-    "code": "DT6M98",
     "brand": "Ram",
-    "model_num": "",
+    "model": "1500",
     "trim": "Longhorn",
-    "cab": "Crew Cab",
-    "drive": "4x4",
-    "raw": "LONGHORNCREW4X4",
-    "source": "ram1500crew-26.pdf"
+    "raw": "LONGHORNCREW4X4"
   },
   "DT6M91": {
-    "code": "DT6M91",
     "brand": "Ram",
-    "model_num": "",
+    "model": "1500",
     "trim": "Longhorn",
-    "cab": "",
-    "drive": "4x4",
-    "raw": "LONGHORNCAB4X4",
-    "source": "ram1500crew-26.pdf"
+    "raw": "LONGHORNCAB4X4"
   }
 }
