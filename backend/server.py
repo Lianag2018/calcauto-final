@@ -2696,12 +2696,19 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
                 html_body, 
                 attachment_data=window_sticker_pdf,
                 attachment_name=f"WindowSticker_{vin}.pdf",
-                inline_images=inline_images
+                inline_images=inline_images,
+                cc_email=user_email  # CC à l'utilisateur connecté
             )
-            return {"success": True, "message": f"Email envoyé à {request.client_email} avec Window Sticker"}
+            return {"success": True, "message": f"Email envoyé à {request.client_email}" + (f" (CC: {user_email})" if user_email else "")}
         else:
-            send_email(request.client_email, subject, html_body, inline_images=inline_images if inline_images else None)
-            return {"success": True, "message": f"Email envoyé à {request.client_email}"}
+            send_email(
+                request.client_email, 
+                subject, 
+                html_body, 
+                inline_images=inline_images if inline_images else None,
+                cc_email=user_email  # CC à l'utilisateur connecté
+            )
+            return {"success": True, "message": f"Email envoyé à {request.client_email}" + (f" (CC: {user_email})" if user_email else "")}
         
     except Exception as e:
         logger.error(f"Erreur envoi email: {str(e)}")
