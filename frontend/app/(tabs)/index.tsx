@@ -1832,11 +1832,13 @@ export default function HomeScreen() {
                         body: JSON.stringify({
                           client_email: clientEmail,
                           client_name: clientName,
+                          client_phone: clientPhone,
                           vehicle_info: {
                             brand: selectedProgram.brand,
                             model: selectedProgram.model,
                             trim: selectedProgram.trim,
                             year: selectedProgram.year,
+                            vin: selectedInventory?.vin || '',
                           },
                           calculation_results: {
                             consumer_cash: selectedProgram.consumer_cash,
@@ -1864,6 +1866,20 @@ export default function HomeScreen() {
                           vehicle_price: parseFloat(vehiclePrice),
                           payment_frequency: paymentFrequency,
                           dealer_name: 'CalcAuto AiPro',
+                          // Window Sticker - inclus si VIN disponible
+                          include_window_sticker: !!(selectedInventory?.vin),
+                          vin: selectedInventory?.vin || '',
+                          // Frais et échange
+                          fees: {
+                            frais_dossier: parseFloat(fraisDossier) || 0,
+                            taxe_pneus: parseFloat(taxePneus) || 0,
+                            frais_rdprm: parseFloat(fraisRDPRM) || 0,
+                          },
+                          trade_in: {
+                            valeur_echange: parseFloat(prixEchange) || 0,
+                            montant_du: parseFloat(montantDuEchange) || 0,
+                          },
+                          rates_table: {},
                         }),
                       });
                       
