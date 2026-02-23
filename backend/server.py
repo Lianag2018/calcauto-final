@@ -4577,6 +4577,10 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
             product_info = decode_product_code(model_code) if model_code else {}
             vin_brand = decode_vin_brand(vin_corrected) if vin_corrected else None
             
+            # Priorité: valeurs du parser > decode_product_code > valeurs VIN
+            extracted_model = parsed.get("model") or product_info.get("model") or ""
+            extracted_trim = parsed.get("trim") or product_info.get("trim") or ""
+            
             vehicle_data = {
                 "stock_no": parsed.get("stock_no", ""),
                 "vin": vin_corrected,
@@ -4587,8 +4591,8 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                 "model_code": model_code,
                 "year": vin_info.get("year") or datetime.now().year,
                 "brand": product_info.get("brand") or vin_brand or "Stellantis",
-                "model": product_info.get("model") or "",
-                "trim": product_info.get("trim") or "",
+                "model": extracted_model,
+                "trim": extracted_trim,
                 "ep_cost": parsed.get("ep_cost") or 0,
                 "pdco": parsed.get("pdco") or 0,
                 "pref": parsed.get("pref") or 0,
