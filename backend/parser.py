@@ -289,7 +289,18 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'CE', 'DU', 'DE', 'LA', 'LE', 'AU', 'EN', 'ET', 'OU', 'UN', 'IF',
         'NO', 'SEE', 'PAGE', 'VOIR', 'PAS', 'SHOWN', 'CANADA', 'FOR',
         'ORIGINAL', 'WINDSOR', 'ONTARIO', 'BOULEVARD', 'STREET', 'SAND',
-        'SOMME', 'TOIT', '20L', 'SANS',
+        'SOMME', 'TOIT', '20L', 'SANS', 'FRAIS', 'ACCISE', 'ALLURE',
+        'AUX', 'BEAU', 'ECLAIR', 'ATTELAGE', 'OUVR', 'PANO', 'TAXES',
+        'NACREE', 'CRISTAL', 'NOIR', 'ETINCEL', 'ENSEMBLE', 'GROUPE',
+        'REMORQUE', 'TRANSMISSION', 'AUTOMATIQUE', 'MOTEUR', 'PENTASTAR',
+        'SUPPLEMENTAIRES', 'ESSENCE', 'TRANSPORT', 'COTISATION', 'MARKETING',
+        'ALLOCATION', 'FINANCE', 'EXPEDIE', 'FEDERALE', 'CLIMATISEUR',
+        'SIEGES', 'SIMILICUIR', 'CAPRI', 'COMMANDVIEW', 'VITESSES',
+        'NOIRE', 'EST', 'FABRIQUE', 'POUR', 'REPONDRE', 'EXIGENCES',
+        'CANADIENNES', 'SPECIFIQUES', 'VEHICULE', 'VENTE', 'IMMATRICULATION',
+        'HORS', 'LIMITED', 'DESCRIPTION', 'CONC', 'VENDU', 'KENNEBEC',
+        'DODGE', 'CHRYSLER', 'LACROIX', 'GEORGES', 'REG', 'INS', 'AUTOMOTIVE',
+        'LEE', 'HIM', 'WELLINGTON', 'TORONTO', 'ORDER', 'COMMANDE', 'CLEF',
     }
     
     text_upper = text.upper()
