@@ -53,20 +53,22 @@ WINDOW_STICKER_URLS = {
 }
 
 
-def convert_pdf_to_images(pdf_bytes: bytes, max_pages: int = 2, dpi: int = 150) -> list:
+def convert_pdf_to_images(pdf_bytes: bytes, max_pages: int = 2, dpi: int = 100) -> list:
     """
-    Convertit un PDF en images JPEG.
+    Convertit un PDF en images JPEG optimisées pour email.
     
     Args:
         pdf_bytes: PDF en bytes
         max_pages: Nombre max de pages à convertir
-        dpi: Résolution (150 = bon équilibre qualité/taille)
+        dpi: Résolution (100 = optimisé pour email, petite taille)
     
     Returns:
-        Liste de tuples (image_base64, width, height)
+        Liste de dicts avec image_base64, width, height
     """
     try:
         import fitz  # PyMuPDF
+        from io import BytesIO
+        from PIL import Image
         
         images = []
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
@@ -79,16 +81,31 @@ def convert_pdf_to_images(pdf_bytes: bytes, max_pages: int = 2, dpi: int = 150) 
             mat = fitz.Matrix(zoom, zoom)
             pix = page.get_pixmap(matrix=mat)
             
-            # Convertir en JPEG
-            img_bytes = pix.tobytes("jpeg")
+            # Convertir via PIL pour meilleure compression
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            
+            # Redimensionner si trop grand (max 800px de large pour email)
+            max_width = 800
+            if img.width > max_width:
+                ratio = max_width / img.width
+                new_size = (max_width, int(img.height * ratio))
+                img = img.resize(new_size, Image.Resampling.LANCZOS)
+            
+            # Compresser en JPEG avec qualité réduite
+            buffer = BytesIO()
+            img.save(buffer, format="JPEG", quality=70, optimize=True)
+            img_bytes = buffer.getvalue()
             img_base64 = base64.b64encode(img_bytes).decode("utf-8")
             
             images.append({
                 "base64": img_base64,
-                "width": pix.width,
-                "height": pix.height,
-                "page": page_num + 1
+                "width": img.width,
+                "height": img.height,
+                "page": page_num + 1,
+                "size_kb": len(img_bytes) // 1024
             })
+            
+            logger.info(f"Window Sticker page {page_num+1}: {img.width}x{img.height}, {len(img_bytes)//1024}KB")
         
         doc.close()
         return images
