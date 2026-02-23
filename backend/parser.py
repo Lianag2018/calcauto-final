@@ -374,23 +374,31 @@ def parse_stock_number(text: str) -> Optional[str]:
         if match:
             return match.group(1)
     
-    # Codes à exclure (adresses, montants partiels, etc.)
+    # Codes à exclure (adresses, montants partiels, codes financiers)
     exclude_patterns = {
         '10240',  # Adresse dealer
         '07544', '07774', '06997', '07205', '07070', '07277',  # Codes financiers
         '72752', '76389', '64951',  # Montants
+        '50000', '05000',  # GVW patterns
     }
+    
+    # Exclure les nombres qui font partie d'adresses (suivi de BOULEVARD, ST-, etc.)
+    address_context = re.findall(r'(\d{5})[,\s]+(BOULEVARD|BLVD|AVENUE|AVE|RUE|ST-|STREET)', text, re.IGNORECASE)
+    for addr_num, _ in address_context:
+        exclude_patterns.add(addr_num)
     
     # Trouver TOUS les nombres de 5 chiffres isolés sur leur propre ligne
     # Le stock manuscrit est généralement le DERNIER (tout en bas de la facture)
     lines = text.split('\n')
     stock_candidates = []
     
+    # D'abord chercher les lignes avec UNIQUEMENT un nombre 5 chiffres (manuscrit)
     for line in lines:
         line = line.strip()
-        # Ligne contenant uniquement un nombre de 5 chiffres
-        if re.match(r'^\d{5}$', line):
-            num = line
+        # Ligne contenant uniquement un nombre de 5 chiffres (ou avec quelques caractères)
+        match = re.match(r'^[\s\W]*(\d{5})[\s\W]*$', line)
+        if match:
+            num = match.group(1)
             if num not in exclude_patterns and not num.startswith('0'):
                 stock_candidates.append(num)
     
@@ -399,14 +407,15 @@ def parse_stock_number(text: str) -> Optional[str]:
         return stock_candidates[-1]
     
     # Fallback: chercher le dernier nombre de 5 chiffres valide dans le texte
+    # En commençant par la fin du texte (où le stock manuscrit se trouve souvent)
     all_five_digits = re.findall(r'\b(\d{5})\b', text)
     
     # Filtrer et prendre le dernier
     valid_candidates = []
     for num in all_five_digits:
         if num not in exclude_patterns and not num.startswith('0'):
-            # Vérifier que ce n'est pas un montant
-            if not re.search(rf'\${num}|{num}\.00|{num}\.60', text):
+            # Vérifier que ce n'est pas un montant ou partie d'une adresse
+            if not re.search(rf'\${num}|{num}\.00|{num}\.60|{num}[,\s]+BOULEVARD|{num}[,\s]+BLVD', text, re.IGNORECASE):
                 valid_candidates.append(num)
     
     if valid_candidates:
