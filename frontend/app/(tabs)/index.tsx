@@ -3191,6 +3191,13 @@ const styles = StyleSheet.create({
     color: '#4ECDC4',
     flex: 1,
   },
+  selectedInventoryVin: {
+    fontSize: 11,
+    color: '#888',
+    fontFamily: 'monospace',
+    marginLeft: 28,
+    marginTop: 2,
+  },
   // Styles Accessoires
   accessoryRow: {
     flexDirection: 'row',
