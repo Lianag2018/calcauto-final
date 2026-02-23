@@ -86,18 +86,35 @@ def parse_model_code(text: str) -> Optional[str]:
     
     Patterns connus:
     - WL**** (Grand Cherokee)
+    - WS**** (Wagoneer S)
     - JT**** (Gladiator)
-    - DT**** (Ram)
+    - DT**** (Ram 1500)
+    - DJ**** (Ram 2500)
+    - D2**** (Ram 3500)
     - JL**** (Wrangler)
+    - MP**** (Compass)
+    - KM**** (Cherokee)
+    - WD**** (Durango)
+    - LB**** (Charger)
+    - RU**** (Pacifica)
+    - VF**** (ProMaster)
     """
     patterns = [
         r'\b(WL[A-Z]{2}\d{2})\b',  # Grand Cherokee
+        r'\b(WS[A-Z]{2}\d{2})\b',  # Wagoneer S
         r'\b(JT[A-Z]{2}\d{2})\b',  # Gladiator
-        r'\b(DT[A-Z0-9]{2}\d{2})\b',  # Ram
+        r'\b(DT[A-Z0-9]{2}\d{2})\b',  # Ram 1500
+        r'\b(DJ[A-Z0-9]{2}\d{2})\b',  # Ram 2500
+        r'\b(D2[A-Z0-9]{2}\d{2})\b',  # Ram 3500
+        r'\b(D[23][0-9][A-Z0-9]{3})\b',  # Ram 3500 alternative (D23L91, D28H92)
         r'\b(JL[A-Z]{2}\d{2})\b',  # Wrangler
-        r'\b(KL[A-Z]{2}\d{2})\b',  # Cherokee
+        r'\b(KL[A-Z]{2}\d{2})\b',  # Cherokee old
+        r'\b(KM[A-Z]{2}\d{2})\b',  # Cherokee new
         r'\b(WD[A-Z]{2}\d{2})\b',  # Durango
         r'\b(MP[A-Z]{2}\d{2})\b',  # Compass
+        r'\b(LB[A-Z]{2}\d{2})\b',  # Charger
+        r'\b(RU[A-Z]{2}\d{2})\b',  # Pacifica
+        r'\b(VF[A-Z0-9]{2}\d{2})\b',  # ProMaster
     ]
     
     for pattern in patterns:
