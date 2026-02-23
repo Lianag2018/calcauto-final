@@ -27,7 +27,8 @@ Application mobile iOS/Android de calcul de financement automobile avec gestion 
 - **Validation PDF**: taille > 20KB + commence par `%PDF`
 - **Playwright fallback** si HTTP échoue
 - **Cache MongoDB** pour éviter re-téléchargements
-- Image intégrée dans email (converti avec PyMuPDF)
+- **Image CID** intégrée dans email (meilleur support Gmail)
+- Image compressée: 800px max, JPEG 70%, ~80KB
 - Endpoints: `/api/window-sticker/{vin}`, `/api/window-sticker/{vin}/pdf`
 
 ### Phase 7: Accessoires dans Calculateur (DONE - Dec 2025)
@@ -44,9 +45,10 @@ Application mobile iOS/Android de calcul de financement automobile avec gestion 
 ### Phase 9: Bug Fixes & UI (DONE - Feb 2026)
 - ✅ Option 2 s'affiche même avec taux 0%
 - ✅ Texte accessoires lisible (style `input` ajouté)
-- ✅ **VIN affiché dans inventaire** (cartes véhicules)
-- ✅ **VIN affiché dans calculateur** (sélecteur + bannière)
-- ✅ Window Sticker réel testé avec VIN `1C4RJKBG5S8806267` (79KB)
+- ✅ VIN affiché dans inventaire (cartes véhicules)
+- ✅ VIN affiché dans calculateur (sélecteur + bannière)
+- ✅ Window Sticker image intégrée via CID (Gmail compatible)
+- ✅ **VIN manuel** si pas d'inventaire (nouveau champ)
 
 ## Stockage Inventaire
 - **Collection MongoDB**: `inventory`
@@ -59,9 +61,9 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
 ```
 
 ## Key Files Modified
-- `backend/server.py` - Window Sticker KenBot (HTTP + Playwright), Option 2 fix
+- `backend/server.py` - Window Sticker KenBot (HTTP + Playwright), email CID, Option 2 fix
 - `backend/parser.py` - Options FCA, stock# dernier
-- `frontend/app/(tabs)/index.tsx` - Section Accessoires, VIN affiché, styles
+- `frontend/app/(tabs)/index.tsx` - Section Accessoires, VIN manuel, styles
 - `frontend/app/(tabs)/inventory.tsx` - VIN affiché dans cartes
 
 ## Backlog
