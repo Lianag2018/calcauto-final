@@ -1871,7 +1871,7 @@ export default function HomeScreen() {
                             model: selectedProgram.model,
                             trim: selectedProgram.trim,
                             year: selectedProgram.year,
-                            vin: selectedInventory?.vin || '',
+                            vin: selectedInventory?.vin || (manualVin && manualVin.length === 17 ? manualVin : ''),
                           },
                           calculation_results: {
                             consumer_cash: selectedProgram.consumer_cash,
