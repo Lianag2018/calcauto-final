@@ -4960,11 +4960,27 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
         except Exception as log_err:
             logger.warning(f"Failed to log parsing metric: {log_err}")
         
+        # ===== ENRICHISSEMENT AVEC PROMOTIONS FINANCEMENT =====
+        # Ajouter automatiquement les informations de financement basées sur le code produit
+        financing_info = None
+        if vehicle_data and vehicle_data.get("model_code"):
+            financing_info = get_financing_for_code(vehicle_data["model_code"])
+            if financing_info:
+                vehicle_data["financing"] = {
+                    "consumer_cash": financing_info.get("consumer_cash", 0),
+                    "bonus_cash": financing_info.get("bonus_cash", 0),
+                    "option1_rates": financing_info.get("option1_rates", {}),
+                    "option2_rates": financing_info.get("option2_rates", {}),
+                    "programme_source": financing_info.get("programme_trim", "")
+                }
+                logger.info(f"Financing info added: Consumer Cash=${financing_info.get('consumer_cash', 0)}, Bonus=${financing_info.get('bonus_cash', 0)}")
+        
         return {
             "success": True,
             "vehicle": vehicle_data,
             "validation": validation,
-            "parse_method": parse_method
+            "parse_method": parse_method,
+            "has_financing": financing_info is not None
         }
         
     except HTTPException:
