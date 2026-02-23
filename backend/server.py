@@ -3878,9 +3878,9 @@ try:
                 "body": f"{info.get('cab', '')} {info.get('drive', '')}".strip(),
                 "description": f"{info.get('brand', '')} {info.get('model', '')} {info.get('trim', '')} {info.get('cab', '')} {info.get('drive', '')}".strip()
             }
-    logger.info(f"Loaded {len(_FCA_CODES_2026)} FCA product codes from JSON")
+    print(f"[FCA] Loaded {len(_FCA_CODES_2026)} product codes from JSON")
 except Exception as e:
-    logger.warning(f"Could not load FCA codes JSON: {e}")
+    print(f"[FCA] Warning: Could not load FCA codes JSON: {e}")
 
 # Base de données des codes produits FCA/Stellantis (fallback)
 # Format: CODE -> {brand, model, trim, body, description}
