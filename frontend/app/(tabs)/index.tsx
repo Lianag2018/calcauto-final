@@ -424,6 +424,15 @@ export default function HomeScreen() {
   const [showInventoryPicker, setShowInventoryPicker] = useState(false);
   const [manualVin, setManualVin] = useState<string>('');  // VIN manuel si pas d'inventaire
   
+  // Auto-detected financing from product code
+  const [autoFinancing, setAutoFinancing] = useState<{
+    consumer_cash: number;
+    bonus_cash: number;
+    option1_rates: Record<string, number | null>;
+    option2_rates: Record<string, number | null>;
+    programme_source: string;
+  } | null>(null);
+  
   // Payment frequency
   const [paymentFrequency, setPaymentFrequency] = useState<'monthly' | 'biweekly' | 'weekly'>('monthly');
   
