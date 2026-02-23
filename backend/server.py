@@ -3882,6 +3882,44 @@ try:
 except Exception as e:
     print(f"[FCA] Warning: Could not load FCA codes JSON: {e}")
 
+# ============ Code -> Programme Financing Mapping ============
+_CODE_PROGRAM_MAPPING = {}
+try:
+    mapping_file = os.path.join(os.path.dirname(__file__), 'data', 'code_program_mapping.json')
+    with open(mapping_file, 'r') as f:
+        _CODE_PROGRAM_MAPPING = _json.load(f)
+    print(f"[FCA] Loaded {len(_CODE_PROGRAM_MAPPING)} code->program mappings")
+except Exception as e:
+    print(f"[FCA] Warning: Could not load code->program mapping: {e}")
+
+def get_financing_for_code(code: str) -> Optional[Dict[str, Any]]:
+    """
+    Retourne les informations de financement pour un code produit.
+    Inclut: consumer_cash, bonus_cash, taux Option 1 et Option 2.
+    """
+    code = code.upper().strip()
+    if code in _CODE_PROGRAM_MAPPING:
+        return _CODE_PROGRAM_MAPPING[code]['financing']
+    return None
+
+def get_full_vehicle_info(code: str) -> Optional[Dict[str, Any]]:
+    """
+    Retourne toutes les informations pour un code produit:
+    - Détails du véhicule (marque, modèle, trim, etc.)
+    - Informations de financement (consumer cash, bonus cash, taux)
+    """
+    code = code.upper().strip()
+    if code in _CODE_PROGRAM_MAPPING:
+        return _CODE_PROGRAM_MAPPING[code]
+    # Fallback: retourner juste les infos du véhicule sans financement
+    if code in _FCA_CODES_2026:
+        return {
+            'code': code,
+            'vehicle': _FCA_CODES_2026[code],
+            'financing': None
+        }
+    return None
+
 # Base de données des codes produits FCA/Stellantis (fallback)
 # Format: CODE -> {brand, model, trim, body, description}
 FCA_PRODUCT_CODES = {
