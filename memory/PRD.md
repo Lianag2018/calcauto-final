@@ -41,20 +41,24 @@ Application mobile iOS/Android de calcul de financement automobile avec gestion 
 - Stock# = dernier nombre 5 chiffres (manuscrit en bas)
 - Format options: "CODE - Description"
 
+### Phase 9: Bug Fixes (Feb 2026)
+- ✅ Corrigé: Texte illisible dans les champs "Accessoires" (style `input` manquant ajouté)
+- ✅ Vérifié: Window Sticker image intégrée dans les emails (conversion PDF→JPEG fonctionne)
+
 ## API Keys (Production - Render)
 ```
 GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
 ```
 
 ## Key Files Modified
-- `backend/server.py` - Window Sticker auto-download, endpoints
+- `backend/server.py` - Window Sticker auto-download, endpoints, email embedding
 - `backend/parser.py` - Options FCA, stock# dernier
-- `frontend/app/(tabs)/index.tsx` - Section Accessoires
+- `frontend/app/(tabs)/index.tsx` - Section Accessoires, style `input` ajouté
 
 ## Backlog
 - (P1) VIN auto-rempli quand stock sélectionné
 - (P2) Interface historique scans
-- (P3) Refactoring code
+- (P3) Refactoring code (index.tsx, server.py)
 
 ## Test Credentials
 - Email: danielgiroux007@gmail.com
