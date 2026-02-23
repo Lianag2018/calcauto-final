@@ -112,35 +112,47 @@ def parse_trim_from_description(text: str) -> Optional[str]:
     """
     Extrait le trim depuis la ligne DESCRIPTION de la facture FCA.
     
-    La ligne ressemble généralement à:
-    MODEL/OPT    Compass    DESCRIPTION    Limited    AMOUNT/MONTANT
-    ou: Ram 3500 Bighorn (manuscrit)
-    
-    Trims connus Stellantis:
-    - Compass: Sport, North, Trailhawk, Limited, Altitude
-    - Grand Cherokee: Laredo, Altitude, Limited, Summit, Overland, Trackhawk
-    - Ram: Tradesman, Big Horn, Bighorn, Lone Star, Laramie, Limited, Rebel, TRX, Express
-    - Wrangler: Sport, Willys, Rubicon, Sahara
-    - Cherokee: Latitude, Altitude, Trailhawk, Limited, Overland
+    Trims connus Stellantis (extrait du guide SCI Lease Corp):
+    - FIAT: Giorgio Armani, La Prima, Red
+    - Chrysler: SXT, Select, Limited, Limited S PHEV, Pinnacle, Pinnacle PHEV
+    - Dodge: R/T, R/T Plus, Scat Pack, Scat Pack Plus, GT, GT Plus, GT Hemi, SXT, SRT Hellcat
+    - Jeep: Sport, Sport S, North, Altitude, Limited, Trailhawk, Trailhawk Elite, Laredo, Laredo Altitude, 
+            Overland, Summit, Summit Reserve, Rubicon, Rubicon X, Sahara, Willys, Mojave, Mojave X,
+            Nighthawk, Base, Upland, Series I/II/III, Moab 392
+    - Ram: Express, Black Express, Tradesman, Big Horn, Bighorn, Sport, Rebel, RHO, Laramie, 
+           Limited, Limited Longhorn, Longhorn, Powerwagon, Tungsten, Warlock
     """
     # Liste des trims connus (ordre de priorité - du plus spécifique au moins)
     known_trims = [
         # Trims spécifiques longs d'abord
-        "Limited Reserve", "Summit Reserve", "High Altitude", "Big Horn", "Lone Star",
+        "Limited Reserve", "Summit Reserve", "Limited Longhorn", "Laredo Altitude",
+        "Limited Altitude", "Summit Obsidian", "Series II Obsidian", "Series II Carbide",
+        "GT Hemi Plus", "GT Hemi Premium", "SRT Hellcat Hammerhead", "SRT Hellcat Silver Bullet",
+        "Scat Pack Plus", "R/T Plus", "R/T 20th Anniv", "Trailhawk Elite",
+        "Limited S PHEV", "Pinnacle PHEV", "Select PHEV", "Moab 392",
+        "Rubicon X", "Mojave X", "Sport S", "Willys 41", "Black Express",
+        
         # Trims Ram
-        "Bighorn", "Laramie", "Rebel", "Tradesman", "TRX", "Express", "Night Edition",
-        # Trims courants
+        "Big Horn", "Bighorn", "Laramie", "Rebel", "Tradesman", "Express",
+        "Powerwagon", "Power Wagon", "Tungsten", "Warlock", "Longhorn", "RHO",
+        
+        # Trims Jeep
         "Limited", "Trailhawk", "Altitude", "Summit", "Overland",
-        "Laredo", "North", "Sport", "Sahara", "Rubicon", "Willys",
-        "Latitude", "SXT", "PHEV", "Base"
+        "Laredo", "North", "Sport", "Sahara", "Rubicon", "Willys", "Mojave", "Nighthawk",
+        "Upland", "Series III", "Series II", "Series I", "Base",
+        
+        # Trims Dodge
+        "SRT Hellcat", "Scat Pack", "R/T", "GT Plus", "GT",
+        
+        # Trims Chrysler/Fiat
+        "Pinnacle", "Select", "SXT",
+        "Giorgio Armani", "La Prima", "Red"
     ]
-    
-    text_upper = text.upper()
     
     # Chercher dans le texte
     for trim in known_trims:
         # Chercher le trim dans le texte (insensible à la casse)
-        pattern = rf'\b{trim}\b'
+        pattern = rf'\b{re.escape(trim)}\b'
         if re.search(pattern, text, re.IGNORECASE):
             return trim
     
