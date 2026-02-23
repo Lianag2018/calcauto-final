@@ -108,6 +108,47 @@ def parse_model_code(text: str) -> Optional[str]:
     return None
 
 
+def parse_trim_from_description(text: str) -> Optional[str]:
+    """
+    Extrait le trim depuis la ligne DESCRIPTION de la facture FCA.
+    
+    La ligne ressemble généralement à:
+    MODEL/OPT    Compass    DESCRIPTION    Limited    AMOUNT/MONTANT
+    
+    Trims connus Stellantis:
+    - Compass: Sport, North, Trailhawk, Limited, Altitude
+    - Grand Cherokee: Laredo, Altitude, Limited, Summit, Overland, Trackhawk
+    - Ram: Tradesman, Big Horn, Lone Star, Laramie, Limited, Rebel, TRX
+    - Wrangler: Sport, Willys, Rubicon, Sahara
+    - Cherokee: Latitude, Altitude, Trailhawk, Limited, Overland
+    """
+    # Liste des trims connus (ordre de priorité - du plus spécifique au moins)
+    known_trims = [
+        # Trims spécifiques longs d'abord
+        "Limited Reserve", "Summit Reserve", "High Altitude",
+        # Trims courants
+        "Limited", "Trailhawk", "Altitude", "Summit", "Overland",
+        "Laredo", "North", "Sport", "Sahara", "Rubicon", "Willys",
+        "Laramie", "Rebel", "Tradesman", "Big Horn", "Lone Star", "TRX",
+        "Latitude", "SXT", "PHEV", "Base"
+    ]
+    
+    text_upper = text.upper()
+    
+    # Chercher dans la zone DESCRIPTION
+    # Pattern: après "DESCRIPTION" ou sur la ligne avec le modèle
+    for trim in known_trims:
+        # Chercher le trim dans le texte (insensible à la casse)
+        if trim.upper() in text_upper:
+            # Vérifier que ce n'est pas dans un contexte d'adresse ou de code
+            # Ex: éviter de matcher "LIMITED" dans "LIMITED WARRANTY"
+            pattern = rf'\b{trim}\b'
+            if re.search(pattern, text, re.IGNORECASE):
+                return trim
+    
+    return None
+
+
 def parse_financial_data(text: str) -> Dict[str, Optional[int]]:
     """
     Extrait EP, PDCO, PREF, Holdback depuis le texte.
