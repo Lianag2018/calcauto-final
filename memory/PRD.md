@@ -54,11 +54,28 @@ Application mobile iOS/Android de calcul de financement automobile avec gestion 
 - **Coût**: ~$0.0015/image (vs $0.02 avec GPT-4 Vision = 92% d'économie)
 - **Quota gratuit**: 1000 images/mois
 
+### Phase 6: Scan History & Statistics (DONE - Dec 2025)
+- **Nouveaux endpoints API**:
+  - `GET /api/scans/history` - Historique des scans de l'utilisateur
+  - `GET /api/scans/stats` - Statistiques détaillées (taux de succès, coûts, méthodes)
+  
+- **Métriques trackées**:
+  - VIN, stock#, marque, modèle
+  - Score de confiance
+  - Méthode utilisée (google_vision_hybrid, tesseract, gpt4_vision)
+  - Coût estimé par scan
+  - Économies par rapport à GPT-4 Vision
+  - Quota gratuit restant Google Vision
+
 ## API Keys Required (Production)
 ```
 GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
 OPENAI_API_KEY=sk-proj-... (backup uniquement)
 ```
+
+## Key Endpoints (New)
+- `GET /api/scans/history?limit=50` - Derniers scans
+- `GET /api/scans/stats?days=30` - Statistiques sur N jours
 
 ## Key Files
 - `backend/ocr.py` - Pipeline CamScanner + Google Vision OCR
@@ -74,7 +91,7 @@ OPENAI_API_KEY=sk-proj-... (backup uniquement)
 
 ### P2: UX Improvements
 - Indicateur visuel pour VINs auto-corrigés
-- Dashboard métriques de parsing
+- Interface mobile pour voir l'historique des scans
 
 ### P3: Code Quality
 - Refactorer `backend/server.py` (~4800 lignes) en structure routes/
@@ -87,6 +104,6 @@ OPENAI_API_KEY=sk-proj-... (backup uniquement)
 ## Recent Changes (Dec 2025)
 1. Intégration Google Cloud Vision API pour OCR
 2. Remplacement GPT-4 Vision par approche hybride (Google Vision + parser regex)
-3. Amélioration parser.py pour variations OCR
-4. Support amélioré du stock# manuscrit
-5. Test réussi 8/8 champs sur vraie facture FCA
+3. Amélioration parser.py pour variations OCR et stock# manuscrit
+4. Test réussi 8/8 champs sur vraie facture FCA
+5. **NEW**: Endpoints /api/scans/history et /api/scans/stats pour statistiques utilisateur
