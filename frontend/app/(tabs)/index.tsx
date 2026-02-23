@@ -448,6 +448,9 @@ export default function HomeScreen() {
   // Comptant (cash down payment, taxes included)
   const [comptantTxInclus, setComptantTxInclus] = useState('');
   
+  // Accessoires additionnels (ajoutés au prix avant taxes)
+  const [accessories, setAccessories] = useState<Array<{description: string; price: string}>>([]);
+  
   // Frais additionnels (taxables)
   const [fraisDossier, setFraisDossier] = useState('259.95');
   const [taxePneus, setTaxePneus] = useState('15');
