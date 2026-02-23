@@ -98,6 +98,90 @@ def convert_pdf_to_images(pdf_bytes: bytes, max_pages: int = 2, dpi: int = 150) 
         return []
 
 
+def generate_window_sticker_html(vin: str, images: list, pdf_url: str, pdf_bytes: bytes = None) -> str:
+    """
+    Génère le HTML pour afficher le Window Sticker avec images uniformes.
+    
+    Args:
+        vin: Numéro VIN du véhicule
+        images: Liste des images converties du PDF
+        pdf_url: URL directe vers le PDF
+        pdf_bytes: Bytes du PDF pour pièce jointe
+    
+    Returns:
+        HTML string pour la section Window Sticker
+    """
+    if not vin or len(vin) != 17:
+        return ""
+    
+    # Si on a des images, les afficher uniformément
+    if images:
+        images_html = ""
+        
+        # Calculer la largeur pour afficher les images uniformément
+        # Si 2 pages côte à côte, 48% chacune. Si 1 page, 100%
+        if len(images) == 2:
+            img_width = "48%"
+            layout = "display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px;"
+        else:
+            img_width = "100%"
+            layout = "text-align: center;"
+        
+        for img in images:
+            images_html += f'''
+                <div style="width: {img_width}; margin-bottom: 10px;">
+                    <img src="data:image/jpeg;base64,{img['base64']}" 
+                         alt="Window Sticker Page {img['page']}" 
+                         style="width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" />
+                    <p style="text-align: center; font-size: 11px; color: #888; margin: 5px 0 0 0;">Page {img['page']}</p>
+                </div>
+            '''
+        
+        return f'''
+            <div class="section" style="margin-top: 25px; page-break-inside: avoid;">
+                <div class="section-title" style="background: linear-gradient(135deg, #1565C0 0%, #0D47A1 100%); color: white; padding: 12px 15px; border-radius: 6px 6px 0 0; font-size: 16px; font-weight: bold;">
+                    📋 Window Sticker Officiel
+                </div>
+                <div style="background: #f8f9fa; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 6px 6px; padding: 15px;">
+                    <p style="margin: 0 0 15px 0; font-size: 13px; color: #555; text-align: center;">
+                        <strong>VIN:</strong> {vin}
+                    </p>
+                    <div style="{layout}">
+                        {images_html}
+                    </div>
+                    <div style="text-align: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                        <a href="{pdf_url}" 
+                           style="display: inline-block; background: #1565C0; color: white; padding: 10px 25px; text-decoration: none; border-radius: 5px; font-size: 14px; font-weight: bold;">
+                            📥 Télécharger le PDF complet
+                        </a>
+                    </div>
+                    {f"<p style='text-align: center; font-size: 11px; color: #388E3C; margin: 10px 0 0 0;'>✅ Le PDF original est également joint à cet email</p>" if pdf_bytes else ""}
+                </div>
+            </div>
+        '''
+    
+    # Fallback: pas d'images, juste le lien
+    elif pdf_url:
+        return f'''
+            <div class="section" style="margin-top: 25px;">
+                <div class="section-title" style="background: linear-gradient(135deg, #1565C0 0%, #0D47A1 100%); color: white; padding: 12px 15px; border-radius: 6px 6px 0 0; font-size: 16px; font-weight: bold;">
+                    📋 Window Sticker Officiel
+                </div>
+                <div style="background: #f8f9fa; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 6px 6px; padding: 20px; text-align: center;">
+                    <p style="margin: 0 0 15px 0; font-size: 13px; color: #555;">
+                        <strong>VIN:</strong> {vin}
+                    </p>
+                    <a href="{pdf_url}" 
+                       style="display: inline-block; background: #1565C0; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-size: 14px; font-weight: bold;">
+                        📥 Voir le Window Sticker
+                    </a>
+                </div>
+            </div>
+        '''
+    
+    return ""
+
+
 async def fetch_window_sticker(vin: str, brand: str = None) -> dict:
     """
     Télécharge le Window Sticker PDF pour un VIN donné.
