@@ -4768,13 +4768,20 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
         if decision == "review_required":
             vin_info = decode_vin(vin_corrected) if vin_corrected and len(vin_corrected) == 17 else {}
             model_code = parsed.get("model_code", "")
-            product_info = decode_product_code(model_code) if model_code else {}
             
-            # PRIORITÉ CORRIGÉE: code produit (base de données) > parser > VIN
-            extracted_model = product_info.get("model") or parsed.get("model") or ""
-            extracted_trim = _build_trim_string(product_info) or parsed.get("trim") or ""
+            # ==== DOUBLE VÉRIFICATION AVEC BASE MASTER ====
+            master_lookup = lookup_product_code(model_code) if model_code else None
+            product_info = master_lookup or (decode_product_code(model_code) if model_code else {})
             
-            logger.info(f"Review - Model extraction: code={model_code}, product_info={product_info}, final_model={extracted_model}, final_trim={extracted_trim}")
+            if master_lookup:
+                extracted_model = master_lookup.get("model") or ""
+                extracted_trim = _build_trim_string(master_lookup)
+                extracted_brand = master_lookup.get("brand") or "Stellantis"
+                logger.info(f"[REVIEW - MASTER OK] Code {model_code} validé: {master_lookup.get('full_description')}")
+            else:
+                extracted_model = product_info.get("model") or parsed.get("model") or ""
+                extracted_trim = _build_trim_string(product_info) or parsed.get("trim") or ""
+                extracted_brand = product_info.get("brand") or "Stellantis"
             
             return {
                 "success": True,
@@ -4785,8 +4792,9 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                     "vin_valid": vin_valid,
                     "vin_corrected": vin_was_corrected,
                     "model_code": model_code,
+                    "model_code_validated": master_lookup is not None,
                     "year": vin_info.get("year") or datetime.now().year,
-                    "brand": product_info.get("brand") or "Stellantis",
+                    "brand": extracted_brand,
                     "model": extracted_model,
                     "trim": extracted_trim,
                     "ep_cost": parsed.get("ep_cost") or 0,
