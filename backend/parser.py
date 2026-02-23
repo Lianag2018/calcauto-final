@@ -481,6 +481,7 @@ def parse_invoice_text(ocr_result: Dict[str, str]) -> Dict[str, Any]:
         "vin": None,
         "model_code": None,
         "stock_no": None,
+        "trim": None,  # Ajouté pour extraire le trim de la facture
         "ep_cost": None,
         "pdco": None,
         "pref": None,
@@ -509,6 +510,9 @@ def parse_invoice_text(ocr_result: Dict[str, str]) -> Dict[str, Any]:
     result["model_code"] = parse_model_code(vin_text)
     if not result["model_code"]:
         result["model_code"] = parse_model_code(ocr_result.get("full_text", ""))
+    
+    # Trim depuis la description (full_text)
+    result["trim"] = parse_trim_from_description(ocr_result.get("full_text", ""))
     
     # Données financières depuis zone finance
     finance_text = ocr_result.get("finance_text", "")
