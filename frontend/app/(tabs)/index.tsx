@@ -3351,6 +3351,69 @@ const styles = StyleSheet.create({
     marginLeft: 28,
     marginTop: 2,
   },
+  // Styles Auto-financing banner
+  autoFinancingBanner: {
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#FFD700',
+  },
+  autoFinancingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  autoFinancingTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FFD700',
+  },
+  autoFinancingContent: {
+    gap: 4,
+  },
+  autoFinancingItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  autoFinancingLabel: {
+    fontSize: 13,
+    color: '#aaa',
+  },
+  autoFinancingLabelTotal: {
+    fontSize: 13,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  autoFinancingValue: {
+    fontSize: 14,
+    color: '#4ECDC4',
+    fontWeight: 'bold',
+  },
+  autoFinancingValueBonus: {
+    fontSize: 14,
+    color: '#9b59b6',
+    fontWeight: 'bold',
+  },
+  autoFinancingValueTotal: {
+    fontSize: 15,
+    color: '#FFD700',
+    fontWeight: 'bold',
+  },
+  autoFinancingValueRate: {
+    fontSize: 13,
+    color: '#4CAF50',
+    fontStyle: 'italic',
+  },
+  autoFinancingSource: {
+    fontSize: 10,
+    color: '#666',
+    marginTop: 6,
+    fontStyle: 'italic',
+  },
   // Styles Accessoires
   accessoryRow: {
     flexDirection: 'row',
