@@ -3246,7 +3246,7 @@ async def get_inventory_vehicle(stock_no: str, authorization: Optional[str] = He
 
 @api_router.post("/inventory")
 async def create_inventory_vehicle(vehicle: InventoryCreate, authorization: Optional[str] = Header(None)):
-    """Ajoute un véhicule à l'inventaire"""
+    """Ajoute un véhicule à l'inventaire et télécharge le Window Sticker automatiquement"""
     user = await get_current_user(authorization)
     
     # Check if stock_no already exists
@@ -3262,6 +3262,19 @@ async def create_inventory_vehicle(vehicle: InventoryCreate, authorization: Opti
     
     # Calculate net_cost
     net_cost = vehicle.ep_cost - vehicle.holdback if vehicle.ep_cost and vehicle.holdback else 0
+    
+    # ===== TÉLÉCHARGER LE WINDOW STICKER AUTOMATIQUEMENT =====
+    window_sticker_available = False
+    if vehicle.vin and len(vehicle.vin) == 17:
+        try:
+            logger.info(f"Téléchargement Window Sticker pour VIN={vehicle.vin}")
+            ws_result = await fetch_window_sticker(vehicle.vin, vehicle.brand)
+            if ws_result["success"]:
+                await save_window_sticker_to_db(vehicle.vin, ws_result["pdf_base64"], user["id"])
+                window_sticker_available = True
+                logger.info(f"Window Sticker sauvegardé pour VIN={vehicle.vin}")
+        except Exception as e:
+            logger.warning(f"Erreur téléchargement Window Sticker: {e}")
     
     vehicle_data = InventoryVehicle(
         owner_id=user["id"],
@@ -3283,7 +3296,12 @@ async def create_inventory_vehicle(vehicle: InventoryCreate, authorization: Opti
     )
     
     await db.inventory.insert_one(vehicle_data.dict())
-    return {"success": True, "vehicle": vehicle_data.dict(), "message": f"Véhicule {vehicle.stock_no} ajouté"}
+    return {
+        "success": True, 
+        "vehicle": vehicle_data.dict(), 
+        "message": f"Véhicule {vehicle.stock_no} ajouté",
+        "window_sticker_available": window_sticker_available
+    }
 
 @api_router.post("/inventory/bulk")
 async def create_inventory_bulk(vehicles: List[InventoryCreate], authorization: Optional[str] = Header(None)):
