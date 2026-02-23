@@ -22,11 +22,12 @@ Application mobile iOS/Android de calcul de financement automobile avec gestion 
 - Extraction: VIN, EP, PDCO, Stock#, Options
 - Coût: ~$0.0015/image (vs $0.02 GPT-4)
 
-### Phase 6: Window Sticker (DONE - Dec 2025)
-- Téléchargement automatique lors création stock
-- PDF en pièce jointe dans emails soumission
+### Phase 6: Window Sticker - KenBot Style (DONE - Feb 2026)
+- **HTTP humain** avec headers (User-Agent, Referer, Accept)
+- **Validation PDF**: taille > 20KB + commence par `%PDF`
+- **Playwright fallback** si HTTP échoue
+- **Cache MongoDB** pour éviter re-téléchargements
 - Image intégrée dans email (converti avec PyMuPDF)
-- Stockage MongoDB (collection `window_stickers`)
 - Endpoints: `/api/window-sticker/{vin}`, `/api/window-sticker/{vin}/pdf`
 
 ### Phase 7: Accessoires dans Calculateur (DONE - Dec 2025)
@@ -34,16 +35,23 @@ Application mobile iOS/Android de calcul de financement automobile avec gestion 
 - Champs: Description + Prix
 - Bouton "+ Ajouter" pour plusieurs accessoires
 - Total ajouté au prix avant taxes
-- Styles: vert, design moderne
 
 ### Phase 8: Améliorations Parser (DONE - Dec 2025)
-- Options triées dans l'ordre de la facture (couleur → équipements → taxes)
+- Options triées dans l'ordre de la facture
 - Stock# = dernier nombre 5 chiffres (manuscrit en bas)
 - Format options: "CODE - Description"
 
-### Phase 9: Bug Fixes (Feb 2026)
-- ✅ Corrigé: Texte illisible dans les champs "Accessoires" (style `input` manquant ajouté)
-- ✅ Vérifié: Window Sticker image intégrée dans les emails (conversion PDF→JPEG fonctionne)
+### Phase 9: Bug Fixes & UI (DONE - Feb 2026)
+- ✅ Option 2 s'affiche même avec taux 0%
+- ✅ Texte accessoires lisible (style `input` ajouté)
+- ✅ **VIN affiché dans inventaire** (cartes véhicules)
+- ✅ **VIN affiché dans calculateur** (sélecteur + bannière)
+- ✅ Window Sticker réel testé avec VIN `1C4RJKBG5S8806267` (79KB)
+
+## Stockage Inventaire
+- **Collection MongoDB**: `inventory`
+- **Par utilisateur**: `owner_id` pour isolation des données
+- **Champs**: stock_no, vin, brand, model, trim, year, msrp, net_cost, asking_price, status, options, etc.
 
 ## API Keys (Production - Render)
 ```
@@ -51,15 +59,23 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
 ```
 
 ## Key Files Modified
-- `backend/server.py` - Window Sticker auto-download, endpoints, email embedding
+- `backend/server.py` - Window Sticker KenBot (HTTP + Playwright), Option 2 fix
 - `backend/parser.py` - Options FCA, stock# dernier
-- `frontend/app/(tabs)/index.tsx` - Section Accessoires, style `input` ajouté
+- `frontend/app/(tabs)/index.tsx` - Section Accessoires, VIN affiché, styles
+- `frontend/app/(tabs)/inventory.tsx` - VIN affiché dans cartes
 
 ## Backlog
-- (P1) VIN auto-rempli quand stock sélectionné
+- (P1) Refactoring index.tsx (fichier monolithique)
 - (P2) Interface historique scans
-- (P3) Refactoring code (index.tsx, server.py)
+- (P3) Refactoring server.py en structure routes/
+- (P3) Dashboard admin métriques parsing
 
 ## Test Credentials
 - Email: danielgiroux007@gmail.com
 - Password: Liana2018$
+
+## Note Production (Render)
+Pour Playwright sur Render, ajouter au build:
+```
+playwright install chromium
+```
