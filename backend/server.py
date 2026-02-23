@@ -2311,7 +2311,8 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
         
         best_option = comparison.get('best_option', '1')
         savings = comparison.get('savings', 0)
-        has_option2 = option2_rate is not None and option2_rate > 0 and option2_payment > 0
+        # Corrected: Option 2 exists if rate is not None AND payment > 0 (rate can be 0%)
+        has_option2 = option2_rate is not None and option2_payment is not None and option2_payment > 0
         
         def fmt(val):
             return f"{val:,.0f}".replace(",", " ")
