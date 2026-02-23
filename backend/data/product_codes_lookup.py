@@ -1,4 +1,5 @@
-{
+# FCA Product Codes 2026 - Auto-generated
+PRODUCT_CODES = {
   "LBEL29": {
     "brand": "Dodge",
     "model": "Charger",
