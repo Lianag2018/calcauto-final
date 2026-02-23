@@ -42,6 +42,103 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# ============ WINDOW STICKER CONFIGURATION ============
+WINDOW_STICKER_URLS = {
+    "chrysler": "https://www.chrysler.com/hostd/windowsticker/getWindowStickerPdf.do?vin=",
+    "jeep": "https://www.jeep.com/hostd/windowsticker/getWindowStickerPdf.do?vin=",
+    "dodge": "https://www.dodge.com/hostd/windowsticker/getWindowStickerPdf.do?vin=",
+    "ram": "https://www.ramtrucks.com/hostd/windowsticker/getWindowStickerPdf.do?vin=",
+    "fiat": "https://www.fiatusa.com/hostd/windowsticker/getWindowStickerPdf.do?vin=",
+    "alfa": "https://www.alfaromeousa.com/hostd/windowsticker/getWindowStickerPdf.do?vin=",
+}
+
+async def fetch_window_sticker(vin: str, brand: str = None) -> dict:
+    """
+    Télécharge le Window Sticker PDF pour un VIN donné.
+    
+    Returns:
+        dict avec:
+        - success: bool
+        - pdf_base64: str (PDF encodé en base64)
+        - pdf_url: str (URL directe)
+        - size_bytes: int
+        - error: str (si échec)
+    """
+    import requests
+    
+    if not vin or len(vin) != 17:
+        return {"success": False, "error": "VIN invalide (doit être 17 caractères)"}
+    
+    # Déterminer l'URL basée sur la marque ou essayer plusieurs
+    urls_to_try = []
+    
+    if brand:
+        brand_lower = brand.lower()
+        for key in WINDOW_STICKER_URLS:
+            if key in brand_lower or brand_lower in key:
+                urls_to_try.append((key, WINDOW_STICKER_URLS[key] + vin))
+                break
+    
+    # Si pas de marque ou pas trouvé, essayer toutes les URLs Stellantis
+    if not urls_to_try:
+        # Ordre de priorité basé sur les VINs courants
+        priority = ["jeep", "chrysler", "dodge", "ram", "fiat", "alfa"]
+        for key in priority:
+            urls_to_try.append((key, WINDOW_STICKER_URLS[key] + vin))
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "application/pdf,*/*",
+    }
+    
+    for brand_key, url in urls_to_try:
+        try:
+            response = requests.get(url, headers=headers, timeout=30)
+            
+            if response.status_code == 200 and response.headers.get("content-type", "").startswith("application/pdf"):
+                pdf_bytes = response.content
+                pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
+                
+                logger.info(f"Window Sticker téléchargé: VIN={vin}, Brand={brand_key}, Size={len(pdf_bytes)} bytes")
+                
+                return {
+                    "success": True,
+                    "pdf_base64": pdf_base64,
+                    "pdf_url": url,
+                    "size_bytes": len(pdf_bytes),
+                    "brand_source": brand_key
+                }
+        except Exception as e:
+            logger.warning(f"Window Sticker fetch failed for {brand_key}: {e}")
+            continue
+    
+    return {"success": False, "error": "Window Sticker non trouvé pour ce VIN"}
+
+
+async def save_window_sticker_to_db(vin: str, pdf_base64: str, owner_id: str) -> str:
+    """
+    Sauvegarde le Window Sticker PDF dans MongoDB.
+    
+    Returns:
+        ID du document créé
+    """
+    doc_id = str(uuid.uuid4())
+    
+    await db.window_stickers.update_one(
+        {"vin": vin},
+        {"$set": {
+            "id": doc_id,
+            "vin": vin,
+            "pdf_base64": pdf_base64,
+            "owner_id": owner_id,
+            "created_at": datetime.utcnow(),
+            "size_bytes": len(base64.b64decode(pdf_base64))
+        }},
+        upsert=True
+    )
+    
+    return doc_id
+
 # Create the main app without a prefix
 app = FastAPI()
 
