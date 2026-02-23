@@ -220,36 +220,64 @@ def parse_totals(text: str) -> Dict[str, Optional[float]]:
 
 def parse_options(text: str) -> List[Dict[str, Any]]:
     """
-    Extrait la liste des options depuis le texte OCR.
+    Extrait la liste des options depuis le texte OCR de factures FCA Canada.
     
-    Format FCA Canada:
-    - CODE (2-5 chars alphanumériques) + DESCRIPTION + [MONTANT ou * ou SANS FRAIS]
-    
-    Codes d'options FCA typiques:
-    - PXJ, PWZ, PW7 (couleurs)
-    - ABR, ALC, GWJ, YGW, DFW, ERC (équipements)
-    - 2TE, 23E, 3CC, 4CP (packages)
-    - B6W7 (intérieur)
+    Le texte OCR de Google Vision peut avoir les codes et descriptions sur des lignes séparées.
+    On construit un mapping code→description en analysant le texte.
     """
     options = []
     
-    # Codes connus FCA Canada (équipements, couleurs, packages)
-    known_fca_codes = {
+    # Dictionnaire des descriptions FCA connues
+    fca_descriptions = {
         # Couleurs
-        'PXJ', 'PW7', 'PWZ', 'PWL', 'PX8', 'PAU', 'PSC', 'PGG', 'PBF', 'PGE',
-        'PRM', 'PAR', 'PYB', 'PBJ', 'PFQ', 'PR4', 'PBK', 'PWD',
+        'PXJ': 'Couche nacrée cristal noir étincelant',
+        'PW7': 'Blanc éclatant',
+        'PWZ': 'Blanc ivoire 3 couches',
+        'PWL': 'Blanc perle',
+        'PX8': 'Noir diamant',
+        'PAU': 'Rouge flamme',
+        'PSC': 'Gris destroyer',
+        'PGG': 'Gris granit cristal',
+        'PBF': 'Bleu patriote',
+        'PGE': 'Vert sarge',
+        'PRM': 'Rouge velours',
+        'PAR': 'Argent billet',
+        'PYB': 'Jaune stinger',
+        'PBJ': 'Bleu hydro',
+        'PFQ': 'Granite cristal',
         # Intérieur
-        'B6W7', 'CLX9', 'X9', 'TL', 'TX', 'T9',
+        'B6W7': 'Sièges en similicuir capri',
+        'CLX9': 'Cuir Nappa ventilé',
         # Équipements
-        'ABR', 'ALC', 'DFW', 'ERC', 'GWJ', 'YGW', 'ADE', 'ADG', 'APA', 'XAC',
-        'UAQ', 'UAM', 'RSD', 'RSB', 'GCD', 'AAN', 'AAM', 'NHK', 'LNJ', 'XR',
-        'DMC', 'AJK', 'AJV', 'AHR', 'RC3', 'RC4', 'AH6', 'AFG', 'AWB', 'AWL',
-        # Packages / Groupes
-        '2TE', '23E', '2BZ', '2BX', '2BY', '21D', '22B', '22D', '22G', '22J',
-        '27A', '27D', '29K', '29N', '27J', '21B', '21F', '25A', '26A', '25F',
-        '3CC', '4CP',
-        # Taxes / Frais
-        '801', '999', '92HC1', '92HC2',
+        'ABR': 'Ensemble attelage de remorque',
+        'ALC': 'Ensemble allure noire',
+        'DFW': 'Transmission automatique 8 vitesses',
+        'ERC': 'Moteur V6 Pentastar 3.6L',
+        'GWJ': 'Toit ouvrant panoramique 2 panneaux CommandView',
+        'YGW': '20L supplémentaires essence',
+        'ADE': 'Système de divertissement arrière',
+        'ADG': 'Navigation et radio satellite',
+        'UAQ': 'Groupe remorquage haute capacité',
+        'RSD': 'Roues 20 pouces',
+        'DMC': 'Climatisation 3 zones',
+        'AJK': 'Sièges avant chauffants et ventilés',
+        'AHR': 'Volant chauffant',
+        'AWL': 'Système audio premium Alpine',
+        # Packages
+        '2TE': 'Ensemble éclair 2TE',
+        '23E': 'Ensemble éclair 23E',
+        '2BZ': 'Groupe luxe',
+        '2BX': 'Groupe technologie',
+        '21D': 'Groupe remorquage',
+        '22B': 'Groupe commodité',
+        '27A': 'Groupe apparence',
+        '3CC': 'Groupe 3CC',
+        # Taxes/Frais
+        '4CP': 'Taxe accise fédérale - Climatiseur',
+        '801': 'Frais de transport',
+        '999': 'Finance/Expédition',
+        '92HC1': 'Cotisation P.P.',
+        '92HC2': 'Allocation de marketing',
     }
     
     # Codes à ignorer (pas des options)
@@ -260,81 +288,59 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'INVOICE', 'VEHICLE', 'NUMBER', 'FACTURE', 'AMOUNT', 'MONTANT',
         'CE', 'DU', 'DE', 'LA', 'LE', 'AU', 'EN', 'ET', 'OU', 'UN', 'IF',
         'NO', 'SEE', 'PAGE', 'VOIR', 'PAS', 'SHOWN', 'CANADA', 'FOR',
-        'ORIGINAL', 'WINDSOR', 'ONTARIO', 'BOULEVARD', 'STREET',
+        'ORIGINAL', 'WINDSOR', 'ONTARIO', 'BOULEVARD', 'STREET', 'SAND',
+        'SOMME', 'TOIT', '20L', 'SANS',
     }
     
-    # Nettoyer et normaliser le texte
     text_upper = text.upper()
-    lines = text_upper.split('\n')
     
-    # Méthode 1: Chercher les codes connus directement
-    for code in known_fca_codes:
-        # Chercher le code suivi d'une description
-        pattern = rf'\b{re.escape(code)}\s+([A-Z][A-Z0-9\s,\-\'/\.]+?)(?:\s+(\d{{1,3}}[,\.]?\d{{3}}[,\.]?\d{{2}}|\d+\.\d{2}|SANS\s*FRAIS|\*))?(?:\n|$)'
-        matches = re.findall(pattern, text_upper, re.MULTILINE)
-        
-        for match in matches:
-            desc = match[0].strip() if match[0] else ""
-            amount_str = match[1] if len(match) > 1 and match[1] else ""
-            
-            # Nettoyer la description
-            desc = re.sub(r'\s+', ' ', desc)[:60]
-            
-            # Filtrer les descriptions invalides
-            if len(desc) < 3 or desc.startswith('AMOUNT') or desc.startswith('MONTANT'):
-                continue
-            
-            # Calculer le montant
-            if 'SANS' in amount_str or amount_str == '*' or not amount_str:
-                amount_value = 0
-            else:
-                # Convertir montant (format: 1,658.00 ou 871.00)
-                clean_amount = re.sub(r'[^\d]', '', amount_str)
-                if len(clean_amount) >= 3:
-                    try:
-                        amount_value = int(clean_amount[:-2]) if len(clean_amount) > 2 else int(clean_amount)
-                    except:
-                        amount_value = 0
-                else:
-                    amount_value = 0
-            
-            # Éviter les doublons
-            if not any(o['product_code'] == code for o in options):
-                options.append({
-                    "product_code": code,
-                    "description": desc,
-                    "amount": 0  # On met 0 comme demandé par l'utilisateur
-                })
+    # Chercher tous les codes d'options connus dans le texte
+    found_codes = set()
     
-    # Méthode 2: Chercher les codes avec pattern générique (2-5 chars)
-    # Pattern: CODE au début de ligne ou après espace, suivi de description
-    generic_pattern = r'(?:^|\n)\s*([A-Z0-9]{2,5})\s+([A-Z][A-Z\s]{5,40}?)(?:\s+\d|$|\n)'
-    generic_matches = re.findall(generic_pattern, text_upper, re.MULTILINE)
+    # Méthode 1: Chercher les codes connus
+    for code in fca_descriptions.keys():
+        if code in text_upper:
+            found_codes.add(code)
     
-    for code, desc in generic_matches:
-        # Filtrer les codes invalides
+    # Méthode 2: Pattern pour codes FCA génériques (2-5 chars alphanumériques)
+    # Pattern: début de mot, 2-5 chars avec au moins une lettre, suivi d'espace ou fin
+    code_pattern = r'\b([A-Z]{1,2}[A-Z0-9]{1,4}|[0-9]{2,3}[A-Z]{1,2}[0-9]{0,2})\b'
+    potential_codes = re.findall(code_pattern, text_upper)
+    
+    for code in potential_codes:
+        if code not in invalid_codes and len(code) >= 2 and len(code) <= 6:
+            # Vérifier que ce n'est pas juste des chiffres
+            if not code.isdigit():
+                found_codes.add(code)
+    
+    # Construire la liste d'options avec descriptions
+    for code in found_codes:
         if code in invalid_codes:
             continue
-        if len(code) < 2 or code.isdigit():
-            continue
+            
+        # Utiliser la description connue ou chercher dans le texte
+        if code in fca_descriptions:
+            description = fca_descriptions[code]
+        else:
+            # Chercher une description après le code dans le texte
+            pattern = rf'\b{re.escape(code)}\s+([A-Z][A-Z\s\-\']{5,40}?)(?:\s+\d|\s+\*|\s+SANS|$)'
+            match = re.search(pattern, text_upper)
+            if match:
+                description = match.group(1).strip().title()
+            else:
+                description = f"Option {code}"
         
-        # Filtrer les descriptions invalides
-        desc = re.sub(r'\s+', ' ', desc.strip())[:60]
-        if len(desc) < 5:
-            continue
-        if any(invalid in desc for invalid in ['AMOUNT', 'MONTANT', 'TOTAL', 'FACTURE', 'INVOICE']):
-            continue
-        
-        # Éviter les doublons
-        if not any(o['product_code'] == code for o in options):
-            options.append({
-                "product_code": code,
-                "description": desc,
-                "amount": 0
-            })
+        options.append({
+            "product_code": code,
+            "description": description[:60],
+            "amount": 0  # Prix à 0 comme demandé
+        })
     
-    # Limiter à 20 options max pour éviter le bruit
-    return options[:20]
+    # Trier par code pour cohérence
+    options.sort(key=lambda x: x['product_code'])
+    
+    # Limiter à 15 options max
+    return options[:15]
 
 
 def parse_stock_number(text: str) -> Optional[str]:
