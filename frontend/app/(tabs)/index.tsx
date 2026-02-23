@@ -3222,5 +3222,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  // Base input style for accessories (was missing)
+  input: {
+    backgroundColor: '#2d2d44',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#444',
+    color: '#ffffff',
+    fontSize: 15,
+  },
 });
 // Last update: Thu Feb 19 19:47:53 UTC 2026
