@@ -469,9 +469,30 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'TVH', 'PROV', 'NET', 'PRIX', 'SANS', 'CHRYSLER', 'GFBR', 'KENNEBEC'
     }
     
+    # Mots-clés d'adresse à ignorer dans la description
+    address_keywords = [
+        'SOLD TO', 'SHIP TO', 'TERMS', 'DEALER NO', 'INVOICE DATE',
+        'STREET', 'AVENUE', 'BOULEVARD', 'ROAD', 'DRIVE', 'PLACE',
+        'RUE', 'CHEMIN', 'ROUTE', 'AUTOROUTE',
+        'QUEBEC', 'ONTARIO', 'ALBERTA', 'MANITOBA', 'SASKATCHEWAN',
+        'MONTREAL', 'TORONTO', 'VANCOUVER', 'CALGARY', 'OTTAWA',
+        'LAVAL', 'LONGUEUIL', 'GATINEAU', 'SHERBROOKE', 'LEVIS',
+        'TROIS-RIVIERES', 'DRUMMONDVILLE', 'SAGUENAY', 'RIMOUSKI',
+        'CANADA INC', 'LTEE', 'LTD', 'ENRG', 'AUTOMOBILES',
+        'CONCESSIONNAIRE', 'DEALER', 'DEALERSHIP'
+    ]
+    
     for line in lines:
         line = line.strip()
         if not line:
+            continue
+        
+        # Ignorer les lignes qui ressemblent à des codes postaux canadiens (A1A 1A1)
+        if re.match(r'^[A-Z]\d[A-Z]\s*\d[A-Z]\d', line):
+            continue
+        
+        # Ignorer les lignes qui commencent par un numéro de rue (ex: "123 RUE...")
+        if re.match(r'^\d+\s+[A-Z]', line):
             continue
         
         # Chercher un code au début de la ligne
@@ -489,8 +510,16 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
             if code in seen_codes:
                 continue
             
-            # Ignorer si la description ressemble à un header ou adresse
-            if any(x in description_raw for x in ['SOLD TO', 'SHIP TO', 'TERMS', 'DEALER NO', 'INVOICE DATE']):
+            # Ignorer si le code ressemble à un code postal (ex: G1K, H2X, etc.)
+            if re.match(r'^[A-Z]\d[A-Z]$', code):
+                continue
+            
+            # Ignorer si la description contient des mots-clés d'adresse
+            if any(keyword in description_raw.upper() for keyword in address_keywords):
+                continue
+            
+            # Ignorer si la description ressemble à un numéro de téléphone
+            if re.search(r'\d{3}[-.\s]?\d{3}[-.\s]?\d{4}', description_raw):
                 continue
             
             # Nettoyer la description (enlever montants à la fin)
