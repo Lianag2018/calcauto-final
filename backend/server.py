@@ -4022,8 +4022,13 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                 ocr_score = validation_result["score"]
                 logger.info(f"OCR: score={ocr_score}, VIN={vin_corrected}, EP={parsed.get('ep_cost')}")
                 
-                # ----------- NOUVELLE LOGIQUE ZÉRO ERREUR -----------
-                if ocr_score >= 85:
+                # ----------- NOUVELLE LOGIQUE: GOOGLE VISION EN PRIORITÉ -----------
+                # Si Google Vision est configuré, on l'utilise TOUJOURS pour meilleure précision
+                google_api_key = os.environ.get("GOOGLE_VISION_API_KEY")
+                if google_api_key:
+                    logger.info("Google Vision API configurée → Utilisation prioritaire")
+                    decision = "vision_required"  # Force Google Vision
+                elif ocr_score >= 85:
                     decision = "auto_approved"
                 elif 60 <= ocr_score < 85:
                     decision = "review_required"
