@@ -4840,6 +4840,141 @@ async def get_parsing_history(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ============ User Scan History Endpoints (Non-Admin) ============
+
+@api_router.get("/inventory/scan-history")
+async def get_user_scan_history(
+    limit: int = 50,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Historique des scans de factures pour l'utilisateur connecté
+    
+    Retourne les derniers scans avec détails (VIN, score, méthode, coût)
+    """
+    user = await get_current_user(authorization)
+    
+    try:
+        # Récupérer les derniers scans de l'utilisateur
+        cursor = db.parsing_metrics.find(
+            {"owner_id": user["id"]},
+            {"_id": 0}
+        ).sort("timestamp", -1).limit(limit)
+        
+        scans = []
+        async for scan in cursor:
+            scans.append({
+                "timestamp": scan.get("timestamp").isoformat() if scan.get("timestamp") else None,
+                "vin": scan.get("vin", ""),
+                "stock_no": scan.get("stock_no", ""),
+                "brand": scan.get("brand", ""),
+                "model": scan.get("model", ""),
+                "ep_cost": scan.get("ep_cost", 0),
+                "pdco": scan.get("pdco", 0),
+                "score": scan.get("score", 0),
+                "status": scan.get("status", "unknown"),
+                "parse_method": scan.get("parse_method", "unknown"),
+                "duration_sec": round(scan.get("duration_sec", 0), 2),
+                "cost_estimate": scan.get("cost_estimate", 0),
+                "vin_valid": scan.get("vin_valid", False),
+                "success": scan.get("success", True)
+            })
+        
+        return {
+            "count": len(scans),
+            "scans": scans
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting user scan history: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/inventory/scan-stats")
+async def get_user_scan_stats(
+    days: int = 30,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Statistiques de scans pour l'utilisateur connecté
+    
+    Retourne:
+    - total_scans: nombre total de scans
+    - success_rate: % de scans réussis (score >= 70)
+    - avg_score: score de confiance moyen
+    - avg_duration: temps moyen de traitement
+    - total_cost: coût estimé total
+    - methods_breakdown: répartition par méthode (tesseract, google_vision)
+    """
+    user = await get_current_user(authorization)
+    
+    try:
+        from_date = datetime.now() - timedelta(days=days)
+        
+        # Filtrer par utilisateur et période
+        match_filter = {
+            "owner_id": user["id"],
+            "timestamp": {"$gte": from_date}
+        }
+        
+        # Compter total
+        total = await db.parsing_metrics.count_documents(match_filter)
+        
+        if total == 0:
+            return {
+                "period_days": days,
+                "total_scans": 0,
+                "success_rate": 0,
+                "avg_score": 0,
+                "avg_duration_sec": 0,
+                "total_cost_estimate": 0,
+                "methods_breakdown": {},
+                "message": "Aucun scan dans cette période"
+            }
+        
+        # Aggregation pour statistiques
+        pipeline = [
+            {"$match": match_filter},
+            {"$group": {
+                "_id": None,
+                "total": {"$sum": 1},
+                "avg_score": {"$avg": "$score"},
+                "avg_duration": {"$avg": "$duration_sec"},
+                "total_cost": {"$sum": {"$ifNull": ["$cost_estimate", 0]}},
+                "success_count": {"$sum": {"$cond": [{"$gte": ["$score", 70]}, 1, 0]}},
+                "google_vision_count": {"$sum": {"$cond": [{"$regexMatch": {"input": {"$ifNull": ["$parse_method", ""]}, "regex": "google_vision"}}, 1, 0]}},
+                "tesseract_count": {"$sum": {"$cond": [{"$regexMatch": {"input": {"$ifNull": ["$parse_method", ""]}, "regex": "tesseract|pdfplumber"}}, 1, 0]}},
+                "gpt4_vision_count": {"$sum": {"$cond": [{"$regexMatch": {"input": {"$ifNull": ["$parse_method", ""]}, "regex": "vision_optimized"}}, 1, 0]}}
+            }}
+        ]
+        
+        results = await db.parsing_metrics.aggregate(pipeline).to_list(1)
+        
+        if results:
+            r = results[0]
+            return {
+                "period_days": days,
+                "total_scans": r["total"],
+                "success_rate": round(r["success_count"] / r["total"] * 100, 1) if r["total"] else 0,
+                "avg_score": round(r["avg_score"], 1) if r["avg_score"] else 0,
+                "avg_duration_sec": round(r["avg_duration"], 2) if r["avg_duration"] else 0,
+                "total_cost_estimate": round(r["total_cost"], 4),
+                "cost_savings_vs_gpt4": round(r["google_vision_count"] * 0.0185, 2),  # Économie par rapport à GPT-4
+                "methods_breakdown": {
+                    "google_vision_hybrid": r["google_vision_count"],
+                    "tesseract_pdfplumber": r["tesseract_count"],
+                    "gpt4_vision": r["gpt4_vision_count"]
+                },
+                "free_quota_remaining": max(0, 1000 - r["google_vision_count"])  # 1000 gratuits/mois Google
+            }
+        
+        return {"period_days": days, "total_scans": 0, "message": "Pas de données"}
+        
+    except Exception as e:
+        logger.error(f"Error getting user scan stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ============ Other Admin Endpoints ============
 
 @api_router.get("/admin/users")
