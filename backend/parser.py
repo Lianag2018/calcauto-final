@@ -272,17 +272,38 @@ def parse_financial_data(text: str) -> Dict[str, Optional[int]]:
             data["pref"] = clean_fca_price(match.group(1))
             break
     
-    # Holdback: chercher près de PREF pour éviter faux positifs
+    # ===== HOLDBACK: Format FCA spécial =====
+    # Le holdback apparaît en bas à gauche de la facture, dans la même colonne que les codes
+    # Format: 0XXXXX0 ou 0XXXXX00 où XXXXX est le montant
+    # Exemple: 070000 = $700.00 (enlever le premier 0 et les deux derniers 0)
+    # Exemple: 0280000 = $2800.00
+    
     holdback_patterns = [
-        r"PREF[^\d]*\d{7,8}[^\d]*(\b0\d{5}\b)",  # Holdback après PREF
-        r"HOLDBACK\s*[:\s]*(\d{3,6})",           # Label explicite
-        r"HB\s*[:\s]*(\d{3,6})"                  # Abréviation
+        # Format principal: 0XXXXX00 en bas de la colonne des codes (6-7 chiffres commençant par 0)
+        r'\n\s*(0\d{5,6})\s*(?:GVW|KG|$|\n)',
+        # Après PREF sur la même ligne ou ligne suivante
+        r'PREF[*\s]*\d{7,9}\s*\n?\s*(0\d{5,6})\b',
+        # Seul sur une ligne (format holdback FCA)
+        r'^\s*(0\d{5}0{1,2})\s*$',
+        # Fallback: chercher un nombre 0XXXXX près de GVW
+        r'(0\d{5,6})\s*GVW',
     ]
+    
     for pattern in holdback_patterns:
-        holdback_match = re.search(pattern, normalized, re.IGNORECASE)
+        holdback_match = re.search(pattern, normalized, re.IGNORECASE | re.MULTILINE)
         if holdback_match:
-            data["holdback"] = clean_fca_price(holdback_match.group(1))
-            break
+            raw_holdback = holdback_match.group(1)
+            # Décoder le format FCA: enlever le premier 0 et les deux derniers 0
+            # 070000 → 700.00, 0280000 → 2800.00
+            if raw_holdback.startswith('0') and len(raw_holdback) >= 6:
+                # Enlever le premier caractère (0) et les deux derniers (00)
+                middle = raw_holdback[1:-2]
+                try:
+                    holdback_value = float(middle)
+                    data["holdback"] = holdback_value
+                    break
+                except:
+                    pass
     
     return data
 
