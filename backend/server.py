@@ -3864,9 +3864,28 @@ def decode_vin(vin: str) -> dict:
 
 # ============ FCA Product Code Database ============
 
-# Base de données des codes produits FCA/Stellantis
+# Charger la base de codes 2026 depuis le fichier JSON
+import json as _json
+_FCA_CODES_2026 = {}
+try:
+    with open(os.path.join(os.path.dirname(__file__), 'fca_product_codes_2026.json'), 'r') as f:
+        _codes_raw = _json.load(f)
+        for code, info in _codes_raw.items():
+            _FCA_CODES_2026[code] = {
+                "brand": info.get("brand"),
+                "model": info.get("model"),
+                "trim": info.get("trim"),
+                "body": f"{info.get('cab', '')} {info.get('drive', '')}".strip(),
+                "description": f"{info.get('brand', '')} {info.get('model', '')} {info.get('trim', '')} {info.get('cab', '')} {info.get('drive', '')}".strip()
+            }
+    logger.info(f"Loaded {len(_FCA_CODES_2026)} FCA product codes from JSON")
+except Exception as e:
+    logger.warning(f"Could not load FCA codes JSON: {e}")
+
+# Base de données des codes produits FCA/Stellantis (fallback)
 # Format: CODE -> {brand, model, trim, body, description}
 FCA_PRODUCT_CODES = {
+    **_FCA_CODES_2026,  # Nouveaux codes 2026 (priorité)
     # Ram 2500 Series (DJ = Heavy Duty 2500)
     "DJ7L91": {"brand": "Ram", "model": "2500", "trim": "Tradesman", "body": "Crew Cab 4x4 6'4\" Box", "description": "Ram 2500 Tradesman Crew Cab 4x4"},
     "DJ7L92": {"brand": "Ram", "model": "2500", "trim": "Big Horn", "body": "Crew Cab 4x4 6'4\" Box", "description": "Ram 2500 Big Horn Crew Cab 4x4"},
