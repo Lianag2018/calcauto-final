@@ -50,10 +50,25 @@ Application mobile iOS/Android de calcul de financement automobile avec gestion 
 - ✅ Window Sticker image intégrée via CID (Gmail compatible)
 - ✅ **VIN manuel** si pas d'inventaire (nouveau champ)
 
+### Phase 10: Code Produit → Promotions Automatiques (DONE - Feb 2026)
+- **Base de données codes produits** : 131 codes (2025 + 2026) extraits des PDFs Stellantis officiels
+- **Mapping code → programme financement** : 114 codes liés aux promotions actuelles
+- **Scan facture enrichi** : Consumer Cash, Bonus Cash, taux Option 1 & 2 automatiquement ajoutés
+- **Nouveaux endpoints API** :
+  - `GET /api/product-codes/{code}/financing` - Infos financement d'un code
+  - `GET /api/financing/lookup?brand=Ram&model=3500` - Recherche par véhicule
+  - `GET /api/financing/summary` - Résumé des meilleures offres
+- **Frontend** : Bannière "Promotions détectées automatiquement" avec Consumer Cash, Bonus Cash, total rabais
+
 ## Stockage Inventaire
 - **Collection MongoDB**: `inventory`
 - **Par utilisateur**: `owner_id` pour isolation des données
 - **Champs**: stock_no, vin, brand, model, trim, year, msrp, net_cost, asking_price, status, options, etc.
+
+## Fichiers de données
+- `backend/fca_product_codes_2026.json` - 131 codes produits FCA (marque, modèle, trim, année)
+- `backend/data/code_program_mapping.json` - Mapping code → programme financement
+- `programmes_fevrier_2026.csv` - Programmes financement source
 
 ## API Keys (Production - Render)
 ```
@@ -61,9 +76,9 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
 ```
 
 ## Key Files Modified
-- `backend/server.py` - Window Sticker KenBot (HTTP + Playwright), email CID, Option 2 fix
+- `backend/server.py` - Window Sticker KenBot (HTTP + Playwright), email CID, Option 2 fix, auto-financing
 - `backend/parser.py` - Options FCA, stock# dernier
-- `frontend/app/(tabs)/index.tsx` - Section Accessoires, VIN manuel, styles
+- `frontend/app/(tabs)/index.tsx` - Section Accessoires, VIN manuel, auto-financing banner, styles
 - `frontend/app/(tabs)/inventory.tsx` - VIN affiché dans cartes
 
 ## Backlog
