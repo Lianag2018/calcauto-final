@@ -997,5 +997,185 @@
     "cab": "",
     "drive": "",
     "raw": "WRANGLER4-DOOR392(4WD)"
+  },
+  "RUFS53": {
+    "year": "2025",
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Pinnacle",
+    "cab": "",
+    "drive": "AWD",
+    "raw": "CHRYSLERPACIFICAPINNACLEAWD"
+  },
+  "RUES53": {
+    "year": "2025",
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Pinnacle",
+    "cab": "",
+    "drive": "",
+    "raw": "CHRYSLERPACIFICAPINNACLEPLUG-INHYBRID"
+  },
+  "MPJE74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Compass",
+    "trim": "Altitude",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "COMPASSALTITUDE4X4"
+  },
+  "WLJS74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Cherokee",
+    "trim": "Overland",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "GRANDCHEROKEEOVERLAND4X4"
+  },
+  "WLJT74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Cherokee",
+    "trim": "Summit",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "GRANDCHEROKEESUMMIT4X4"
+  },
+  "WLJS75": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Cherokee L",
+    "trim": "Overland",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "GRANDCHEROKEELOVERLAND4X4"
+  },
+  "WLJT75": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Cherokee L",
+    "trim": "Summit",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "GRANDCHEROKEELSUMMIT4X4"
+  },
+  "WSJT75": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Wagoneer",
+    "trim": "Series I",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "GRANDWAGONEERSERIESIII4X4"
+  },
+  "GGEH49": {
+    "year": "2025",
+    "brand": "Dodge",
+    "model": "Hornet",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "HORNETG/T"
+  },
+  "GG7P49": {
+    "year": "2025",
+    "brand": "Dodge",
+    "model": "Hornet",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "HORNETR/T"
+  },
+  "VFLL59": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "ProMaster EV",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "3500PROMASTEREVSTEPVANSUPERHIGHROOF"
+  },
+  "DT6H91": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "Ram 1500",
+    "trim": "Bighorn",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "raw": "1500BIGHORNCREWCAB4X4"
+  },
+  "WSJM75": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wagoneer",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "WAGONEER4X4"
+  },
+  "WSJH75": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wagoneer",
+    "trim": "Series I",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "WAGONEERSERIESII4X4"
+  },
+  "WSJP75": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wagoneer",
+    "trim": "Series I",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "WAGONEERSERIESIII4X4"
+  },
+  "WSJM76": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wagoneer L",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "WAGONEERL4X4"
+  },
+  "WSJH76": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wagoneer L",
+    "trim": "Series I",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "WAGONEERLSERIESII4X4"
+  },
+  "WSJP76": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wagoneer L",
+    "trim": "Series I",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "WAGONEERLSERIESIII4X4"
+  },
+  "KMXL49": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wagoneer S",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "WAGONEERS"
+  },
+  "JLXS74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wrangler 4xe",
+    "trim": "Rubicon",
+    "cab": "",
+    "drive": "",
+    "raw": "WRANGLER4-DOORRUBICON4XE"
   }
 }
