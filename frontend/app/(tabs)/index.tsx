@@ -1071,6 +1071,74 @@ export default function HomeScreen() {
                 </View>
               </View>
             )}
+            
+            {/* Section Accessoires */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="add-circle-outline" size={20} color="#4CAF50" />
+                <Text style={styles.sectionTitle}>
+                  {lang === 'fr' ? 'Accessoires' : 'Accessories'}
+                </Text>
+              </View>
+              
+              {accessories.map((acc, index) => (
+                <View key={index} style={styles.accessoryRow}>
+                  <TextInput
+                    style={[styles.input, styles.accessoryDescInput]}
+                    placeholder={lang === 'fr' ? 'Description' : 'Description'}
+                    placeholderTextColor="#666"
+                    value={acc.description}
+                    onChangeText={(text) => {
+                      const newAcc = [...accessories];
+                      newAcc[index].description = text;
+                      setAccessories(newAcc);
+                    }}
+                  />
+                  <TextInput
+                    style={[styles.input, styles.accessoryPriceInput]}
+                    placeholder="$"
+                    placeholderTextColor="#666"
+                    keyboardType="numeric"
+                    value={acc.price}
+                    onChangeText={(text) => {
+                      const newAcc = [...accessories];
+                      newAcc[index].price = text;
+                      setAccessories(newAcc);
+                    }}
+                  />
+                  <TouchableOpacity
+                    style={styles.removeAccessoryBtn}
+                    onPress={() => {
+                      const newAcc = accessories.filter((_, i) => i !== index);
+                      setAccessories(newAcc);
+                    }}
+                  >
+                    <Ionicons name="close-circle" size={24} color="#FF5252" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              
+              <TouchableOpacity
+                style={styles.addAccessoryBtn}
+                onPress={() => setAccessories([...accessories, { description: '', price: '' }])}
+              >
+                <Ionicons name="add" size={20} color="#4CAF50" />
+                <Text style={styles.addAccessoryText}>
+                  {lang === 'fr' ? 'Ajouter un accessoire' : 'Add accessory'}
+                </Text>
+              </TouchableOpacity>
+              
+              {accessories.length > 0 && (
+                <View style={styles.accessoriesTotalRow}>
+                  <Text style={styles.accessoriesTotalLabel}>
+                    {lang === 'fr' ? 'Total accessoires:' : 'Total accessories:'}
+                  </Text>
+                  <Text style={styles.accessoriesTotalValue}>
+                    {formatCurrency(accessories.reduce((sum, acc) => sum + (parseFloat(acc.price) || 0), 0))}
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
 
           {/* Inventory Selection - Filtered by selected brand */}
