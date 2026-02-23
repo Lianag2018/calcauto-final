@@ -4050,13 +4050,13 @@ def get_full_vehicle_info(code: str) -> Optional[Dict[str, Any]]:
         }
     return None
 
-# Base de données des codes produits FCA/Stellantis (fallback)
+# Base de données des codes produits FCA/Stellantis
+# PRIORITÉ: fichier JSON (codes officiels) > codes fallback en dur
 # Format: CODE -> {brand, model, trim, body, description}
-FCA_PRODUCT_CODES = {
-    **_FCA_CODES_2026,  # Nouveaux codes 2026 (priorité)
-    # Ram 2500 Series (DJ = Heavy Duty 2500)
+_FCA_FALLBACK_CODES = {
+    # Ram 2500 Series (DJ = Heavy Duty 2500) - FALLBACK si pas dans JSON
     "DJ7L91": {"brand": "Ram", "model": "2500", "trim": "Tradesman", "body": "Crew Cab 4x4 6'4\" Box", "description": "Ram 2500 Tradesman Crew Cab 4x4"},
-    "DJ7L92": {"brand": "Ram", "model": "2500", "trim": "Big Horn", "body": "Crew Cab 4x4 6'4\" Box", "description": "Ram 2500 Big Horn Crew Cab 4x4"},
+    "DJ7L92": {"brand": "Ram", "model": "2500", "trim": "Tradesman", "body": "Crew Cab 4x4 6'4\" Box", "description": "Ram 2500 Tradesman Crew Cab 4x4"},
     "DJ7L94": {"brand": "Ram", "model": "2500", "trim": "Laramie", "body": "Crew Cab 4x4 6'4\" Box", "description": "Ram 2500 Laramie Crew Cab 4x4"},
     "DJ7L96": {"brand": "Ram", "model": "2500", "trim": "Limited", "body": "Crew Cab 4x4 6'4\" Box", "description": "Ram 2500 Limited Crew Cab 4x4"},
     "DJ7L98": {"brand": "Ram", "model": "2500", "trim": "Power Wagon", "body": "Crew Cab 4x4 6'4\" Box", "description": "Ram 2500 Power Wagon Crew Cab 4x4"},
@@ -4110,6 +4110,12 @@ FCA_PRODUCT_CODES = {
     # Chrysler
     "RUXL74": {"brand": "Chrysler", "model": "Pacifica", "trim": "Limited", "body": "FWD", "description": "Chrysler Pacifica Limited"},
     "RUXL78": {"brand": "Chrysler", "model": "Pacifica", "trim": "Pinnacle", "body": "AWD", "description": "Chrysler Pacifica Pinnacle AWD"},
+}
+
+# Fusionner avec PRIORITÉ au fichier JSON (codes officiels 2025/2026)
+FCA_PRODUCT_CODES = {
+    **_FCA_FALLBACK_CODES,  # Codes fallback en premier (seront écrasés par JSON)
+    **_FCA_CODES_2026,      # Codes officiels du JSON en dernier (priorité maximale)
 }
 
 # Codes d'options communes FCA
