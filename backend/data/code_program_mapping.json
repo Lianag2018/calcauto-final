@@ -1,0 +1,3764 @@
+{
+  "LBEL29": {
+    "code": "LBEL29",
+    "vehicle": {
+      "brand": "Dodge",
+      "model": "Charger",
+      "trim": "",
+      "year": "2026",
+      "cab": "",
+      "drive": "AWD"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "2-Door & 4-Door (ICE)",
+      "programme_model": "Charger"
+    }
+  },
+  "LBEL49": {
+    "code": "LBEL49",
+    "vehicle": {
+      "brand": "Dodge",
+      "model": "Charger",
+      "trim": "GT",
+      "year": "2026",
+      "cab": "",
+      "drive": "AWD"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "2-Door & 4-Door (ICE)",
+      "programme_model": "Charger"
+    }
+  },
+  "LBEP29": {
+    "code": "LBEP29",
+    "vehicle": {
+      "brand": "Dodge",
+      "model": "Charger",
+      "trim": "Scat Pack",
+      "year": "2026",
+      "cab": "",
+      "drive": "AWD"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "2-Door & 4-Door (ICE)",
+      "programme_model": "Charger"
+    }
+  },
+  "LBEP49": {
+    "code": "LBEP49",
+    "vehicle": {
+      "brand": "Dodge",
+      "model": "Charger",
+      "trim": "Scat Pack",
+      "year": "2026",
+      "cab": "",
+      "drive": "AWD"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "2-Door & 4-Door (ICE)",
+      "programme_model": "Charger"
+    }
+  },
+  "KMJL74": {
+    "code": "KMJL74",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Cherokee",
+      "trim": "",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "Base (KMJL74)",
+      "programme_model": "Cherokee"
+    }
+  },
+  "KMJM74": {
+    "code": "KMJM74",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Cherokee",
+      "trim": "Limited",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 1.99,
+        "48": 2.99,
+        "60": 3.49,
+        "72": 3.99,
+        "84": 4.49,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "Limited/Limited Reserve/Summit",
+      "programme_model": "Grand Cherokee/L"
+    }
+  },
+  "KMJP74": {
+    "code": "KMJP74",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Cherokee",
+      "trim": "Overland",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "Base (KMJL74)",
+      "programme_model": "Cherokee"
+    }
+  },
+  "RUCL53": {
+    "code": "RUCL53",
+    "vehicle": {
+      "brand": "Chrysler",
+      "model": "Grand Caravan",
+      "trim": "CVP",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.49,
+        "84": 1.99,
+        "96": 3.49
+      },
+      "programme_trim": "SXT",
+      "programme_model": "Grand Caravan"
+    }
+  },
+  "RUCT53": {
+    "code": "RUCT53",
+    "vehicle": {
+      "brand": "Chrysler",
+      "model": "Pacifica",
+      "trim": "Limited",
+      "year": "2026",
+      "cab": "",
+      "drive": "FWD"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.49,
+        "84": 1.99,
+        "96": 3.49
+      },
+      "programme_trim": "PHEV",
+      "programme_model": "Pacifica"
+    }
+  },
+  "RUFT53": {
+    "code": "RUFT53",
+    "vehicle": {
+      "brand": "Chrysler",
+      "model": "Pacifica",
+      "trim": "Limited",
+      "year": "2026",
+      "cab": "",
+      "drive": "AWD"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.49,
+        "84": 1.99,
+        "96": 3.49
+      },
+      "programme_trim": "PHEV",
+      "programme_model": "Pacifica"
+    }
+  },
+  "RUET53": {
+    "code": "RUET53",
+    "vehicle": {
+      "brand": "Chrysler",
+      "model": "Pacifica",
+      "trim": "Select PHEV",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.49,
+        "84": 1.99,
+        "96": 3.49
+      },
+      "programme_trim": "PHEV",
+      "programme_model": "Pacifica"
+    }
+  },
+  "MPJL74": {
+    "code": "MPJL74",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Compass",
+      "trim": "Sport",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.49,
+        "84": 1.99,
+        "96": 3.49
+      },
+      "programme_trim": "Sport",
+      "programme_model": "Compass"
+    }
+  },
+  "MPJM74": {
+    "code": "MPJM74",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Compass",
+      "trim": "North",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 3500.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.49,
+        "84": 1.99,
+        "96": 3.49
+      },
+      "programme_trim": "North",
+      "programme_model": "Compass"
+    }
+  },
+  "MPJH74": {
+    "code": "MPJH74",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Compass",
+      "trim": "Trailhawk",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 4000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.49,
+        "84": 1.99,
+        "96": 3.49
+      },
+      "programme_trim": "Trailhawk",
+      "programme_model": "Compass"
+    }
+  },
+  "MPJP74": {
+    "code": "MPJP74",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Compass",
+      "trim": "Limited",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.49,
+        "84": 1.99,
+        "96": 3.49
+      },
+      "programme_trim": "Limited",
+      "programme_model": "Compass"
+    }
+  },
+  "WDEE75": {
+    "code": "WDEE75",
+    "vehicle": {
+      "brand": "Dodge",
+      "model": "Durango",
+      "trim": "",
+      "year": "2026",
+      "cab": "",
+      "drive": "AWD"
+    },
+    "financing": {
+      "consumer_cash": 7500.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.49,
+        "84": 2.49,
+        "96": 3.49
+      },
+      "programme_trim": "SXT, GT, GT Plus",
+      "programme_model": "Durango"
+    }
+  },
+  "WDEH75": {
+    "code": "WDEH75",
+    "vehicle": {
+      "brand": "Dodge",
+      "model": "Durango",
+      "trim": "",
+      "year": "2026",
+      "cab": "",
+      "drive": "AWD"
+    },
+    "financing": {
+      "consumer_cash": 7500.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.49,
+        "84": 2.49,
+        "96": 3.49
+      },
+      "programme_trim": "SXT, GT, GT Plus",
+      "programme_model": "Durango"
+    }
+  },
+  "WDES75": {
+    "code": "WDES75",
+    "vehicle": {
+      "brand": "Dodge",
+      "model": "Durango",
+      "trim": "GT",
+      "year": "2026",
+      "cab": "",
+      "drive": "AWD"
+    },
+    "financing": {
+      "consumer_cash": 7500.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.49,
+        "84": 2.49,
+        "96": 3.49
+      },
+      "programme_trim": "SXT, GT, GT Plus",
+      "programme_model": "Durango"
+    }
+  },
+  "WDEM75": {
+    "code": "WDEM75",
+    "vehicle": {
+      "brand": "Dodge",
+      "model": "Durango",
+      "trim": "R/T",
+      "year": "2026",
+      "cab": "",
+      "drive": "AWD"
+    },
+    "financing": {
+      "consumer_cash": 15500.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.49,
+        "84": 2.49,
+        "96": 3.49
+      },
+      "programme_trim": "SRT Hellcat",
+      "programme_model": "Durango"
+    }
+  },
+  "JTJL98": {
+    "code": "JTJL98",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Gladiator",
+      "trim": "Sport",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "Sport S, Willys, Sahara, Willys '41",
+      "programme_model": "Gladiator"
+    }
+  },
+  "JTJH98": {
+    "code": "JTJH98",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Gladiator",
+      "trim": "Mojave",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "Sport S, Willys, Sahara, Willys '41",
+      "programme_model": "Gladiator"
+    }
+  },
+  "JTJS98": {
+    "code": "JTJS98",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Gladiator",
+      "trim": "Rubicon",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "Sport S, Willys, Sahara, Willys '41",
+      "programme_model": "Gladiator"
+    }
+  },
+  "WSJR76": {
+    "code": "WSJR76",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Grand Wagoneer",
+      "trim": "Summit",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.99,
+        "84": 1.99,
+        "96": 3.99
+      },
+      "programme_trim": "",
+      "programme_model": "Grand Wagoneer/L"
+    }
+  },
+  "WSJR75": {
+    "code": "WSJR75",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Grand Wagoneer",
+      "trim": "Summit",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.99,
+        "84": 1.99,
+        "96": 3.99
+      },
+      "programme_trim": "",
+      "programme_model": "Grand Wagoneer/L"
+    }
+  },
+  "VF1L13": {
+    "code": "VF1L13",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "1500",
+      "trim": "",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 6500.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Tradesman, Express, Warlock",
+      "programme_model": "1500"
+    }
+  },
+  "VF2L12": {
+    "code": "VF2L12",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "VF2L16": {
+    "code": "VF2L16",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "VF3L12": {
+    "code": "VF3L12",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "VF3L13": {
+    "code": "VF3L13",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "VF3L16": {
+    "code": "VF3L16",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "VF3L17": {
+    "code": "VF3L17",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "VF3L19": {
+    "code": "VF3L19",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "VFLL17": {
+    "code": "VFLL17",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "DT6L98": {
+    "code": "DT6L98",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "1500",
+      "trim": "Tradesman",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 6500.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Tradesman, Express, Warlock",
+      "programme_model": "1500"
+    }
+  },
+  "DT6L91": {
+    "code": "DT6L91",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "1500",
+      "trim": "Tradesman",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 6500.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Tradesman, Express, Warlock",
+      "programme_model": "1500"
+    }
+  },
+  "DT6H98": {
+    "code": "DT6H98",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "1500",
+      "trim": "Big Horn",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 6000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Big Horn",
+      "programme_model": "1500"
+    }
+  },
+  "DT6T98": {
+    "code": "DT6T98",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "1500",
+      "trim": "Sport",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 8250.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Sport, Rebel",
+      "programme_model": "1500"
+    }
+  },
+  "DT6X98": {
+    "code": "DT6X98",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "1500",
+      "trim": "Rebel",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 8250.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Sport, Rebel",
+      "programme_model": "1500"
+    }
+  },
+  "DT6P98": {
+    "code": "DT6P98",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "1500",
+      "trim": "Laramie",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "Laramie (DT6P98)",
+      "programme_model": "1500"
+    }
+  },
+  "DT6P91": {
+    "code": "DT6P91",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "1500",
+      "trim": "Laramie",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "Laramie (DT6P98)",
+      "programme_model": "1500"
+    }
+  },
+  "DT6M98": {
+    "code": "DT6M98",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "1500",
+      "trim": "Limited",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 11500.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.0,
+        "84": 1.99,
+        "96": 3.49
+      },
+      "programme_trim": "Laramie, Limited, Longhorn, Tungsten, RHO (excl. DT6P98)",
+      "programme_model": "1500"
+    }
+  },
+  "DT6M91": {
+    "code": "DT6M91",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "1500",
+      "trim": "Limited",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 11500.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.0,
+        "84": 1.99,
+        "96": 3.49
+      },
+      "programme_trim": "Laramie, Limited, Longhorn, Tungsten, RHO (excl. DT6P98)",
+      "programme_model": "1500"
+    }
+  },
+  "DT6L41": {
+    "code": "DT6L41",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "1500",
+      "trim": "Tradesman",
+      "year": "2026",
+      "cab": "Quad Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 6500.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Tradesman, Express, Warlock",
+      "programme_model": "1500"
+    }
+  },
+  "DT6H41": {
+    "code": "DT6H41",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "1500",
+      "trim": "Big Horn",
+      "year": "2026",
+      "cab": "Quad Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 6000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Big Horn",
+      "programme_model": "1500"
+    }
+  },
+  "DT6S98": {
+    "code": "DT6S98",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "1500",
+      "trim": "RHO",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 11500.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.0,
+        "84": 1.99,
+        "96": 3.49
+      },
+      "programme_trim": "Laramie, Limited, Longhorn, Tungsten, RHO (excl. DT6P98)",
+      "programme_model": "1500"
+    }
+  },
+  "DT6R98": {
+    "code": "DT6R98",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "1500",
+      "trim": "Tungsten",
+      "year": "2026",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 11500.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.0,
+        "84": 1.99,
+        "96": 3.49
+      },
+      "programme_trim": "Laramie, Limited, Longhorn, Tungsten, RHO (excl. DT6P98)",
+      "programme_model": "1500"
+    }
+  },
+  "DJ2L91": {
+    "code": "DJ2L91",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Tradesman",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x2"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ2L92": {
+    "code": "DJ2L92",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Tradesman",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x2"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ2H91": {
+    "code": "DJ2H91",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Big Horn",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x2"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ2H92": {
+    "code": "DJ2H92",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Big Horn",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x2"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ7L91": {
+    "code": "DJ7L91",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Tradesman",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ7L92": {
+    "code": "DJ7L92",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Tradesman",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ7H91": {
+    "code": "DJ7H91",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Big Horn",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ7H92": {
+    "code": "DJ7H92",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Big Horn",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ7X91": {
+    "code": "DJ7X91",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Rebel",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ7P91": {
+    "code": "DJ7P91",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Laramie",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ7P92": {
+    "code": "DJ7P92",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Laramie",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ7M91": {
+    "code": "DJ7M91",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Limited",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ7M92": {
+    "code": "DJ7M92",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Limited",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ7P81": {
+    "code": "DJ7P81",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Laramie",
+      "year": "2026",
+      "cab": "Mega Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ7M81": {
+    "code": "DJ7M81",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Limited",
+      "year": "2026",
+      "cab": "Mega Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ2L62": {
+    "code": "DJ2L62",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Tradesman",
+      "year": "2026",
+      "cab": "Regular Cab",
+      "drive": "4x2"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ2H62": {
+    "code": "DJ2H62",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Big Horn",
+      "year": "2026",
+      "cab": "Regular Cab",
+      "drive": "4x2"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ7L62": {
+    "code": "DJ7L62",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Tradesman",
+      "year": "2026",
+      "cab": "Regular Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DJ7H62": {
+    "code": "DJ7H62",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "2500",
+      "trim": "Big Horn",
+      "year": "2026",
+      "cab": "Regular Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "(DJ7X91 2UP)",
+      "programme_model": "2500 Power Wagon Crew Cab"
+    }
+  },
+  "DD3L64": {
+    "code": "DD3L64",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "",
+      "year": "2026",
+      "cab": "Regular Cab",
+      "drive": "4x2"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "DD8L63": {
+    "code": "DD8L63",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "",
+      "year": "2026",
+      "cab": "Regular Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "DD8L64": {
+    "code": "DD8L64",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "",
+      "year": "2026",
+      "cab": "Regular Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "DD8L93": {
+    "code": "DD8L93",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D23L91": {
+    "code": "D23L91",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Tradesman",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x2"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D23L92": {
+    "code": "D23L92",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Tradesman",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x2"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D23H91": {
+    "code": "D23H91",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Big Horn",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x2"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D23H92": {
+    "code": "D23H92",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Big Horn",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x2"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D28L91": {
+    "code": "D28L91",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Tradesman",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D28L92": {
+    "code": "D28L92",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Tradesman",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D28H91": {
+    "code": "D28H91",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Big Horn",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D28H92": {
+    "code": "D28H92",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Big Horn",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D28P91": {
+    "code": "D28P91",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Laramie",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D28P92": {
+    "code": "D28P92",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Laramie",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D28M91": {
+    "code": "D28M91",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Limited",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D28M92": {
+    "code": "D28M92",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Limited",
+      "year": "2026",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D28P81": {
+    "code": "D28P81",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Laramie",
+      "year": "2026",
+      "cab": "Mega Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D28M81": {
+    "code": "D28M81",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Limited",
+      "year": "2026",
+      "cab": "Mega Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D23L62": {
+    "code": "D23L62",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Tradesman",
+      "year": "2026",
+      "cab": "Regular Cab",
+      "drive": "4x2"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D23H62": {
+    "code": "D23H62",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Big Horn",
+      "year": "2026",
+      "cab": "Regular Cab",
+      "drive": "4x2"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D28L62": {
+    "code": "D28L62",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Tradesman",
+      "year": "2026",
+      "cab": "Regular Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "D28H62": {
+    "code": "D28H62",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "3500",
+      "trim": "Big Horn",
+      "year": "2026",
+      "cab": "Regular Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 7000.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 1.99,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Gas Models",
+      "programme_model": "2500/3500"
+    }
+  },
+  "EJXM74": {
+    "code": "EJXM74",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "",
+      "trim": "Willys",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "Sport S, Willys, Sahara, Willys '41",
+      "programme_model": "Gladiator"
+    }
+  },
+  "JLJL72": {
+    "code": "JLJL72",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Wrangler",
+      "trim": "Sport",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "2-Door (JL) non Rubicon",
+      "programme_model": "Wrangler"
+    }
+  },
+  "JLJL74": {
+    "code": "JLJL74",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Wrangler",
+      "trim": "Sport",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "2-Door (JL) non Rubicon",
+      "programme_model": "Wrangler"
+    }
+  },
+  "JLJP74": {
+    "code": "JLJP74",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Wrangler",
+      "trim": "Sahara",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "2-Door (JL) non Rubicon",
+      "programme_model": "Wrangler"
+    }
+  },
+  "JLJS72": {
+    "code": "JLJS72",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Wrangler",
+      "trim": "Rubicon",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "2-Door (JL) non Rubicon",
+      "programme_model": "Wrangler"
+    }
+  },
+  "JLJS74": {
+    "code": "JLJS74",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Wrangler",
+      "trim": "Rubicon",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "2-Door (JL) non Rubicon",
+      "programme_model": "Wrangler"
+    }
+  },
+  "JLJX74": {
+    "code": "JLJX74",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Wrangler",
+      "trim": "",
+      "year": "2026",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 0.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "2-Door (JL) non Rubicon",
+      "programme_model": "Wrangler"
+    }
+  },
+  "RUFS53": {
+    "code": "RUFS53",
+    "vehicle": {
+      "brand": "Chrysler",
+      "model": "Pacifica",
+      "trim": "Pinnacle",
+      "year": "2025",
+      "cab": "",
+      "drive": "AWD"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 1.99,
+        "72": 2.99,
+        "84": 3.99,
+        "96": 4.99
+      },
+      "programme_trim": "Hybrid",
+      "programme_model": "Pacifica"
+    }
+  },
+  "RUES53": {
+    "code": "RUES53",
+    "vehicle": {
+      "brand": "Chrysler",
+      "model": "Pacifica",
+      "trim": "Pinnacle",
+      "year": "2025",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 1.99,
+        "72": 2.99,
+        "84": 3.99,
+        "96": 4.99
+      },
+      "programme_trim": "Hybrid",
+      "programme_model": "Pacifica"
+    }
+  },
+  "MPJE74": {
+    "code": "MPJE74",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Compass",
+      "trim": "Altitude",
+      "year": "2025",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 4000.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.99,
+        "48": 1.99,
+        "60": 2.49,
+        "72": 3.49,
+        "84": 3.99,
+        "96": 4.99
+      },
+      "programme_trim": "Altitude, Trailhawk, Trailhawk Elite",
+      "programme_model": "Compass"
+    }
+  },
+  "WLJS74": {
+    "code": "WLJS74",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Grand Cherokee",
+      "trim": "Overland",
+      "year": "2025",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.0,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Overland (WLJS75)",
+      "programme_model": "Grand Cherokee L"
+    }
+  },
+  "WLJT74": {
+    "code": "WLJT74",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Grand Cherokee",
+      "trim": "Summit",
+      "year": "2025",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.0,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Summit (WLJT74 23S)",
+      "programme_model": "Grand Cherokee"
+    }
+  },
+  "WLJS75": {
+    "code": "WLJS75",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Grand Cherokee L",
+      "trim": "Overland",
+      "year": "2025",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.0,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Overland (WLJS75)",
+      "programme_model": "Grand Cherokee L"
+    }
+  },
+  "WLJT75": {
+    "code": "WLJT75",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Grand Cherokee L",
+      "trim": "Summit",
+      "year": "2025",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.0,
+        "84": 2.99,
+        "96": 3.99
+      },
+      "programme_trim": "Summit (WLJT74 23S)",
+      "programme_model": "Grand Cherokee"
+    }
+  },
+  "WSJT75": {
+    "code": "WSJT75",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Grand Wagoneer",
+      "trim": "Series I",
+      "year": "2025",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 9500.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.99,
+        "84": 1.99,
+        "96": 3.99
+      },
+      "programme_trim": "",
+      "programme_model": "Grand Wagoneer/L"
+    }
+  },
+  "GGEH49": {
+    "code": "GGEH49",
+    "vehicle": {
+      "brand": "Dodge",
+      "model": "Hornet",
+      "trim": "",
+      "year": "2025",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "RT (PHEV)",
+      "programme_model": "Hornet"
+    }
+  },
+  "GG7P49": {
+    "code": "GG7P49",
+    "vehicle": {
+      "brand": "Dodge",
+      "model": "Hornet",
+      "trim": "",
+      "year": "2025",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "RT (PHEV)",
+      "programme_model": "Hornet"
+    }
+  },
+  "VFLL59": {
+    "code": "VFLL59",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "ProMaster EV",
+      "trim": "",
+      "year": "2025",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 9250.0,
+      "bonus_cash": 3000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.0,
+        "84": 1.99,
+        "96": 2.99
+      },
+      "programme_trim": "Tradesman, Warlock, Express (DT)",
+      "programme_model": "1500"
+    }
+  },
+  "DT6H91": {
+    "code": "DT6H91",
+    "vehicle": {
+      "brand": "Ram",
+      "model": "Ram 1500",
+      "trim": "Bighorn",
+      "year": "2025",
+      "cab": "Crew Cab",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 0.0,
+      "bonus_cash": 3000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.0,
+        "84": 1.99,
+        "96": 2.99
+      },
+      "programme_trim": "Big Horn (DT) w/ Off-Roader Value Package (4KF)",
+      "programme_model": "1500"
+    }
+  },
+  "WSJM75": {
+    "code": "WSJM75",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Wagoneer",
+      "trim": "",
+      "year": "2025",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 9500.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.99,
+        "84": 1.99,
+        "96": 3.99
+      },
+      "programme_trim": "",
+      "programme_model": "Grand Wagoneer/L"
+    }
+  },
+  "WSJH75": {
+    "code": "WSJH75",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Wagoneer",
+      "trim": "Series I",
+      "year": "2025",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 9500.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.99,
+        "84": 1.99,
+        "96": 3.99
+      },
+      "programme_trim": "",
+      "programme_model": "Grand Wagoneer/L"
+    }
+  },
+  "WSJP75": {
+    "code": "WSJP75",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Wagoneer",
+      "trim": "Series I",
+      "year": "2025",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 9500.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.99,
+        "84": 1.99,
+        "96": 3.99
+      },
+      "programme_trim": "",
+      "programme_model": "Grand Wagoneer/L"
+    }
+  },
+  "WSJM76": {
+    "code": "WSJM76",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Wagoneer L",
+      "trim": "",
+      "year": "2025",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 9500.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.99,
+        "84": 1.99,
+        "96": 3.99
+      },
+      "programme_trim": "",
+      "programme_model": "Grand Wagoneer/L"
+    }
+  },
+  "WSJH76": {
+    "code": "WSJH76",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Wagoneer L",
+      "trim": "Series I",
+      "year": "2025",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 9500.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.99,
+        "84": 1.99,
+        "96": 3.99
+      },
+      "programme_trim": "",
+      "programme_model": "Grand Wagoneer/L"
+    }
+  },
+  "WSJP76": {
+    "code": "WSJP76",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Wagoneer L",
+      "trim": "Series I",
+      "year": "2025",
+      "cab": "",
+      "drive": "4x4"
+    },
+    "financing": {
+      "consumer_cash": 9500.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.99,
+        "84": 1.99,
+        "96": 3.99
+      },
+      "programme_trim": "",
+      "programme_model": "Grand Wagoneer/L"
+    }
+  },
+  "KMXL49": {
+    "code": "KMXL49",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Wagoneer S",
+      "trim": "",
+      "year": "2025",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 8000.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": 0.0,
+        "48": 0.0,
+        "60": 0.0,
+        "72": 0.99,
+        "84": 1.99,
+        "96": 2.99
+      },
+      "programme_trim": "Limited & Premium (BEV)",
+      "programme_model": "Wagoneer S"
+    }
+  },
+  "JLXS74": {
+    "code": "JLXS74",
+    "vehicle": {
+      "brand": "Jeep",
+      "model": "Wrangler 4xe",
+      "trim": "Rubicon",
+      "year": "2025",
+      "cab": "",
+      "drive": ""
+    },
+    "financing": {
+      "consumer_cash": 750.0,
+      "bonus_cash": 1000.0,
+      "option1_rates": {
+        "36": 4.99,
+        "48": 4.99,
+        "60": 4.99,
+        "72": 4.99,
+        "84": 4.99,
+        "96": 4.99
+      },
+      "option2_rates": {
+        "36": null,
+        "48": null,
+        "60": null,
+        "72": null,
+        "84": null,
+        "96": null
+      },
+      "programme_trim": "2-Door (JL) non Rubicon",
+      "programme_model": "Wrangler"
+    }
+  }
+}
