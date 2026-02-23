@@ -1080,6 +1080,12 @@ export default function ClientsScreen() {
                   <Text style={styles.ignoreBtnText}>{crm.reject}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
+                  style={[styles.ignoreBtn, { borderColor: '#FF6B6B' }]}
+                  onPress={() => deleteBetterOffer(offer.submission_id)}
+                >
+                  <Ionicons name="trash" size={18} color="#FF6B6B" />
+                </TouchableOpacity>
+                <TouchableOpacity 
                   style={styles.approveBtn}
                   onPress={() => approveOffer(offer.submission_id)}
                   disabled={approvingOffer === offer.submission_id}
