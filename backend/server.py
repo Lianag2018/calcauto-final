@@ -4165,6 +4165,36 @@ FCA_OPTION_CODES = {
     "92HC2": "Allocation Marketing",
 }
 
+def _build_trim_string(product_info: dict) -> str:
+    """
+    Construit la chaîne de trim à partir des données product_info.
+    Gère les deux formats: {trim, body} et {trim, cab, drive}
+    """
+    if not product_info:
+        return ""
+    
+    trim = product_info.get("trim") or ""
+    
+    # Format 1: body direct
+    body = product_info.get("body") or ""
+    
+    # Format 2: cab + drive (fichier JSON)
+    if not body:
+        cab = product_info.get("cab") or ""
+        drive = product_info.get("drive") or ""
+        if cab or drive:
+            body = f"{cab} {drive}".strip()
+    
+    # Combiner trim et body
+    if trim and body:
+        return f"{trim} {body}"
+    elif trim:
+        return trim
+    elif body:
+        return body
+    else:
+        return ""
+
 def decode_product_code(code: str) -> dict:
     """Décode un code produit FCA et retourne les informations du véhicule"""
     code = code.upper().strip()
