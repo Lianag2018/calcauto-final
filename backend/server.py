@@ -153,6 +153,7 @@ def generate_window_sticker_html(vin: str, images: list, pdf_url: str, pdf_bytes
 async def fetch_window_sticker(vin: str, brand: str = None) -> dict:
     """
     Télécharge le Window Sticker PDF pour un VIN donné.
+    Approche KenBot: HTTP humain + validation PDF + fallback Playwright
     
     Returns:
         dict avec:
@@ -164,10 +165,78 @@ async def fetch_window_sticker(vin: str, brand: str = None) -> dict:
     """
     import requests
     
+    MIN_PDF_SIZE = 20_000  # 20 KB minimum pour un vrai sticker
+    
     if not vin or len(vin) != 17:
         return {"success": False, "error": "VIN invalide (doit être 17 caractères)"}
     
-    # Déterminer l'URL basée sur la marque ou essayer plusieurs
+    def validate_pdf(data: bytes) -> tuple[bool, str]:
+        """Valide que les bytes sont un vrai PDF Window Sticker"""
+        if len(data) < MIN_PDF_SIZE:
+            return False, f"PDF trop petit ({len(data)} bytes) — probablement pas un vrai sticker"
+        if not data.startswith(b"%PDF"):
+            head = data[:30]
+            return False, f"Pas un PDF (head={head!r}) — probablement HTML/Not found/anti-bot"
+        return True, "OK"
+    
+    def download_pdf_human(pdf_url: str, referer: str) -> bytes:
+        """Télécharge le PDF avec headers humains"""
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/122.0.0.0 Safari/537.36"
+            ),
+            "Accept": "application/pdf,application/octet-stream;q=0.9,*/*;q=0.8",
+            "Accept-Language": "fr-CA,fr;q=0.9,en;q=0.8",
+            "Referer": referer,
+            "Connection": "keep-alive",
+            "Cache-Control": "no-cache",
+        }
+        
+        response = requests.get(pdf_url, headers=headers, timeout=30, allow_redirects=True)
+        response.raise_for_status()
+        return response.content
+    
+    def download_pdf_playwright(pdf_url: str) -> bytes:
+        """Fallback: télécharge via navigateur headless"""
+        try:
+            from playwright.sync_api import sync_playwright
+        except ImportError:
+            raise RuntimeError("Playwright non installé")
+        
+        pdf_bytes = None
+        
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            
+            def on_response(resp):
+                nonlocal pdf_bytes
+                ct = (resp.headers.get("content-type") or "").lower()
+                if "application/pdf" in ct:
+                    try:
+                        pdf_bytes = resp.body()
+                    except:
+                        pass
+            
+            page.on("response", on_response)
+            
+            try:
+                page.goto(pdf_url, wait_until="networkidle", timeout=30000)
+                # Attendre un peu si le PDF arrive en retard
+                if pdf_bytes is None:
+                    page.wait_for_timeout(3000)
+            except Exception as e:
+                logger.warning(f"Playwright navigation error: {e}")
+            
+            browser.close()
+        
+        if not pdf_bytes:
+            raise RuntimeError("PDF non capturé via Playwright")
+        return pdf_bytes
+    
+    # Déterminer les URLs à essayer basées sur la marque
     urls_to_try = []
     
     if brand:
@@ -179,38 +248,75 @@ async def fetch_window_sticker(vin: str, brand: str = None) -> dict:
     
     # Si pas de marque ou pas trouvé, essayer toutes les URLs Stellantis
     if not urls_to_try:
-        # Ordre de priorité basé sur les VINs courants
         priority = ["jeep", "chrysler", "dodge", "ram", "fiat", "alfa"]
         for key in priority:
             urls_to_try.append((key, WINDOW_STICKER_URLS[key] + vin))
     
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "application/pdf,*/*",
+    # Referers par marque
+    referers = {
+        "jeep": "https://www.jeep.com/",
+        "chrysler": "https://www.chrysler.com/",
+        "dodge": "https://www.dodge.com/",
+        "ram": "https://www.ramtrucks.com/",
+        "fiat": "https://www.fiatusa.com/",
+        "alfa": "https://www.alfaromeousa.com/",
     }
     
+    last_error = None
+    
     for brand_key, url in urls_to_try:
+        referer = referers.get(brand_key, "https://www.chrysler.com/")
+        
+        # === Étape 1: HTTP "humain" ===
         try:
-            response = requests.get(url, headers=headers, timeout=30)
+            logger.info(f"Window Sticker HTTP fetch: VIN={vin}, Brand={brand_key}")
+            pdf_bytes = download_pdf_human(url, referer)
             
-            if response.status_code == 200 and response.headers.get("content-type", "").startswith("application/pdf"):
-                pdf_bytes = response.content
+            is_valid, msg = validate_pdf(pdf_bytes)
+            if is_valid:
                 pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
-                
-                logger.info(f"Window Sticker téléchargé: VIN={vin}, Brand={brand_key}, Size={len(pdf_bytes)} bytes")
-                
+                logger.info(f"Window Sticker téléchargé (HTTP): VIN={vin}, Size={len(pdf_bytes)} bytes")
                 return {
                     "success": True,
                     "pdf_base64": pdf_base64,
                     "pdf_url": url,
                     "size_bytes": len(pdf_bytes),
-                    "brand_source": brand_key
+                    "brand_source": brand_key,
+                    "method": "http"
                 }
+            else:
+                logger.warning(f"Window Sticker HTTP invalid: {msg}")
+                last_error = msg
         except Exception as e:
-            logger.warning(f"Window Sticker fetch failed for {brand_key}: {e}")
+            logger.warning(f"Window Sticker HTTP failed for {brand_key}: {e}")
+            last_error = str(e)
+        
+        # === Étape 2: Fallback Playwright ===
+        try:
+            logger.info(f"Window Sticker Playwright fallback: VIN={vin}, Brand={brand_key}")
+            pdf_bytes = download_pdf_playwright(url)
+            
+            is_valid, msg = validate_pdf(pdf_bytes)
+            if is_valid:
+                pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
+                logger.info(f"Window Sticker téléchargé (Playwright): VIN={vin}, Size={len(pdf_bytes)} bytes")
+                return {
+                    "success": True,
+                    "pdf_base64": pdf_base64,
+                    "pdf_url": url,
+                    "size_bytes": len(pdf_bytes),
+                    "brand_source": brand_key,
+                    "method": "playwright"
+                }
+            else:
+                logger.warning(f"Window Sticker Playwright invalid: {msg}")
+                last_error = msg
+        except Exception as e:
+            logger.warning(f"Window Sticker Playwright failed for {brand_key}: {e}")
+            last_error = str(e)
             continue
     
-    return {"success": False, "error": "Window Sticker non trouvé pour ce VIN"}
+    return {"success": False, "error": f"Window Sticker non trouvé: {last_error}"}
 
 
 async def save_window_sticker_to_db(vin: str, pdf_base64: str, owner_id: str) -> str:
