@@ -304,7 +304,7 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'COUCHE', 'C08', 'C4564', 'G5Y', '1K1', 'M5J', '1J1', 'FL', 'ON',
         '1C4', 'S8', '806264', 'R100963941', 'GFBR', 'RETING', 'II', 'III',
         'IV', 'VI', 'VII', 'VIII', 'IX', 'XI', 'XII', 'NI', 'TAX', 'TAUX',
-        'PAN', 'PANN', 'YGW',  # Fragments de descriptions
+        'PAN', 'PANN',  # Fragments de descriptions (YGW retiré - c'est une option valide)
     }
     
     text_upper = text.upper()
