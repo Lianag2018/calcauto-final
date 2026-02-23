@@ -176,7 +176,7 @@
     "model": "500e",
     "trim": "",
     "cab": "",
-    "drive": "",
+    "drive": "FWD",
     "raw": "500ECOUPE"
   },
   "JTJL98": {
@@ -209,7 +209,7 @@
   "WSJR76": {
     "year": "2026",
     "brand": "Jeep",
-    "model": "Grand Wagoneer",
+    "model": "Grand Wagoneer L",
     "trim": "Summit",
     "cab": "",
     "drive": "4x4",
@@ -227,8 +227,8 @@
   "VF1L13": {
     "year": "2026",
     "brand": "Ram",
-    "model": "1500",
-    "trim": "",
+    "model": "ProMaster Cargo Van",
+    "trim": "High Roof",
     "cab": "",
     "drive": "",
     "raw": "1500PROMASTERCARGOVANHIGHROOF(136WB)"
@@ -236,8 +236,8 @@
   "VF2L12": {
     "year": "2026",
     "brand": "Ram",
-    "model": "2500",
-    "trim": "",
+    "model": "ProMaster Cargo Van",
+    "trim": "Low Roof",
     "cab": "",
     "drive": "",
     "raw": "2500PROMASTERCARGOVANLOWROOF(136WB)"
@@ -245,8 +245,8 @@
   "VF2L16": {
     "year": "2026",
     "brand": "Ram",
-    "model": "2500",
-    "trim": "",
+    "model": "ProMaster Cargo Van",
+    "trim": "High Roof",
     "cab": "",
     "drive": "",
     "raw": "2500PROMASTERCARGOVANHIGHROOF(159WB)"
@@ -254,8 +254,8 @@
   "VF3L12": {
     "year": "2026",
     "brand": "Ram",
-    "model": "3500",
-    "trim": "",
+    "model": "ProMaster Cargo Van",
+    "trim": "Low Roof",
     "cab": "",
     "drive": "",
     "raw": "3500PROMASTERCARGOVANLOWROOF(136WB)"
@@ -263,8 +263,8 @@
   "VF3L13": {
     "year": "2026",
     "brand": "Ram",
-    "model": "3500",
-    "trim": "",
+    "model": "ProMaster Cargo Van",
+    "trim": "High Roof",
     "cab": "",
     "drive": "",
     "raw": "3500PROMASTERCARGOVANHIGHROOF(136WB)"
@@ -272,8 +272,8 @@
   "VF3L16": {
     "year": "2026",
     "brand": "Ram",
-    "model": "3500",
-    "trim": "",
+    "model": "ProMaster Cargo Van",
+    "trim": "High Roof",
     "cab": "",
     "drive": "",
     "raw": "3500PROMASTERCARGOVANHIGHROOF(159WB)"
@@ -281,8 +281,8 @@
   "VF3L17": {
     "year": "2026",
     "brand": "Ram",
-    "model": "3500",
-    "trim": "",
+    "model": "ProMaster Cargo Van",
+    "trim": "High Roof",
     "cab": "",
     "drive": "",
     "raw": "3500PROMASTERCARGOVANHIGHROOF(159WBEXT)"
@@ -290,8 +290,8 @@
   "VF3L19": {
     "year": "2026",
     "brand": "Ram",
-    "model": "3500",
-    "trim": "",
+    "model": "ProMaster Cargo Van",
+    "trim": "High Roof",
     "cab": "",
     "drive": "",
     "raw": "3500PROMASTERCARGOVANSUPERHIGHROOF(159WBEXT)"
@@ -299,8 +299,8 @@
   "VFLL17": {
     "year": "2026",
     "brand": "Ram",
-    "model": "3500",
-    "trim": "",
+    "model": "ProMaster Cargo Van",
+    "trim": "High Roof",
     "cab": "",
     "drive": "",
     "raw": "3500PROMASTEREVCARGOVANHIGHROOF(159WBEXT)"
@@ -596,7 +596,7 @@
   "DD3L64": {
     "year": "2026",
     "brand": "Ram",
-    "model": "3500",
+    "model": "3500 Chassis Cab",
     "trim": "",
     "cab": "Regular Cab",
     "drive": "4x2",
@@ -605,7 +605,7 @@
   "DD8L63": {
     "year": "2026",
     "brand": "Ram",
-    "model": "3500",
+    "model": "3500 Chassis Cab",
     "trim": "",
     "cab": "Regular Cab",
     "drive": "4x4",
@@ -614,7 +614,7 @@
   "DD8L64": {
     "year": "2026",
     "brand": "Ram",
-    "model": "3500",
+    "model": "3500 Chassis Cab",
     "trim": "",
     "cab": "Regular Cab",
     "drive": "4x4",
@@ -623,7 +623,7 @@
   "DD8L93": {
     "year": "2026",
     "brand": "Ram",
-    "model": "3500",
+    "model": "3500 Chassis Cab",
     "trim": "",
     "cab": "Crew Cab",
     "drive": "4x4",
@@ -794,7 +794,7 @@
   "DP4L93": {
     "year": "2026",
     "brand": "Ram",
-    "model": "4500",
+    "model": "4500 Chassis Cab",
     "trim": "",
     "cab": "Crew Cab",
     "drive": "4x2",
@@ -803,7 +803,7 @@
   "DP4L94": {
     "year": "2026",
     "brand": "Ram",
-    "model": "4500",
+    "model": "4500 Chassis Cab",
     "trim": "",
     "cab": "Crew Cab",
     "drive": "4x2",
@@ -812,7 +812,7 @@
   "DP9L93": {
     "year": "2026",
     "brand": "Ram",
-    "model": "4500",
+    "model": "4500 Chassis Cab",
     "trim": "",
     "cab": "Crew Cab",
     "drive": "4x4",
@@ -821,7 +821,7 @@
   "DP4L63": {
     "year": "2026",
     "brand": "Ram",
-    "model": "4500",
+    "model": "4500 Chassis Cab",
     "trim": "",
     "cab": "Regular Cab",
     "drive": "4x2",
@@ -830,7 +830,7 @@
   "DP4L65": {
     "year": "2026",
     "brand": "Ram",
-    "model": "4500",
+    "model": "4500 Chassis Cab",
     "trim": "",
     "cab": "Regular Cab",
     "drive": "4x2",
@@ -839,7 +839,7 @@
   "DP9L63": {
     "year": "2026",
     "brand": "Ram",
-    "model": "4500",
+    "model": "4500 Chassis Cab",
     "trim": "",
     "cab": "Regular Cab",
     "drive": "4x4",
@@ -848,7 +848,7 @@
   "DP9L65": {
     "year": "2026",
     "brand": "Ram",
-    "model": "4500",
+    "model": "4500 Chassis Cab",
     "trim": "",
     "cab": "Regular Cab",
     "drive": "4x4",
@@ -857,7 +857,7 @@
   "DP9L66": {
     "year": "2026",
     "brand": "Ram",
-    "model": "4500",
+    "model": "4500 Chassis Cab",
     "trim": "",
     "cab": "Regular Cab",
     "drive": "4x4",
@@ -866,7 +866,7 @@
   "DP5L93": {
     "year": "2026",
     "brand": "Ram",
-    "model": "5500",
+    "model": "5500 Chassis Cab",
     "trim": "",
     "cab": "Crew Cab",
     "drive": "4x2",
@@ -875,7 +875,7 @@
   "DP5L94": {
     "year": "2026",
     "brand": "Ram",
-    "model": "5500",
+    "model": "5500 Chassis Cab",
     "trim": "",
     "cab": "Crew Cab",
     "drive": "4x2",
@@ -884,7 +884,7 @@
   "DP0L93": {
     "year": "2026",
     "brand": "Ram",
-    "model": "5500",
+    "model": "5500 Chassis Cab",
     "trim": "",
     "cab": "Crew Cab",
     "drive": "4x4",
@@ -893,7 +893,7 @@
   "DP5L63": {
     "year": "2026",
     "brand": "Ram",
-    "model": "5500",
+    "model": "5500 Chassis Cab",
     "trim": "",
     "cab": "Regular Cab",
     "drive": "4x2",
@@ -902,7 +902,7 @@
   "DP5L65": {
     "year": "2026",
     "brand": "Ram",
-    "model": "5500",
+    "model": "5500 Chassis Cab",
     "trim": "",
     "cab": "Regular Cab",
     "drive": "4x2",
@@ -911,7 +911,7 @@
   "DP0L63": {
     "year": "2026",
     "brand": "Ram",
-    "model": "5500",
+    "model": "5500 Chassis Cab",
     "trim": "",
     "cab": "Regular Cab",
     "drive": "4x4",
@@ -920,7 +920,7 @@
   "DP0L65": {
     "year": "2026",
     "brand": "Ram",
-    "model": "5500",
+    "model": "5500 Chassis Cab",
     "trim": "",
     "cab": "Regular Cab",
     "drive": "4x4",
@@ -929,7 +929,7 @@
   "DP0L66": {
     "year": "2026",
     "brand": "Ram",
-    "model": "5500",
+    "model": "5500 Chassis Cab",
     "trim": "",
     "cab": "Regular Cab",
     "drive": "4x4",
@@ -938,7 +938,7 @@
   "EJXM74": {
     "year": "2026",
     "brand": "Jeep",
-    "model": "",
+    "model": "Recon",
     "trim": "Willys",
     "cab": "",
     "drive": "",
