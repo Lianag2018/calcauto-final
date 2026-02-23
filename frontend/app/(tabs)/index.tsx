@@ -1283,9 +1283,58 @@ export default function HomeScreen() {
                   {selectedInventory.vin && (
                     <Text style={styles.selectedInventoryVin}>VIN: {selectedInventory.vin}</Text>
                   )}
-                  <TouchableOpacity onPress={() => { setSelectedInventory(null); setVehiclePrice(''); }}>
+                  <TouchableOpacity onPress={() => { setSelectedInventory(null); setVehiclePrice(''); setAutoFinancing(null); }}>
                     <Ionicons name="close-circle" size={22} color="#FF6B6B" />
                   </TouchableOpacity>
+                </View>
+              )}
+              
+              {/* Promotions automatiques détectées */}
+              {autoFinancing && (selectedInventory || selectedProgram) && (
+                <View style={styles.autoFinancingBanner}>
+                  <View style={styles.autoFinancingHeader}>
+                    <Ionicons name="flash" size={18} color="#FFD700" />
+                    <Text style={styles.autoFinancingTitle}>
+                      {lang === 'fr' ? 'Promotions détectées automatiquement' : 'Auto-detected Promotions'}
+                    </Text>
+                  </View>
+                  <View style={styles.autoFinancingContent}>
+                    {autoFinancing.consumer_cash > 0 && (
+                      <View style={styles.autoFinancingItem}>
+                        <Text style={styles.autoFinancingLabel}>Consumer Cash:</Text>
+                        <Text style={styles.autoFinancingValue}>{formatCurrency(autoFinancing.consumer_cash)}</Text>
+                      </View>
+                    )}
+                    {autoFinancing.bonus_cash > 0 && (
+                      <View style={styles.autoFinancingItem}>
+                        <Text style={styles.autoFinancingLabel}>Bonus Cash:</Text>
+                        <Text style={styles.autoFinancingValueBonus}>+{formatCurrency(autoFinancing.bonus_cash)}</Text>
+                      </View>
+                    )}
+                    {(autoFinancing.consumer_cash > 0 || autoFinancing.bonus_cash > 0) && (
+                      <View style={styles.autoFinancingItem}>
+                        <Text style={styles.autoFinancingLabelTotal}>
+                          {lang === 'fr' ? 'Total rabais:' : 'Total rebates:'}
+                        </Text>
+                        <Text style={styles.autoFinancingValueTotal}>
+                          {formatCurrency(autoFinancing.consumer_cash + autoFinancing.bonus_cash)}
+                        </Text>
+                      </View>
+                    )}
+                    {autoFinancing.option2_rates && Object.values(autoFinancing.option2_rates).some(v => v !== null && v < 5) && (
+                      <View style={styles.autoFinancingItem}>
+                        <Text style={styles.autoFinancingLabel}>Option 2:</Text>
+                        <Text style={styles.autoFinancingValueRate}>
+                          {lang === 'fr' ? 'Taux réduits disponibles' : 'Reduced rates available'}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  {autoFinancing.programme_source && (
+                    <Text style={styles.autoFinancingSource}>
+                      Source: {autoFinancing.programme_source}
+                    </Text>
+                  )}
                 </View>
               )}
               
