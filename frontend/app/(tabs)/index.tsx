@@ -422,6 +422,7 @@ export default function HomeScreen() {
   const [inventoryList, setInventoryList] = useState<any[]>([]);
   const [selectedInventory, setSelectedInventory] = useState<any>(null);
   const [showInventoryPicker, setShowInventoryPicker] = useState(false);
+  const [manualVin, setManualVin] = useState<string>('');  // VIN manuel si pas d'inventaire
   
   // Payment frequency
   const [paymentFrequency, setPaymentFrequency] = useState<'monthly' | 'biweekly' | 'weekly'>('monthly');
