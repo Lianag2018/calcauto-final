@@ -1880,9 +1880,38 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 8,
   },
+  submissionCardRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  submissionCardInfo: {
+    flex: 1,
+  },
+  deleteSubmissionBtn: {
+    padding: 8,
+    marginLeft: 8,
+  },
   submissionVehicle: { color: '#4ECDC4', fontSize: 14, fontWeight: '600' },
   submissionPayment: { color: '#fff', fontSize: 14, marginTop: 4 },
   submissionDate: { color: '#888', fontSize: 12, marginTop: 4 },
+  deleteHistoryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    borderWidth: 1,
+    borderColor: '#FF6B6B',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 16,
+    gap: 8,
+  },
+  deleteHistoryButtonText: {
+    color: '#FF6B6B',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   
   // Follow-up Modal
   followUpModalContent: {
