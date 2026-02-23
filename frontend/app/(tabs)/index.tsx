@@ -1888,7 +1888,9 @@ export default function HomeScreen() {
                       if (data.success) {
                         // Get auth token
                         const token = await getToken();
-                        const authHeaders = token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+                        const authHeaders: Record<string, string> = token 
+                          ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } 
+                          : { 'Content-Type': 'application/json' };
                         
                         // Track contact status for notification
                         let contactStatus = '';
