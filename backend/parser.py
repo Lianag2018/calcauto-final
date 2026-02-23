@@ -111,6 +111,7 @@ def parse_model_code(text: str) -> Optional[str]:
 def parse_financial_data(text: str) -> Dict[str, Optional[int]]:
     """
     Extrait EP, PDCO, PREF, Holdback depuis le texte.
+    Amélioré pour supporter les variations de format Google Vision OCR.
     """
     data = {
         "ep_cost": None,
@@ -119,25 +120,31 @@ def parse_financial_data(text: str) -> Dict[str, Optional[int]]:
         "holdback": None
     }
     
-    # E.P. (Employee Price / Coût réel)
+    # Normaliser le texte (remplacer les séparateurs courants)
+    normalized = text.upper()
+    
+    # E.P. (Employee Price / Coût réel) - Patterns améliorés
     ep_patterns = [
-        r"E\.P\.\s*(\d{7,10})",
-        r"E\.P\s+(\d{7,10})",
-        r"EP\s+(\d{7,10})"
+        r"E\.P\.?\s*(\d{7,10})",      # E.P. ou E.P suivi de chiffres
+        r"E\.?P\.?\s*(\d{7,10})",     # EP. ou E.P ou EP
+        r"EP\s*(\d{7,10})",           # EP sans point
+        r"\bEP[\.\s]*(\d{7,10})",     # EP avec . ou espace optionnel
     ]
     for pattern in ep_patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
+        match = re.search(pattern, normalized, re.IGNORECASE)
         if match:
             data["ep_cost"] = clean_fca_price(match.group(1))
             break
     
-    # PDCO (Prix Dealer)
+    # PDCO (Prix Dealer) - Patterns améliorés
     pdco_patterns = [
-        r"PDCO\s*(\d{7,10})",
-        r"P\.D\.C\.O\.\s*(\d{7,10})"
+        r"PDCO\s*(\d{7,10})",         # PDCO standard
+        r"PDC0\s*(\d{7,10})",         # PDC0 (OCR confusion O/0)
+        r"P\.?D\.?C\.?O\.?\s*(\d{7,10})",  # Avec points
+        r"\bPDCO?(\d{7,10})",         # PDCO collé aux chiffres
     ]
     for pattern in pdco_patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
+        match = re.search(pattern, normalized, re.IGNORECASE)
         if match:
             data["pdco"] = clean_fca_price(match.group(1))
             break
@@ -145,23 +152,23 @@ def parse_financial_data(text: str) -> Dict[str, Optional[int]]:
     # PREF (Prix de référence)
     pref_patterns = [
         r"PREF\*?\s*(\d{7,10})",
-        r"P\.R\.E\.F\.\s*(\d{7,10})"
+        r"P\.?R\.?E\.?F\.?\*?\s*(\d{7,10})",
+        r"\bPREF\*?(\d{7,10})",       # PREF collé aux chiffres
     ]
     for pattern in pref_patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
+        match = re.search(pattern, normalized, re.IGNORECASE)
         if match:
             data["pref"] = clean_fca_price(match.group(1))
             break
     
     # Holdback: chercher près de PREF pour éviter faux positifs
-    # Pattern amélioré: holdback apparaît généralement après PREF sur la facture
     holdback_patterns = [
         r"PREF[^\d]*\d{7,8}[^\d]*(\b0\d{5}\b)",  # Holdback après PREF
         r"HOLDBACK\s*[:\s]*(\d{3,6})",           # Label explicite
         r"HB\s*[:\s]*(\d{3,6})"                  # Abréviation
     ]
     for pattern in holdback_patterns:
-        holdback_match = re.search(pattern, text, re.IGNORECASE)
+        holdback_match = re.search(pattern, normalized, re.IGNORECASE)
         if holdback_match:
             data["holdback"] = clean_fca_price(holdback_match.group(1))
             break
