@@ -4838,7 +4838,7 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                     "ep_cost": parsed.get("ep_cost") or 0,
                     "pdco": parsed.get("pdco") or 0,
                     "pref": parsed.get("pref") or 0,
-                    "holdback": parsed.get("holdback") or 0,
+                    "holdback": calculate_holdback(extracted_brand, parsed.get("pdco") or 0, parsed.get("holdback")),
                     "subtotal": parsed.get("subtotal_excl_tax") or parsed.get("subtotal") or 0,
                     "invoice_total": parsed.get("invoice_total") or 0,
                     "options": parsed.get("options", []),
