@@ -626,6 +626,109 @@ export default function ClientsScreen() {
     }
   };
 
+  const deleteReminder = async (submissionId: string) => {
+    const confirmDelete = () => {
+      return new Promise((resolve) => {
+        if (Platform.OS === 'web') {
+          resolve(window.confirm('Supprimer ce rappel?'));
+        } else {
+          Alert.alert(
+            'Confirmer',
+            'Supprimer ce rappel?',
+            [
+              { text: 'Annuler', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Supprimer', style: 'destructive', onPress: () => resolve(true) }
+            ]
+          );
+        }
+      });
+    };
+
+    const confirmed = await confirmDelete();
+    if (!confirmed) return;
+
+    try {
+      const headers = await getAuthHeaders();
+      await axios.delete(`${API_URL}/api/submissions/${submissionId}/reminder`, { headers });
+      await loadData();
+      Platform.OS === 'web' ? alert('✅ Rappel supprimé!') : Alert.alert('✅', 'Rappel supprimé!');
+    } catch (err) {
+      console.error('Error deleting reminder:', err);
+    }
+  };
+
+  const deleteSubmission = async (submissionId: string) => {
+    const confirmDelete = () => {
+      return new Promise((resolve) => {
+        if (Platform.OS === 'web') {
+          resolve(window.confirm('Supprimer cette soumission? Cette action est irréversible.'));
+        } else {
+          Alert.alert(
+            'Confirmer',
+            'Supprimer cette soumission? Cette action est irréversible.',
+            [
+              { text: 'Annuler', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Supprimer', style: 'destructive', onPress: () => resolve(true) }
+            ]
+          );
+        }
+      });
+    };
+
+    const confirmed = await confirmDelete();
+    if (!confirmed) return;
+
+    try {
+      const headers = await getAuthHeaders();
+      await axios.delete(`${API_URL}/api/submissions/${submissionId}`, { headers });
+      await loadData();
+      Platform.OS === 'web' ? alert('✅ Soumission supprimée!') : Alert.alert('✅', 'Soumission supprimée!');
+    } catch (err) {
+      console.error('Error deleting submission:', err);
+    }
+  };
+
+  const deleteContactHistory = async (contactId: string) => {
+    const confirmDelete = () => {
+      return new Promise((resolve) => {
+        if (Platform.OS === 'web') {
+          resolve(window.confirm('Supprimer tout l\'historique de ce contact? Cette action est irréversible.'));
+        } else {
+          Alert.alert(
+            'Confirmer',
+            'Supprimer tout l\'historique de ce contact? Cette action est irréversible.',
+            [
+              { text: 'Annuler', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Supprimer tout', style: 'destructive', onPress: () => resolve(true) }
+            ]
+          );
+        }
+      });
+    };
+
+    const confirmed = await confirmDelete();
+    if (!confirmed) return;
+
+    try {
+      const headers = await getAuthHeaders();
+      await axios.delete(`${API_URL}/api/contacts/${contactId}/history`, { headers });
+      await loadData();
+      Platform.OS === 'web' ? alert('✅ Historique supprimé!') : Alert.alert('✅', 'Historique supprimé!');
+    } catch (err) {
+      console.error('Error deleting history:', err);
+    }
+  };
+
+  const deleteBetterOffer = async (submissionId: string) => {
+    try {
+      const headers = await getAuthHeaders();
+      await axios.delete(`${API_URL}/api/better-offers/${submissionId}`, { headers });
+      await loadData();
+    } catch (err) {
+      console.error('Error deleting offer:', err);
+    }
+  };
+
   const openClientDetails = (client: Client) => {
     setSelectedClient(client);
     setShowClientModal(true);
