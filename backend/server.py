@@ -294,7 +294,7 @@ async def fetch_window_sticker(vin: str, brand: str = None) -> dict:
         # === Étape 2: Fallback Playwright ===
         try:
             logger.info(f"Window Sticker Playwright fallback: VIN={vin}, Brand={brand_key}")
-            pdf_bytes = download_pdf_playwright(url)
+            pdf_bytes = await download_pdf_playwright(url)
             
             is_valid, msg = validate_pdf(pdf_bytes)
             if is_valid:
