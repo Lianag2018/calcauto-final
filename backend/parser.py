@@ -529,6 +529,14 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
             if re.search(r'\d{3}[-.\s]?\d{3}[-.\s]?\d{4}', description_raw):
                 continue
             
+            # Ignorer si la description contient un code postal canadien (A1A 1A1)
+            if re.search(r'[A-Z]\d[A-Z]\s*\d[A-Z]\d', description_raw):
+                continue
+            
+            # Ignorer si la description est trop courte (probablement une abréviation de province)
+            if len(description_raw) <= 3:
+                continue
+            
             # Nettoyer la description (enlever montants à la fin)
             description_clean = re.sub(r'\s+[\d,]+\.\d{2}\s*\*?$', '', description_raw)
             description_clean = re.sub(r'\s+SANS\s+FRAIS\s*$', '', description_clean)
