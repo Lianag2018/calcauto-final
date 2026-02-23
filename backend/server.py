@@ -4997,7 +4997,7 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                     "year": vin_info.get("year") or datetime.now().year,
                     "brand": product_info.get("brand") or vin_brand or "Stellantis",
                     "model": product_info.get("model") or "",
-                    "trim": f"{product_info.get('trim', '')} {product_info.get('body', '')}".strip() if product_info else "",
+                    "trim": _build_trim_string(product_info),
                     "ep_cost": ep_cost,
                     "pdco": pdco,
                     "pref": pref,
