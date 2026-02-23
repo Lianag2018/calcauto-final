@@ -309,43 +309,19 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
     
     text_upper = text.upper()
     
-    # Chercher tous les codes d'options connus dans le texte
-    found_codes = set()
-    
     # Chercher UNIQUEMENT les codes connus (plus fiable, évite les faux positifs)
+    found_codes = set()
     for code in fca_descriptions.keys():
         if re.search(rf'\b{re.escape(code)}\b', text_upper):
             found_codes.add(code)
     
-    # Ne PAS utiliser la méthode générique pour éviter les faux positifs
-    
-    # Méthode 2: Pattern pour codes FCA génériques (2-5 chars alphanumériques)
-    # Pattern: début de mot, 2-5 chars avec au moins une lettre, suivi d'espace ou fin
-    code_pattern = r'\b([A-Z]{1,2}[A-Z0-9]{1,4}|[0-9]{2,3}[A-Z]{1,2}[0-9]{0,2})\b'
-    potential_codes = re.findall(code_pattern, text_upper)
-    
-    for code in potential_codes:
-        if code not in invalid_codes and len(code) >= 2 and len(code) <= 6:
-            # Vérifier que ce n'est pas juste des chiffres
-            if not code.isdigit():
-                found_codes.add(code)
-    
-    # Construire la liste d'options avec descriptions
+    # Construire la liste d'options avec descriptions connues
     for code in found_codes:
         if code in invalid_codes:
             continue
-            
-        # Utiliser la description connue ou chercher dans le texte
-        if code in fca_descriptions:
-            description = fca_descriptions[code]
-        else:
-            # Chercher une description après le code dans le texte
-            pattern = rf'\b{re.escape(code)}\s+([A-Z][A-Z\s\-\']{5,40}?)(?:\s+\d|\s+\*|\s+SANS|$)'
-            match = re.search(pattern, text_upper)
-            if match:
-                description = match.group(1).strip().title()
-            else:
-                description = f"Option {code}"
+        
+        # Utiliser la description du dictionnaire
+        description = fca_descriptions.get(code, f"Option {code}")
         
         options.append({
             "product_code": code,
