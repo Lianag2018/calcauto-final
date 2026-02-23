@@ -4362,6 +4362,14 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
             else:
                 status = "vision"
             
+            # Estimer le coût basé sur la méthode utilisée
+            cost_estimate = 0.0
+            if "google_vision" in parse_method:
+                cost_estimate = 0.0015  # Google Vision DOCUMENT_TEXT_DETECTION
+            elif "vision" in parse_method:
+                cost_estimate = 0.02    # GPT-4 Vision (fallback)
+            # OCR Tesseract = gratuit
+            
             log_entry = {
                 "timestamp": datetime.now(),
                 "owner_id": user["id"],
@@ -4370,13 +4378,18 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                 "status": status,
                 "vin_valid": vehicle_data.get("vin_valid") if vehicle_data else False,
                 "vin": vehicle_data.get("vin", "")[:17] if vehicle_data else "",
+                "stock_no": vehicle_data.get("stock_no", "") if vehicle_data else "",
+                "brand": vehicle_data.get("brand", "") if vehicle_data else "",
+                "model": vehicle_data.get("model", "") if vehicle_data else "",
                 "ep_cost": vehicle_data.get("ep_cost", 0) if vehicle_data else 0,
+                "pdco": vehicle_data.get("pdco", 0) if vehicle_data else 0,
                 "duration_sec": duration,
+                "cost_estimate": cost_estimate,
                 "success": True
             }
             
             await db.parsing_metrics.insert_one(log_entry)
-            logger.info(f"Parsing metric logged: status={status}, score={score}")
+            logger.info(f"Parsing metric logged: status={status}, score={score}, method={parse_method}")
         except Exception as log_err:
             logger.warning(f"Failed to log parsing metric: {log_err}")
         
