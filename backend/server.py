@@ -2046,6 +2046,9 @@ class SendCalculationEmailRequest(BaseModel):
     rates_table: Dict[str, Any] = {}  # Option 1 & 2 rates for all terms
     fees: Dict[str, float] = {}  # frais_dossier, taxe_pneus, frais_rdprm
     trade_in: Dict[str, float] = {}  # valeur_echange, montant_du
+    # Window Sticker
+    include_window_sticker: bool = True  # Inclure le Window Sticker automatiquement
+    vin: str = ""  # VIN pour récupérer le Window Sticker
 
 class SendReportEmailRequest(BaseModel):
     """Requête pour envoyer un rapport après import"""
@@ -2054,7 +2057,69 @@ class SendReportEmailRequest(BaseModel):
     program_year: int
     brands_summary: Dict[str, int]
 
-@api_router.post("/send-calculation-email")
+
+# ============ WINDOW STICKER ENDPOINT ============
+
+@api_router.get("/window-sticker/{vin}")
+async def get_window_sticker(vin: str, authorization: Optional[str] = Header(None)):
+    """
+    Récupère le Window Sticker PDF pour un VIN.
+    Télécharge depuis Chrysler/Jeep/Dodge/Ram et stocke dans MongoDB.
+    """
+    user = await get_current_user(authorization)
+    
+    # Vérifier si déjà en cache dans MongoDB
+    cached = await db.window_stickers.find_one({"vin": vin}, {"_id": 0, "pdf_base64": 0})
+    if cached:
+        logger.info(f"Window Sticker trouvé en cache pour VIN={vin}")
+        return {
+            "success": True,
+            "cached": True,
+            "vin": vin,
+            "pdf_url": f"/api/window-sticker/{vin}/pdf",
+            "size_bytes": cached.get("size_bytes", 0)
+        }
+    
+    # Télécharger depuis Chrysler/Stellantis
+    result = await fetch_window_sticker(vin)
+    
+    if result["success"]:
+        # Sauvegarder dans MongoDB
+        await save_window_sticker_to_db(vin, result["pdf_base64"], user["id"])
+        
+        return {
+            "success": True,
+            "cached": False,
+            "vin": vin,
+            "pdf_url": f"/api/window-sticker/{vin}/pdf",
+            "size_bytes": result["size_bytes"],
+            "source": result.get("brand_source", "stellantis")
+        }
+    
+    return {"success": False, "error": result.get("error", "Window Sticker non disponible")}
+
+
+@api_router.get("/window-sticker/{vin}/pdf")
+async def get_window_sticker_pdf(vin: str):
+    """
+    Retourne le PDF du Window Sticker (depuis MongoDB).
+    """
+    from fastapi.responses import Response
+    
+    doc = await db.window_stickers.find_one({"vin": vin})
+    
+    if not doc or "pdf_base64" not in doc:
+        raise HTTPException(status_code=404, detail="Window Sticker non trouvé")
+    
+    pdf_bytes = base64.b64decode(doc["pdf_base64"])
+    
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"inline; filename=WindowSticker_{vin}.pdf"
+        }
+    )
 async def send_calculation_email(request: SendCalculationEmailRequest):
     """Envoie un calcul de financement par email - STYLE PDF CLAIR"""
     try:
