@@ -4646,12 +4646,14 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
     - 95% des factures traitées sans coût API
     - Fallback intelligent uniquement si nécessaire
     - Validation VIN industrielle avec auto-correction
+    - DOUBLE VÉRIFICATION: code produit validé contre base master 131 codes
     """
     # Import des nouveaux modules OCR
     from ocr import process_image_ocr_pipeline
     from parser import parse_invoice_text
     from vin_utils import validate_and_correct_vin
     from validation import validate_invoice_data as validate_invoice_full, calculate_validation_score
+    from product_code_lookup import lookup_product_code, get_vehicle_info_from_invoice
     
     user = await get_current_user(authorization)
     
