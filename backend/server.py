@@ -2182,6 +2182,7 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
         
         # ============ WINDOW STICKER ============
         window_sticker_pdf = None
+        window_sticker_images = []  # Liste des images converties du PDF
         window_sticker_url = None
         vin = request.vin or vehicle.get("vin", "")
         
@@ -2205,8 +2206,21 @@ async def send_calculation_email(request: SendCalculationEmailRequest):
                 else:
                     logger.warning(f"Window Sticker non disponible: {ws_result.get('error')}")
             
-            # Construire l'URL du Window Sticker
-            window_sticker_url = f"https://www.jeep.com/hostd/windowsticker/getWindowStickerPdf.do?vin={vin}"
+            # Convertir le PDF en images pour l'email
+            if window_sticker_pdf:
+                window_sticker_images = convert_pdf_to_images(window_sticker_pdf, max_pages=2, dpi=120)
+                logger.info(f"Window Sticker converti en {len(window_sticker_images)} image(s)")
+            
+            # Construire l'URL du Window Sticker (basé sur la marque)
+            brand_lower = vehicle.get("brand", "jeep").lower()
+            if "chrysler" in brand_lower:
+                window_sticker_url = f"https://www.chrysler.com/hostd/windowsticker/getWindowStickerPdf.do?vin={vin}"
+            elif "dodge" in brand_lower:
+                window_sticker_url = f"https://www.dodge.com/hostd/windowsticker/getWindowStickerPdf.do?vin={vin}"
+            elif "ram" in brand_lower:
+                window_sticker_url = f"https://www.ramtrucks.com/hostd/windowsticker/getWindowStickerPdf.do?vin={vin}"
+            else:
+                window_sticker_url = f"https://www.jeep.com/hostd/windowsticker/getWindowStickerPdf.do?vin={vin}"
         
         # Get comparison data
         comparison = None
