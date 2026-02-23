@@ -5049,6 +5049,7 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                     "vin_brand": vin_brand,
                     "vin_consistent": vin_consistent,
                     "model_code": model_code,
+                    "model_code_validated": master_lookup is not None,  # Flag de validation master
                     "year": vin_info.get("year") or datetime.now().year,
                     "brand": product_info.get("brand") or vin_brand or "Stellantis",
                     "model": product_info.get("model") or "",
