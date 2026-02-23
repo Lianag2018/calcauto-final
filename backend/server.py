@@ -4111,236 +4111,90 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
             parse_method = "ocr_auto_approved"
             logger.info(f"OCR Auto-Approved: VIN={vin_corrected}, EP={vehicle_data['ep_cost']}, Score={ocr_score}")
         
-        # ===== NIVEAU 3: FALLBACK → GPT-4 VISION AVEC PRÉTRAITEMENT CAMSCANNER =====
+        # ===== NIVEAU 3: FALLBACK → GOOGLE CLOUD VISION (OCR HYBRIDE) =====
+        # Stratégie hybride: Google Vision pour l'OCR pur (moins cher, plus précis)
+        # + parser.py pour l'extraction structurée des données
         if decision == "vision_required" or vehicle_data is None:
-            logger.info("Fallback → GPT-4 Vision avec prétraitement CamScanner")
+            logger.info("Fallback → Google Cloud Vision avec prétraitement CamScanner")
             
             try:
-                import openai
                 from PIL import Image as PILImage
-                from ocr import camscanner_preprocess_for_vision, load_image_from_bytes
+                from ocr import (
+                    camscanner_preprocess_for_vision, 
+                    load_image_from_bytes,
+                    google_vision_ocr_from_numpy,
+                    google_vision_ocr
+                )
+                from parser import (
+                    parse_vin, 
+                    parse_model_code, 
+                    parse_financial_data, 
+                    parse_totals, 
+                    parse_options,
+                    parse_stock_number
+                )
                 
-                api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
-                if not api_key:
-                    raise HTTPException(status_code=500, detail="Clé API Vision non configurée")
-                
-                client = openai.OpenAI(api_key=api_key)
+                # Vérifier la clé API Google Vision
+                google_api_key = os.environ.get("GOOGLE_VISION_API_KEY")
+                if not google_api_key:
+                    logger.warning("GOOGLE_VISION_API_KEY non configurée, fallback vers GPT-4 Vision")
+                    raise ValueError("Google Vision API key not configured")
                 
                 # Décoder l'image
-                compressed_base64 = request.image_base64
-                img_data = base64.b64decode(compressed_base64)
+                img_data = base64.b64decode(request.image_base64)
                 
                 # ====== PRÉTRAITEMENT CAMSCANNER ======
-                # Convertir en array numpy pour OpenCV
                 cv_image = load_image_from_bytes(img_data)
                 
                 if cv_image is not None:
-                    # Appliquer le prétraitement style CamScanner
-                    logger.info("Applying CamScanner preprocessing...")
+                    logger.info("Applying CamScanner preprocessing for Google Vision...")
                     preprocessed = camscanner_preprocess_for_vision(cv_image)
                     
-                    # Convertir le résultat en image PIL
-                    pil_img = PILImage.fromarray(preprocessed)
+                    # ====== OCR GOOGLE CLOUD VISION ======
+                    logger.info("Calling Google Cloud Vision API...")
+                    vision_result = google_vision_ocr_from_numpy(preprocessed, google_api_key)
                     
-                    # Reconvertir en base64 pour GPT-4 Vision
-                    buffered = io.BytesIO()
-                    pil_img.save(buffered, format="JPEG", quality=95)
-                    compressed_base64 = base64.b64encode(buffered.getvalue()).decode()
+                    if not vision_result["success"]:
+                        logger.error(f"Google Vision error: {vision_result['error']}")
+                        raise ValueError(f"Google Vision error: {vision_result['error']}")
                     
-                    logger.info(f"CamScanner preprocessing complete: {pil_img.width}x{pil_img.height}")
+                    full_text = vision_result["full_text"]
+                    ocr_confidence = vision_result["confidence"]
+                    logger.info(f"Google Vision OCR: {len(full_text)} chars, confidence={ocr_confidence:.2f}")
                 else:
-                    # Fallback: utiliser l'image originale
-                    pil_img = PILImage.open(io.BytesIO(img_data))
+                    # Fallback: envoyer l'image originale directement
                     logger.warning("CamScanner preprocessing failed, using original image")
+                    image_base64 = base64.b64encode(img_data).decode("utf-8")
+                    vision_result = google_vision_ocr(image_base64, google_api_key)
+                    
+                    if not vision_result["success"]:
+                        raise ValueError(f"Google Vision error: {vision_result['error']}")
+                    
+                    full_text = vision_result["full_text"]
+                    ocr_confidence = vision_result["confidence"]
                 
-                width, height = pil_img.size
+                # ====== PARSING STRUCTURÉ (parser.py) ======
+                # Utiliser les parsers regex existants sur le texte brut de Google Vision
+                logger.info("Parsing structured data from Google Vision text...")
                 
-                # Extraire les zones critiques avec zoom (sur l'image prétraitée)
-                zones_to_extract = {
-                    "vin_zone": (int(width * 0.35), 0, width, int(height * 0.25)),  # Haut droite - VIN
-                    "color_zone": (0, int(height * 0.15), int(width * 0.6), int(height * 0.5)),  # Centre gauche - Options/Couleur
-                    "finance_zone": (0, int(height * 0.65), int(width * 0.5), height),  # Bas gauche - EP/PDCO
-                    "stock_zone": (int(width * 0.3), int(height * 0.85), int(width * 0.7), height),  # Bas centre - Stock manuscrit
-                }
+                # Parser le VIN
+                vin_raw = parse_vin(full_text)
+                if not vin_raw:
+                    # Chercher dans le texte brut avec un pattern plus permissif
+                    vin_match = re.search(r'1C4[A-Z0-9]{14}', full_text.replace("-", "").replace(" ", "").upper())
+                    if vin_match:
+                        vin_raw = vin_match.group()
+                vin_raw = str(vin_raw or "").replace("-", "").replace(" ", "").upper()[:17]
                 
-                zone_images = {}
-                for zone_name, (x1, y1, x2, y2) in zones_to_extract.items():
-                    zone_crop = pil_img.crop((x1, y1, x2, y2))
-                    # Agrandir la zone pour meilleure lisibilité (x3 pour le stock manuscrit)
-                    scale = 3 if zone_name == "stock_zone" else 2
-                    zone_crop = zone_crop.resize((zone_crop.width * scale, zone_crop.height * scale), PILImage.Resampling.LANCZOS)
-                    buffered = io.BytesIO()
-                    zone_crop.save(buffered, format="JPEG", quality=95)
-                    zone_images[zone_name] = base64.b64encode(buffered.getvalue()).decode()
-                    logger.info(f"Zone {zone_name} extraite: {zone_crop.width}x{zone_crop.height}")
-                
-                
-                # Prompt ultra-précis pour factures FCA
-                system_prompt = """Tu es un extracteur EXPERT de factures FCA Canada. Tu dois extraire les données avec une précision de 100%.
-
-RÈGLES CRITIQUES:
-
-1. STOCK NUMBER (TRÈS IMPORTANT):
-- C'est le numéro ÉCRIT À LA MAIN en bas de page (5 chiffres)
-- Cherche une écriture manuscrite, souvent au stylo bleu ou noir
-- Le stock # est souvent encerclé ou souligné
-
-⚠️ CONFUSIONS MANUSCRITES FRÉQUENTES:
-- 3 vs 8: Le 3 manuscrit a deux courbes OUVERTES à droite (comme un E retourné), le 8 est FERMÉ (deux boucles complètes)
-- 7 vs 1: Le 7 a une barre horizontale en haut
-- 4 vs 9: Le 4 est angulaire, le 9 est rond en haut
-- 5 vs 6: Le 5 a une barre horizontale en haut
-
-- NE PAS utiliser R100963941 (c'est le numéro TPS/GST)
-- NE PAS utiliser C08-625829-40 (c'est le numéro de commande)
-
-2. VIN (VEHICLE IDENTIFICATION NUMBER) - ULTRA CRITIQUE:
-- Situé en haut à droite, sous "VEHICLE IDENTIFICATION NUMBER"
-- Format FCA avec tirets: 1C4RJHBG6-S8-806264
-- RETIRE les tirets pour obtenir 17 caractères: 1C4RJHBG6S8806264
-
-⚠️ ERREURS FRÉQUENTES À ÉVITER ABSOLUMENT:
-- 6 vs 5: Le 6 a une boucle en bas fermée, le 5 a une barre horizontale en haut
-- S vs 5 vs 8: Le S est une lettre courbe, le 5 a une barre horizontale, le 8 a deux boucles
-- 3 vs 8: Le 3 est ouvert à gauche, le 8 est complètement fermé
-- K vs X: Le K a deux diagonales partant d'une barre verticale
-- 9 vs 8: Le 9 a une boucle en HAUT seulement, le 8 a deux boucles
-
-POSITION 10 = ANNÉE (TRÈS IMPORTANT):
-- R = 2024
-- S = 2025  
-- T = 2026
-- Le 10ème caractère est une LETTRE (R, S, T), PAS un chiffre
-- Si tu lis 5 ou 8 en position 10, c'est probablement S
-- POUR 2025, la partie après le tiret est toujours "-S8-" (lettre S puis chiffre 8)
-
-EXEMPLE VIN FCA 2025:
-- Facture: 1C4RJHBG6-S8-806264
-- Sans tirets: 1C4RJHBG6S8806264
-- Position 9: checksum (6)
-- Position 10: S (année 2025)
-- Position 11: 8 (usine)
-- LES 6 DERNIERS = numéro série: 806264
-
-3. CODE COULEUR - ULTRA IMPORTANT:
-- C'est le CODE à 3 caractères, PAS la description
-- Le code est dans la colonne de GAUCHE, la description à droite
-- Exemples de codes: PW7, PWZ, PWL, PXJ, PX8, PAU, PSC, PGG
-- ⚠️ BLANC a plusieurs codes (PW7, PWZ, PWL) - retourne le code EXACT vu sur la facture
-- ⚠️ NOIR a plusieurs codes (PXJ, PX8) - retourne le code EXACT vu sur la facture
-- NE JAMAIS retourner la description (BLANC ECLATANT, NOIR CRISTAL)
-- TOUJOURS retourner le code P suivi de 2 caractères
-
-4. OPTIONS AVEC PRIX:
-- Chaque option a un code (ex: ABR, GWA, 23B) et une description
-- NE PAS extraire les montants des options - mettre 0 pour tous
-- Extraire seulement le code et la description
-
-5. CODES FINANCIERS (en bas à gauche) - TRÈS IMPORTANT:
-- E.P. = 8 chiffres (ex: 06534500 = $65,345)
-- PDCO = 8 chiffres (ex: 07035500 = $70,355)
-- PREF* = 8 chiffres (ex: 06607000 = $66,070)
-- HOLDBACK = 6 chiffres JUSTE EN DESSOUS de PREF*, AVANT "GVW:" (ex: 070000 = $700)
-- Le HOLDBACK est souvent écrit seul sans label, juste un nombre à 6 chiffres avant GVW
-
-Retourne UNIQUEMENT ce JSON:
-{
-  "stock_no": "5 chiffres manuscrits",
-  "vin": "17 caractères EXACTS - vérifie K pas X, 9 pas 5, 6 pas G",
-  "model_code": "code 5-6 chars (ex: WLJH75)",
-  "description": "description modèle",
-  "ep": "8 chiffres brut",
-  "pdco": "8 chiffres brut",
-  "pref": "8 chiffres brut",
-  "holdback": "6 chiffres - CHERCHE EN DESSOUS DE PREF*, AVANT GVW",
-  "subtotal": nombre décimal,
-  "total": nombre décimal,
-  "color": "CODE 3 chars (ex: PW7) - PAS la description",
-  "options": [{"c":"code","d":"description","a":0}]
-}"""
-                
-                # Construire le message avec l'image complète + zones zoomées
-                image_content = [
-                    {"type": "text", "text": "Extrait JSON de cette facture FCA. Je t'envoie l'image complète + 3 zooms sur les zones critiques (VIN, couleur/options, codes financiers)."},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{compressed_base64}", "detail": "high"}
-                    }
-                ]
-                
-                # Ajouter les zones zoomées
-                zone_descriptions = {
-                    "vin_zone": "ZOOM sur zone VIN (haut droite) - Lis le VIN caractère par caractère. Format: 1C4RJHBG6-S8-806264. La partie '-S8-' c'est LETTRE S puis chiffre 8, pas '88' ou '58'",
-                    "color_zone": "ZOOM sur zone OPTIONS/COULEUR - Cherche le CODE couleur (PW7, PWZ, PXJ...) pas la description",
-                    "finance_zone": "ZOOM sur zone FINANCIÈRE (bas gauche) - Cherche: E.P. (8 chiffres), PDCO (8 chiffres), PREF* (8 chiffres), et HOLDBACK (6 chiffres AVANT GVW:)",
-                    "stock_zone": "ZOOM sur STOCK # MANUSCRIT (bas de page) - C'est un nombre de 5 chiffres ÉCRIT À LA MAIN. Attention: le 3 manuscrit ressemble parfois à 8 mais le 3 est OUVERT à gauche, le 8 est FERMÉ. Lis chaque chiffre attentivement."
-                }
-                
-                for zone_name, zone_base64 in zone_images.items():
-                    image_content.append({
-                        "type": "text", 
-                        "text": zone_descriptions.get(zone_name, f"Zone {zone_name}")
-                    })
-                    image_content.append({
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{zone_base64}", "detail": "high"}
-                    })
-                
-                logger.info(f"Envoi GPT-4 Vision: 1 image complète + {len(zone_images)} zones zoomées")
-                
-                response = client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": image_content}
-                    ],
-                    max_tokens=2000,
-                    temperature=0.1
-                )
-                
-                json_str = response.choices[0].message.content.strip()
-                if "```" in json_str:
-                    for part in json_str.split("```"):
-                        clean = part.strip()
-                        if clean.startswith("json"):
-                            json_str = clean[4:].strip()
-                            break
-                        elif clean.startswith("{"):
-                            json_str = clean
-                            break
-                
-                # Nettoyer les caractères problématiques
-                json_str = json_str.replace('\\"', '"').replace("\\'", "'")
-                json_str = re.sub(r'\\(?!["\\/bfnrt])', r'', json_str)  # Remove invalid escapes
-                
-                try:
-                    raw = json.loads(json_str)
-                except json.JSONDecodeError as je:
-                    # Essayer d'extraire juste le JSON
-                    match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', json_str, re.DOTALL)
-                    if match:
-                        try:
-                            clean_json = match.group()
-                            clean_json = re.sub(r'\\(?!["\\/bfnrt])', r'', clean_json)
-                            raw = json.loads(clean_json)
-                        except:
-                            logger.error(f"JSON parse failed. Error: {je}. Response: {json_str[:500]}")
-                            raise HTTPException(status_code=400, detail="Extraction JSON échouée")
-                    else:
-                        logger.error(f"JSON parse failed. Error: {je}. Response: {json_str[:500]}")
-                        raise HTTPException(status_code=400, detail="Extraction JSON échouée")
-                
-                # Décoder les valeurs (supporte les deux formats de clés)
-                vin_raw = str(raw.get("vin", raw.get("v", ""))).replace("-", "").replace(" ", "").upper()[:17]
-                
-                # PATCH 3: Unifier VIN - utiliser validate_and_correct_vin uniquement
+                # Valider et corriger le VIN
                 vin_result = validate_and_correct_vin(vin_raw) if len(vin_raw) == 17 else {"corrected": vin_raw, "is_valid": False, "was_corrected": False}
                 vin_corrected = vin_result.get("corrected", vin_raw)
                 vin_valid = vin_result.get("is_valid", False)
                 vin_was_corrected = vin_result.get("was_corrected", False)
                 vin_info = decode_vin(vin_corrected) if len(vin_corrected) == 17 else {}
                 
-                model_code = str(raw.get("model_code", raw.get("m", ""))).upper().strip()[:7]
+                # Parser le code modèle
+                model_code = parse_model_code(full_text) or ""
                 product_info = decode_product_code(model_code) if model_code else {}
                 
                 # Validation cohérence VIN ↔ marque
