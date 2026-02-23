@@ -263,17 +263,47 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
 def parse_stock_number(text: str) -> Optional[str]:
     """
     Extrait le numéro de stock (souvent écrit à la main, 5 chiffres)
+    Amélioré pour supporter les différents formats et positions
     """
+    # Patterns avec label explicite
     patterns = [
         r"STOCK\s*#?\s*(\d{5})",
         r"INV\s*#?\s*(\d{5})",
-        r"#(\d{5})\b"
+        r"#(\d{5})\b",
+        r"STOCK\s*NO\.?\s*(\d{5})",
     ]
     
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
             return match.group(1)
+    
+    # Si pas trouvé avec label, chercher un nombre de 5 chiffres isolé
+    # Le stock manuscrit est souvent sur sa propre ligne
+    lines = text.split('\n')
+    for line in lines:
+        line = line.strip()
+        # Ligne contenant uniquement un nombre de 5 chiffres
+        if re.match(r'^\d{5}$', line):
+            # Éviter les faux positifs (codes postaux, etc.)
+            num = int(line)
+            # Les numéros de stock FCA sont généralement entre 10000 et 99999
+            # et ne ressemblent pas à des codes postaux canadiens
+            if 10000 <= num <= 99999:
+                # Exclure les codes connus (adresses, etc.)
+                if line not in ['10240']:  # Exclure adresse connue du dealer
+                    return line
+    
+    # Fallback: chercher parmi tous les nombres de 5 chiffres
+    # en excluant ceux qui ressemblent à des montants ou codes connus
+    all_five_digits = re.findall(r'\b(\d{5})\b', text)
+    exclude_patterns = ['10240', '07544', '06997', '07070']  # Adresses et codes financiers partiels
+    
+    for num in all_five_digits:
+        if num not in exclude_patterns and not num.startswith('0'):
+            # Vérifier que ce n'est pas un montant (pas précédé de $ ou suivi de .00)
+            if not re.search(rf'\${num}|{num}\.00', text):
+                return num
     
     return None
 
