@@ -304,7 +304,7 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'COUCHE', 'C08', 'C4564', 'G5Y', '1K1', 'M5J', '1J1', 'FL', 'ON',
         '1C4', 'S8', '806264', 'R100963941', 'GFBR', 'RETING', 'II', 'III',
         'IV', 'VI', 'VII', 'VIII', 'IX', 'XI', 'XII', 'NI', 'TAX', 'TAUX',
-        'PAN', 'YGW',  # YGW souvent mal parsé, inclus dans descriptions connues
+        'PAN', 'PANN', 'YGW',  # Fragments de descriptions
     }
     
     text_upper = text.upper()
@@ -312,10 +312,12 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
     # Chercher tous les codes d'options connus dans le texte
     found_codes = set()
     
-    # Méthode 1: Chercher UNIQUEMENT les codes connus (plus fiable)
+    # Chercher UNIQUEMENT les codes connus (plus fiable, évite les faux positifs)
     for code in fca_descriptions.keys():
         if re.search(rf'\b{re.escape(code)}\b', text_upper):
             found_codes.add(code)
+    
+    # Ne PAS utiliser la méthode générique pour éviter les faux positifs
     
     # Méthode 2: Pattern pour codes FCA génériques (2-5 chars alphanumériques)
     # Pattern: début de mot, 2-5 chars avec au moins une lettre, suivi d'espace ou fin
