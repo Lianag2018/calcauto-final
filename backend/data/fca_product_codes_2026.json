@@ -1,4 +1,40 @@
 {
+  "LBEL29": {
+    "year": "2026",
+    "brand": "Dodge",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "AWD",
+    "raw": "DOORAWD"
+  },
+  "LBEL49": {
+    "year": "2026",
+    "brand": "Dodge",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "AWD",
+    "raw": "DOORAWD"
+  },
+  "LBEP29": {
+    "year": "2026",
+    "brand": "Dodge",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "AWD",
+    "raw": "DOORAWD"
+  },
+  "LBEP49": {
+    "year": "2026",
+    "brand": "Dodge",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "AWD",
+    "raw": "DOORAWD"
+  },
   "KMJL74": {
     "year": "2026",
     "brand": "Jeep",
@@ -30,7 +66,7 @@
     "year": "2026",
     "brand": "Chrysler",
     "model": "Grand Caravan",
-    "trim": "Canada Value Package",
+    "trim": "CVP",
     "cab": "",
     "drive": "",
     "raw": "GRANDCARAVANCANADAVALUEPACKAGE"
@@ -156,7 +192,7 @@
     "year": "2026",
     "brand": "Dodge",
     "model": "Durango",
-    "trim": "Gt",
+    "trim": "GT",
     "cab": "",
     "drive": "AWD",
     "raw": "DURANGOGTHEMIV8AWD"
@@ -165,7 +201,7 @@
     "year": "2026",
     "brand": "Dodge",
     "model": "Durango",
-    "trim": "Rt",
+    "trim": "R/T",
     "cab": "",
     "drive": "AWD",
     "raw": "DURANGOSRTHELLCATAWD"
@@ -206,10 +242,28 @@
     "drive": "4x4",
     "raw": "GLADIATORRUBICON4X4"
   },
+  "WLJH74": {
+    "year": "2026",
+    "brand": "Jeep",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "ROW)4X4"
+  },
+  "WLJH75": {
+    "year": "2026",
+    "brand": "Jeep",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "ROW)4X4"
+  },
   "WSJM76": {
     "year": "2026",
     "brand": "Jeep",
-    "model": "Wagoneer",
+    "model": "Grand Wagoneer",
     "trim": "",
     "cab": "",
     "drive": "4x4",
@@ -218,7 +272,7 @@
   "WSJH76": {
     "year": "2026",
     "brand": "Jeep",
-    "model": "Wagoneer",
+    "model": "Grand Wagoneer",
     "trim": "Limited",
     "cab": "",
     "drive": "4x4",
@@ -227,7 +281,7 @@
   "WSJR76": {
     "year": "2026",
     "brand": "Jeep",
-    "model": "Wagoneer",
+    "model": "Grand Wagoneer",
     "trim": "Summit",
     "cab": "",
     "drive": "4x4",
@@ -236,7 +290,7 @@
   "WSJM75": {
     "year": "2026",
     "brand": "Jeep",
-    "model": "Wagoneer",
+    "model": "Grand Wagoneer",
     "trim": "",
     "cab": "",
     "drive": "4x4",
@@ -245,7 +299,7 @@
   "WSJH75": {
     "year": "2026",
     "brand": "Jeep",
-    "model": "Wagoneer",
+    "model": "Grand Wagoneer",
     "trim": "Limited",
     "cab": "",
     "drive": "4x4",
@@ -254,7 +308,7 @@
   "WSJR75": {
     "year": "2026",
     "brand": "Jeep",
-    "model": "Wagoneer",
+    "model": "Grand Wagoneer",
     "trim": "Summit",
     "cab": "",
     "drive": "4x4",
@@ -264,10 +318,19 @@
     "year": "2026",
     "brand": "Dodge",
     "model": "Hornet",
-    "trim": "Gt",
+    "trim": "GT",
     "cab": "",
     "drive": "AWD",
     "raw": "HORNETGTAWD"
+  },
+  "GG7P49": {
+    "year": "2026",
+    "brand": "Dodge",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "AWD",
+    "raw": "INHYBRIDAWD"
   },
   "VF1L11": {
     "year": "2026",
@@ -398,7 +461,7 @@
   "DT6L91": {
     "year": "2026",
     "brand": "Ram",
-    "model": "1500",
+    "model": "",
     "trim": "Tradesman",
     "cab": "Crew Cab",
     "drive": "4x4",
@@ -416,7 +479,7 @@
   "DT6H91": {
     "year": "2026",
     "brand": "Ram",
-    "model": "1500",
+    "model": "",
     "trim": "Big Horn",
     "cab": "Crew Cab",
     "drive": "4x4",
@@ -470,17 +533,17 @@
   "DT6M98": {
     "year": "2026",
     "brand": "Ram",
-    "model": "1500",
-    "trim": "Longhorn",
-    "cab": "Crew Cab",
+    "model": "",
+    "trim": "Limited",
+    "cab": "",
     "drive": "4x4",
     "raw": "1500LIMITED/LONGHORNCREW4X4"
   },
   "DT6M91": {
     "year": "2026",
     "brand": "Ram",
-    "model": "1500",
-    "trim": "Longhorn",
+    "model": "",
+    "trim": "Limited",
     "cab": "",
     "drive": "4x4",
     "raw": "1500LIMITED/LONGHORNCAB4X4"
@@ -488,7 +551,7 @@
   "DT6L41": {
     "year": "2026",
     "brand": "Ram",
-    "model": "1500",
+    "model": "",
     "trim": "Tradesman",
     "cab": "Quad Cab",
     "drive": "4x4",
@@ -497,7 +560,7 @@
   "DT6H41": {
     "year": "2026",
     "brand": "Ram",
-    "model": "1500",
+    "model": "",
     "trim": "Big Horn",
     "cab": "Quad Cab",
     "drive": "4x4",
@@ -596,8 +659,8 @@
   "DJ7X91": {
     "year": "2026",
     "brand": "Ram",
-    "model": "2500",
-    "trim": "Power Wagon",
+    "model": "",
+    "trim": "Rebel",
     "cab": "Crew Cab",
     "drive": "",
     "raw": "2500REBEL/POWERWAGONCREWCAB"
@@ -750,132 +813,132 @@
     "year": "2026",
     "brand": "Ram",
     "model": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": ")"
+    "trim": "Tradesman",
+    "cab": "Crew Cab",
+    "drive": "4x2",
+    "raw": "3500TRADESMANCREWCAB4X2(149INWB6FT4INBox)"
   },
   "D23L92": {
     "year": "2026",
     "brand": "Ram",
     "model": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": ")"
+    "trim": "Tradesman",
+    "cab": "Crew Cab",
+    "drive": "4x2",
+    "raw": "3500TRADESMANCREWCAB4X2(169INWB8FT0INBox)"
   },
   "D23H91": {
     "year": "2026",
     "brand": "Ram",
     "model": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": ")"
+    "trim": "Big Horn",
+    "cab": "Crew Cab",
+    "drive": "4x2",
+    "raw": "3500BIGHORNCREWCAB4X2(149INWB6FT4INBox)"
   },
   "D23H92": {
     "year": "2026",
     "brand": "Ram",
     "model": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": ")"
+    "trim": "Big Horn",
+    "cab": "Crew Cab",
+    "drive": "4x2",
+    "raw": "3500BIGHORNCREWCAB4X2(169INWB8FT0INBox)"
   },
   "D28L91": {
     "year": "2026",
     "brand": "Ram",
     "model": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": ")"
+    "trim": "Tradesman",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "raw": "3500TRADESMANCREWCAB4X4(149INWB6FT4INBox)"
   },
   "D28L92": {
     "year": "2026",
     "brand": "Ram",
     "model": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": ")"
+    "trim": "Tradesman",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "raw": "3500TRADESMANCREWCAB4X4(169INWB8FT0INBox)"
   },
   "D28H91": {
     "year": "2026",
     "brand": "Ram",
     "model": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": ")"
+    "trim": "Big Horn",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "raw": "3500BIGHORNCREWCAB4X4(149INWB6FT4INBox)"
   },
   "D28H92": {
     "year": "2026",
     "brand": "Ram",
     "model": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": ")"
+    "trim": "Big Horn",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "raw": "3500BIGHORNCREWCAB4X4(169INWB8FT0INBox)"
   },
   "D28P91": {
     "year": "2026",
     "brand": "Ram",
     "model": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": ")"
+    "trim": "Laramie",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "raw": "3500LARAMIECREWCAB4X4(149INWB6FT4INBox)"
   },
   "D28P92": {
     "year": "2026",
     "brand": "Ram",
     "model": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": ")"
+    "trim": "Laramie",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "raw": "3500LARAMIECREWCAB4X4(169INWB8FT0INBox)"
   },
   "D28M91": {
     "year": "2026",
     "brand": "Ram",
     "model": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": ")"
+    "trim": "Limited",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "raw": "3500LIMITEDCREWCAB4X4(149INWB6FT4INBox)"
   },
   "D28M92": {
     "year": "2026",
     "brand": "Ram",
     "model": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": ")"
+    "trim": "Limited",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "raw": "3500LIMITEDCREWCAB4X4(169INWB8FT0INBox)"
   },
   "D28P81": {
     "year": "2026",
     "brand": "Ram",
     "model": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": ")"
+    "trim": "Laramie",
+    "cab": "Mega Cab",
+    "drive": "4x4",
+    "raw": "3500LARAMIEMEGACAB4X4(160INWB6FT4INBox)"
   },
   "D28M81": {
     "year": "2026",
     "brand": "Ram",
     "model": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": ")"
+    "trim": "Limited",
+    "cab": "Mega Cab",
+    "drive": "4x4",
+    "raw": "3500LIMITEDMEGACAB4X4(160INWB6FT4INBox)"
   },
   "D23L62": {
     "year": "2026",
     "brand": "Ram",
-    "model": "3500",
+    "model": "",
     "trim": "Tradesman",
     "cab": "Regular Cab",
     "drive": "4x2",
@@ -884,7 +947,7 @@
   "D23H62": {
     "year": "2026",
     "brand": "Ram",
-    "model": "3500",
+    "model": "",
     "trim": "Big Horn",
     "cab": "Regular Cab",
     "drive": "4x2",
@@ -894,19 +957,19 @@
     "year": "2026",
     "brand": "Ram",
     "model": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": ")"
+    "trim": "Tradesman",
+    "cab": "Regular Cab",
+    "drive": "4x4",
+    "raw": "3500TRADESMANREGCAB4X4(140INWB8FT0INBox)"
   },
   "D28H62": {
     "year": "2026",
     "brand": "Ram",
     "model": "",
-    "trim": "",
-    "cab": "",
-    "drive": "",
-    "raw": ")"
+    "trim": "Big Horn",
+    "cab": "Regular Cab",
+    "drive": "4x4",
+    "raw": "3500BIGHORNREGCAB4X4(140INWB8FT0INBox)"
   },
   "DP4L93": {
     "year": "2026",
@@ -1124,6 +1187,15 @@
     "drive": "",
     "raw": "120IN)"
   },
+  "EJXM74": {
+    "year": "2026",
+    "brand": "Jeep",
+    "model": "",
+    "trim": "Willys",
+    "cab": "",
+    "drive": "",
+    "raw": "WILLYSBEV"
+  },
   "JLJL72": {
     "year": "2026",
     "brand": "Jeep",
@@ -1133,6 +1205,24 @@
     "drive": "",
     "raw": "WRANGLERSPORT"
   },
+  "JLJL74": {
+    "year": "2026",
+    "brand": "Jeep",
+    "model": "",
+    "trim": "Sport",
+    "cab": "",
+    "drive": "",
+    "raw": "DOORSPORT"
+  },
+  "JLJP74": {
+    "year": "2026",
+    "brand": "Jeep",
+    "model": "",
+    "trim": "Sahara",
+    "cab": "",
+    "drive": "",
+    "raw": "DOORSAHARA"
+  },
   "JLJS72": {
     "year": "2026",
     "brand": "Jeep",
@@ -1141,5 +1231,23 @@
     "cab": "",
     "drive": "",
     "raw": "WRANGLERRUBICON"
+  },
+  "JLJS74": {
+    "year": "2026",
+    "brand": "Jeep",
+    "model": "",
+    "trim": "Rubicon",
+    "cab": "",
+    "drive": "",
+    "raw": "DOORRUBICON"
+  },
+  "JLJX74": {
+    "year": "2026",
+    "brand": "Jeep",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "raw": "DOOR392(4WD)"
   }
 }
