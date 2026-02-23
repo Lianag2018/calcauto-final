@@ -4842,7 +4842,7 @@ async def get_parsing_history(
 
 # ============ User Scan History Endpoints (Non-Admin) ============
 
-@api_router.get("/inventory/scan-history")
+@api_router.get("/scans/history")
 async def get_user_scan_history(
     limit: int = 50,
     authorization: Optional[str] = Header(None)
@@ -4890,7 +4890,7 @@ async def get_user_scan_history(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@api_router.get("/inventory/scan-stats")
+@api_router.get("/scans/stats")
 async def get_user_scan_stats(
     days: int = 30,
     authorization: Optional[str] = Header(None)
