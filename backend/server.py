@@ -2219,23 +2219,42 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
+from email.mime.image import MIMEImage
 from email import encoders
 import io
 
-def send_email(to_email: str, subject: str, html_body: str, attachment_data: bytes = None, attachment_name: str = None):
-    """Envoie un email via Gmail SMTP"""
+def send_email(to_email: str, subject: str, html_body: str, attachment_data: bytes = None, attachment_name: str = None, inline_images: list = None):
+    """
+    Envoie un email via Gmail SMTP avec support pour images inline (CID).
+    
+    Args:
+        inline_images: Liste de dicts avec 'cid', 'data' (bytes), 'mimetype' (ex: 'image/jpeg')
+    """
     if not SMTP_EMAIL or not SMTP_PASSWORD:
         raise Exception("Configuration SMTP manquante")
     
-    msg = MIMEMultipart('alternative')
+    # Utiliser 'related' pour supporter les images CID
+    msg = MIMEMultipart('related')
     msg['From'] = f"CalcAuto AiPro <{SMTP_EMAIL}>"
     msg['To'] = to_email
     msg['Subject'] = subject
     
-    # Corps HTML
-    msg.attach(MIMEText(html_body, 'html', 'utf-8'))
+    # Créer une partie alternative pour le HTML
+    msg_alternative = MIMEMultipart('alternative')
+    msg.attach(msg_alternative)
     
-    # Pièce jointe si fournie
+    # Corps HTML
+    msg_alternative.attach(MIMEText(html_body, 'html', 'utf-8'))
+    
+    # Images inline (CID) - pour Window Sticker
+    if inline_images:
+        for img in inline_images:
+            mime_img = MIMEImage(img['data'], _subtype=img.get('subtype', 'jpeg'))
+            mime_img.add_header('Content-ID', f"<{img['cid']}>")
+            mime_img.add_header('Content-Disposition', 'inline', filename=img.get('filename', 'image.jpg'))
+            msg.attach(mime_img)
+    
+    # Pièce jointe PDF si fournie
     if attachment_data and attachment_name:
         part = MIMEBase('application', 'octet-stream')
         part.set_payload(attachment_data)
