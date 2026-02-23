@@ -1899,9 +1899,9 @@ export default function HomeScreen() {
                           vehicle_price: parseFloat(vehiclePrice),
                           payment_frequency: paymentFrequency,
                           dealer_name: 'CalcAuto AiPro',
-                          // Window Sticker - inclus si VIN disponible
-                          include_window_sticker: !!(selectedInventory?.vin),
-                          vin: selectedInventory?.vin || '',
+                          // Window Sticker - inclus si VIN disponible (inventaire OU manuel)
+                          include_window_sticker: !!(selectedInventory?.vin || (manualVin && manualVin.length === 17)),
+                          vin: selectedInventory?.vin || (manualVin && manualVin.length === 17 ? manualVin : ''),
                           // Frais et échange
                           fees: {
                             frais_dossier: parseFloat(fraisDossier) || 0,
