@@ -743,8 +743,9 @@ export default function HomeScreen() {
       echangeNet,
       comptant,
       bonusCash,
+      totalAccessoires,
     });
-  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, tauxTaxe]);
+  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, tauxTaxe, accessories]);
 
   // Recalculate when inputs change
   useEffect(() => {
