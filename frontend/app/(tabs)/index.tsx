@@ -1215,6 +1215,9 @@ export default function HomeScreen() {
                       Stock #{selectedInventory.stock_no} - {selectedInventory.year} {selectedInventory.brand} {selectedInventory.model} {selectedInventory.trim}
                     </Text>
                   </View>
+                  {selectedInventory.vin && (
+                    <Text style={styles.selectedInventoryVin}>VIN: {selectedInventory.vin}</Text>
+                  )}
                   <TouchableOpacity onPress={() => { setSelectedInventory(null); setVehiclePrice(''); }}>
                     <Ionicons name="close-circle" size={22} color="#FF6B6B" />
                   </TouchableOpacity>
