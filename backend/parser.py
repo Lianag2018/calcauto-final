@@ -302,7 +302,8 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'DODGE', 'CHRYSLER', 'LACROIX', 'GEORGES', 'REG', 'INS', 'AUTOMOTIVE',
         'LEE', 'HIM', 'WELLINGTON', 'TORONTO', 'ORDER', 'COMMANDE', 'CLEF',
         'COUCHE', 'C08', 'C4564', 'G5Y', '1K1', 'M5J', '1J1', 'FL', 'ON',
-        '1C4', 'S8', '806264', 'R100963941', 'GFBR', 'RETING',
+        '1C4', 'S8', '806264', 'R100963941', 'GFBR', 'RETING', 'II', 'III',
+        'IV', 'VI', 'VII', 'VIII', 'IX', 'XI', 'XII',
     }
     
     text_upper = text.upper()
