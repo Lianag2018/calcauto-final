@@ -995,6 +995,9 @@ export default function ClientsScreen() {
                   <Ionicons name="checkmark" size={16} color="#1a1a2e" />
                   <Text style={styles.reminderBtnTextDone}>{crm.markDone}</Text>
                 </TouchableOpacity>
+                <TouchableOpacity style={[styles.reminderBtn, styles.reminderBtnDelete]} onPress={() => deleteReminder(reminder.id)}>
+                  <Ionicons name="trash" size={16} color="#FF6B6B" />
+                </TouchableOpacity>
               </View>
             </View>
           );
