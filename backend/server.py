@@ -2228,12 +2228,18 @@ from email.mime.image import MIMEImage
 from email import encoders
 import io
 
-def send_email(to_email: str, subject: str, html_body: str, attachment_data: bytes = None, attachment_name: str = None, inline_images: list = None):
+def send_email(to_email: str, subject: str, html_body: str, attachment_data: bytes = None, attachment_name: str = None, inline_images: list = None, cc_email: str = None):
     """
     Envoie un email via Gmail SMTP avec support pour images inline (CID).
     
     Args:
+        to_email: Email du destinataire
+        subject: Sujet de l'email
+        html_body: Corps HTML de l'email
+        attachment_data: Données de la pièce jointe (optionnel)
+        attachment_name: Nom de la pièce jointe (optionnel)
         inline_images: Liste de dicts avec 'cid', 'data' (bytes), 'mimetype' (ex: 'image/jpeg')
+        cc_email: Email en copie (CC) - optionnel
     """
     if not SMTP_EMAIL or not SMTP_PASSWORD:
         raise Exception("Configuration SMTP manquante")
@@ -2243,6 +2249,10 @@ def send_email(to_email: str, subject: str, html_body: str, attachment_data: byt
     msg['From'] = f"CalcAuto AiPro <{SMTP_EMAIL}>"
     msg['To'] = to_email
     msg['Subject'] = subject
+    
+    # Ajouter CC si fourni
+    if cc_email:
+        msg['Cc'] = cc_email
     
     # Créer une partie alternative pour le HTML
     msg_alternative = MIMEMultipart('alternative')
@@ -2267,11 +2277,16 @@ def send_email(to_email: str, subject: str, html_body: str, attachment_data: byt
         part.add_header('Content-Disposition', f'attachment; filename="{attachment_name}"')
         msg.attach(part)
     
+    # Liste des destinataires (To + CC)
+    recipients = [to_email]
+    if cc_email:
+        recipients.append(cc_email)
+    
     # Connexion SMTP
     with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
         server.starttls()
         server.login(SMTP_EMAIL, SMTP_PASSWORD)
-        server.send_message(msg)
+        server.send_message(msg, to_addrs=recipients)
     
     return True
 
