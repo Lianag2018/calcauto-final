@@ -4202,30 +4202,42 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                 expected_brand = product_info.get("brand")
                 vin_consistent = validate_vin_brand_consistency(vin_corrected, expected_brand) if vin_brand else True
                 
-                ep_cost = clean_fca_price(str(raw.get("ep", raw.get("e", ""))))
-                pdco = clean_fca_price(str(raw.get("pdco", raw.get("p", ""))))
-                pref = clean_fca_price(str(raw.get("pref", raw.get("r", ""))))
-                holdback = clean_fca_price(str(raw.get("holdback", raw.get("h", ""))))
+                # Parser les données financières
+                financial = parse_financial_data(full_text)
+                ep_cost = financial.get("ep_cost", 0) or 0
+                pdco = financial.get("pdco", 0) or 0
+                pref = financial.get("pref", 0) or 0
+                holdback = financial.get("holdback", 0) or 0
                 
-                # Décoder options (supporte formats: liste ou dict)
+                # Parser les totaux
+                totals = parse_totals(full_text)
+                subtotal = totals.get("subtotal", 0) or 0
+                invoice_total = totals.get("invoice_total", 0) or 0
+                
+                # Parser les options
                 options = []
-                options_raw = raw.get("options", raw.get("o", []))
-                for opt in options_raw:
-                    if isinstance(opt, list) and len(opt) >= 2:
-                        options.append({
-                            "product_code": str(opt[0]).upper(),
-                            "description": str(opt[1])[:80],
-                            "amount": 0  # Pas de prix accessoires
-                        })
-                    elif isinstance(opt, dict):
-                        options.append({
-                            "product_code": str(opt.get("code", opt.get("c", ""))).upper(),
-                            "description": str(opt.get("description", opt.get("d", "")))[:80],
-                            "amount": 0  # Pas de prix accessoires
-                        })
+                for opt in parse_options(full_text):
+                    options.append({
+                        "product_code": opt.get("product_code", ""),
+                        "description": opt.get("description", "")[:80],
+                        "amount": 0  # Pas de prix accessoires comme demandé
+                    })
                 
-                # Couleur - Amélioration extraction
-                raw_color = str(raw.get("color", raw.get("c", ""))).upper().strip()
+                # Parser le numéro de stock (souvent manuscrit)
+                stock_no = parse_stock_number(full_text) or ""
+                
+                # Chercher le stock manuscrit avec un pattern plus large si non trouvé
+                if not stock_no:
+                    # Chercher un nombre de 5 chiffres isolé (souvent le stock manuscrit)
+                    stock_match = re.search(r'\b(\d{5})\b', full_text)
+                    if stock_match:
+                        stock_no = stock_match.group(1)
+                
+                # Couleur - Extraire le code couleur (3 caractères commençant par P)
+                raw_color = ""
+                color_match = re.search(r'\b(P[A-Z0-9]{2})\b', full_text)
+                if color_match:
+                    raw_color = color_match.group(1)
                 
                 # Mapping des codes couleur FCA
                 color_map = {
@@ -4235,40 +4247,11 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                     "PGE": "Vert Sarge", "PRM": "Rouge Velours", "PAR": "Argent Billet",
                     "PYB": "Jaune Stinger", "PBJ": "Bleu Hydro", "PFQ": "Granite Cristal"
                 }
-                
-                # Extraire le code couleur (3 caractères commençant par P)
-                color_code = ""
-                # Si c'est déjà un code valide (3 chars commençant par P)
-                if len(raw_color) >= 3 and raw_color[:3] in color_map:
-                    color_code = raw_color[:3]
-                elif raw_color.startswith("P") and len(raw_color) == 3:
-                    color_code = raw_color
-                else:
-                    # Chercher un code couleur dans la chaîne (ex: "PW7 BLANC ECLATANT")
-                    code_match = re.search(r'\b(P[A-Z0-9]{2})\b', raw_color)
-                    if code_match:
-                        color_code = code_match.group(1)
-                    else:
-                        # PAS de mapping description → code car ambigü
-                        # (BLANC peut être PW7, PWZ, PWL; NOIR peut être PXJ, PX8)
-                        # Retourner la description brute pour révision manuelle
-                        color_code = raw_color[:15] if raw_color else ""
-                        logger.warning(f"Code couleur non trouvé, description brute: {raw_color}")
-                
-                logger.info(f"Couleur: raw='{raw_color}' → code='{color_code}'")
-                
-                # Subtotal et total
-                subtotal = raw.get("subtotal", raw.get("t", 0))
-                if isinstance(subtotal, str):
-                    subtotal = float(subtotal.replace(",", "").replace("$", "")) if subtotal else 0
-                
-                invoice_total = raw.get("total", raw.get("f", 0))
-                if isinstance(invoice_total, str):
-                    invoice_total = float(invoice_total.replace(",", "").replace("$", "")) if invoice_total else 0
+                color_code = raw_color if raw_color in color_map else raw_color
                 
                 parse_duration = round(time.time() - start_time, 3)
                 
-                # PATCH 7: Unifier validation - utiliser validate_invoice_full
+                # Validation avec validate_invoice_full
                 vehicle_data_for_validation = {
                     "vin": vin_corrected,
                     "vin_valid": vin_valid,
@@ -4281,13 +4264,13 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                 }
                 validation = validate_invoice_full(vehicle_data_for_validation)
                 
-                # Ajout erreurs spécifiques Vision
+                # Ajout erreurs spécifiques
                 if vin_was_corrected:
-                    validation["errors"] = validation.get("errors", []) + ["VIN auto-corrigé par Vision"]
+                    validation["errors"] = validation.get("errors", []) + ["VIN auto-corrigé"]
                 
                 vehicle_data = {
-                    "stock_no": str(raw.get("stock_no", raw.get("s", ""))).strip(),
-                    "vin": vin_corrected,  # VIN corrigé
+                    "stock_no": stock_no,
+                    "vin": vin_corrected,
                     "vin_original": vin_raw if vin_was_corrected else None,
                     "vin_valid": vin_valid,
                     "vin_corrected": vin_was_corrected,
@@ -4296,7 +4279,7 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                     "model_code": model_code,
                     "year": vin_info.get("year") or datetime.now().year,
                     "brand": product_info.get("brand") or vin_brand or "Stellantis",
-                    "model": product_info.get("model") or str(raw.get("description", raw.get("d", ""))).split()[0] if raw.get("description") or raw.get("d") else "",
+                    "model": product_info.get("model") or "",
                     "trim": product_info.get("trim") or "",
                     "ep_cost": ep_cost,
                     "pdco": pdco,
@@ -4309,17 +4292,17 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                     "color": color_map.get(color_code, color_code),
                     "options": options,
                     "file_hash": file_hash,
-                    "parse_method": "vision_optimized",
+                    "parse_method": "google_vision_hybrid",
                     "metrics": {
                         "parse_duration_sec": parse_duration,
                         "validation_score": validation.get("score", 0),
-                        "image_compressed": True,
-                        "cost_estimate": "~$0.02"
+                        "ocr_confidence": ocr_confidence,
+                        "cost_estimate": "~$0.0015"  # Google Vision est ~85% moins cher que GPT-4
                     }
                 }
                 
-                parse_method = "vision_optimized"
-                logger.info(f"Vision optimisé: VIN={vin_corrected}, EP={ep_cost}, Score={validation.get('score', 0)}, Duration={parse_duration}s")
+                parse_method = "google_vision_hybrid"
+                logger.info(f"Google Vision Hybrid: VIN={vin_corrected}, EP={ep_cost}, PDCO={pdco}, Score={validation.get('score', 0)}, Duration={parse_duration}s")
                 
             except HTTPException:
                 raise
