@@ -330,8 +330,26 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
             "amount": 0  # Prix à 0 comme demandé
         })
     
-    # Trier par code pour cohérence
-    options.sort(key=lambda x: x['product_code'])
+    # Définir l'ordre de priorité (comme sur la facture FCA)
+    # 1. Couleurs, 2. Intérieur, 3. Équipements, 4. Packages, 5. Taxes/Frais
+    priority_order = {
+        # Couleurs (en premier)
+        'PXJ': 1, 'PW7': 1, 'PWZ': 1, 'PWL': 1, 'PX8': 1, 'PAU': 1, 
+        'PSC': 1, 'PGG': 1, 'PBF': 1, 'PGE': 1, 'PRM': 1, 'PAR': 1,
+        'PYB': 1, 'PBJ': 1, 'PFQ': 1,
+        # Intérieur
+        'B6W7': 2, 'CLX9': 2,
+        # Équipements
+        'ABR': 3, 'ALC': 3, 'DFW': 3, 'ERC': 3, 'GWJ': 3, 'YGW': 3,
+        'ADE': 3, 'ADG': 3, 'UAQ': 3, 'RSD': 3, 'DMC': 3, 'AJK': 3, 'AHR': 3, 'AWL': 3,
+        # Packages
+        '2TE': 4, '23E': 4, '2BZ': 4, '2BX': 4, '21D': 4, '22B': 4, '27A': 4, '3CC': 4,
+        # Taxes/Frais (en dernier)
+        '4CP': 5, '801': 5, '999': 5, '92HC1': 5, '92HC2': 5,
+    }
+    
+    # Trier par priorité (ordre facture), puis par code
+    options.sort(key=lambda x: (priority_order.get(x['product_code'], 3), x['product_code']))
     
     # Limiter à 20 options max
     return options[:20]
