@@ -234,8 +234,17 @@ export default function InventoryScreen() {
         });
       }
 
-      if (!result.canceled && result.assets[0].base64) {
-        await scanInvoice(result.assets[0].base64, false);
+      console.log('Image picker result:', result?.canceled, result?.assets?.[0]?.base64?.length);
+
+      if (!result.canceled && result.assets?.[0]) {
+        const base64 = result.assets[0].base64;
+        if (base64 && base64.length > 0) {
+          await scanInvoice(base64, false);
+        } else {
+          Platform.OS === 'web'
+            ? alert('Erreur: Image non chargée correctement')
+            : Alert.alert('Erreur', 'Image non chargée correctement');
+        }
       }
     } catch (error) {
       console.error('Error picking image:', error);
