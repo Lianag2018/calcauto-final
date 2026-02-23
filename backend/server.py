@@ -2383,9 +2383,20 @@ async def get_window_sticker_pdf(vin: str):
 
 
 @api_router.post("/send-calculation-email")
-async def send_calculation_email(request: SendCalculationEmailRequest):
-    """Envoie un calcul de financement par email avec Window Sticker en pièce jointe"""
+async def send_calculation_email(request: SendCalculationEmailRequest, authorization: Optional[str] = Header(None)):
+    """Envoie un calcul de financement par email avec Window Sticker en pièce jointe et CC à l'utilisateur"""
     try:
+        # Récupérer l'email de l'utilisateur connecté pour le CC
+        user_email = None
+        if authorization:
+            try:
+                user = await get_current_user(authorization)
+                if user:
+                    user_email = user.get("email")
+                    logger.info(f"Email CC sera envoyé à: {user_email}")
+            except:
+                pass
+        
         vehicle = request.vehicle_info
         calc = request.calculation_results
         term = request.selected_term
