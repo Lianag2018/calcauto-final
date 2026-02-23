@@ -2979,6 +2979,77 @@ async def update_submission_status(submission_id: str, status: str, authorizatio
     
     return {"success": True, "message": f"Statut mis à jour: {status}"}
 
+@api_router.delete("/submissions/{submission_id}/reminder")
+async def delete_reminder(submission_id: str, authorization: Optional[str] = Header(None)):
+    """Supprimer un rappel (remet reminder_date à null et reminder_done à true)"""
+    user = await get_current_user(authorization)
+    
+    result = await db.submissions.update_one(
+        {"id": submission_id, "owner_id": user["id"]},
+        {"$set": {"reminder_date": None, "reminder_done": True}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Soumission non trouvée")
+    
+    return {"success": True, "message": "Rappel supprimé"}
+
+@api_router.delete("/submissions/{submission_id}")
+async def delete_submission(submission_id: str, authorization: Optional[str] = Header(None)):
+    """Supprimer une soumission/offre complètement"""
+    user = await get_current_user(authorization)
+    
+    result = await db.submissions.delete_one({
+        "id": submission_id,
+        "owner_id": user["id"]
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Soumission non trouvée")
+    
+    return {"success": True, "message": "Soumission supprimée"}
+
+@api_router.delete("/contacts/{contact_id}/history")
+async def delete_contact_history(contact_id: str, authorization: Optional[str] = Header(None)):
+    """Supprimer tout l'historique (soumissions) d'un contact"""
+    user = await get_current_user(authorization)
+    
+    # Vérifier que le contact existe et appartient à l'utilisateur
+    contact = await db.contacts.find_one({
+        "id": contact_id,
+        "owner_id": user["id"]
+    })
+    
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact non trouvé")
+    
+    # Supprimer toutes les soumissions liées à ce contact
+    result = await db.submissions.delete_many({
+        "contact_id": contact_id,
+        "owner_id": user["id"]
+    })
+    
+    return {
+        "success": True, 
+        "message": f"Historique supprimé ({result.deleted_count} soumissions)"
+    }
+
+@api_router.delete("/better-offers/{submission_id}")
+async def delete_better_offer(submission_id: str, authorization: Optional[str] = Header(None)):
+    """Supprimer une offre améliorée de la liste"""
+    user = await get_current_user(authorization)
+    
+    # Marquer l'offre comme ignorée (équivalent à suppression de la liste)
+    result = await db.submissions.update_one(
+        {"id": submission_id, "owner_id": user["id"]},
+        {"$set": {"better_offer_status": "deleted"}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Offre non trouvée")
+    
+    return {"success": True, "message": "Offre supprimée de la liste"}
+
 @api_router.post("/compare-programs")
 async def compare_programs_with_submissions(authorization: Optional[str] = Header(None)):
     """Compare les programmes actuels avec les soumissions passées pour trouver de meilleures offres"""
