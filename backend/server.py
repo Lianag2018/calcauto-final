@@ -4991,7 +4991,7 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                     "year": vin_info.get("year") or datetime.now().year,
                     "brand": product_info.get("brand") or vin_brand or "Stellantis",
                     "model": product_info.get("model") or "",
-                    "trim": product_info.get("trim") or "",
+                    "trim": f"{product_info.get('trim', '')} {product_info.get('body', '')}".strip() if product_info else "",
                     "ep_cost": ep_cost,
                     "pdco": pdco,
                     "pref": pref,
@@ -5012,6 +5012,7 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                     }
                 }
                 
+                logger.info(f"Google Vision - Model extraction: code={model_code}, product_info={product_info}")
                 parse_method = "google_vision_hybrid"
                 logger.info(f"Google Vision Hybrid: VIN={vin_corrected}, EP={ep_cost}, PDCO={pdco}, Score={validation.get('score', 0)}, Duration={parse_duration}s")
                 
