@@ -2173,6 +2173,73 @@ export default function HomeScreen() {
           </View>
         </Modal>
 
+        {/* SMS Preview Modal */}
+        <Modal
+          visible={showSmsPreview}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowSmsPreview(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.smsPreviewModalContent}>
+              <View style={styles.smsPreviewHeader}>
+                <View style={styles.smsPreviewIconContainer}>
+                  <Ionicons name="chatbubble-ellipses" size={32} color="#4ECDC4" />
+                </View>
+                <Text style={styles.smsPreviewTitle}>
+                  {lang === 'fr' ? 'Aperçu du message' : 'Message Preview'}
+                </Text>
+                <TouchableOpacity
+                  style={styles.smsPreviewClose}
+                  onPress={() => setShowSmsPreview(false)}
+                >
+                  <Ionicons name="close" size={24} color="#888" />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.smsPreviewBody}>
+                <Text style={styles.smsPreviewLabel}>
+                  {lang === 'fr' ? 'Modifiez le message si nécessaire:' : 'Edit the message if needed:'}
+                </Text>
+                <TextInput
+                  style={styles.smsPreviewTextInput}
+                  multiline
+                  numberOfLines={12}
+                  value={smsPreviewText}
+                  onChangeText={setSmsPreviewText}
+                  placeholder={lang === 'fr' ? 'Message...' : 'Message...'}
+                  placeholderTextColor="#666"
+                  textAlignVertical="top"
+                />
+                <Text style={styles.smsPreviewCharCount}>
+                  {smsPreviewText.length} {lang === 'fr' ? 'caractères' : 'characters'}
+                </Text>
+              </View>
+              
+              <View style={styles.smsPreviewButtons}>
+                <TouchableOpacity
+                  style={styles.smsPreviewCancelButton}
+                  onPress={() => setShowSmsPreview(false)}
+                >
+                  <Text style={styles.smsPreviewCancelText}>
+                    {lang === 'fr' ? 'Annuler' : 'Cancel'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.smsPreviewSendButton}
+                  onPress={handleSendSms}
+                  data-testid="sms-preview-send-btn"
+                >
+                  <Ionicons name="send" size={18} color="#fff" />
+                  <Text style={styles.smsPreviewSendText}>
+                    {lang === 'fr' ? 'Envoyer' : 'Send'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
         {/* Email Modal */}
         <Modal
           visible={showEmailModal}
