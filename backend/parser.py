@@ -554,16 +554,19 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
     }
     
     # Mots-clés d'adresse à ignorer dans la description
+    # Note: Utiliser des patterns avec espaces pour éviter faux positifs (ex: OFF-ROAD != ROAD)
     address_keywords = [
         'SOLD TO', 'SHIP TO', 'TERMS', 'DEALER NO', 'INVOICE DATE',
-        'STREET', 'AVENUE', 'BOULEVARD', 'ROAD', 'DRIVE', 'PLACE',
-        'RUE', 'CHEMIN', 'ROUTE', 'AUTOROUTE',
-        'QUEBEC', 'ONTARIO', 'ALBERTA', 'MANITOBA', 'SASKATCHEWAN',
-        'MONTREAL', 'TORONTO', 'VANCOUVER', 'CALGARY', 'OTTAWA',
-        'LAVAL', 'LONGUEUIL', 'GATINEAU', 'SHERBROOKE', 'LEVIS',
+        ' STREET', ' AVENUE', ' BOULEVARD', ' ROAD ', ' DRIVE ', ' PLACE ',
+        ' RUE ', ' CHEMIN ', ' ROUTE ', ' AUTOROUTE',
+        ' QUEBEC', ' ONTARIO', ' ALBERTA', ' MANITOBA', ' SASKATCHEWAN',
+        ' MONTREAL', ' TORONTO', ' VANCOUVER', ' CALGARY', ' OTTAWA',
+        ' LAVAL', ' LONGUEUIL', ' GATINEAU', ' SHERBROOKE', ' LEVIS',
         'TROIS-RIVIERES', 'DRUMMONDVILLE', 'SAGUENAY', 'RIMOUSKI',
-        'CANADA INC', 'LTEE', 'LTD', 'ENRG', 'AUTOMOBILES',
-        'CONCESSIONNAIRE', 'DEALER', 'DEALERSHIP'
+        'CANADA INC', ' LTEE', ' LTD', ' ENRG', 'AUTOMOBILES',
+        'CONCESSIONNAIRE', ' DEALER', 'DEALERSHIP',
+        # Adresses du dealer dans les captures
+        'SOURCES', 'DOLLARD', 'ORMEAUX', 'WINDSOR'
     ]
     
     for line in lines:
