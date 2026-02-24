@@ -423,6 +423,62 @@ def parse_totals(text: str) -> Dict[str, Optional[float]]:
     return data
 
 
+# =====================================
+# CATÉGORIES FCA POUR DÉDUPLICATION
+# =====================================
+
+CATEGORY_GROUPS = {
+    "transmission": {"DFT", "DFW", "DFM", "DFD", "DFL", "DFH", "DFR"},
+    "engine": {"ERB", "ERC", "ETM", "ETK", "EZH", "ESG", "EFC"},
+    "color": {"PXJ", "PW7", "PAU", "PBF", "PSC", "PX8", "PWL", "PGG", "PWZ", "PGE", "PRM", "PAR", "PYB", "PBJ", "PFQ", "PJ7"},
+    "fuel": {"YGN", "YGV", "YGW"},
+    "fee": {"801", "4CP"},
+    "package": {"2TE", "23E", "2TW", "24W", "2BZ", "2BX", "21D", "22B", "27A", "2TY", "22Y"},
+}
+
+
+def deduplicate_options(options: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Supprime les doublons logiques d'options (ex: deux transmissions).
+    Garde la version avec montant > 0 prioritaire (OCR direct vs fallback).
+    
+    Stratégie:
+    - Options sans catégorie connue → gardées telles quelles
+    - Options avec catégorie → une seule par catégorie (priorité au montant > 0)
+    """
+    best_by_category = {}
+    final = []
+
+    for opt in options:
+        code = opt.get("product_code")
+
+        # Trouver la catégorie de ce code
+        category = None
+        for cat, codes in CATEGORY_GROUPS.items():
+            if code in codes:
+                category = cat
+                break
+
+        # Si pas de catégorie connue, garder l'option
+        if not category:
+            final.append(opt)
+            continue
+
+        # Si catégorie connue, garder le meilleur
+        existing = best_by_category.get(category)
+
+        if not existing:
+            best_by_category[category] = opt
+        else:
+            # Priorité à l'OCR direct (montant > 0)
+            if opt.get("amount", 0) > existing.get("amount", 0):
+                best_by_category[category] = opt
+
+    # Ajouter les meilleures options par catégorie
+    final.extend(best_by_category.values())
+    return final
+
+
 def parse_options(text: str) -> List[Dict[str, Any]]:
     """
     Extrait la liste des options depuis le texte OCR de factures FCA Canada.
