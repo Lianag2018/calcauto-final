@@ -1,11 +1,12 @@
 <analysis>**original_problem_statement:**
-The user wants to continue developing a mobile application for iOS and Android named CalcAuto AiPro, which functions as a comprehensive vehicle financing calculator.
+The user wants to continue developing a mobile application for iOS and Android named CalcAuto AiPro, a comprehensive vehicle financing calculator.
 
 The primary goals have evolved to focus on high-fidelity data extraction from scanned invoices and enhancing the professionalism of client-facing communications.
-1.  **Invoice Scanning Perfection:** Initially a migration from GPT-4 Vision to Google Cloud Vision, this task has become a deep dive into achieving near-perfect data extraction for Stellantis (Chrysler, Jeep, Dodge, Ram) invoices. This involves parsing handwritten text, extracting product codes, and accurately identifying the vehicle's model and trim.
-2.  **Window Sticker Integration:** Automatically fetch the Chrysler/FCA Window Sticker PDF using the VIN, convert it to an optimized image, and embed it directly and visibly within the submission email.
-3.  **Accessories Feature:** Allow users to add multiple accessories to the calculator, which are then included in the final price.
-4.  **UI/UX Improvements:** Add missing information (like VINs) to the UI and fix styling bugs.
+1.  **Invoice Scanning Perfection:** Achieve near-perfect data extraction for Stellantis (Chrysler, Jeep, Dodge, Ram) invoices. This involves parsing handwritten text, extracting product codes, and accurately identifying the vehicle's model, trim, holdback, and all accessories in the correct order. The parser must also be robust against extracting irrelevant information like dealer addresses.
+2.  **Automated Promotions:** Automatically link a scanned vehicle's product code to applicable financing programs (e.g., Consumer Cash, special interest rates) and display these promotions in the calculator UI.
+3.  **Window Sticker Integration:** Automatically fetch the Chrysler/FCA Window Sticker PDF using the VIN and embed it directly within the submission email.
+4.  **CRM Enhancements:** Add the ability for users to delete reminders, offers, and a client's entire interaction history from the CRM.
+5.  **Email CC:** Automatically send a copy (CC) of the submission email to the logged-in user.
 
 **PRODUCT REQUIREMENTS:**
 *   **Data Isolation (Multi-Tenancy):** Completed.
@@ -15,49 +16,60 @@ The primary goals have evolved to focus on high-fidelity data extraction from sc
 *   **Production Deployment:** Completed.
 *   **Admin Panel (P0):** Completed.
 *   **Inventory Management (P0):** Implemented.
-*   **Invoice Scanning (P0):** Significantly enhanced. Migrated to Google Cloud Vision and implemented a sophisticated, multi-layered parser that now uses a custom-built product code database for maximum accuracy.
+*   **Invoice Scanning (P0):** Significantly enhanced. Migrated to Google Cloud Vision. Implemented a sophisticated, multi-layered parser using a custom-built product code database () for maximum accuracy. A dedicated lookup module () now ensures this database is the primary source of truth. Parser logic for accessories, holdback, and filtering unwanted text has been heavily refactored.
 *   **Calculator & Inventory Integration (P1):** Implemented.
-*   **Window Sticker Integration (P0):** Implemented and robustly tested.
-*   **Accessories in Calculator (P0):** Implemented.
+*   **Window Sticker Integration (P0):** Implemented.
+*   **Accessories in Calculator (P0):** Implemented and fixed.
+*   **Automated Promotions (P0):** Implemented. A new mapping file () links product codes to financing programs, with new backend APIs and frontend UI to display them.
+*   **CRM Deletions (P0):** Implemented. New backend endpoints and frontend UI buttons allow for deleting reminders, offers, and client history.
+*   **Email CC (P0):** Implemented. The backend logic was updated to CC the logged-in user on submission emails.
 
 **User's preferred language**: French. The next agent MUST respond in French.
 
 **what currently exists?**
-A full-stack application with a React Native (Expo) frontend and a FastAPI backend. The user deploys to a production environment on Vercel/Render, separate from the agent's preview environment.
+A full-stack application with a React Native (Expo) frontend and a FastAPI backend. The user deploys to a production environment on Vercel/Render.
 
-The backend's invoice scanning pipeline is now highly advanced:
-1.  **OCR:** Google Cloud Vision for text extraction.
-2.  **Data Extraction (Multi-Layered):**
-    *   **Product Code Decoder:** A new, highly accurate system that uses a JSON database () built from 30+ official product guide PDFs provided by the user. This correctly maps FCA codes (e.g., ) to the exact model and trim (e.g., ).
-    *   **Regex Parser ():** A fallback that intelligently searches the invoice text for model, trim, and handwritten stock numbers.
-    *   The system prioritizes the most reliable data source (Parser > Product Code > VIN).
+The backend features a highly advanced invoice scanning pipeline that has undergone significant improvements:
+1.  **Consolidated Product Database:** All product codes for 2025 and 2026, extracted from user-provided PDFs, are now in a single  file.
+2.  **Reliable Lookup Module:** A new  module acts as the single source of truth for vehicle identification, ensuring the validated database is always prioritized over less reliable OCR text parsing.
+3.  **Automated Promotions:** A  file links vehicle codes to financing programs. New API endpoints () serve this data to the frontend.
+4.  **Accurate Parser ():** The parser has been heavily refactored to:
+    *   Correctly extract the holdback amount from a specific format on the invoice (e.g.,  -> ).
+    *   Extract *all* accessories and options in the exact order they appear on the invoice.
+    *   Filter out irrelevant text like dealer addresses and postal codes.
+5.  **CRM & Email Features:** The backend now includes APIs to delete CRM entries and to CC the logged-in user on submission emails. A comprehensive Pytest suite () with 18 tests ensures the parser's reliability.
 
-The Window Sticker feature is complete and working correctly:
-*   It uses a human-like HTTP request to fetch the PDF. A Playwright (headless browser) fallback was implemented but made optional to resolve the user's deployment issues on Render.
-*   The email sending logic now uses **CID embedding** to display the sticker image inline, which is compatible with clients like Gmail that block large base64 images.
-*   The sticker image is optimized using  to reduce its size by over 90%, preventing emails from being clipped.
-
-The frontend has been improved to display the VIN on inventory cards and allows for manual VIN entry in the calculator if a vehicle is not in the inventory.
+The frontend (, ) has been updated to:
+*   Display the new Automatic Promotions when a vehicle is selected.
+*   Include delete buttons in the CRM interface for managing reminders, offers, and client history.
 
 **Last working item**:
-*   **Last item agent was working:** Finalizing the creation of a comprehensive product code database from ~30 PDFs supplied by the user. The agent wrote a script to parse these PDFs, generate a  file with 149 mappings, and integrated it into the backend logic. This was the final step in a major effort to perfect the invoice parsing accuracy.
-*   **Status:** USER VERIFICATION PENDING
-*   **Agent Testing Done:** Y (Agent confirmed that the  file is loaded on server start and that specific product codes are correctly decoded in a local test.)
-*   **Which testing method agent to use?** The user needs to test this on their production environment after deployment. The test involves scanning invoices that previously failed (e.g., the Ram 3500 Bighorn) to confirm that the model and trim are now extracted correctly.
+*   **Last item agent was working:** The user reported that scanning an invoice from a photo fails silently, returning the user to the previous screen without an error message (je ne suis pas encore capable de télécharger une facture à partir dune photo... et ça revient à lécran). The agent had started investigating this issue.
+*   **Status:** IN PROGRESS
+*   **Agent Testing Done:** N
+*   **Which testing method agent to use?** The agent cannot test the mobile photo-taking functionality directly. The next step should be to add robust  error handling with user-facing alerts (e.g., using  or a simple ) within the  and  functions in . This will reveal the silent error occurring on the user's device. The agent can also test the  endpoint with a base64 string to ensure the backend is not the cause.
 *   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-There are no active or known bugs. All previously reported issues (unreadable accessory text, Option 2 visibility, window sticker not appearing in email, VIN not displayed in UI) have been resolved. The primary pending item is user validation of the latest major feature.
+*   **Issue 1: Invoice photo scanning fails silently (P0)**
+    *   **Description:** When the user takes a photo of an invoice to scan it, the operation fails without any error message, and the app returns to the calculator screen.
+    *   **Attempted fixes:** The agent started investigating by reviewing the frontend () and backend () code but had not yet implemented a fix.
+    *   **Next debug checklist:**
+        1.  Edit .
+        2.  Wrap the logic inside the  and  functions in a  block.
+        3.  In the  block, display the error to the user using  or a toast notification. This will make the silent error visible.
+        4.  Based on the revealed error, determine if the issue is with image picking, base64 conversion, the API call (), or a timeout.
+    *   **Why fix this issue and what will be achieved with the fix?** This is a critical bug blocking a core feature of the application. Fixing it will restore the primary method of data entry.
+    *   **Status:** IN PROGRESS
+    *   **Is recurring issue?** N
+    *   **Should Test frontend/backend/both after fix?** Frontend (The fix is in the frontend error handling, but the root cause might be on the backend).
+    *   **Blocked on other issue:** None.
 
 **In progress Task List**:
-*   **Task 1: Validate Parser and Product Code Decoder (P0)**
-    *   **Where to resume**: The user needs to deploy the latest changes by clicking **Save to Github** and then deploying on Render.
-    *   **What will be achieved with this?**: This will confirm that the extensive work on the invoice parser and product code decoder has successfully resolved the data extraction errors the user was experiencing.
-    *   **Status**: USER VERIFICATION PENDING
-    *   **Should Test frontend/backend/both after fix?**: Both (user will test via the frontend UI, which triggers the backend logic).
-    *   **Blocked on something**: User action (deployment and testing).
+None. The last work was a bug fix.
 
 **Upcoming and Future Tasks**
+*   **(P1) Restrict Invoice Header Parsing:** Implement the user's request to only extract the VIN from the invoice header and ignore all other data from that section to improve accuracy. This requires modifying .
 *   **(P1) Finalize Frontend Refactoring Migration:** The logic in  is still monolithic. A migration plan exists in  but has not been executed.
 *   **(P2) Add Frontend Warning for Corrected VINs:** Add a visual indicator in the review modal for auto-corrected VINs.
 *   **(P3) Refactor :** Split the monolithic file into a  directory structure for better maintainability.
@@ -65,16 +77,25 @@ There are no active or known bugs. All previously reported issues (unreadable ac
 *   **(P3) Finalize App Store / Play Store Build Process.**
 
 **Completed work in this session**
-- **Core Parser Enhancement:** Created and integrated a comprehensive product code database () from user-provided PDFs, dramatically increasing the accuracy of model/trim extraction from invoices.
-- **Window Sticker Email Fix:** Resolved the issue of the sticker image not appearing in emails by switching from Base64 to **CID embedding** and optimizing the image size with Pillow to prevent Gmail from clipping the content.
-- **Window Sticker Fetching:** Implemented a robust KenBot-style fetching mechanism (human-like HTTP request). A Playwright fallback was coded but made optional to solve the user's deployment issues on Render.
-- **UI Bug Fixes & Enhancements:**
-    - Added the VIN to inventory cards and the calculator's selected vehicle banner (, ).
-    - Fixed unreadable text in the Accessories input fields.
-    - Added a manual VIN input field to the calculator for use when no inventory item is selected.
-- **Backend Logic Fixes:**
-    - Corrected the email template logic to correctly display Option 2 even when the interest rate is 0%.
-    - Ensured all necessary data (VIN, fees, etc.) is included in the frontend's email submission request.
+- **Core Parser Reliability:**
+    - Created a unified  module to act as the single source of truth, prioritizing the validated database over OCR parsing.
+    - Fixed model/trim identification logic by correcting the priority of data sources ( > ).
+    - Fixed data inconsistencies by ensuring the JSON database from PDFs overrides outdated hardcoded values.
+    - Created a robust helper function () to prevent None None trims.
+- **Parser Accuracy Fixes:**
+    - **Holdback:** Correctly implemented parsing for the specific invoice format (e.g.,  -> 00), replacing the incorrect 3% calculation.
+    - **Accessories:** Rewrote the parser to extract ALL accessories in the correct order as they appear on the invoice.
+    - **Address Filtering:** Added regex filters to prevent the parser from incorrectly extracting dealer addresses and postal codes as accessories.
+- **New Feature: Automated Promotions:**
+    - Created a  to link product codes to financing programs.
+    - Added a new endpoint () to serve this data.
+    - Integrated a new UI section in the calculator to automatically display applicable promotions for a selected vehicle.
+- **New Feature: CRM Deletions & Email CC:**
+    - Added  endpoints to the backend for removing reminders, offers, and client history.
+    - Added corresponding delete buttons and functions to the CRM UI in .
+    - Modified the backend to automatically CC the logged-in user on submission emails.
+- **Testing & Stability:**
+    - Created a comprehensive Pytest suite () with 18 tests to validate parser logic and prevent regressions.
 
 **Earlier issues found/mentioned but not fixed**
 *   **Issue 1: Large Monolithic Files (, )**
@@ -84,122 +105,82 @@ There are no active or known bugs. All previously reported issues (unreadable ac
     *   **Is recurring issue?**: Y
 
 **Known issue recurrence from previous fork**
-- **Issue recurrence in previous fork**: OCR Accuracy
+- **Issue recurrence in previous fork**: OCR/Parser Accuracy
 - **Recurrence count**: High
-- **Status**: RESOLVED. This should be definitively resolved by the new multi-layer parsing system that heavily relies on the accurate, user-sourced product code database.
+- **Status**: SIGNIFICANTLY IMPROVED. While the core issue of OCR being imperfect remains, the agent has built multiple layers of validation and logic (database-first approach, specific parsers for holdback/accessories, filtering) and a regression test suite to make the system far more reliable. It is no longer RESOLVED as new edge cases continue to appear, but it's much more robust.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **CID (Content-ID) Email Image Embedding:** The standard, reliable method for embedding images in HTML emails, ensuring compatibility with clients like Gmail.
-- **Dynamic Data Loading:** The backend now loads the  file at startup to power its decoding logic.
-- **Image Optimization:** Using  to resize and compress images to reduce file size significantly.
-- **Robust Service Integration:** Building fallbacks and optional dependencies ( for Playwright) to handle deployment environment constraints.
-- **PDF Data Extraction:** Using usage: pdfplumber [-h] [--structure | --structure-text]
-                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
-                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
-                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
-                  [--laparams LAPARAMS] [--precision PRECISION]
-                  [--pages PAGES [PAGES ...]] [--indent INDENT]
-                  [infile]
+- **Database-First Parsing:** Prioritizing a validated data source (JSON database) over real-time, fallible OCR results to ensure data accuracy.
+- **Modular Code Design:** Creating a dedicated  module to encapsulate and standardize a core piece of business logic.
+- **Regression Testing:** Using ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0
+rootdir: /app/frontend
+plugins: anyio-4.12.1
+collected 0 items
 
-positional arguments:
-  infile
-
-options:
-  -h, --help            show this help message and exit
-  --structure           Write the structure tree as JSON. All other arguments
-                        except --pages, --laparams, and --indent will be
-                        ignored
-  --structure-text      Write the structure tree as JSON including text
-                        contents. All other arguments except --pages,
-                        --laparams, and --indent will be ignored
-  --format {csv,json,text}
-  --types TYPES [TYPES ...]
-  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
-                        Include *only* these object attributes in output.
-  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
-                        Exclude these object attributes from output.
-  --laparams LAPARAMS
-  --precision PRECISION
-  --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing. to systematically parse structured and semi-structured data from dozens of PDF files to build a database.
+============================ no tests ran in 0.01s ============================= to create a suite of tests that lock in correct behavior for the complex parser, preventing future changes from breaking past fixes.
+- **Robust String/Data Handling:** Creating helper functions () to gracefully handle  values and prevent malformed output.
+- **Targeted Regex Parsing:** Using specific regex patterns to extract structured data (like holdback) and filter out unstructured noise (like addresses).
 
 **key DB schema**
 - No changes to the database schema.
 
 **changes in tech stack**
-- **Added**:  for image processing.
-- **Added**: usage: pdfplumber [-h] [--structure | --structure-text]
-                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
-                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
-                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
-                  [--laparams LAPARAMS] [--precision PRECISION]
-                  [--pages PAGES [PAGES ...]] [--indent INDENT]
-                  [infile]
+- ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0
+rootdir: /app/frontend
+plugins: anyio-4.12.1
+collected 0 items
 
-positional arguments:
-  infile
-
-options:
-  -h, --help            show this help message and exit
-  --structure           Write the structure tree as JSON. All other arguments
-                        except --pages, --laparams, and --indent will be
-                        ignored
-  --structure-text      Write the structure tree as JSON including text
-                        contents. All other arguments except --pages,
-                        --laparams, and --indent will be ignored
-  --format {csv,json,text}
-  --types TYPES [TYPES ...]
-  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
-                        Include *only* these object attributes in output.
-  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
-                        Exclude these object attributes from output.
-  --laparams LAPARAMS
-  --precision PRECISION
-  --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing. was used extensively for the one-time task of building the product code database.
-- **Modified**:  was added for the window sticker fallback, but its import was wrapped in a  block to make it an optional dependency, resolving a user deployment issue.
+============================ no tests ran in 0.01s ============================= was introduced for backend testing.
 
 **All files of reference**
-- : Contains the core logic for email sending (now with CID), window sticker fetching (optional Playwright), and loading/using the new product code database.
-- : The new, critical database mapping product codes to vehicle models/trims.
-- : Contains the UI for the main calculator, including the new manual VIN input field.
-- : The UI for the inventory list, now displaying the VIN.
+- : The main FastAPI file, modified for new endpoints (finance, CRM delete), email CC, and integration of the new lookup module.
+- : The core parsing logic, heavily refactored for holdback, accessories, and address filtering.
+- : A new critical module that provides a reliable double-check for vehicle identification.
+- : A new Pytest file essential for maintaining parser reliability.
+- : The main calculator screen, modified to display automatic promotions and containing the buggy  function.
+- : The CRM screen, modified to include UI for the new deletion features.
 
 **Areas that need refactoring**:
 - : Remains a large monolithic file.
 - : Remains a large monolithic component.
 
 **key api endpoints**
-- : Now uses the new product code database for significantly more accurate results.
-- : Now uses CID embedding for images and can accept a manually entered VIN.
+- ****: The endpoint used by the mobile app's photo scanning feature, which is currently failing silently.
+- ****: **NEW** - Fetches applicable financial programs for a given vehicle model code.
+- ****: **NEW** - Deletes a specific reminder.
+- ****: **NEW** - Deletes a specific offer.
+- ****: **NEW** - Deletes all submissions for a client.
 
 **Critical Info for New Agent**
 1.  **Parlez Français:** All communication with the user MUST be in French.
-2.  **Deployment Has Been a Blocker:** The user's production environment on Render failed to build when  was a hard dependency. It has been made an optional import. **Do not re-introduce it as a hard requirement.** The user was instructed to update their build command to simply .
-3.  **User Verification is Next:** The last major task was completing the product code decoder. The user has been instructed to Save to Github and deploy to test it. Your first interaction should be to ask for the results of this test.
-4.  **The Parser is Now Multi-Layered:** The system's accuracy for identifying vehicle models/trims no longer relies on just simple text parsing. It now has a highly reliable database (). When debugging parsing issues, check this file and the  function in  first.
+2.  **Focus on the Photo Scan Bug:** Your immediate priority is to solve the silent failure in the invoice photo scanning feature. The key is to add frontend error handling in  to make the error visible.
+3.  **User Tests on Production:** The user tests on their own Render deployment. The agent's preview environment is not suitable for testing the Expo mobile app's native features like the camera. Changes must be saved to GitHub for the user to deploy and test.
+4.  **Parser is the Core Logic:** The invoice parser is the most complex and critical part of the backend. When debugging it, refer to  as the source of truth for vehicle data and  to ensure you don't cause regressions.
+5.  **Acknowledge Pending Tasks:** Remember that the user's request to *only* parse the VIN from the invoice header has not yet been implemented.
 
 **documents and test reports created in this job**
-- : A new, critical data file generated from user-provided PDFs.
--  was updated.
+- 
+- 
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Asks where to upload files for the agent to use.
-2.  **Agent:** Explains the options (chat, project folder, GitHub).
-3.  **User:** Provides , containing ~30 PDFs of product guides for the 2026 model year.
-4.  **Agent:** Begins extracting data from the PDFs.
-5.  **User:** Clarifies that the PDFs contain all the necessary info: year/brand/model/code=trim.
-6.  **Agent:** Refines the parsing script to match the exact PDF structure.
-7.  **User:** Asks the agent to update all vehicle brands using the provided files.
-8.  **Agent:** Confirms and runs the script on all 30 PDFs.
-9.  **Agent:** Confirms the script was successful, the new product code database is loaded (149 codes), and the decoder is working.
-10. **Agent:** Instructs the user to Save to Github and deploy to production to test the massive parser improvements.
+1.  **User:** Asks to delete CRM items (reminders, offers, history).
+2.  **Agent:** Implements the CRM deletion features (backend and frontend).
+3.  **User:** Reports that scanning an invoice from a photo is failing silently.
+4.  **Agent:** Begins investigating the photo scanning bug.
+5.  **Agent:** Reviews frontend and backend code related to scanning.
+6.  **Agent:** Suspects a silent error in the frontend or a timeout.
+7.  **Agent:** Concludes the issue is likely on the user's production environment and plans to add better error handling.
+8.  **User:** Asks for an update on the failing upload.
+9.  **Agent:** States it will test the endpoint directly to find the problem.
+10. **Agent:** The session ends while the agent is investigating the photo scanning bug.
 
 **Project Health Check:**
-*   **Broken:** The Playwright headless browser fallback for window sticker fetching is effectively disabled on the user's production environment due to build issues on Render. The primary HTTP method still works.
+*   **Broken:** The core feature of scanning an invoice from a photo is currently not working for the user.
 *   **Mocked:** None.
 
 **3rd Party Integrations**
@@ -207,7 +188,7 @@ options:
 *   **OpenAI GPT-4o**: Fallback OCR engine.
 *   ****: Used for converting PDF window stickers to images.
 *   ****: Used for optimizing the generated sticker image.
-*   ****: Used as a *fallback* for fetching window stickers, but is an optional dependency to prevent build failures on the user's deployment environment.
+*   ****: Used as a *fallback* for fetching window stickers, but is an optional dependency.
 
 **Testing status**
 - **Testing agent used after significant changes:** NO
@@ -222,4 +203,4 @@ options:
 - **Note**: These credentials are for the user's account on their production environment, not the agent's preview environment.
 
 **What agent forgot to execute**
-The agent has been thorough. All user-reported issues have been addressed, and the major requested features have been implemented. The workflow is currently in the correct state, awaiting user validation of the latest deployment.</analysis>
+- The agent acknowledged but did not implement the user's request from message #431 to modify the parser to **only extract the VIN from the invoice header** and ignore other header data. This task is still pending.</analysis>
