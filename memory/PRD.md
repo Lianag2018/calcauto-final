@@ -60,6 +60,18 @@ Application mobile iOS/Android de calcul de financement automobile avec gestion 
   - `GET /api/financing/summary` - Résumé des meilleures offres
 - **Frontend** : Bannière "Promotions détectées automatiquement" avec Consumer Cash, Bonus Cash, total rabais
 
+### Phase 11: Fix Scan Facture - Révision Manuelle (DONE - Feb 2026)
+- **Bug corrigé** : Quand le scan retournait des données incomplètes (VIN manquant, EP=0, etc.), l'app affichait une erreur bloquante au lieu de permettre la correction manuelle.
+- **Solution** :
+  - Frontend accepte maintenant `review_required: true` en plus de `success: true`
+  - Le modal de révision s'ouvre avec les données partielles pré-remplies
+  - Un bandeau rouge affiche les erreurs bloquantes (`blocking_errors[]`) pour guider l'utilisateur
+  - L'utilisateur peut corriger manuellement les champs et sauvegarder
+- **Fichiers modifiés** :
+  - `frontend/app/(tabs)/inventory.tsx` - Gestion `review_required`, bandeau erreurs
+- **Tests** : 
+  - `backend/tests/test_scan_invoice.py` - 7 tests de validation du fix
+
 ## Stockage Inventaire
 - **Collection MongoDB**: `inventory`
 - **Par utilisateur**: `owner_id` pour isolation des données
