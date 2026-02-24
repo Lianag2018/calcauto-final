@@ -535,6 +535,9 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'PREMIUM LEATHER BUCKET': 'YLX9',
         'LEATHER BUCKET SEATS': 'YLX9',
         'RED INTERIOR ACCENTS': 'CU2',
+        'SIEGES BAQ DOSSIER BAS TISSU': 'E7X9',  # Gladiator
+        'BAQ DOSSIER BAS TISSU': 'E7X9',
+        'DOSSIER BAS TISSU': 'E7X9',
         
         # Équipements
         'BED UTILITY GROUP': 'ANT',
@@ -546,13 +549,18 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'ATTELAGE DE REMORQUE': 'ABR',
         'ENSEMBLE ALLURE NOIRE': 'ALC',
         'ALLURE NOIRE': 'ALC',
+        'ENSEMBLE COMMODITES': 'AJK',  # Gladiator
+        'COMMODITES': 'AJK',
+        'TOIT RIGIDE FREEDOM TOP': 'HT1',  # Gladiator
+        'FREEDOM TOP 3 SECT': 'HT1',
+        'FREEDOM TOP': 'HT1',
         
         # Transmission/Moteur
         '8-SPEED AUTOMATIC': 'DFR',
         '8 SPEED AUTOMATIC': 'DFR',
         'AUTOMATIC TRANSMISSION': 'DFR',
         'TRANSMISSION AUTOMATIQUE 8 VITESSES': 'DFW',
-        'AUTOMATIQUE 8 VITESSES': 'DFW',
+        'AUTOMATIQUE 8 VITESSES': 'DFT',  # Gladiator (DFT pas DFW)
         '3.0L I-6': 'EFC',
         'TWIN-TURBO ENGINE': 'EFC',
         'MOTEUR V6 PENTASTAR': 'ERC',
@@ -581,6 +589,8 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         '20L SUPPLEMENTAIRES ESSENCE': 'YGW',
         'SUPPLEMENTAIRES ESSENCE': 'YGW',
         '20L SUPPLEMENTAIRES': 'YGW',
+        '15 L SUPPLEMENTAIRES': 'YGN',  # Gladiator
+        '15L SUPPLEMENTAIRES': 'YGN',
         
         # Packages/Ensembles
         'CUSTOMER PREFERRED PACKAGE 2TY': '2TY',
@@ -591,6 +601,10 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'ECLAIR 2TE': '2TE',
         'ENSEMBLE ECLAIR 23E': '23E',
         'ECLAIR 23E': '23E',
+        'ENSEMBLE ECLAIR 2TW': '2TW',  # Gladiator
+        'ECLAIR 2TW': '2TW',
+        'ENSEMBLE ECLAIR 24W': '24W',  # Gladiator
+        'ECLAIR 24W': '24W',
         'GROUPE LUXE': '2BZ',
         'GROUPE TECHNOLOGIE': '2BX',
         'GROUPE REMORQUAGE': '21D',
@@ -602,6 +616,8 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'EXCISE TAX': '4CP',
         'TAXE ACCISE FEDERALE': '4CP',
         'ACCISE FEDERALE': '4CP',
+        "TAXE D'ACCISE FEDERALE": '4CP',
+        'CLIMATISEUR': '4CP',
         'DESTINATION CHARGE': '801',
         'FRAIS DE TRANSPORT': '801',
         'FINANCED': '999',
