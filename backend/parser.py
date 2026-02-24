@@ -973,15 +973,19 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
     
     # ====== FALLBACK: Rechercher les descriptions connues dans le texte ======
     # Quand l'OCR ne capture pas le code mais capture la description
+    # IMPORTANT: Les options fallback sont ajoutées À LA FIN pour préserver l'ordre des options OCR directes
+    
+    fallback_options = []  # Collecter séparément
     
     # Groupes de codes équivalents (ne pas ajouter si un code similaire existe déjà)
     equivalent_codes = {
         'DFT': {'DFR', 'DFW'},  # Transmissions automatiques
         'DFR': {'DFT', 'DFW'},
         'DFW': {'DFT', 'DFR'},
-        'YGN': {'YGV', 'YGW'},  # Essence supplémentaire
-        'YGV': {'YGN', 'YGW'},
-        'YGW': {'YGN', 'YGV'},
+        'YGN': {'YGV', 'YGW', 'YG4'},  # Carburant supplémentaire
+        'YGV': {'YGN', 'YGW', 'YG4'},
+        'YGW': {'YGN', 'YGV', 'YG4'},
+        'YG4': {'YGN', 'YGV', 'YGW'},  # Diesel
     }
     
     for desc_key, code in description_to_code.items():
@@ -994,10 +998,11 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         if desc_key in text_upper:
             seen_codes.add(code)
             desc = fca_descriptions.get(code, desc_key.title())
-            found_options.append({
+            fallback_options.append({
                 "product_code": code,
                 "description": f"{code} - {desc}",
-                "amount": 0
+                "amount": 0,
+                "source": "fallback"
             })
     
     # Fallback additionnel: chercher les codes connus directement
@@ -1012,11 +1017,15 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
                 continue
         if re.search(rf'\b{re.escape(code)}\b', text_upper):
             seen_codes.add(code)
-            found_options.append({
+            fallback_options.append({
                 "product_code": code,
                 "description": f"{code} - {desc}",
-                "amount": 0
+                "amount": 0,
+                "source": "fallback"
             })
+    
+    # Ajouter les options fallback À LA FIN (après les options OCR directes)
+    found_options.extend(fallback_options)
     
     # ====== DÉDUPLICATION FINALE ======
     # Supprime les doublons logiques (ex: deux transmissions)
