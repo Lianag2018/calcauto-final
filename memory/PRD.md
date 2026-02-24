@@ -136,8 +136,23 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
   - Styles: Modal aperçu SMS complet avec header, textarea, boutons
   - data-testid: `share-sms-btn`, `print-btn`, `send-email-btn`, `sms-preview-send-btn`
 
+### Phase 17: Blocage Complet Codes YG4/4CP/2TZ (DONE - Feb 2026)
+- **Bug fix critique**: Les codes YG4, 4CP, 2TZ apparaissaient toujours en lignes 1 et 2 de toutes les factures
+- **Cause racine**: Les boucles fallback dans `parse_options()` ne vérifiaient pas `skip_codes`
+- **Corrections dans `backend/parser.py`**:
+  1. Supprimé YG4, 4CP, 2TZ du dictionnaire `fca_descriptions`
+  2. Supprimé tous les mappings `description_to_code` pointant vers ces codes
+  3. Ajouté check `skip_codes` aux deux boucles fallback (description_to_code + fca_descriptions)
+  4. Nettoyé `equivalent_codes` (retiré YG4)
+  5. Ajouté DJ7H91 aux skip_codes (code modèle, pas une option)
+- **Tests**: 3 nouveaux tests `TestBlockedCodes` (28/28 tests passent)
+
 ## Backlog
-- (P1) Refactoring index.tsx (fichier monolithique)
+- (P0) Corriger l'ordre des options du parseur (options fallback ajoutées au début au lieu de la fin)
+- (P1) Corriger visibilité bouton "Export Excel" dans le modal de révision
+- (P1) Implémenter l'import Excel complet (frontend UI)
+- (P1) Restreindre parsing en-tête facture (VIN uniquement)
+- (P2) Refactoring index.tsx (fichier monolithique)
 - (P2) Interface historique scans
 - (P3) Refactoring server.py en structure routes/
 - (P3) Dashboard admin métriques parsing
