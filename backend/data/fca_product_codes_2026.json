@@ -1,4 +1,40 @@
 {
+  "WLJH74": {
+    "year": "2026",
+    "brand": "Jeep",
+    "model": "Grand Cherokee",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "GRANDCHEROKEELIMITED4X4"
+  },
+  "WLJL74": {
+    "year": "2026",
+    "brand": "Jeep",
+    "model": "Grand Cherokee L",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "GRANDCHEROKEELLIMITED4X4"
+  },
+  "WLJP74": {
+    "year": "2026",
+    "brand": "Jeep",
+    "model": "Grand Cherokee",
+    "trim": "Overland",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "GRANDCHEROKEEOVERLAND4X4"
+  },
+  "WLJS74": {
+    "year": "2026",
+    "brand": "Jeep",
+    "model": "Grand Cherokee",
+    "trim": "Summit",
+    "cab": "",
+    "drive": "4x4",
+    "raw": "GRANDCHEROKEESUMMIT4X4"
+  },
   "LBEL29": {
     "year": "2026",
     "brand": "Dodge",
