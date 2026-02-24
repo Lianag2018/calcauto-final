@@ -820,7 +820,14 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'VAN', 'LOW', 'EXTENDED', 'SUPER', 'WB', '136WB', '159WB',
         # Fragments OCR erronés des factures Gladiator/Wrangler
         'BAQ', 'DOSSIER', 'BAS', 'TISSU', 'RIGIDE', 'FREEDOM', 'TOP', 'SECT',
-        'NOIR', 'COMMODITES', 'CLIMATISEUR'
+        'NOIR', 'COMMODITES', 'CLIMATISEUR',
+        # Fragments OCR erronés des factures Ram 2500/3500 - MOTS SEULS PAS DES CODES
+        'GRIS', 'PREP', 'FEUX', 'PNBV', 'CERAMIQUE', 'REMORQ', 'SELLETTE', 
+        'GABARIT', 'EDITION', 'NUIT', 'COMMANDES', 'AUXILIAIRES', 'TABLEAU',
+        'BORD', 'DOUBLURES', 'PASSAGE', 'ROUE', 'ARRIERE', 'DIESEL',
+        'BAQUETS', 'AVANT', 'CATEGORIE', 'SUP', 'NIVEAU', 'HORN', 'BIG',
+        'TAPIS', 'PROTECT', 'MOPARMD', 'POWERLINE', 'TURB', 'CUMMINS',
+        'COL', 'CYGNE', 'EQUIP'
     }
     
     # Mots-clés d'adresse à ignorer dans la description
