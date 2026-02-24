@@ -503,38 +503,109 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
     
     # Dictionnaire inversé: description partielle → code
     # Pour quand l'OCR capture la description mais pas le code
+    # IMPORTANT: Ces mappings doivent correspondre aux descriptions EXACTES des factures FCA
     description_to_code = {
+        # Couleurs
         'CANYON LAKE': 'PJ7',
+        'COUCHE NACREE CRISTAL NOIR': 'PXJ',
+        'NACREE CRISTAL NOIR ETINCEL': 'PXJ',
+        'CRISTAL NOIR ETINCEL': 'PXJ',
+        'BLANC ECLATANT': 'PW7',
+        'NOIR DIAMANT': 'PX8',
+        'ROUGE FLAMME': 'PAU',
+        'GRIS DESTROYER': 'PSC',
+        'GRIS GRANIT CRISTAL': 'PGG',
+        'BLEU PATRIOTE': 'PBF',
+        'VERT SARGE': 'PGE',
+        'ROUGE VELOURS': 'PRM',
+        'ARGENT BILLET': 'PAR',
+        
+        # Intérieur / Sièges
+        'SIEGES EN SIMILICUIR CAPRI': 'B6W7',
+        'SIMILICUIR CAPRI': 'B6W7',
+        'CUIR NAPPA VENTILE': 'CLX9',
         'PREMIUM LEATHER BUCKET': 'YLX9',
+        'LEATHER BUCKET SEATS': 'YLX9',
+        'RED INTERIOR ACCENTS': 'CU2',
+        
+        # Équipements
         'BED UTILITY GROUP': 'ANT',
         'RHO LEVEL 1': 'A6H',
         'LEVEL 1 EQUIPMENT': 'A6H',
         'TRI-FOLD SOFT TONNEAU': 'CS7',
         'SOFT TONNEAU COVER': 'CS7',
-        'RED INTERIOR ACCENTS': 'CU2',
+        'ENSEMBLE ATTELAGE DE REMORQUE': 'ABR',
+        'ATTELAGE DE REMORQUE': 'ABR',
+        'ENSEMBLE ALLURE NOIRE': 'ALC',
+        'ALLURE NOIRE': 'ALC',
+        
+        # Transmission/Moteur
         '8-SPEED AUTOMATIC': 'DFR',
+        '8 SPEED AUTOMATIC': 'DFR',
         'AUTOMATIC TRANSMISSION': 'DFR',
+        'TRANSMISSION AUTOMATIQUE 8 VITESSES': 'DFW',
+        'AUTOMATIQUE 8 VITESSES': 'DFW',
         '3.0L I-6': 'EFC',
         'TWIN-TURBO ENGINE': 'EFC',
+        'MOTEUR V6 PENTASTAR': 'ERC',
+        'V6 PENTASTAR 3,6': 'ERC',
+        'V6 PENTASTAR 3.6': 'ERC',
+        'PENTASTAR 3,6 L': 'ERC',
+        
+        # Toit/Extérieur
         'DUAL-PANE PANORAMIC': 'GWJ',
         'PANORAMIC SUNROOF': 'GWJ',
+        'TOIT OUVR PANO': 'GWJ',
+        'OUVR PANO 2 PANN': 'GWJ',
+        'PANO 2 PANN COMMANDVIEW': 'GWJ',
+        '2 PANN COMMANDVIEW': 'GWJ',
         'RHO EXTERIOR GRAPHICS': 'MH7',
         'EXTERIOR GRAPHICS': 'MH7',
         'RHO HOOD GRAPHICS': 'MMB',
         'HOOD GRAPHICS': 'MMB',
         'OFF-ROAD STYLE RUNNING': 'MTW',
         'RUNNING BOARDS': 'MTW',
+        
+        # Carburant
         'ADDITIONAL LITRES': 'YGV',
         'LITRES OF GAS': 'YGV',
+        '17 ADDITIONAL LITRES': 'YGV',
+        '20L SUPPLEMENTAIRES ESSENCE': 'YGW',
+        'SUPPLEMENTAIRES ESSENCE': 'YGW',
+        '20L SUPPLEMENTAIRES': 'YGW',
+        
+        # Packages/Ensembles
         'CUSTOMER PREFERRED PACKAGE 2TY': '2TY',
+        'PREFERRED PACKAGE 2TY': '2TY',
         'CUSTOMER PREFERRED PACKAGE 22Y': '22Y',
+        'PREFERRED PACKAGE 22Y': '22Y',
+        'ENSEMBLE ECLAIR 2TE': '2TE',
+        'ECLAIR 2TE': '2TE',
+        'ENSEMBLE ECLAIR 23E': '23E',
+        'ECLAIR 23E': '23E',
+        'GROUPE LUXE': '2BZ',
+        'GROUPE TECHNOLOGIE': '2BX',
+        'GROUPE REMORQUAGE': '21D',
+        'GROUPE COMMODITE': '22B',
+        'GROUPE APPARENCE': '27A',
+        
+        # Taxes/Frais
         'FEDERAL A/C EXCISE': '4CP',
         'EXCISE TAX': '4CP',
+        'TAXE ACCISE FEDERALE': '4CP',
+        'ACCISE FEDERALE': '4CP',
         'DESTINATION CHARGE': '801',
+        'FRAIS DE TRANSPORT': '801',
         'FINANCED': '999',
         'SHIPPED': '999',
+        'FINANCE': '999',
+        'EXPEDIE': '999',
         'PPA ASSESSMENT': '92HC1',
+        'COTISATION P.P.': '92HC1',
+        'COTISATION P.P': '92HC1',
         'MARKETING ALLOWANCE': '92HC2',
+        'ALLOCATION DE MARKETING': '92HC2',
+        'ALLOCATION MARKETING': '92HC2',
     }
     
     # Codes à ignorer (pas des options)
