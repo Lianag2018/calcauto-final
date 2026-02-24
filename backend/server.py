@@ -5215,7 +5215,7 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                     "pref": pref,
                     "holdback": calculate_holdback(product_info.get("brand") or vin_brand or "Ram", pdco, holdback),
                     "msrp": pdco,
-                    "net_cost": ep_cost - calculate_holdback(product_info.get("brand") or vin_brand or "Ram", pdco, holdback),
+                    "net_cost": ep_cost,  # E.P. = Coût Net (holdback déjà déduit)
                     "subtotal": subtotal,
                     "invoice_total": invoice_total,
                     "color": color_map.get(color_code, color_code),
