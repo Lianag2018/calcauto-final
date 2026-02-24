@@ -2179,7 +2179,7 @@ export default function HomeScreen() {
                 >
                   <Ionicons name="chatbubble-outline" size={18} color="#fff" />
                   <Text style={styles.shareButtonText}>
-                    {lang === 'fr' ? 'Partager par texto' : 'Share via SMS'}
+                    {lang === 'fr' ? 'Texto' : 'SMS'}
                   </Text>
                 </TouchableOpacity>
                 
@@ -2192,6 +2192,18 @@ export default function HomeScreen() {
                   <Ionicons name="print-outline" size={18} color="#fff" />
                   <Text style={styles.shareButtonText}>
                     {lang === 'fr' ? 'Imprimer' : 'Print'}
+                  </Text>
+                </TouchableOpacity>
+                
+                {/* Export Excel Button */}
+                <TouchableOpacity
+                  style={styles.exportExcelButton}
+                  onPress={handleExportExcel}
+                  data-testid="export-excel-btn"
+                >
+                  <Ionicons name="document-outline" size={18} color="#fff" />
+                  <Text style={styles.shareButtonText}>
+                    Excel
                   </Text>
                 </TouchableOpacity>
               </View>
