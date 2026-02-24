@@ -309,9 +309,18 @@ export default function InventoryScreen() {
 
       console.log('Scan response:', response.data);
 
-      if (response.data.success) {
+      // Accepter les scans réussis OU les scans partiels nécessitant révision
+      if (response.data.success || response.data.review_required) {
         // Préparer les données pour révision/correction
         const vehicle = response.data.vehicle || {};
+        
+        // Si révision requise, afficher les erreurs bloquantes
+        const blockingErrors = response.data.blocking_errors || [];
+        if (blockingErrors.length > 0) {
+          console.log('Blocking errors:', blockingErrors);
+          // On continue quand même pour permettre la correction manuelle
+        }
+        
         setReviewData({
           stock_no: vehicle.stock_no || '',
           vin: vehicle.vin || '',
@@ -328,7 +337,8 @@ export default function InventoryScreen() {
           asking_price: vehicle.asking_price || vehicle.msrp || 0,
           color: vehicle.color || '',
           options: vehicle.options || [],
-          parse_method: response.data.parse_method || 'unknown'
+          parse_method: response.data.parse_method || 'unknown',
+          blocking_errors: blockingErrors  // Garder pour affichage dans le modal
         });
         setShowScanModal(false);
         setShowReviewModal(true);
