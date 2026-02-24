@@ -208,6 +208,116 @@ class TestValidation:
         assert result["status"] in ["valid", "review"]
 
 
+# =====================================
+# TESTS DÉDUPLICATION V6.5
+# =====================================
+
+from parser import deduplicate_options, CATEGORY_GROUPS
+
+
+class TestDeduplication:
+    """Tests pour la déduplication d'options FCA"""
+    
+    def test_deduplicate_transmission(self):
+        """Deux transmissions → garde celle avec montant > 0"""
+        options = [
+            {"product_code": "DFT", "description": "Trans Auto 8 vitesses", "amount": 0},
+            {"product_code": "DFW", "description": "Trans Auto 8 vitesses", "amount": 1500}
+        ]
+        
+        result = deduplicate_options(options)
+        
+        assert len(result) == 1
+        assert result[0]["product_code"] == "DFW"
+        assert result[0]["amount"] == 1500
+    
+    def test_deduplicate_engine(self):
+        """Deux moteurs → garde celui avec montant > 0"""
+        options = [
+            {"product_code": "ERB", "description": "Moteur V6", "amount": 0},
+            {"product_code": "ERC", "description": "Moteur V6 Pentastar", "amount": 0}
+        ]
+        
+        result = deduplicate_options(options)
+        
+        # Les deux ont amount=0, garde le premier
+        assert len(result) == 1
+        assert result[0]["product_code"] == "ERB"
+    
+    def test_deduplicate_color(self):
+        """Deux couleurs → garde une seule"""
+        options = [
+            {"product_code": "PXJ", "description": "Noir cristal", "amount": 500},
+            {"product_code": "PW7", "description": "Blanc éclatant", "amount": 0}
+        ]
+        
+        result = deduplicate_options(options)
+        
+        assert len(result) == 1
+        assert result[0]["product_code"] == "PXJ"  # montant > 0
+    
+    def test_deduplicate_fuel(self):
+        """Carburant supplémentaire → une seule option"""
+        options = [
+            {"product_code": "YGN", "description": "15L essence", "amount": 0},
+            {"product_code": "YGW", "description": "20L essence", "amount": 100}
+        ]
+        
+        result = deduplicate_options(options)
+        
+        assert len(result) == 1
+        assert result[0]["product_code"] == "YGW"
+    
+    def test_no_dedup_different_categories(self):
+        """Options de catégories différentes → toutes gardées"""
+        options = [
+            {"product_code": "DFT", "description": "Transmission", "amount": 0},
+            {"product_code": "ERC", "description": "Moteur", "amount": 0},
+            {"product_code": "PXJ", "description": "Couleur", "amount": 500}
+        ]
+        
+        result = deduplicate_options(options)
+        
+        assert len(result) == 3
+    
+    def test_no_dedup_unknown_codes(self):
+        """Codes inconnus → tous gardés"""
+        options = [
+            {"product_code": "ABC", "description": "Option inconnue 1", "amount": 0},
+            {"product_code": "XYZ", "description": "Option inconnue 2", "amount": 100},
+            {"product_code": "DFT", "description": "Transmission", "amount": 0}
+        ]
+        
+        result = deduplicate_options(options)
+        
+        # ABC et XYZ gardés (inconnus) + DFT gardé (seul de sa catégorie)
+        assert len(result) == 3
+    
+    def test_mixed_dedup(self):
+        """Mix de catégories connues et inconnues"""
+        options = [
+            {"product_code": "DFT", "description": "Trans 1", "amount": 0},
+            {"product_code": "DFW", "description": "Trans 2", "amount": 1000},
+            {"product_code": "ABC", "description": "Inconnu", "amount": 0},
+            {"product_code": "PXJ", "description": "Couleur 1", "amount": 0},
+            {"product_code": "PW7", "description": "Couleur 2", "amount": 200},
+            {"product_code": "ERC", "description": "Moteur", "amount": 0}
+        ]
+        
+        result = deduplicate_options(options)
+        
+        # ABC (inconnu) + DFW (trans prioritaire) + PW7 (couleur prioritaire) + ERC (moteur seul)
+        assert len(result) == 4
+        
+        codes = [opt["product_code"] for opt in result]
+        assert "ABC" in codes
+        assert "DFW" in codes
+        assert "PW7" in codes
+        assert "ERC" in codes
+        assert "DFT" not in codes  # Supprimé car DFW prioritaire
+        assert "PXJ" not in codes  # Supprimé car PW7 prioritaire
+
+
 if __name__ == "__main__":
     # Exécuter avec pytest
     pytest.main([__file__, "-v", "--tb=short"])
