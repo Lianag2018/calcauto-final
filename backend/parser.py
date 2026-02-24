@@ -47,20 +47,28 @@ def parse_vin(text: str) -> Optional[str]:
     Formats supportés:
     - VIN standard 17 caractères
     - VIN FCA avec tirets: XXXXX-XX-XXXXXX (format 5-2-X)
-    - VIN avec erreurs OCR courantes (I/1, O/0, K/J)
+    - VIN avec erreurs OCR courantes (I/1, O/0, K/J, S/5, B/8)
+    - VIN partiellement espacé par l'OCR
     """
     text = text.upper()
     
-    # Pattern VIN FCA spécifique (1C4R... avec tirets)
+    # Pattern VIN FCA spécifique (1C4R..., 2C4R..., 3C4R..., 3C6UR...)
     # Tolère K au lieu de J (erreur OCR courante)
-    vin_fca_pattern = r'1C4R[IJKL][JK]AG[0-9][-\s]*[A-Z0-9]{2}[-\s]*[A-Z0-9]{6}'
-    vin_match = re.search(vin_fca_pattern, text)
-    if vin_match:
-        vin = re.sub(r'[-\s]', '', vin_match.group())
-        # Corriger K→J si nécessaire (position 5 devrait être J)
-        if len(vin) >= 5 and vin[4] == 'K':
-            vin = vin[:4] + 'J' + vin[5:]
-        return vin[:17] if len(vin) >= 17 else vin
+    vin_fca_patterns = [
+        r'[123]C4R[IJKL][JK]AG[0-9][-\s]*[A-Z0-9]{2}[-\s]*[A-Z0-9]{6}',  # Jeep (1C4R)
+        r'[123]C6[A-Z]{2}[A-Z0-9]{2}[-\s]*[A-Z0-9]{2}[-\s]*[A-Z0-9]{6}',  # Ram HD (3C6UR)
+        r'[123]C[0-9A-Z]{4}[A-Z0-9]{2}[-\s]*[A-Z0-9]{2}[-\s]*[A-Z0-9]{6}', # FCA générique
+    ]
+    
+    for pattern in vin_fca_patterns:
+        vin_match = re.search(pattern, text)
+        if vin_match:
+            vin = re.sub(r'[-\s]', '', vin_match.group())
+            # Corriger K→J si nécessaire (position 5 devrait être J pour Jeep)
+            if len(vin) >= 5 and vin[4] == 'K' and vin.startswith('1C4R'):
+                vin = vin[:4] + 'J' + vin[5:]
+            if len(vin) >= 17:
+                return vin[:17]
     
     # VIN avec tirets FCA générique (5-2-X chars)
     vin_dash_match = re.search(
@@ -76,6 +84,26 @@ def parse_vin(text: str) -> Optional[str]:
     vin_match = re.search(r'\b([0-9A-HJ-NPR-Z]{17})\b', text)
     if vin_match:
         return vin_match.group(1)
+    
+    # FALLBACK: VIN avec espaces/erreurs OCR - Recherche aggressive
+    # Chercher patterns commençant par 1C, 2C, 3C (FCA/Stellantis)
+    aggressive_patterns = [
+        r'([123]C[0-9A-Z\s]{15,20})',  # FCA avec espaces possibles
+        r'([WJKM][A-Z0-9\s]{15,20})',  # Autres patterns VIN
+    ]
+    for pattern in aggressive_patterns:
+        match = re.search(pattern, text)
+        if match:
+            # Nettoyer: enlever espaces, garder alphanumériques
+            candidate = re.sub(r'[\s\-]', '', match.group(1))
+            candidate = ''.join(c for c in candidate if c.isalnum())
+            # Corriger erreurs OCR courantes
+            candidate = candidate.replace('O', '0').replace('I', '1')
+            if len(candidate) >= 17:
+                vin = candidate[:17]
+                # Valider que c'est un VIN vraisemblable (pas de I, O, Q)
+                if not re.search(r'[IOQ]', vin):
+                    return vin
     
     return None
 
