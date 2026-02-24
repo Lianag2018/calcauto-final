@@ -318,6 +318,70 @@ class TestDeduplication:
         assert "PXJ" not in codes  # Supprimé car PW7 prioritaire
 
 
+class TestBlockedCodes:
+    """Tests pour vérifier que YG4, 4CP, 2TZ sont complètement bloqués"""
+
+    BLOCKED_CODES = {'YG4', '4CP', '2TZ'}
+
+    def test_blocked_codes_direct_ocr(self):
+        """Les codes bloqués sont ignorés même quand l'OCR les détecte directement"""
+        text = """
+PDN GRIS CERAMIQUE SANS FRAIS
+YG4 20L SUPPLEMENTAIRES DIESEL SANS FRAIS
+4CP TAXE ACCISE FEDERALE CLIMATISEUR 100.00
+2TZ ENSEMBLE ECLAIR 2TZ 935.00
+ETM 6 CYL TURBO DIESEL CUMMINS 6,7L 8,800.00
+"""
+        options = parse_options(text)
+        codes = {opt["product_code"] for opt in options}
+        assert codes.isdisjoint(self.BLOCKED_CODES), f"Codes bloqués trouvés: {codes & self.BLOCKED_CODES}"
+        assert "PDN" in codes
+        assert "ETM" in codes
+
+    def test_blocked_codes_fallback_description(self):
+        """Les codes bloqués ne sont pas ajoutés via fallback description"""
+        text = """
+PDN GRIS CERAMIQUE SANS FRAIS
+20L SUPPLEMENTAIRES DIESEL
+TAXE ACCISE FEDERALE CLIMATISEUR
+ENSEMBLE ECLAIR 2TZ
+"""
+        options = parse_options(text)
+        codes = {opt["product_code"] for opt in options}
+        assert codes.isdisjoint(self.BLOCKED_CODES), f"Codes bloqués via fallback: {codes & self.BLOCKED_CODES}"
+
+    def test_blocked_codes_full_ram_invoice(self):
+        """Simulation complète d'une facture Ram 2500 sans codes bloqués"""
+        text = """
+DJ7H91 RAM 2500 BIG HORN
+PDN GRIS CERAMIQUE SANS FRAIS
+MJX9 BAQUETS AVANT TISSU CATEGORIE SUP SANS FRAIS
+AHU PREP REMORQ SELLETTE/COL-DE-CYGNE 485.00
+ASH EDITION NUIT 1,495.00
+A7H ENSEMBLE EQUIP NIVEAU 2 BIG HORN 5,530.00
+CLF TAPIS PROTECT AVANT/ARR MOPARMD 440.00
+DFM TRANSMISSION AUTO 8 VIT ZF POWERLINE SANS FRAIS
+ETM 6 CYL LI TURB DIESEL HR CUMMINS 6,7L 8,800.00
+LHL COMMANDES AUXILIAIRES TABLEAU BORD SANS FRAIS
+MWH DOUBLURES PASSAGE ROUE ARRIERE 345.00
+Z7H PNBV 4490 KG (9900 LB) SANS FRAIS
+YG4 20L SUPPLEMENTAIRES DIESEL SANS FRAIS
+4CP TAXE ACCISE FEDERALE CLIMATISEUR 100.00
+2TZ ENSEMBLE ECLAIR 2TZ 935.00
+"""
+        options = parse_options(text)
+        codes = [opt["product_code"] for opt in options]
+
+        # Aucun code bloqué ne doit apparaître
+        for blocked in self.BLOCKED_CODES:
+            assert blocked not in codes, f"{blocked} ne devrait pas être dans les options"
+
+        # Les vrais codes doivent y être
+        expected = ["PDN", "MJX9", "AHU", "ASH", "A7H", "CLF", "DFM", "ETM", "LHL", "MWH", "Z7H"]
+        for exp in expected:
+            assert exp in codes, f"{exp} devrait être dans les options"
+
+
 if __name__ == "__main__":
     # Exécuter avec pytest
     pytest.main([__file__, "-v", "--tb=short"])
