@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any
 
 # Configuration
-BACKEND_URL = "https://fca-vehicle-options.preview.emergentagent.com/api"
+BACKEND_URL = "https://invoice-parser-fix.preview.emergentagent.com/api"
 TIMEOUT = 30
 
 class BetterOffersTestSuite:

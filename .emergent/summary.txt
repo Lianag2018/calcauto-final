@@ -1,170 +1,164 @@
 <analysis>**original_problem_statement:**
-The user wants to continue developing a mobile application named CalcAuto AiPro. The primary goal is to perfect the invoice scanning feature to achieve flawless data extraction from Stellantis (FCA) invoices, ensuring all vehicle options are captured in the correct order and prices are formatted correctly.
-
-A new feature request has been introduced: the ability to send vehicle financing submissions via SMS text message, with a preference for a free implementation that uses the phone's native sharing capabilities.
+The user wants to perfect the invoice scanning feature for their mobile application, CalcAuto AiPro. The primary goal is to achieve flawless, correctly ordered data extraction from Stellantis (FCA) invoices. Several new features have also been requested and implemented:
+*   Ability to send financing submissions via SMS and a preview modal.
+*   An option to Print submission details.
+*   A new hybrid workflow to export OCR scan data to an Excel file for manual correction and later import, aiming for 100% data accuracy.
 
 **PRODUCT REQUIREMENTS:**
-*   **Invoice Scanning Perfection (P0):** The parser must be enhanced to handle OCR failures, especially for short option codes. It needs to correctly identify all accessories in the exact order they appear on the invoice, handle price formatting (e.g.,  -> ), and avoid extracting incorrect data. This involves enriching the product code and description databases and refining the parsing logic.
-*   **Add SMS Sharing (P0):** Implement a feature to share submissions via SMS. The user prefers a free method, such as using the device's native share functionality.
-*   **Complete Product Database (P1):** Ensure all 2025 and 2026 product codes and descriptions are loaded into the system and used by the calculator.
-*   **Restrict Invoice Header Parsing (P1):** A pending request to only extract the VIN from the invoice header and ignore other data from that section.
-*   **Code Refactoring (P2):** The monolithic files  and  are slated for refactoring.
+*   **Invoice Parser Perfection (P0):** The parser logic must be fixed to preserve the exact order of vehicle options as they appear on the invoice. It frequently misorders options, especially those found via fallback logic. It also needs to correctly identify vehicle trims and filter out irrelevant text.
+*   **Complete Excel Workflow (P1):** The user has approved a hybrid OCR/Excel strategy. The Export to Excel functionality is partially built. The Import from Excel feature needs to be implemented.
+*   **UI/UX Bug Fixes (P1):** The new Export Excel button is not appearing in the correct location for the user, causing confusion.
+*   **Code Refactoring (P2):** The monolithic files , , and  are slated for refactoring to improve maintainability.
 
 **User's preferred language**: French. The next agent MUST respond in French.
 
 **what currently exists?**
-A full-stack application with a React Native (Expo) frontend and a FastAPI backend. The application's core feature is an advanced invoice scanner for vehicle financing.
+A full-stack application with a React Native (Expo) frontend and a FastAPI backend. The core feature is an advanced invoice scanner for vehicle financing, heavily customized for FCA invoices.
 
-The backend  has been significantly enhanced with a multi-layered strategy to combat OCR inaccuracies. It now uses:
-1.  A primary  database for vehicle identification.
-2.  A fallback mechanism using a  dictionary to map option descriptions back to their correct codes when OCR fails to capture them.
-3.  An extensive list of  to filter out OCR noise and irrelevant text fragments.
-4.  Specific regex patterns to find critical data (VIN, prices) and to avoid accidentally filtering valid option codes that resemble postal codes.
+The backend  uses a multi-stage process involving regex, a description-to-code fallback dictionary, extensive skip lists, and a category-based deduplication function to clean OCR data. The frontend has been updated to include buttons for SMS sharing, printing, and exporting to Excel. Backend endpoints for exporting data to an  file have been created.
 
-The frontend was fixed to correctly handle partial scans. Instead of showing a generic error, it now opens a review modal, pre-fills the successfully parsed data, and displays a banner listing the specific fields that require manual correction.
+However, the application suffers from a critical, recurring bug where the invoice parser fails to maintain the correct order of vehicle options, and the newly added Export Excel button is not reliably visible to the user.
 
 **Last working item**:
-*   **Last item agent was working:** The user requested a new feature to send submissions via SMS. The agent analyzed the possible solutions (native sharing vs. a paid service like Twilio), recommended the free native sharing option, and asked the user for confirmation to proceed with implementation.
-*   **Status:** BLOCKED (awaiting user confirmation)
-*   **Agent Testing Done:** N/A
-*   **Which testing method agent to use?** Frontend testing agent (once implemented) to verify the new Share via SMS button triggers the native share dialog. Manual verification on a device would be required for a full E2E test, which the agent cannot perform.
-*   **User Testing Done:** N
-
-**All Pending/In progress Issue list**:
-*   **Issue 1: Invoice Parser Produces Duplicate/Similar Options (P0)**
-    *   **Description:** During the parsing of a Gladiator invoice, the agent noticed the fallback logic could introduce duplicate options for the same component (e.g., adding both  and  for the automatic transmission).
-    *   **Attempted fixes:** The agent identified the problem but was interrupted by the user's new feature request before a fix could be implemented.
-    *   **Next debug checklist:**
-        1.  Modify the  function in .
-        2.  After the initial parsing and the description-based fallback have run, implement a deduplication step.
-        3.  This step should identify options that refer to the same vehicle part (e.g., transmission, engine) and keep only the most accurate one, likely the one with a code captured directly by OCR.
-        4.  Re-run the ============================= test session starts ==============================
+*   **Last item agent was working:** The user requested that three specific option codes (, , ) be permanently removed from all future invoice scans. The agent added these codes to the  list in  and was in the process of removing them from other data files (, ) to prevent them from being re-added by fallback logic.
+*   **Status:** IN PROGRESS
+*   **Agent Testing Done:** N
+*   **Which testing method agent to use?** Backend testing agent. Run ============================= test session starts ==============================
 platform linux -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0
 rootdir: /app/frontend
 plugins: anyio-4.12.1
 collected 0 items
 
-============================ no tests ran in 0.01s ============================= suite and test against all sample invoices (RAM RHO, Gladiator, ProMaster, Grand Cherokee) to ensure no regressions.
-    *   **Why fix this issue and what will be achieved with the fix?** This is critical for achieving the user's goal of a perfect parser. It will clean up the final list of options and improve data accuracy.
+============================ no tests ran in 0.01s ============================= to check for regressions, then manually test parsing the Ram 2500 invoice to confirm the unwanted codes are gone and that this change hasn't further worsened the option ordering.
+*   **User Testing Done:** N
+
+**All Pending/In progress Issue list**:
+*   **Issue 1: Incorrect Option Order (P0)**
+    *   **Description:** The user has repeatedly reported that the order of vehicle options is wrong. The parser's fallback logic appears to add options to the beginning of the list instead of the end, causing items from the bottom of the invoice to appear at the top of the scan results. This is the user's number one frustration.
+    *   **Attempted fixes:** The agent has tried modifying the deduplication function and adding problematic codes to a  list. These are patches that do not address the root cause.
+    *   **Next debug checklist:**
+        1.  In , locate the description-to-code fallback logic (the loop that uses ).
+        2.  Refactor this section. Create two separate lists: one for options found by the main OCR regex () and another for options found by the fallback logic ().
+        3.  After both loops complete, combine the lists: .
+        4.  Pass this combined, correctly ordered list to the  function.
+        5.  Test against all known invoice types (Ram, Grand Cherokee, Gladiator) to ensure order is preserved.
+    *   **Why fix this issue and what will be achieved with the fix?** This is the most critical bug. Fixing it will meet the user's primary requirement for a perfect parser and resolve their main point of frustration.
     *   **Status:** IN PROGRESS
     *   **Is recurring issue?** Y
     *   **Should Test frontend/backend/both after fix?** Backend
-    *   **Blocked on other issue:** None.
+    *   **Blocked on other issue:** None
 
 **In progress Task List**:
-*   **Task 1: Implement Share via SMS Feature (P0)**
-    *   **Where to resume:** Wait for the user to approve the proposed solution (using the native share API). Once approved, modify the frontend ( or a relevant component) to add a Partager par Texto button next to the email submission button. This button should invoke React Native's  API with the submission details.
-    *   **What will be achieved with this?** Fulfills the user's new feature request for a free way to send submissions via text.
-    *   **Status:** BLOCKED (awaiting user confirmation)
-    *   **Should Test frontend/backend/both after fix?** Frontend
-    *   **Blocked on something:** User confirmation.
+*   **Task 1: Complete Removal of Unwanted Option Codes (P0)**
+    *   **Where to resume:** The agent added , , and  to  in . To complete the task, these codes must also be removed from the  dictionary and the  file to prevent any possibility of them being re-introduced.
+    *   **What will be achieved with this?** Fulfills the user's direct request to permanently ignore these specific codes on all invoices.
+    *   **Status:** IN PROGRESS
+    *   **Should Test frontend/backend/both after fix?** Backend
+    *   **Blocked on something:** None.
 
 **Upcoming and Future Tasks**
-*   **(P1) Restrict Invoice Header Parsing:** Modify  to only extract the VIN from the invoice header, ignoring all other data from that section to improve accuracy.
-*   **(P1) Finalize Frontend Refactoring Migration:** Execute the migration plan from  to break down the monolithic .
-*   **(P2) Add Frontend Warning for Corrected VINs:** Add a visual indicator in the review modal for auto-corrected VINs.
-*   **(P3) Refactor :** Split the monolithic file into a  directory structure for better maintainability.
-*   **(P3) Admin Dashboard for Parsing Metrics:** Create a frontend dashboard to visualize data from the  endpoint.
+*   **(P1) Implement Excel Import:** Create the frontend UI and the backend logic for the  endpoint to allow a user to upload a corrected Excel file, which will then populate the vehicle data in the app.
+*   **(P1) Fix Export Excel Button Visibility:** The user cannot find the Export Excel button. It was added to the review modal in , but it's not appearing. This needs to be debugged and fixed.
+*   **(P1) Restrict Invoice Header Parsing:** A pending request to only extract the VIN from the invoice header, ignoring all other data from that section to improve accuracy.
+*   **(P2) Finalize Frontend Refactoring Migration:** Execute the migration plan from  to break down the monolithic .
+*   **(P2) Refactor  and :** Split these large monolithic files into smaller, more manageable modules.
 
 **Completed work in this session**
-- **Fixed Critical Scan Bug:** Resolved the silent photo scan failure by modifying the frontend to handle  responses, allowing users to manually correct partial scans instead of hitting a dead end. This was verified by the testing agent.
-- **Revolutionized Invoice Parser ():**
-    - Implemented a robust **description-to-code fallback** mechanism to reconstruct option codes that OCR fails to read, dramatically improving accuracy.
-    - Correctly identified and handled the GKRP price code as an alias for PDCO/MSRP and ensured it's not listed as an accessory.
-    - Fixed a bug where the postal code regex was incorrectly filtering the valid option code .
-    - Iteratively expanded the  and  lists based on 5+ real-world invoice examples provided by the user, making the parser smarter.
-    - Corrected product data in the master database (e.g., fixed  to be a ProMaster instead of Ram 1500).
-- **Consolidated Product Database:**
-    - Processed a user-provided zip file with 36 PDFs to extract and merge all 2025 product codes into the master .
-    - Fixed the  endpoint in  to correctly load data from the JSON file instead of a non-existent database collection.
-    - Expanded the  file to ensure all known product codes have associated financing programs.
+- **Implemented Share via SMS & Print:** Added Partager par Texto and Imprimer features with a preview modal for the SMS.
+- **Implemented Initial Excel Export Feature:** Created the  backend endpoint and added Exporter Excel buttons to the frontend in both  and the review modal in .
+- **Fixed  Calculation:** Corrected logic in  to set , as the holdback is already factored into the E.P. value on FCA invoices.
+- **Solved Parser Duplication Issue:** Implemented a  function in  using  to remove logically equivalent options and added corresponding ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0
+rootdir: /app/frontend
+plugins: anyio-4.12.1
+collected 0 items
+
+============================ no tests ran in 0.01s ============================= tests.
+- **Refined Parser Data & Logic:** Continuously updated parser data files and  based on user feedback on multiple real-world invoices. Removed a faulty generic mapping from  that was causing incorrect option detection.
+- **Fixed Trim Detection:** Added vehicle codes (, ) to  to ensure the correct Limited and Big Horn trims are identified.
 
 **Earlier issues found/mentioned but not fixed**
-*   **Issue 1: Large Monolithic Files (, )**
+*   **Issue 1: Large Monolithic Files (, , )**
     *   **Debug checklist**: Follow the plan in  for the frontend. For the backend, plan a split of  into a  directory.
     *   **Why to solve this issue and what will be achieved with this?**: Improve code maintainability, readability, and scalability.
     *   **Should Test frontend/backend/both after fix?**: both
     *   **Is recurring issue?**: Y
 
 **Known issue recurrence from previous fork**
-- **Issue recurrence in previous fork**: OCR/Parser Accuracy
-- **Recurrence count**: High
-- **Status**: IN PROGRESS. While massively improved with the new fallback logic, the parser is not yet perfect, as shown by the duplicate option issue on the Gladiator invoice. The core challenge of imperfect OCR remains the primary driver of work.
+*   **Issue recurrence in previous fork**: OCR/Parser Accuracy, specifically option ordering and duplicates.
+*   **Recurrence count**: High
+*   **Status**: IN PROGRESS. The core issue of option ordering remains unsolved and is the top priority.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **OCR Fallback Mechanism:** Using a  dictionary to reconstruct data when OCR is unreliable. This is the session's key innovation.
-- **Iterative Debugging with Real Data:** Using user-provided invoice images as test cases to incrementally find and fix parsing errors.
-- **Regex Specificity:** Fine-tuning regular expressions to be specific enough to find data (like prices) but not so broad that they filter valid codes (the  postal code issue).
-- **Data-Driven Parsing:** The accuracy of the parser is now heavily dependent on the completeness of the  and  files.
+*   **Hybrid OCR/Excel Workflow:** A new strategy to combine the speed of OCR with the reliability of manual Excel validation. Export is partially built; import is next.
+*   **Parser Logic Flaw:** The current implementation of the description-to-code fallback logic is the root cause of the option reordering bug. It needs to be refactored to append, not prepend, found items.
+*   **Monolithic File Management:** The agent is struggling with large, complex files (, , ), which is slowing down development and introducing bugs.
 
 **key DB schema**
-- No changes to the database schema.
-
-**changes in tech stack**
 - No changes.
 
+**changes in tech stack**
+-  is used on the backend for Excel file generation.
+
 **All files of reference**
-- : The heart of the application logic. Contains the new fallback and deduplication logic.
-- : A new, critical data file for the OCR fallback.
-- : The master list of all vehicles.
-- : Contains the API endpoints.
-- : Contains the UI logic for scanning and the review modal.
+*   : The most critical file. The option ordering bug is here.
+*   : Contains all API endpoints, including the new Excel endpoints.
+*   : Main frontend file.
+*   : Contains the Vérifier et corriger review modal where the Excel button is supposed to appear.
+*   : The master database for all vehicle models and trims.
+*   : The dictionary for the description-to-code fallback logic.
 
 **Areas that need refactoring**:
-- : Remains a large monolithic file.
-- : Remains a large monolithic component.
+*   : The  function needs to be refactored to correctly sequence OCR and fallback results to fix the ordering bug.
+*   , , : These monolithic files should be broken down into smaller components/routes for maintainability.
 
 **key api endpoints**
-- ****: The main endpoint for invoice parsing. Its behavior and response structure were central to the work done.
-- ****: This endpoint was fixed to read from the correct JSON data source.
+*   : The main endpoint for invoice parsing.
+*   : **NEW** endpoint to generate an Excel file from scan data.
+*   : **NEW** endpoint (stubbed) to import data from an Excel file.
 
 **Critical Info for New Agent**
 1.  **Parlez Français:** All communication with the user MUST be in French.
-2.  **Await User Confirmation for SMS Feature:** Your first action should be to wait for the user to respond to the proposal for the SMS feature. Do not start other work until the user replies.
-3.  **Parser Perfection is the Main Goal:** The user's primary expectation is a flawless invoice parser. After the SMS task, your priority is to fix the option deduplication bug in  ().
-4.  **Embrace the Iterative Cycle:** The established workflow is: user provides a failing invoice -> you analyze the OCR output and parser logic -> you update  and/or the data files (, ) -> you test against all known invoices to prevent regressions.
-5.  **The Fallback is Key:** The most important logic for parser accuracy is the description-to-code fallback in  within . Most new parsing fixes will likely involve improving this function or the data in .
+2.  **Fix Option Order FIRST (P0):** Your absolute top priority is to fix the incorrect ordering of vehicle options. This is the user's biggest complaint. The root cause is in the fallback logic in . Refactor it to process direct OCR results first, then append fallback results at the end.
+3.  **Complete the Excel Workflow:** The user is invested in the hybrid OCR/Excel strategy. After fixing the parser, the next priority is implementing the Excel import functionality and fixing the visibility of the Export Excel button on the frontend.
+4.  **Test Against All Invoices:** Any change to  must be tested against the ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0
+rootdir: /app/frontend
+plugins: anyio-4.12.1
+collected 0 items
+
+============================ no tests ran in 0.01s ============================= suite and also validated against the different invoice examples the user has provided (Gladiator, Grand Cherokee, Ram 2500) to prevent regressions.
 
 **documents and test reports created in this job**
-- 
-- 
-- Numerous temporary files in  from invoice and PDF analysis.
+*   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Provides Gladiator invoice, points out options are still wrong/out of order. (PENDING FIX)
-2.  **Agent:** Adds Gladiator codes, identifies a duplicate option issue (/).
-3.  **User:** Asks how to send submissions via SMS, for free. (NEW REQUEST)
-4.  **Agent:** Proposes using the phone's native Share API.
-5.  **Agent:** Asks user for confirmation to add a Share via SMS button. (AWAITING RESPONSE)
-6.  **User:** Uploads  with all product codes for that year.
-7.  **Agent:** Extracts and integrates the 2025 codes into the master database.
-8.  **User:** Provides another invoice image and states the option order is wrong.
-9.  **Agent:** Acknowledges the issue and improves the  fallback logic.
-10. **User:** Provides a detailed explanation of the expected logical flow of accessories under the model code.
+The user's recent messages focus entirely on the parser's failures on a Ram 2500 invoice: incorrect option order, detection of wrong options (, ), and the absence of the Excel button. The final messages are a direct request to permanently remove specific unwanted codes (, , ) and another complaint that options from the end of the invoice are appearing at the start of the list.
 
 **Project Health Check:**
-*   **Broken:** The invoice parser still produces imperfect results on certain invoices (e.g., duplicate options on the Gladiator invoice), failing to meet the user's primary requirement.
+*   **Broken:** The core invoice parser is functionally broken regarding option ordering, failing to meet the user's primary requirement. The new Excel feature is also not working correctly from the user's perspective.
 
 **3rd Party Integrations**
-*   **Google Cloud Vision**: Primary OCR engine.
-*   **OpenAI GPT-4o**: Fallback OCR engine.
-*   : Used for parsing PDF files.
+*   Google Cloud Vision (OCR)
+*   OpenAI GPT-4o (Fallback OCR)
+*    (Excel generation)
+*    (PDF parsing)
 
 **Testing status**
-- **Testing agent used after significant changes:** YES, successfully validated the initial bug fix for the review modal.
-- **Troubleshoot agent used after agent stuck in loop:** NO
-- **Test files created:**
-    -  (now contains 145 tests)
-- **Known regressions:** None.
+*   **Testing agent used after significant changes:** No
+*   **Troubleshoot agent used after agent stuck in loop:** No
+*   **Test files created:**
+    *    was expanded with deduplication tests.
+*   **Known regressions:** The option ordering seems to have gotten worse, or at least has not been fixed, despite several attempts.
 
 **Credentials to test flow:**
-- **User:** 
-- **Password:** 
+*   **User:** 
+*   **Password:** 
 
 **What agent forgot to execute**
-- The agent identified but did not fix the issue of the parser creating duplicate but similar options (e.g.,  and ). This was superseded by the user's request for the SMS feature.
-- The long-standing refactoring tasks for  and  remain pending.
-- The request to restrict invoice header parsing to only the VIN is also still pending.</analysis>
+*   The agent has consistently failed to fix the root cause of the option ordering issue, instead applying temporary patches like modifying .
+*   The full Excel import/export feature loop was not completed.
+*   The long-standing refactoring tasks for monolithic files have not been started.</analysis>
