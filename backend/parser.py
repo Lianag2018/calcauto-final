@@ -318,11 +318,14 @@ def parse_financial_data(text: str) -> Dict[str, Optional[int]]:
             break
     
     # PDCO (Prix Dealer) - Patterns améliorés
+    # Note: Certaines factures utilisent "GKRP" au lieu de "PDCO"
     pdco_patterns = [
         r"PDCO\s*(\d{7,10})",         # PDCO standard
         r"PDC0\s*(\d{7,10})",         # PDC0 (OCR confusion O/0)
         r"P\.?D\.?C\.?O\.?\s*(\d{7,10})",  # Avec points
         r"\bPDCO?(\d{7,10})",         # PDCO collé aux chiffres
+        r"GKRP\s*(\d{7,10})",         # GKRP (alias utilisé sur certaines factures FCA)
+        r"G\.?K\.?R\.?P\.?\s*(\d{7,10})",  # GKRP avec points
     ]
     for pattern in pdco_patterns:
         match = re.search(pattern, normalized, re.IGNORECASE)
