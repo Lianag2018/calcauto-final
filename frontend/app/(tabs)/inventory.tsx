@@ -1248,6 +1248,9 @@ const styles = StyleSheet.create({
   // Review modal styles
   reviewBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 179, 71, 0.1)', padding: 12, borderRadius: 10, marginBottom: 16 },
   reviewBannerText: { color: '#FFB347', fontSize: 13, marginLeft: 8, flex: 1 },
+  errorBanner: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: 'rgba(255, 107, 107, 0.15)', padding: 12, borderRadius: 10, marginBottom: 16, borderWidth: 1, borderColor: '#FF6B6B' },
+  errorBannerTitle: { color: '#FF6B6B', fontSize: 13, fontWeight: 'bold', marginBottom: 4 },
+  errorBannerItem: { color: '#FF9999', fontSize: 12, marginLeft: 4 },
   costInput: { borderWidth: 1, borderColor: '#4ECDC4' },
   calculatedField: { backgroundColor: '#1a1a2e', borderRadius: 8, padding: 12, borderWidth: 1, borderColor: '#4ECDC4' },
   calculatedValue: { color: '#4ECDC4', fontSize: 16, fontWeight: 'bold' },
