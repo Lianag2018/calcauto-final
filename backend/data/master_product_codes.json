@@ -1503,5 +1503,16 @@
     "model": "1500",
     "trim": "",
     "raw": "5INWB6FT4INBOX)"
+  },
+  "WLJP75": {
+    "brand": "Jeep",
+    "cab": "",
+    "code": "WLJP75",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Cherokee L Limited 4x4",
+    "model": "Grand Cherokee L",
+    "raw": "GRANDCHEROKEELLIMITED4X4",
+    "trim": "Limited",
+    "year": "2025"
   }
 }
