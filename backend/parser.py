@@ -530,7 +530,7 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
     found_options = []
     seen_codes = set()
     
-    # Codes qui ne sont PAS des options (à ignorer)
+    # Codes à ignorer (pas des options, mais des données financières/système)
     skip_codes = {
         'VIN', 'GST', 'TPS', 'QUE', 'INC', 'PDCO', 'PREF', 'MODEL', 'MODELE',
         'TOTAL', 'MSRP', 'SUB', 'EP', 'HST', 'TVQ', 'GVW', 'KG', 'FCA', 'RAM',
@@ -540,13 +540,17 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'SEE', 'PAGE', 'VOIR', 'PAS', 'SHOWN', 'CANADA', 'FOR', 'ORIGINAL', 'NI',
         'WINDSOR', 'ONTARIO', 'BOULEVARD', 'STREET', 'SOMME', 'TAXES', 'TPS',
         'TVH', 'PROV', 'NET', 'PRIX', 'SANS', 'CHRYSLER', 'GFBR', 'KENNEBEC',
+        # GKRP est un prix (PDCO/MSRP), pas une option!
+        'GKRP',
         # Villes québécoises et canadiennes courantes
         'LAVAL', 'QUEBEC', 'MONTREAL', 'TORONTO', 'OTTAWA', 'CALGARY', 'VANCOUVER',
         'LONGUEUIL', 'GATINEAU', 'SHERBROOKE', 'LEVIS', 'TROIS', 'SAGUENAY',
         'DRUMMONDVILLE', 'RIMOUSKI', 'CHICOUTIMI', 'GRANBY', 'SAINT', 'SAINTE',
         # Autres mots à ignorer
         'SOLD', 'SHIP', 'BILL', 'ATTN', 'PHONE', 'FAX', 'EMAIL', 'WWW', 'HTTP',
-        'LTEE', 'LTD', 'ENRG', 'INC', 'CORP', 'AUTO', 'AUTOS'
+        'LTEE', 'LTD', 'ENRG', 'INC', 'CORP', 'AUTO', 'AUTOS',
+        # Codes modèles (pas des options)
+        'DT6S98', 'DJ7L92', 'WLJP74', 'WLJH75', 'VF1L13'
     }
     
     # Mots-clés d'adresse à ignorer dans la description
