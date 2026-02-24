@@ -674,6 +674,318 @@ export default function HomeScreen() {
     }).format(value);
   };
 
+  // Generate submission text for sharing
+  const generateSubmissionText = () => {
+    if (!selectedProgram || !localResult || !vehiclePrice) return '';
+    
+    const vehicle = `${selectedProgram.brand} ${selectedProgram.model} ${selectedProgram.trim || ''} ${selectedProgram.year}`.trim();
+    const option = selectedOption === '2' ? '2' : '1';
+    const rate = option === '1' ? localResult.option1Rate : localResult.option2Rate;
+    
+    let payment: number;
+    if (paymentFrequency === 'biweekly') {
+      payment = option === '1' ? localResult.option1Biweekly : (localResult.option2Biweekly || 0);
+    } else if (paymentFrequency === 'weekly') {
+      payment = option === '1' ? localResult.option1Weekly : (localResult.option2Weekly || 0);
+    } else {
+      payment = option === '1' ? localResult.option1Monthly : (localResult.option2Monthly || 0);
+    }
+    
+    const frequencyText = paymentFrequency === 'biweekly' 
+      ? (lang === 'fr' ? 'aux 2 sem.' : 'bi-weekly')
+      : paymentFrequency === 'weekly'
+        ? (lang === 'fr' ? 'hebdo' : 'weekly')
+        : (lang === 'fr' ? 'mensuel' : 'monthly');
+    
+    const vin = selectedInventory?.vin || (manualVin && manualVin.length === 17 ? manualVin : '');
+    
+    const text = lang === 'fr' 
+      ? `🚗 SOUMISSION CalcAuto AiPro\n\n` +
+        `Véhicule: ${vehicle}\n` +
+        `Prix: ${formatCurrency(parseFloat(vehiclePrice))}\n` +
+        (vin ? `VIN: ${vin}\n` : '') +
+        `\n📊 FINANCEMENT Option ${option}\n` +
+        `Terme: ${selectedTerm} mois\n` +
+        `Taux: ${rate}%\n` +
+        `Paiement ${frequencyText}: ${formatCurrencyDecimal(payment)}\n` +
+        (selectedProgram.consumer_cash > 0 ? `Rabais: ${formatCurrency(selectedProgram.consumer_cash)}\n` : '') +
+        `\n✉️ Envoyé via CalcAuto AiPro`
+      : `🚗 CalcAuto AiPro SUBMISSION\n\n` +
+        `Vehicle: ${vehicle}\n` +
+        `Price: ${formatCurrency(parseFloat(vehiclePrice))}\n` +
+        (vin ? `VIN: ${vin}\n` : '') +
+        `\n📊 FINANCING Option ${option}\n` +
+        `Term: ${selectedTerm} months\n` +
+        `Rate: ${rate}%\n` +
+        `${frequencyText} payment: ${formatCurrencyDecimal(payment)}\n` +
+        (selectedProgram.consumer_cash > 0 ? `Rebate: ${formatCurrency(selectedProgram.consumer_cash)}\n` : '') +
+        `\n✉️ Sent via CalcAuto AiPro`;
+    
+    return text;
+  };
+
+  // Handle Share via SMS (native share)
+  const handleShareSMS = async () => {
+    if (!selectedProgram || !localResult || !vehiclePrice) {
+      if (Platform.OS === 'web') {
+        alert(lang === 'fr' ? 'Aucune soumission à partager' : 'No submission to share');
+      } else {
+        Alert.alert('Erreur', lang === 'fr' ? 'Aucune soumission à partager' : 'No submission to share');
+      }
+      return;
+    }
+
+    const message = generateSubmissionText();
+    
+    try {
+      if (Platform.OS === 'web') {
+        // On web, use the Web Share API if available, otherwise copy to clipboard
+        if (navigator.share) {
+          await navigator.share({
+            title: 'CalcAuto AiPro - Soumission',
+            text: message,
+          });
+        } else {
+          // Fallback: open SMS link (won't work well on desktop but okay for mobile web)
+          const smsBody = encodeURIComponent(message);
+          window.open(`sms:?body=${smsBody}`, '_blank');
+        }
+      } else {
+        // On mobile, use React Native's Share API
+        const result = await Share.share({
+          message: message,
+        });
+        
+        if (result.action === Share.sharedAction) {
+          if (result.activityType) {
+            console.log('Shared with activity type:', result.activityType);
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error('Share error:', error);
+      if (error.message !== 'User did not share') {
+        if (Platform.OS === 'web') {
+          alert(lang === 'fr' ? 'Erreur lors du partage' : 'Error sharing');
+        } else {
+          Alert.alert('Erreur', lang === 'fr' ? 'Erreur lors du partage' : 'Error sharing');
+        }
+      }
+    }
+  };
+
+  // Handle Print
+  const handlePrint = async () => {
+    if (!selectedProgram || !localResult || !vehiclePrice) {
+      if (Platform.OS === 'web') {
+        alert(lang === 'fr' ? 'Aucune soumission à imprimer' : 'No submission to print');
+      } else {
+        Alert.alert('Erreur', lang === 'fr' ? 'Aucune soumission à imprimer' : 'No submission to print');
+      }
+      return;
+    }
+
+    const vehicle = `${selectedProgram.brand} ${selectedProgram.model} ${selectedProgram.trim || ''} ${selectedProgram.year}`.trim();
+    const option = selectedOption === '2' ? '2' : '1';
+    const rate = option === '1' ? localResult.option1Rate : localResult.option2Rate;
+    
+    let payment: number;
+    let paymentLabel: string;
+    if (paymentFrequency === 'biweekly') {
+      payment = option === '1' ? localResult.option1Biweekly : (localResult.option2Biweekly || 0);
+      paymentLabel = lang === 'fr' ? 'Aux 2 semaines' : 'Bi-weekly';
+    } else if (paymentFrequency === 'weekly') {
+      payment = option === '1' ? localResult.option1Weekly : (localResult.option2Weekly || 0);
+      paymentLabel = lang === 'fr' ? 'Hebdomadaire' : 'Weekly';
+    } else {
+      payment = option === '1' ? localResult.option1Monthly : (localResult.option2Monthly || 0);
+      paymentLabel = lang === 'fr' ? 'Mensuel' : 'Monthly';
+    }
+    
+    const vin = selectedInventory?.vin || (manualVin && manualVin.length === 17 ? manualVin : '');
+    const consumerCash = selectedProgram.consumer_cash;
+    const bonusCash = parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0;
+
+    // Create printable HTML
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>CalcAuto AiPro - Soumission</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            color: #333;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #4ECDC4;
+          }
+          .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1a1a2e;
+          }
+          .logo span {
+            color: #4ECDC4;
+          }
+          .section {
+            margin-bottom: 25px;
+          }
+          .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+          }
+          .vehicle-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1a1a2e;
+          }
+          .price {
+            font-size: 20px;
+            color: #4ECDC4;
+            font-weight: 600;
+          }
+          .vin {
+            font-size: 12px;
+            color: #888;
+            font-family: monospace;
+          }
+          .financing-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
+          }
+          .financing-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+          }
+          .financing-label {
+            color: #666;
+          }
+          .financing-value {
+            font-weight: 600;
+          }
+          .payment-highlight {
+            background: #4ECDC4;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 15px;
+          }
+          .payment-amount {
+            font-size: 32px;
+            font-weight: bold;
+          }
+          .payment-frequency {
+            font-size: 14px;
+            opacity: 0.9;
+          }
+          .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+          }
+          @media print {
+            body { padding: 20px; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="logo">CalcAuto <span>AiPro</span></div>
+          <p style="margin: 5px 0; color: #666;">${lang === 'fr' ? 'Soumission de financement' : 'Financing Submission'}</p>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">${lang === 'fr' ? 'Véhicule' : 'Vehicle'}</div>
+          <div class="vehicle-name">${vehicle}</div>
+          <div class="price">${formatCurrency(parseFloat(vehiclePrice))}</div>
+          ${vin ? `<div class="vin">VIN: ${vin}</div>` : ''}
+        </div>
+        
+        <div class="section">
+          <div class="section-title">${lang === 'fr' ? 'Financement - Option' : 'Financing - Option'} ${option}</div>
+          <div class="financing-box">
+            <div class="financing-row">
+              <span class="financing-label">${lang === 'fr' ? 'Terme' : 'Term'}</span>
+              <span class="financing-value">${selectedTerm} ${lang === 'fr' ? 'mois' : 'months'}</span>
+            </div>
+            <div class="financing-row">
+              <span class="financing-label">${lang === 'fr' ? 'Taux' : 'Rate'}</span>
+              <span class="financing-value">${rate}%</span>
+            </div>
+            ${consumerCash > 0 ? `
+            <div class="financing-row">
+              <span class="financing-label">${lang === 'fr' ? 'Rabais consommateur' : 'Consumer rebate'}</span>
+              <span class="financing-value">${formatCurrency(consumerCash)}</span>
+            </div>
+            ` : ''}
+            ${bonusCash > 0 ? `
+            <div class="financing-row">
+              <span class="financing-label">Bonus Cash</span>
+              <span class="financing-value">${formatCurrency(bonusCash)}</span>
+            </div>
+            ` : ''}
+            <div class="payment-highlight">
+              <div class="payment-amount">${formatCurrencyDecimal(payment)}</div>
+              <div class="payment-frequency">${paymentLabel}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="footer">
+          <p>${lang === 'fr' ? 'Généré le' : 'Generated on'} ${new Date().toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA')}</p>
+          <p>CalcAuto AiPro - ${lang === 'fr' ? 'Calculateur de financement automobile' : 'Auto financing calculator'}</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    if (Platform.OS === 'web') {
+      // On web, open print dialog
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+          printWindow.print();
+        }, 250);
+      }
+    } else {
+      // On mobile, share the text as there's no direct print API
+      // The user can then use their device's print functionality
+      Alert.alert(
+        lang === 'fr' ? 'Imprimer' : 'Print',
+        lang === 'fr' 
+          ? 'Sur mobile, utilisez le bouton "Partager" puis sélectionnez "Imprimer" dans les options.'
+          : 'On mobile, use the "Share" button then select "Print" from the options.',
+        [
+          { text: 'OK', style: 'default' },
+          { 
+            text: lang === 'fr' ? 'Partager' : 'Share', 
+            onPress: handleShareSMS 
+          }
+        ]
+      );
+    }
+  };
+
   // Calculate monthly payment
   const calculateMonthlyPayment = (principal: number, annualRate: number, months: number): number => {
     if (principal <= 0 || months <= 0) return 0;
