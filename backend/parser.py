@@ -509,6 +509,7 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'PFQ': 'Granite cristal',
         'PJ7': 'Canyon Lake',
         'PAS': 'Gris de mer métallisé',  # Grand Cherokee
+        'PDN': 'Gris céramique',  # Ram
         # Intérieur / Sièges
         'B6W7': 'Sièges en similicuir capri',
         'CLX9': 'Cuir Nappa ventilé',
@@ -516,6 +517,7 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'CU2': 'Red Interior Accents',
         'E7X9': 'Sièges baq dossier bas tissu',  # Gladiator
         'FLX7': 'Sièges dessus en cuir Nappa',  # Grand Cherokee
+        'MJX9': 'Baquets avant tissu catégorie sup',  # Ram
         # Équipements - RAM 1500 RHO
         'ANT': 'Bed Utility Group',
         'A6H': 'RHO Level 1 Equipment Group',
@@ -527,6 +529,20 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'MMB': 'MOPAR RHO Hood Graphics',
         'MTW': 'MOPAR Off-Road Style Running Boards',
         'YGV': '17 Additional Litres Of Gas',
+        # Équipements - RAM 2500/3500
+        'AHU': 'Prep remorq sellette/col-de-cygne',
+        'ASH': 'Édition nuit',
+        'A7H': 'Ensemble équip niveau 2 Big Horn',
+        'CLF': 'Tapis protect avant/arr Mopar',
+        'DFM': 'Transmission auto 8 vit ZF Powerline',
+        'ETM': '6 cyl turbo diesel Cummins 6.7L',
+        'LHL': 'Commandes auxiliaires tableau bord',
+        'LNC': 'Feux de gabarit',
+        'MWH': 'Doublures passage roue arrière',
+        'YG4': '20L supplémentaires diesel',
+        'Z7H': 'PNBV 4490 kg (9900 lb)',
+        '2TZ': 'Ensemble Éclair 2TZ',
+        '24Z': 'Ensemble Éclair 24Z',
         # Équipements - Gladiator/Wrangler
         'AJK': 'Ensemble Commodités',
         'DFT': 'Transmission Automatique 8 Vitesses',
