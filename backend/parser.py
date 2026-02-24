@@ -840,9 +840,24 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
     
     # ====== FALLBACK: Rechercher les descriptions connues dans le texte ======
     # Quand l'OCR ne capture pas le code mais capture la description
+    
+    # Groupes de codes équivalents (ne pas ajouter si un code similaire existe déjà)
+    equivalent_codes = {
+        'DFT': {'DFR', 'DFW'},  # Transmissions automatiques
+        'DFR': {'DFT', 'DFW'},
+        'DFW': {'DFT', 'DFR'},
+        'YGN': {'YGV', 'YGW'},  # Essence supplémentaire
+        'YGV': {'YGN', 'YGW'},
+        'YGW': {'YGN', 'YGV'},
+    }
+    
     for desc_key, code in description_to_code.items():
         if code in seen_codes:
             continue
+        # Vérifier si un code équivalent existe déjà
+        if code in equivalent_codes:
+            if any(eq in seen_codes for eq in equivalent_codes[code]):
+                continue
         if desc_key in text_upper:
             seen_codes.add(code)
             desc = fca_descriptions.get(code, desc_key.title())
@@ -858,6 +873,10 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
             continue
         if code in invalid_codes:
             continue
+        # Vérifier si un code équivalent existe déjà
+        if code in equivalent_codes:
+            if any(eq in seen_codes for eq in equivalent_codes[code]):
+                continue
         if re.search(rf'\b{re.escape(code)}\b', text_upper):
             seen_codes.add(code)
             found_options.append({
