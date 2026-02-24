@@ -3711,11 +3711,38 @@ async def get_inventory_stats(authorization: Optional[str] = Header(None)):
 # Product codes reference
 @api_router.get("/product-codes")
 async def get_product_codes():
-    """Récupère le référentiel des codes produits"""
-    codes = []
-    async for code in db.product_codes.find({}, {"_id": 0}):
-        codes.append(code)
-    return codes
+    """Récupère le référentiel des codes produits (depuis fichier JSON + DB)"""
+    # D'abord, charger depuis le fichier JSON master
+    all_codes = {}
+    
+    try:
+        import json
+        with open('data/master_product_codes.json', 'r') as f:
+            master_codes = json.load(f)
+            for code, info in master_codes.items():
+                all_codes[code] = {
+                    "code": code,
+                    "brand": info.get("brand", ""),
+                    "model": info.get("model", ""),
+                    "trim": info.get("trim", ""),
+                    "year": info.get("year", ""),
+                    "cab": info.get("cab", ""),
+                    "drive": info.get("drive", ""),
+                    "full_description": info.get("full_description", "")
+                }
+    except Exception as e:
+        print(f"Erreur chargement master_product_codes.json: {e}")
+    
+    # Ensuite, charger depuis MongoDB (priorité aux données DB)
+    try:
+        async for code_doc in db.product_codes.find({}, {"_id": 0}):
+            code = code_doc.get("code")
+            if code:
+                all_codes[code] = code_doc
+    except Exception as e:
+        print(f"Erreur chargement DB: {e}")
+    
+    return list(all_codes.values())
 
 @api_router.post("/product-codes")
 async def add_product_code(code: ProductCode, authorization: Optional[str] = Header(None)):
