@@ -409,6 +409,10 @@ export default function HomeScreen() {
   const [clientPhone, setClientPhone] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
   
+  // SMS Preview modal
+  const [showSmsPreview, setShowSmsPreview] = useState(false);
+  const [smsPreviewText, setSmsPreviewText] = useState('');
+  
   // Current program period
   const [currentPeriod, setCurrentPeriod] = useState<{month: number, year: number} | null>(null);
   
