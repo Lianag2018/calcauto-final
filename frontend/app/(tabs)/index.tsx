@@ -23,6 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Print from 'expo-print';
 
 // Import components and i18n
 import { AnimatedSplashScreen } from '../../components/AnimatedSplashScreen';
