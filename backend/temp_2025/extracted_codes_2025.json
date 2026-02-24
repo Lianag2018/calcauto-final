@@ -1,0 +1,1312 @@
+{
+  "RUCL53": {
+    "code": "RUCL53",
+    "raw_description": "CHRYSLER GRAND CARAVAN 46,579 47,700",
+    "brand": "Ram",
+    "model": "",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Ram"
+  },
+  "RUCH53": {
+    "code": "RUCH53",
+    "raw_description": "PAGES CHRYSLER GRAND CARAVAN CHRYSLER PACIFICA SELECT",
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Chrysler Pacifica"
+  },
+  "RUCT53": {
+    "code": "RUCT53",
+    "raw_description": "CHRYSLER PACIFICA SELECT CHRYSLER PACIFICA LIMITED",
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "",
+    "full_description": "Chrysler Pacifica Limited"
+  },
+  "RUFH53": {
+    "code": "RUFH53",
+    "raw_description": "CHRYSLER PACIFICA LIMITED CHRYSLER PACIFICA SELECT AWD",
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Chrysler Pacifica Limited  4x4"
+  },
+  "RUFT53": {
+    "code": "RUFT53",
+    "raw_description": "CHRYSLER PACIFICA SELECT AWD CHRYSLER PACIFICA LIMITED AWD",
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Chrysler Pacifica Limited  4x4"
+  },
+  "RUFS53": {
+    "code": "RUFS53",
+    "raw_description": "CHRYSLER PACIFICA LIMITED AWD CHRYSLER PACIFICA PINNACLE AWD",
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Chrysler Pacifica Limited  4x4"
+  },
+  "RUET53": {
+    "code": "RUET53",
+    "raw_description": "CHRYSLER PACIFICA PINNACLE AWD CHRYSLER PACIFICA SELECT PLUG-IN HYBRID",
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Pinnacle",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Chrysler Pacifica Pinnacle  4x4"
+  },
+  "RUES53": {
+    "code": "RUES53",
+    "raw_description": "CHRYSLER PACIFICA SELECT PLUG-IN HYBRID CHRYSLER PACIFICA PINNACLE PLUG-IN HYBRID",
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Pinnacle",
+    "cab": "",
+    "drive": "",
+    "full_description": "Chrysler Pacifica Pinnacle"
+  },
+  "LB7M29": {
+    "code": "LB7M29",
+    "raw_description": "CODE PAGES CHARGER DAYTONA 2-DOOR AWD",
+    "brand": "Dodge",
+    "model": "Charger",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Dodge Charger   4x4"
+  },
+  "MPJL74": {
+    "code": "MPJL74",
+    "raw_description": "CODE PAGES COMPASS SPORT 4X4",
+    "brand": "Jeep",
+    "model": "Compass",
+    "trim": "Sport",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Compass Sport  4x4"
+  },
+  "MPJM74": {
+    "code": "MPJM74",
+    "raw_description": "PAGES COMPASS SPORT 4X4 COMPASS NORTH 4X4",
+    "brand": "Jeep",
+    "model": "Compass",
+    "trim": "Sport",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Compass Sport  4x4"
+  },
+  "MPJE74": {
+    "code": "MPJE74",
+    "raw_description": "COMPASS NORTH 4X4 COMPASS ALTITUDE 4X4",
+    "brand": "Jeep",
+    "model": "Compass",
+    "trim": "Altitude",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Compass Altitude  4x4"
+  },
+  "MPJH74": {
+    "code": "MPJH74",
+    "raw_description": "COMPASS ALTITUDE 4X4 COMPASS TRAILHAWK 4X4",
+    "brand": "Jeep",
+    "model": "Compass",
+    "trim": "Altitude",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Compass Altitude  4x4"
+  },
+  "MPJP74": {
+    "code": "MPJP74",
+    "raw_description": "COMPASS TRAILHAWK 4X4 COMPASS LIMITED 4X4",
+    "brand": "Jeep",
+    "model": "Compass",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Compass Limited  4x4"
+  },
+  "WDEE75": {
+    "code": "WDEE75",
+    "raw_description": "CODE PAGES DURANGO ENFORCER AWD",
+    "brand": "Dodge",
+    "model": "Durango",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Dodge Durango   4x4"
+  },
+  "WDEH75": {
+    "code": "WDEH75",
+    "raw_description": "PAGES DURANGO ENFORCER AWD DURANGO GT AWD",
+    "brand": "Dodge",
+    "model": "Durango",
+    "trim": "Gt",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Dodge Durango Gt  4x4"
+  },
+  "WDES75": {
+    "code": "WDES75",
+    "raw_description": "DURANGO GT AWD DURANGO R/T AWD",
+    "brand": "Dodge",
+    "model": "Durango",
+    "trim": "Gt",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Dodge Durango Gt  4x4"
+  },
+  "WDEM75": {
+    "code": "WDEM75",
+    "raw_description": "DURANGO R/T AWD DURANGO SRT HELLCAT AWD",
+    "brand": "Dodge",
+    "model": "Durango",
+    "trim": "R/T",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Dodge Durango R/T  4x4"
+  },
+  "FGEP24": {
+    "code": "FGEP24",
+    "raw_description": "CODE PAGES 500e",
+    "brand": "Fiat",
+    "model": "500e",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Fiat 500e"
+  },
+  "JTJL98": {
+    "code": "JTJL98",
+    "raw_description": "CODE PAGES GLADIATOR SPORT 4X4",
+    "brand": "Jeep",
+    "model": "Gladiator",
+    "trim": "Sport",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Gladiator Sport  4x4"
+  },
+  "JTJH98": {
+    "code": "JTJH98",
+    "raw_description": "PAGES GLADIATOR SPORT 4X4 GLADIATOR MOJAVE 4X4",
+    "brand": "Jeep",
+    "model": "Gladiator",
+    "trim": "Sport",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Gladiator Sport  4x4"
+  },
+  "JTJS98": {
+    "code": "JTJS98",
+    "raw_description": "GLADIATOR MOJAVE 4X4 GLADIATOR RUBICON 4X4",
+    "brand": "Jeep",
+    "model": "Gladiator",
+    "trim": "Rubicon",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Gladiator Rubicon  4x4"
+  },
+  "WLJH74": {
+    "code": "WLJH74",
+    "raw_description": "CODE PAGES GRAND CHEROKEE LAREDO 4X4",
+    "brand": "Jeep",
+    "model": "Grand Cherokee L",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Cherokee L   4x4"
+  },
+  "WLJP74": {
+    "code": "WLJP74",
+    "raw_description": "PAGES GRAND CHEROKEE LAREDO 4X4 GRAND CHEROKEE LIMITED 4X4",
+    "brand": "Jeep",
+    "model": "Grand Cherokee L",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Cherokee L Limited  4x4"
+  },
+  "WLJS74": {
+    "code": "WLJS74",
+    "raw_description": "GRAND CHEROKEE LIMITED 4X4 GRAND CHEROKEE OVERLAND 4X4",
+    "brand": "Jeep",
+    "model": "Grand Cherokee L",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Cherokee L Limited  4x4"
+  },
+  "WLJT74": {
+    "code": "WLJT74",
+    "raw_description": "GRAND CHEROKEE OVERLAND 4X4 GRAND CHEROKEE SUMMIT 4X4",
+    "brand": "Jeep",
+    "model": "Grand Cherokee",
+    "trim": "Overland",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Cherokee Overland  4x4"
+  },
+  "WLXH74": {
+    "code": "WLXH74",
+    "raw_description": "CODE PAGES GRAND CHEROKEE 4XE",
+    "brand": "Jeep",
+    "model": "Grand Cherokee",
+    "trim": "4Xe",
+    "cab": "",
+    "drive": "",
+    "full_description": "Jeep Grand Cherokee 4Xe"
+  },
+  "WLJH75": {
+    "code": "WLJH75",
+    "raw_description": "CODE PAGES GRAND CHEROKEE L LAREDO 4X4",
+    "brand": "Jeep",
+    "model": "Grand Cherokee L",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Cherokee L   4x4"
+  },
+  "WLJP75": {
+    "code": "WLJP75",
+    "raw_description": "PAGES GRAND CHEROKEE L LAREDO 4X4 GRAND CHEROKEE L LIMITED 4X4",
+    "brand": "Jeep",
+    "model": "Grand Cherokee L",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Cherokee L Limited  4x4"
+  },
+  "WLJS75": {
+    "code": "WLJS75",
+    "raw_description": "GRAND CHEROKEE L LIMITED 4X4 GRAND CHEROKEE L OVERLAND 4X4",
+    "brand": "Jeep",
+    "model": "Grand Cherokee L",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Cherokee L Limited  4x4"
+  },
+  "WLJT75": {
+    "code": "WLJT75",
+    "raw_description": "GRAND CHEROKEE L OVERLAND 4X4 GRAND CHEROKEE L SUMMIT 4X4",
+    "brand": "Jeep",
+    "model": "Grand Cherokee L",
+    "trim": "Overland",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Cherokee L Overland  4x4"
+  },
+  "WSJR75": {
+    "code": "WSJR75",
+    "raw_description": "CODE PAGES GRAND WAGONEER 4X4",
+    "brand": "Jeep",
+    "model": "Grand Wagoneer",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Wagoneer   4x4"
+  },
+  "WSJS75": {
+    "code": "WSJS75",
+    "raw_description": "PAGES GRAND WAGONEER 4X4 GRAND WAGONEER SERIES II 4X4",
+    "brand": "Jeep",
+    "model": "Grand Wagoneer",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Wagoneer   4x4"
+  },
+  "WSJT75": {
+    "code": "WSJT75",
+    "raw_description": "GRAND WAGONEER SERIES II 4X4 GRAND WAGONEER SERIES III 4X4",
+    "brand": "Jeep",
+    "model": "Grand Wagoneer",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Wagoneer   4x4"
+  },
+  "WSJS76": {
+    "code": "WSJS76",
+    "raw_description": "CODE PAGES GRAND WAGONEER L SERIES II 4X4",
+    "brand": "Jeep",
+    "model": "Grand Wagoneer L",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Wagoneer L   4x4"
+  },
+  "WSJT76": {
+    "code": "WSJT76",
+    "raw_description": "PAGES GRAND WAGONEER L SERIES II 4X4 GRAND WAGONEER L SERIES III 4X4",
+    "brand": "Jeep",
+    "model": "Grand Wagoneer L",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Wagoneer L   4x4"
+  },
+  "GGEH49": {
+    "code": "GGEH49",
+    "raw_description": "CODE PAGES HORNET G/T",
+    "brand": "Dodge",
+    "model": "Hornet",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Dodge Hornet"
+  },
+  "GG7P49": {
+    "code": "GG7P49",
+    "raw_description": "PAGES HORNET G/T HORNET R/T",
+    "brand": "Dodge",
+    "model": "Hornet",
+    "trim": "R/T",
+    "cab": "",
+    "drive": "",
+    "full_description": "Dodge Hornet R/T"
+  },
+  "VFLL16": {
+    "code": "VFLL16",
+    "raw_description": "CODE PAGES 3500 PROMASTER EV CARGO VAN HIGH ROOF (159 WB)",
+    "brand": "Ram",
+    "model": "ProMaster Cargo Van",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Ram ProMaster Cargo Van"
+  },
+  "VFLL17": {
+    "code": "VFLL17",
+    "raw_description": "PAGES 3500 PROMASTER EV CARGO VAN HIGH ROOF (159 WB) 3500 PROMASTER EV CARGO VAN HIGH ROOF (159 WB EXT)",
+    "brand": "Ram",
+    "model": "ProMaster Cargo Van",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Ram ProMaster Cargo Van"
+  },
+  "VFLL59": {
+    "code": "VFLL59",
+    "raw_description": "3500 PROMASTER EV CARGO VAN HIGH ROOF (159 WB EXT) 3500 PROMASTER EV STEP VAN SUPER HIGH ROOF (159 WB EXT)",
+    "brand": "Ram",
+    "model": "ProMaster Cargo Van",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Ram ProMaster Cargo Van"
+  },
+  "DT6L98": {
+    "code": "DT6L98",
+    "raw_description": "PAGES 1500 TRADESMAN CREW CAB 4X4 (144.5 IN WB 5 FT 7 IN BOX)",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Tradesman",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 1500 Tradesman Crew Cab 4x4"
+  },
+  "DT6L91": {
+    "code": "DT6L91",
+    "raw_description": "(144.5 IN WB 5 FT 7 IN BOX) 1500 TRADESMAN CREW CAB 4X4 (153.5 IN WB 6 FT 4 IN BOX)",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Tradesman",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 1500 Tradesman Crew Cab 4x4"
+  },
+  "DT6H98": {
+    "code": "DT6H98",
+    "raw_description": "(153.5 IN WB 6 FT 4 IN BOX) 1500 BIG HORN CREW CAB 4X4 (144.5 IN WB 5 FT 7 IN BOX)",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Big Horn",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 1500 Big Horn Crew Cab 4x4"
+  },
+  "DT6H91": {
+    "code": "DT6H91",
+    "raw_description": "(144.5 IN WB 5 FT 7 IN BOX) 1500 BIG HORN CREW CAB 4X4 (153.5 IN WB 6 FT 4 IN BOX)",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Big Horn",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 1500 Big Horn Crew Cab 4x4"
+  },
+  "DT6T98": {
+    "code": "DT6T98",
+    "raw_description": "1500 BIG HORN CREW CAB 4X4 (153.5 IN WB 6 FT 4 IN BOX) 1500 SPORT CREW CAB 4X4 (144.5 IN WB 5 FT 7 IN BOX)",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Big Horn",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 1500 Big Horn Crew Cab 4x4"
+  },
+  "DT6T91": {
+    "code": "DT6T91",
+    "raw_description": "1500 SPORT CREW CAB 4X4 (144.5 IN WB 5 FT 7 IN BOX) 1500 SPORT CREW CAB 4X4 1500 (153.5 IN WB 6 FT 4 IN BOX)",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Sport",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 1500 Sport Crew Cab 4x4"
+  },
+  "DT6X98": {
+    "code": "DT6X98",
+    "raw_description": "1500 SPORT CREW CAB 4X4 1500 (153.5 IN WB 6 FT 4 IN BOX) 1500 REBEL CREW CAB 4X4 (144.5 IN WB 5 FT 7 IN BOX)",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Sport",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 1500 Sport Crew Cab 4x4"
+  },
+  "DT6P98": {
+    "code": "DT6P98",
+    "raw_description": "1500 REBEL CREW CAB 4X4 (144.5 IN WB 5 FT 7 IN BOX) 1500 LARAMIE CREW CAB 4X4 (144.5 IN WB 5 FT 7 IN BOX)",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Rebel",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 1500 Rebel Crew Cab 4x4"
+  },
+  "DT6P91": {
+    "code": "DT6P91",
+    "raw_description": "1500 LARAMIE CREW CAB 4X4 (144.5 IN WB 5 FT 7 IN BOX) 1500 LARAMIE CREW CAB 4X4 (153.5 IN WB 6 FT 4 IN BOX))",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Laramie",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 1500 Laramie Crew Cab 4x4"
+  },
+  "DT6M98": {
+    "code": "DT6M98",
+    "raw_description": "(153.5 IN WB 6 FT 4 IN BOX)) 1500 LONGHORN/LIMITED CREW CAB 4X4 (144.5 IN WB 5 FT 7 IN BOX)",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Longhorn",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 1500 Longhorn Crew Cab 4x4"
+  },
+  "DT6M91": {
+    "code": "DT6M91",
+    "raw_description": "(144.5 IN WB 5 FT 7 IN BOX) 1500 LONGHORN/LIMITED CREW CAB 4X4 (153.5 IN WB 6 FT 4 IN BOX)",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Longhorn",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 1500 Longhorn Crew Cab 4x4"
+  },
+  "DT6R98": {
+    "code": "DT6R98",
+    "raw_description": "PAGES 1500 TUNGSTEN CREW CAB 4X4 (144.5 IN WB 5 FT 7 IN BOX)",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Tungsten",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 1500 Tungsten Crew Cab 4x4"
+  },
+  "DT6L41": {
+    "code": "DT6L41",
+    "raw_description": "CODE PAGES 1500 TRADESMAN QUAD CAB 4X4 (140 IN WB 6 FT 4 IN BOX)",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Tradesman",
+    "cab": "Quad Cab",
+    "drive": "4x4",
+    "full_description": "Ram 1500 Tradesman Quad Cab 4x4"
+  },
+  "DT6H41": {
+    "code": "DT6H41",
+    "raw_description": "PAGES 1500 TRADESMAN QUAD CAB 4X4 (140 IN WB 6 FT 4 IN BOX) 1500 BIG HORN QUAD CAB 4X4 (140 IN WB 6 FT 4 IN BOX)",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Tradesman",
+    "cab": "Quad Cab",
+    "drive": "4x4",
+    "full_description": "Ram 1500 Tradesman Quad Cab 4x4"
+  },
+  "DT6S98": {
+    "code": "DT6S98",
+    "raw_description": "CODE PAGES 1500 TRX CREW CAB 4X4 (144.5 IN WB 5 FT 7 IN BOX)",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Trx",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 1500 Trx Crew Cab 4x4"
+  },
+  "DJ2L91": {
+    "code": "DJ2L91",
+    "raw_description": "CODE PAGES 2500 TRADESMAN CREW CAB 4X2 (149 in WB 6FT 4 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Tradesman",
+    "cab": "Crew Cab",
+    "drive": "4x2",
+    "full_description": "Ram 2500 Tradesman Crew Cab 4x2"
+  },
+  "DJ2L92": {
+    "code": "DJ2L92",
+    "raw_description": "PAGES 2500 TRADESMAN CREW CAB 4X2 (149 in WB 6FT 4 IN box) 2500 TRADESMAN CREW CAB 4X2 (169 in WB 8FT 0 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Tradesman",
+    "cab": "Crew Cab",
+    "drive": "4x2",
+    "full_description": "Ram 2500 Tradesman Crew Cab 4x2"
+  },
+  "DJ2H91": {
+    "code": "DJ2H91",
+    "raw_description": "2500 TRADESMAN CREW CAB 4X2 (169 in WB 8FT 0 IN box) 2500 BIG HORN CREW CAB 4X2 (149 in WB 6FT 4 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Tradesman",
+    "cab": "Crew Cab",
+    "drive": "4x2",
+    "full_description": "Ram 2500 Tradesman Crew Cab 4x2"
+  },
+  "DJ2H92": {
+    "code": "DJ2H92",
+    "raw_description": "2500 BIG HORN CREW CAB 4X2 (149 in WB 6FT 4 IN box) 2500 BIG HORN CREW CAB 4X2 (169 in WB 8FT 0 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Big Horn",
+    "cab": "Crew Cab",
+    "drive": "4x2",
+    "full_description": "Ram 2500 Big Horn Crew Cab 4x2"
+  },
+  "DJ7L91": {
+    "code": "DJ7L91",
+    "raw_description": "2500 BIG HORN CREW CAB 4X2 (169 in WB 8FT 0 IN box) 2500 TRADESMAN CREW CAB 4X4 (149 in WB 6FT 4 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Tradesman",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Tradesman Crew Cab 4x4"
+  },
+  "DJ7L92": {
+    "code": "DJ7L92",
+    "raw_description": "2500 TRADESMAN CREW CAB 4X4 (149 in WB 6FT 4 IN box) 2500 TRADESMAN CREW CAB 4X4 (169 in WB 8FT 0 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Tradesman",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Tradesman Crew Cab 4x4"
+  },
+  "DJ7H91": {
+    "code": "DJ7H91",
+    "raw_description": "2500 TRADESMAN CREW CAB 4X4 (169 in WB 8FT 0 IN box) 2500 BIG HORN CREW CAB 4X4 (149 in WB 6FT 4 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Tradesman",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Tradesman Crew Cab 4x4"
+  },
+  "DJ7H92": {
+    "code": "DJ7H92",
+    "raw_description": "2500 BIG HORN CREW CAB 4X4 (149 in WB 6FT 4 IN box) 2500 BIG HORN CREW CAB 4X4 (169 in WB 8FT 0 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Big Horn",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Big Horn Crew Cab 4x4"
+  },
+  "DJ7X91": {
+    "code": "DJ7X91",
+    "raw_description": "2500 BIG HORN CREW CAB 4X4 (169 in WB 8FT 0 IN box) 2500 REBEL / POWER WAGON CREW CAB (149 in WB 6FT 4 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Big Horn",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Big Horn Crew Cab 4x4"
+  },
+  "DJ7P91": {
+    "code": "DJ7P91",
+    "raw_description": "2500 REBEL / POWER WAGON CREW CAB (149 in WB 6FT 4 IN box) 2500 LARAMIE CREW CAB 4X4 (149 in WB 6FT 4 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Rebel",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Rebel Crew Cab 4x4"
+  },
+  "DJ7P92": {
+    "code": "DJ7P92",
+    "raw_description": "2500 LARAMIE CREW CAB 4X4 (149 in WB 6FT 4 IN box) 2500 LARAMIE CREW CAB 4X4 (169 in WB 8FT 0 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Laramie",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Laramie Crew Cab 4x4"
+  },
+  "DJ7M91": {
+    "code": "DJ7M91",
+    "raw_description": "2500 LARAMIE CREW CAB 4X4 (169 in WB 8FT 0 IN box) 2500 LIMITED CREW CAB 4X4 (149 in WB 6FT 4 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Laramie",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Laramie Crew Cab 4x4"
+  },
+  "DJ7M92": {
+    "code": "DJ7M92",
+    "raw_description": "2500 LIMITED CREW CAB 4X4 (149 in WB 6FT 4 IN box) 2500 LIMITED CREW CAB 4X4 (169 in WB 8FT 0 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Limited",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Limited Crew Cab 4x4"
+  },
+  "DJ7P81": {
+    "code": "DJ7P81",
+    "raw_description": "CODE PAGES 2500 LARAMIE MEGA CAB 4X4 (160 in WB 6 FT 4 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Laramie",
+    "cab": "Mega Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Laramie Mega Cab 4x4"
+  },
+  "DJ7M81": {
+    "code": "DJ7M81",
+    "raw_description": "PAGES 2500 LARAMIE MEGA CAB 4X4 (160 in WB 6 FT 4 IN box) 2500 LIMITED MEGA CAB 4X4 (160 in WB 6 FT 4 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Laramie",
+    "cab": "Mega Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Laramie Mega Cab 4x4"
+  },
+  "DJ2L62": {
+    "code": "DJ2L62",
+    "raw_description": "CODE PAGES 2500 TRADESMAN REG CAB 4X2 (140 in WB 8FT 0 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Tradesman",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "full_description": "Ram 2500 Tradesman Regular Cab 4x2"
+  },
+  "DJ2H62": {
+    "code": "DJ2H62",
+    "raw_description": "PAGES 2500 TRADESMAN REG CAB 4X2 (140 in WB 8FT 0 IN box) 2500 BIG HORN REG CAB 4X2 (140 in WB 8FT 0 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Tradesman",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "full_description": "Ram 2500 Tradesman Regular Cab 4x2"
+  },
+  "DJ7L62": {
+    "code": "DJ7L62",
+    "raw_description": "2500 BIG HORN REG CAB 4X2 (140 in WB 8FT 0 IN box) 2500 TRADESMAN REG CAB 4X4 (140 in WB 8FT 0 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Tradesman",
+    "cab": "Regular Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Tradesman Regular Cab 4x4"
+  },
+  "DJ7H62": {
+    "code": "DJ7H62",
+    "raw_description": "2500 TRADESMAN REG CAB 4X4 (140 in WB 8FT 0 IN box) 2500 BIG HORN REG CAB 4X4 (140 in WB 8FT 0 IN box)",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Tradesman",
+    "cab": "Regular Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Tradesman Regular Cab 4x4"
+  },
+  "DD3L63": {
+    "code": "DD3L63",
+    "raw_description": "CODE PAGES 3500 REG CAB CHASSIS 4X2 (143.5 in WB - CA of 60 in)",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "full_description": "Ram 3500  Regular Cab 4x2"
+  },
+  "DD3L64": {
+    "code": "DD3L64",
+    "raw_description": "PAGES 3500 REG CAB CHASSIS 4X2 (143.5 in WB - CA of 60 in) 3500 REG CAB CHASSIS 4X2 (167.5 in WB - CA of 84 in)",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "full_description": "Ram 3500  Regular Cab 4x2"
+  },
+  "DD3L93": {
+    "code": "DD3L93",
+    "raw_description": "3500 REG CAB CHASSIS 4X2 (167.5 in WB - CA of 84 in) 3500 CREW CAB CHASSIS 4X2 (172.4 in WB - CA of 60 in)",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "Crew Cab",
+    "drive": "4x2",
+    "full_description": "Ram 3500  Crew Cab 4x2"
+  },
+  "DD8L63": {
+    "code": "DD8L63",
+    "raw_description": "3500 CREW CAB CHASSIS 4X2 (172.4 in WB - CA of 60 in) 3500 REG CAB CHASSIS 4X4 (143.5 in WB - CA of 60 in)",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 3500  Crew Cab 4x4"
+  },
+  "DD8L64": {
+    "code": "DD8L64",
+    "raw_description": "3500 REG CAB CHASSIS 4X4 (143.5 in WB - CA of 60 in) 3500 REG CAB CHASSIS 4X4 (167.5 in WB - CA of 84 in)",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x4",
+    "full_description": "Ram 3500  Regular Cab 4x4"
+  },
+  "DD8L93": {
+    "code": "DD8L93",
+    "raw_description": "3500 REG CAB CHASSIS 4X4 (167.5 in WB - CA of 84 in) 3500 CREW CAB CHASSIS 4X4 (172.4 in WB - CA of 60 in)",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 3500  Crew Cab 4x4"
+  },
+  "DP4L93": {
+    "code": "DP4L93",
+    "raw_description": "CODE PAGES 4500 CREW CAB CHASSIS 4X2 (173.4 IN WB - CA of 60 IN)",
+    "brand": "Ram",
+    "model": "4500",
+    "trim": "",
+    "cab": "Crew Cab",
+    "drive": "4x2",
+    "full_description": "Ram 4500  Crew Cab 4x2"
+  },
+  "DP4L94": {
+    "code": "DP4L94",
+    "raw_description": "PAGES 4500 CREW CAB CHASSIS 4X2 (173.4 IN WB - CA of 60 IN) 4500 CREW CAB CHASSIS 4X2 (197.4 IN WB - CA of 84 IN)",
+    "brand": "Ram",
+    "model": "4500",
+    "trim": "",
+    "cab": "Crew Cab",
+    "drive": "4x2",
+    "full_description": "Ram 4500  Crew Cab 4x2"
+  },
+  "DP9L93": {
+    "code": "DP9L93",
+    "raw_description": "4500 CREW CAB CHASSIS 4X2 (197.4 IN WB - CA of 84 IN) 4500 CREW CAB CHASSIS 4X4 (173.4 IN WB - CA of 60 IN)",
+    "brand": "Ram",
+    "model": "4500",
+    "trim": "",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 4500  Crew Cab 4x4"
+  },
+  "DP9L94": {
+    "code": "DP9L94",
+    "raw_description": "4500 CREW CAB CHASSIS 4X4 (173.4 IN WB - CA of 60 IN) 4500 CREW CAB CHASSIS 4X4 (197.4 IN WB - CA of 84 IN)",
+    "brand": "Ram",
+    "model": "4500",
+    "trim": "",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 4500  Crew Cab 4x4"
+  },
+  "DP4L63": {
+    "code": "DP4L63",
+    "raw_description": "CODE PAGES 4500 REG CAB CHASSIS 4X2 (144.5 IN WB - CA of 60 IN)",
+    "brand": "Ram",
+    "model": "4500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "full_description": "Ram 4500  Regular Cab 4x2"
+  },
+  "DP4L64": {
+    "code": "DP4L64",
+    "raw_description": "PAGES 4500 REG CAB CHASSIS 4X2 (144.5 IN WB - CA of 60 IN) 4500 REG CAB CHASSIS 4X2 (168.5 IN WB - CA of 84 IN)",
+    "brand": "Ram",
+    "model": "4500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "full_description": "Ram 4500  Regular Cab 4x2"
+  },
+  "DP4L65": {
+    "code": "DP4L65",
+    "raw_description": "4500 REG CAB CHASSIS 4X2 (168.5 IN WB - CA of 84 IN) 4500 REG CAB CHASSIS 4X2 (192.5 IN WB - CA of 108 IN)",
+    "brand": "Ram",
+    "model": "4500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "full_description": "Ram 4500  Regular Cab 4x2"
+  },
+  "DP4L66": {
+    "code": "DP4L66",
+    "raw_description": "4500 REG CAB CHASSIS 4X2 (192.5 IN WB - CA of 108 IN) 4500 REG CAB CHASSIS 4X2 (204.5 IN WB - CA of 120 IN)",
+    "brand": "Ram",
+    "model": "4500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "full_description": "Ram 4500  Regular Cab 4x2"
+  },
+  "DP9L63": {
+    "code": "DP9L63",
+    "raw_description": "4500 REG CAB CHASSIS 4X2 (204.5 IN WB - CA of 120 IN) 4500 REG CAB CHASSIS 4X4 (144.5 IN WB - CA of 60 IN)",
+    "brand": "Ram",
+    "model": "4500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x4",
+    "full_description": "Ram 4500  Regular Cab 4x4"
+  },
+  "DP9L64": {
+    "code": "DP9L64",
+    "raw_description": "4500 REG CAB CHASSIS 4X4 (144.5 IN WB - CA of 60 IN) 4500 REG CAB CHASSIS 4X4 (168.5 IN WB - CA of 84 IN)",
+    "brand": "Ram",
+    "model": "4500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x4",
+    "full_description": "Ram 4500  Regular Cab 4x4"
+  },
+  "DP9L65": {
+    "code": "DP9L65",
+    "raw_description": "4500 REG CAB CHASSIS 4X4 (168.5 IN WB - CA of 84 IN) 4500 REG CAB CHASSIS 4X4 (192.5 IN WB - CA of 108 IN)",
+    "brand": "Ram",
+    "model": "4500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x4",
+    "full_description": "Ram 4500  Regular Cab 4x4"
+  },
+  "DP9L66": {
+    "code": "DP9L66",
+    "raw_description": "4500 REG CAB CHASSIS 4X4 (192.5 IN WB - CA of 108 IN) 4500 REG CAB CHASSIS 4X4 (204.5 IN WB - CA of 120 IN)",
+    "brand": "Ram",
+    "model": "4500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x4",
+    "full_description": "Ram 4500  Regular Cab 4x4"
+  },
+  "DP5L93": {
+    "code": "DP5L93",
+    "raw_description": "CODE PAGES 5500 CREW CAB CHASSIS 4X2 (173.4 IN WB - CA of 60 IN)",
+    "brand": "Ram",
+    "model": "5500",
+    "trim": "",
+    "cab": "Crew Cab",
+    "drive": "4x2",
+    "full_description": "Ram 5500  Crew Cab 4x2"
+  },
+  "DP5L94": {
+    "code": "DP5L94",
+    "raw_description": "PAGES 5500 CREW CAB CHASSIS 4X2 (173.4 IN WB - CA of 60 IN) 5500 CREW CAB CHASSIS 4X2 (173.4 IN WB - CA of 60 IN)",
+    "brand": "Ram",
+    "model": "5500",
+    "trim": "",
+    "cab": "Crew Cab",
+    "drive": "4x2",
+    "full_description": "Ram 5500  Crew Cab 4x2"
+  },
+  "DP0L93": {
+    "code": "DP0L93",
+    "raw_description": "5500 CREW CAB CHASSIS 4X2 (173.4 IN WB - CA of 60 IN) 5500 CREW CAB CHASSIS 4X4 (173.4 IN WB - CA of 60 IN)",
+    "brand": "Ram",
+    "model": "5500",
+    "trim": "",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 5500  Crew Cab 4x4"
+  },
+  "DP0L94": {
+    "code": "DP0L94",
+    "raw_description": "5500 CREW CAB CHASSIS 4X4 (173.4 IN WB - CA of 60 IN) 5500 CREW CAB CHASSIS 4X4 (197.4 IN WB - CA of 84 IN)",
+    "brand": "Ram",
+    "model": "5500",
+    "trim": "",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 5500  Crew Cab 4x4"
+  },
+  "DP5L63": {
+    "code": "DP5L63",
+    "raw_description": "CODE PAGES 5500 REG CAB CHASSIS 4X2 (144.5 IN WB - CA of 60 IN)",
+    "brand": "Ram",
+    "model": "5500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "full_description": "Ram 5500  Regular Cab 4x2"
+  },
+  "DP5L64": {
+    "code": "DP5L64",
+    "raw_description": "PAGES 5500 REG CAB CHASSIS 4X2 (144.5 IN WB - CA of 60 IN) 5500 REG CAB CHASSIS 4X2 (168.5 IN WB - CA of 84 IN)",
+    "brand": "Ram",
+    "model": "5500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "full_description": "Ram 5500  Regular Cab 4x2"
+  },
+  "DP5L65": {
+    "code": "DP5L65",
+    "raw_description": "5500 REG CAB CHASSIS 4X2 (168.5 IN WB - CA of 84 IN) 5500 REG CAB CHASSIS 4X2 (192.5 IN WB - CA of 108 IN)",
+    "brand": "Ram",
+    "model": "5500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "full_description": "Ram 5500  Regular Cab 4x2"
+  },
+  "DP5L66": {
+    "code": "DP5L66",
+    "raw_description": "5500 REG CAB CHASSIS 4X2 (192.5 IN WB - CA of 108 IN) 5500 REG CAB CHASSIS 4X2 (204.5 IN WB - CA of 120 IN)",
+    "brand": "Ram",
+    "model": "5500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "full_description": "Ram 5500  Regular Cab 4x2"
+  },
+  "DP0L63": {
+    "code": "DP0L63",
+    "raw_description": "5500 REG CAB CHASSIS 4X2 (204.5 IN WB - CA of 120 IN) 5500 REG CAB CHASSIS 4X4 (144.5 IN WB - CA of 60 IN)",
+    "brand": "Ram",
+    "model": "5500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x4",
+    "full_description": "Ram 5500  Regular Cab 4x4"
+  },
+  "DP0L64": {
+    "code": "DP0L64",
+    "raw_description": "5500 REG CAB CHASSIS 4X4 (144.5 IN WB - CA of 60 IN) 5500 REG CAB CHASSIS 4X4 (168.5 IN WB - CA of 84 IN)",
+    "brand": "Ram",
+    "model": "5500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x4",
+    "full_description": "Ram 5500  Regular Cab 4x4"
+  },
+  "DP0L65": {
+    "code": "DP0L65",
+    "raw_description": "5500 REG CAB CHASSIS 4X4 (168.5 IN WB - CA of 84 IN) 5500 REG CAB CHASSIS 4X4 (192.5 IN WB - CA of 108 IN)",
+    "brand": "Ram",
+    "model": "5500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x4",
+    "full_description": "Ram 5500  Regular Cab 4x4"
+  },
+  "DP0L66": {
+    "code": "DP0L66",
+    "raw_description": "5500 REG CAB CHASSIS 4X4 (192.5 IN WB - CA of 108 IN) 5500 REG CAB CHASSIS 4X4 (204.5 IN WB - CA of 120 IN)",
+    "brand": "Ram",
+    "model": "5500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x4",
+    "full_description": "Ram 5500  Regular Cab 4x4"
+  },
+  "VF1L11": {
+    "code": "VF1L11",
+    "raw_description": "CODE PAGES 1500 PROMASTER CARGO VAN LOW ROOF (118 WB)",
+    "brand": "Ram",
+    "model": "ProMaster Cargo Van",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Ram ProMaster Cargo Van"
+  },
+  "VF1L12": {
+    "code": "VF1L12",
+    "raw_description": "PAGES 1500 PROMASTER CARGO VAN LOW ROOF (118 WB) 1500 PROMASTER CARGO VAN LOW ROOF (136 WB)",
+    "brand": "Ram",
+    "model": "ProMaster Cargo Van",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Ram ProMaster Cargo Van"
+  },
+  "VF1L13": {
+    "code": "VF1L13",
+    "raw_description": "1500 PROMASTER CARGO VAN LOW ROOF (136 WB) 1500 PROMASTER CARGO VAN HIGH ROOF (136 WB)",
+    "brand": "Ram",
+    "model": "ProMaster Cargo Van",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Ram ProMaster Cargo Van"
+  },
+  "VF2L12": {
+    "code": "VF2L12",
+    "raw_description": "1500 PROMASTER CARGO VAN HIGH ROOF (136 WB) 2500 PROMASTER CARGO VAN LOW ROOF (136 WB)",
+    "brand": "Ram",
+    "model": "ProMaster Cargo Van",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Ram ProMaster Cargo Van"
+  },
+  "VF2L13": {
+    "code": "VF2L13",
+    "raw_description": "2500 PROMASTER CARGO VAN LOW ROOF (136 WB) 2500 PROMASTER CARGO VAN HIGH ROOF (136 WB)",
+    "brand": "Ram",
+    "model": "ProMaster Cargo Van",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Ram ProMaster Cargo Van"
+  },
+  "VF2L16": {
+    "code": "VF2L16",
+    "raw_description": "2500 PROMASTER CARGO VAN HIGH ROOF (136 WB) 2500 PROMASTER CARGO VAN HIGH ROOF (159 WB)",
+    "brand": "Ram",
+    "model": "ProMaster Cargo Van",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Ram ProMaster Cargo Van"
+  },
+  "VF3L12": {
+    "code": "VF3L12",
+    "raw_description": "2500 PROMASTER CARGO VAN HIGH ROOF (159 WB) 3500 PROMASTER CARGO VAN LOW ROOF (136 WB)",
+    "brand": "Ram",
+    "model": "ProMaster Cargo Van",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Ram ProMaster Cargo Van"
+  },
+  "VF3L13": {
+    "code": "VF3L13",
+    "raw_description": "3500 PROMASTER CARGO VAN LOW ROOF (136 WB) 3500 PROMASTER CARGO VAN HIGH ROOF (136 WB)",
+    "brand": "Ram",
+    "model": "ProMaster Cargo Van",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Ram ProMaster Cargo Van"
+  },
+  "VF3L16": {
+    "code": "VF3L16",
+    "raw_description": "3500 PROMASTER CARGO VAN HIGH ROOF (136 WB) 3500 PROMASTER CARGO VAN HIGH ROOF (159 WB)",
+    "brand": "Ram",
+    "model": "ProMaster Cargo Van",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Ram ProMaster Cargo Van"
+  },
+  "VF3L17": {
+    "code": "VF3L17",
+    "raw_description": "3500 PROMASTER CARGO VAN HIGH ROOF (159 WB) 3500 PROMASTER CARGO VAN HIGH ROOF (159 WB EXT)",
+    "brand": "Ram",
+    "model": "ProMaster Cargo Van",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Ram ProMaster Cargo Van"
+  },
+  "VF3L19": {
+    "code": "VF3L19",
+    "raw_description": "3500 PROMASTER CARGO VAN HIGH ROOF (159 WB EXT) 3500 PROMASTER CARGO VAN SUPER HIGH ROOF (159 WB EXT)",
+    "brand": "Ram",
+    "model": "ProMaster Cargo Van",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Ram ProMaster Cargo Van"
+  },
+  "WSJM75": {
+    "code": "WSJM75",
+    "raw_description": "CODE PAGES WAGONEER 4X4",
+    "brand": "Jeep",
+    "model": "Wagoneer",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Wagoneer   4x4"
+  },
+  "WSJH75": {
+    "code": "WSJH75",
+    "raw_description": "PAGES WAGONEER 4X4 WAGONEER SERIES II 4X4",
+    "brand": "Jeep",
+    "model": "Wagoneer S",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Wagoneer S   4x4"
+  },
+  "WSJP75": {
+    "code": "WSJP75",
+    "raw_description": "WAGONEER SERIES II 4X4 WAGONEER SERIES III 4X4",
+    "brand": "Jeep",
+    "model": "Wagoneer S",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Wagoneer S   4x4"
+  },
+  "WSJM76": {
+    "code": "WSJM76",
+    "raw_description": "CODE PAGES WAGONEER L 4X4",
+    "brand": "Jeep",
+    "model": "Wagoneer L",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Wagoneer L   4x4"
+  },
+  "WSJH76": {
+    "code": "WSJH76",
+    "raw_description": "PAGES WAGONEER L 4X4 WAGONEER L SERIES II 4X4",
+    "brand": "Jeep",
+    "model": "Wagoneer L",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Wagoneer L   4x4"
+  },
+  "WSJP76": {
+    "code": "WSJP76",
+    "raw_description": "WAGONEER L SERIES II 4X4 WAGONEER L SERIES III 4X4",
+    "brand": "Jeep",
+    "model": "Wagoneer L",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Wagoneer L   4x4"
+  },
+  "KMXL49": {
+    "code": "KMXL49",
+    "raw_description": "CODE PAGES WAGONEER S",
+    "brand": "Jeep",
+    "model": "Wagoneer S",
+    "trim": "",
+    "cab": "",
+    "drive": "",
+    "full_description": "Jeep Wagoneer S"
+  },
+  "JLJL72": {
+    "code": "JLJL72",
+    "raw_description": "CODE PAGES WRANGLER SPORT",
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "Sport",
+    "cab": "",
+    "drive": "",
+    "full_description": "Jeep Wrangler Sport"
+  },
+  "JLJL74": {
+    "code": "JLJL74",
+    "raw_description": "PAGES WRANGLER SPORT WRANGLER 4-DOOR SPORT",
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "Sport",
+    "cab": "",
+    "drive": "",
+    "full_description": "Jeep Wrangler Sport"
+  },
+  "JLJP74": {
+    "code": "JLJP74",
+    "raw_description": "WRANGLER 4-DOOR SPORT WRANGLER 4-DOOR SAHARA",
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "Sport",
+    "cab": "",
+    "drive": "",
+    "full_description": "Jeep Wrangler Sport"
+  },
+  "JLJS72": {
+    "code": "JLJS72",
+    "raw_description": "WRANGLER 4-DOOR SAHARA WRANGLER RUBICON",
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "Rubicon",
+    "cab": "",
+    "drive": "",
+    "full_description": "Jeep Wrangler Rubicon"
+  },
+  "JLJS74": {
+    "code": "JLJS74",
+    "raw_description": "WRANGLER RUBICON WRANGLER 4-DOOR RUBICON",
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "Rubicon",
+    "cab": "",
+    "drive": "",
+    "full_description": "Jeep Wrangler Rubicon"
+  },
+  "JLXL74": {
+    "code": "JLXL74",
+    "raw_description": "CODE PAGES WRANGLER 4XE 4-DOOR",
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "4Xe",
+    "cab": "",
+    "drive": "",
+    "full_description": "Jeep Wrangler 4Xe"
+  },
+  "JLXP74": {
+    "code": "JLXP74",
+    "raw_description": "PAGES WRANGLER 4XE 4-DOOR WRANGLER 4-DOOR SAHARA 4XE",
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "Sahara",
+    "cab": "",
+    "drive": "",
+    "full_description": "Jeep Wrangler Sahara"
+  },
+  "JLXS74": {
+    "code": "JLXS74",
+    "raw_description": "WRANGLER 4-DOOR SAHARA 4XE WRANGLER 4-DOOR RUBICON 4XE",
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "Rubicon",
+    "cab": "",
+    "drive": "",
+    "full_description": "Jeep Wrangler Rubicon"
+  }
+}
