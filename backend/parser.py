@@ -449,42 +449,58 @@ def deduplicate_options(options: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Supprime les doublons logiques d'options (ex: deux transmissions).
     Garde la version avec montant > 0 prioritaire (OCR direct vs fallback).
+    PRÉSERVE L'ORDRE ORIGINAL des options de la facture.
     
     Stratégie:
-    - Options sans catégorie connue → gardées telles quelles
-    - Options avec catégorie → une seule par catégorie (priorité au montant > 0)
+    - Options sans catégorie connue → gardées dans l'ordre original
+    - Options avec catégorie → une seule par catégorie, à la position de la première occurrence
     """
-    best_by_category = {}
-    final = []
-
-    for opt in options:
+    best_by_category = {}  # category -> (index, option)
+    seen_categories = set()
+    result = []
+    
+    # Premier passage: identifier le meilleur de chaque catégorie
+    for i, opt in enumerate(options):
         code = opt.get("product_code")
-
+        
         # Trouver la catégorie de ce code
         category = None
         for cat, codes in CATEGORY_GROUPS.items():
             if code in codes:
                 category = cat
                 break
-
-        # Si pas de catégorie connue, garder l'option
+        
+        if category:
+            existing = best_by_category.get(category)
+            if not existing:
+                best_by_category[category] = (i, opt)
+            else:
+                # Priorité à l'OCR direct (montant > 0)
+                if opt.get("amount", 0) > existing[1].get("amount", 0):
+                    best_by_category[category] = (i, opt)
+    
+    # Deuxième passage: construire le résultat en préservant l'ordre
+    for i, opt in enumerate(options):
+        code = opt.get("product_code")
+        
+        # Trouver la catégorie de ce code
+        category = None
+        for cat, codes in CATEGORY_GROUPS.items():
+            if code in codes:
+                category = cat
+                break
+        
         if not category:
-            final.append(opt)
-            continue
-
-        # Si catégorie connue, garder le meilleur
-        existing = best_by_category.get(category)
-
-        if not existing:
-            best_by_category[category] = opt
-        else:
-            # Priorité à l'OCR direct (montant > 0)
-            if opt.get("amount", 0) > existing.get("amount", 0):
-                best_by_category[category] = opt
-
-    # Ajouter les meilleures options par catégorie
-    final.extend(best_by_category.values())
-    return final
+            # Pas de catégorie connue → garder l'option
+            result.append(opt)
+        elif category not in seen_categories:
+            # Première occurrence de cette catégorie → ajouter le meilleur
+            seen_categories.add(category)
+            best_opt = best_by_category[category][1]
+            result.append(best_opt)
+        # Sinon: catégorie déjà vue, ignorer (c'est un doublon)
+    
+    return result
 
 
 def parse_options(text: str) -> List[Dict[str, Any]]:
