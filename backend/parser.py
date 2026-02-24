@@ -883,6 +883,10 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         if re.match(r'^\d{4,}\s+[A-Z]', line):
             continue
         
+        # Ignorer les lignes qui sont des adresses courtes (3 chiffres + mot d'adresse)
+        if re.match(r'^\d{3}\s+(AVENUE|RUE|CHEMIN|BOULEVARD|ROUTE|STREET|ROAD|DRIVE|PLACE|CH\s)', line, re.IGNORECASE):
+            continue
+        
         # Chercher un code au début de la ligne
         # Format: CODE + espace + description
         # Accepte codes de 2-6 caractères (pour 92HC1, 92HC2, DT6S98 etc.)
