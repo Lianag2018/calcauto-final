@@ -749,11 +749,13 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'DIST', 'DEALER', 'SHIP', 'TERMS', 'KEY', 'OPT', 'SOLD', 'DATE', 'JEEP',
         'INVOICE', 'VEHICLE', 'NUMBER', 'FACTURE', 'AMOUNT', 'MONTANT', 'DODGE',
         'CE', 'DU', 'DE', 'LA', 'LE', 'AU', 'EN', 'ET', 'OU', 'UN', 'IF', 'NO',
-        'SEE', 'PAGE', 'VOIR', 'PAS', 'SHOWN', 'CANADA', 'FOR', 'ORIGINAL', 'NI',
+        'SEE', 'PAGE', 'VOIR', 'SHOWN', 'CANADA', 'FOR', 'ORIGINAL', 'NI',
         'WINDSOR', 'ONTARIO', 'BOULEVARD', 'STREET', 'SOMME', 'TAXES', 'TPS',
         'TVH', 'PROV', 'NET', 'PRIX', 'SANS', 'CHRYSLER', 'GFBR', 'KENNEBEC',
         # GKRP est un prix (PDCO/MSRP), pas une option!
         'GKRP',
+        # Codes administratifs FCA (pas des options réelles)
+        '999', '92HC1', '92HC2',
         # Villes québécoises et canadiennes courantes
         'LAVAL', 'QUEBEC', 'MONTREAL', 'TORONTO', 'OTTAWA', 'CALGARY', 'VANCOUVER',
         'LONGUEUIL', 'GATINEAU', 'SHERBROOKE', 'LEVIS', 'TROIS', 'SAGUENAY',
