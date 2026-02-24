@@ -1298,15 +1298,13 @@
     "year": "2026"
   },
   "WLJS74": {
+    "year": "2026",
     "brand": "Jeep",
-    "cab": "",
-    "code": "WLJS74",
-    "drive": "4x4",
-    "full_description": "Jeep Grand Cherokee Overland  4x4",
     "model": "Grand Cherokee",
-    "raw": "GRANDCHEROKEEOVERLAND4X4",
-    "trim": "Overland",
-    "year": "2025"
+    "trim": "Summit",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Cherokee Summit 4x4"
   },
   "WLJS75": {
     "brand": "Jeep",
@@ -1441,15 +1439,13 @@
     "year": "2025"
   },
   "WLJP74": {
+    "year": "2026",
     "brand": "Jeep",
-    "cab": "",
-    "code": "WLJP74",
-    "drive": "4x4",
-    "full_description": "Jeep Grand Cherokee Limited 4x4",
     "model": "Grand Cherokee",
-    "raw": "GRANDCHEROKEELIMITED4X4",
-    "trim": "Limited",
-    "year": "2026"
+    "trim": "Overland",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Cherokee Overland 4x4"
   },
   "WLJH75": {
     "brand": "Jeep",
@@ -1531,15 +1527,13 @@
     "year": "2025"
   },
   "WLJH74": {
-    "code": "WLJH74",
+    "year": "2026",
     "brand": "Jeep",
-    "model": "Grand Cherokee L",
-    "trim": "",
+    "model": "Grand Cherokee",
+    "trim": "Limited",
     "cab": "",
     "drive": "4x4",
-    "full_description": "Jeep Grand Cherokee L   4x4",
-    "raw": "CODE PAGES GRAND CHEROKEE LAREDO 4X4",
-    "year": "2025"
+    "full_description": "Jeep Grand Cherokee Limited 4x4"
   },
   "WLXH74": {
     "code": "WLXH74",
@@ -1716,5 +1710,14 @@
     "full_description": "Jeep Wrangler Sahara",
     "raw": "PAGES WRANGLER 4XE 4-DOOR WRANGLER 4-DOOR SAHARA 4XE",
     "year": "2025"
+  },
+  "WLJL74": {
+    "year": "2026",
+    "brand": "Jeep",
+    "model": "Grand Cherokee L",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Cherokee L Limited 4x4"
   }
 }
