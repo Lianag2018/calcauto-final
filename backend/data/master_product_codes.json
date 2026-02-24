@@ -1461,5 +1461,47 @@
     "raw": "GRANDCHEROKEELALTITUDE4X4",
     "trim": "Altitude",
     "year": "2026"
+  },
+  "RUCH53": {
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Select",
+    "raw": "PACIFICASELECTFWD"
+  },
+  "RUFH53": {
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Select",
+    "raw": "PACIFICASELECTAWD"
+  },
+  "VFLL16": {
+    "brand": "Ram",
+    "model": "ProMaster",
+    "trim": "",
+    "raw": "3500PROMASTEREVCARGOVANHIGHROOF(159WB)"
+  },
+  "VF1L11": {
+    "brand": "Ram",
+    "model": "ProMaster",
+    "trim": "",
+    "raw": "1500PROMASTERCARGOVANLOWROOF(118WB)"
+  },
+  "VF1L12": {
+    "brand": "Ram",
+    "model": "ProMaster",
+    "trim": "",
+    "raw": "1500PROMASTERCARGOVANLOWROOF(136WB)"
+  },
+  "VF2L13": {
+    "brand": "Ram",
+    "model": "ProMaster",
+    "trim": "",
+    "raw": "2500PROMASTERCARGOVANHIGHROOF(136WB)"
+  },
+  "DT6T91": {
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "",
+    "raw": "5INWB6FT4INBOX)"
   }
 }
