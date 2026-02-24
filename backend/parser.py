@@ -432,7 +432,8 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
     """
     options = []
     
-    # Dictionnaire des descriptions FCA connues
+    # Dictionnaire des descriptions FCA connues (code → description)
+    # Utilisé pour le fallback quand l'OCR ne capture pas le code
     fca_descriptions = {
         # Couleurs
         'PXJ': 'Couche nacrée cristal noir étincelant',
@@ -450,15 +451,28 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'PYB': 'Jaune stinger',
         'PBJ': 'Bleu hydro',
         'PFQ': 'Granite cristal',
+        'PJ7': 'Canyon Lake',  # Couleur RAM
         # Intérieur
         'B6W7': 'Sièges en similicuir capri',
         'CLX9': 'Cuir Nappa ventilé',
-        # Équipements
+        'YLX9': 'Premium Leather Bucket Seats',
+        'CU2': 'Red Interior Accents',
+        # Équipements - RAM 1500 RHO
+        'ANT': 'Bed Utility Group',
+        'A6H': 'RHO Level 1 Equipment Group',
+        'CS7': 'Tri-Fold Soft Tonneau Cover',
+        'DFR': '8-Speed Automatic Transmission',
+        'EFC': '3.0L I-6 HO Twin-Turbo Engine',
+        'GWJ': 'Dual-Pane Panoramic Sunroof',
+        'MH7': 'MOPAR RHO Exterior Graphics',
+        'MMB': 'MOPAR RHO Hood Graphics',
+        'MTW': 'MOPAR Off-Road Style Running Boards',
+        'YGV': '17 Additional Litres Of Gas',
+        # Équipements généraux
         'ABR': 'Ensemble attelage de remorque',
         'ALC': 'Ensemble allure noire',
         'DFW': 'Transmission automatique 8 vitesses',
         'ERC': 'Moteur V6 Pentastar 3.6L',
-        'GWJ': 'Toit ouvrant panoramique 2 panneaux CommandView',
         'YGW': '20L supplémentaires essence',
         'ADE': 'Système de divertissement arrière',
         'ADG': 'Navigation et radio satellite',
@@ -477,12 +491,50 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         '22B': 'Groupe commodité',
         '27A': 'Groupe apparence',
         '3CC': 'Groupe 3CC',
+        '2TY': 'Customer Preferred Package 2TY',
+        '22Y': 'Customer Preferred Package 22Y',
         # Taxes/Frais
-        '4CP': 'Taxe accise fédérale - Climatiseur',
-        '801': 'Frais de transport',
-        '999': 'Finance/Expédition',
-        '92HC1': 'Cotisation P.P.',
-        '92HC2': 'Allocation de marketing',
+        '4CP': 'Federal A/C Excise Tax',
+        '801': 'Destination Charge',
+        '999': 'Financed/Shipped',
+        '92HC1': 'PPA Assessment',
+        '92HC2': 'Marketing Allowance',
+    }
+    
+    # Dictionnaire inversé: description partielle → code
+    # Pour quand l'OCR capture la description mais pas le code
+    description_to_code = {
+        'CANYON LAKE': 'PJ7',
+        'PREMIUM LEATHER BUCKET': 'YLX9',
+        'BED UTILITY GROUP': 'ANT',
+        'RHO LEVEL 1': 'A6H',
+        'LEVEL 1 EQUIPMENT': 'A6H',
+        'TRI-FOLD SOFT TONNEAU': 'CS7',
+        'SOFT TONNEAU COVER': 'CS7',
+        'RED INTERIOR ACCENTS': 'CU2',
+        '8-SPEED AUTOMATIC': 'DFR',
+        'AUTOMATIC TRANSMISSION': 'DFR',
+        '3.0L I-6': 'EFC',
+        'TWIN-TURBO ENGINE': 'EFC',
+        'DUAL-PANE PANORAMIC': 'GWJ',
+        'PANORAMIC SUNROOF': 'GWJ',
+        'RHO EXTERIOR GRAPHICS': 'MH7',
+        'EXTERIOR GRAPHICS': 'MH7',
+        'RHO HOOD GRAPHICS': 'MMB',
+        'HOOD GRAPHICS': 'MMB',
+        'OFF-ROAD STYLE RUNNING': 'MTW',
+        'RUNNING BOARDS': 'MTW',
+        'ADDITIONAL LITRES': 'YGV',
+        'LITRES OF GAS': 'YGV',
+        'CUSTOMER PREFERRED PACKAGE 2TY': '2TY',
+        'CUSTOMER PREFERRED PACKAGE 22Y': '22Y',
+        'FEDERAL A/C EXCISE': '4CP',
+        'EXCISE TAX': '4CP',
+        'DESTINATION CHARGE': '801',
+        'FINANCED': '999',
+        'SHIPPED': '999',
+        'PPA ASSESSMENT': '92HC1',
+        'MARKETING ALLOWANCE': '92HC2',
     }
     
     # Codes à ignorer (pas des options)
