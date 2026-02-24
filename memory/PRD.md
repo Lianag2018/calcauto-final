@@ -165,6 +165,21 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
 - **CATEGORY_GROUPS enrichi**: Ajouté DC1 (transmission), EC7 (engine), PAS (color), 2C1/2T1 (package)
 - **Fichiers modifiés**: `backend/parser.py`, `backend/server.py`
 
+### Phase 16: Système Excel Export/Import (DONE - Feb 2026)
+- **Workflow hybride**: OCR → Excel (révision) → Import corrigé
+- **Endpoints API créés**:
+  - `POST /api/invoice/export-excel` - Exporte données scan vers Excel formaté
+  - `POST /api/invoice/import-excel` - Importe Excel corrigé
+  - `GET /api/invoice/template-excel` - Télécharge template vide
+- **Frontend**:
+  - Nouveau bouton "Excel" (vert #217346) dans la barre d'actions
+  - Fonction `handleExportExcel()` - Télécharge fichier Excel après scan
+- **Fichiers Excel créés**:
+  - `FCA_Master_Codes.xlsx` - 162 codes véhicules + 48 codes options
+  - `fca_product_codes_2025.json` - Base complète 2025
+  - Template facture avec sections: véhicule, financier, options
+- **Codes Ram 2500 ajoutés**: DJ7H91/92 (Big Horn), DJ7L91/62 (Tradesman), DJ7P91/92 (Laramie), DJ7S91/92 (Limited)
+
 ## Test Credentials
 - Email: danielgiroux007@gmail.com
 - Password: Liana2018$
