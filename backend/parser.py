@@ -676,7 +676,7 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'DT6S98', 'DJ7L92', 'WLJP74', 'WLJH75', 'VF1L13',
         # Fragments de descriptions OCR erronés (mots seuls, pas des codes FCA)
         'MODE', 'BED', 'RHO', 'RED', 'THIS', 'OR', '1F', '2F', '3F', '17', '20',
-        'THE', 'TO', 'IS', 'IT', 'OF', 'IN', 'ON', 'AT', 'BY', 'AN', 'AS',
+        'THE', 'TO', 'IS', 'IT', 'OF', 'IN', 'ON', 'AT', 'BY', 'AN', 'AS', '20L',
         'MOPAR', 'LEVEL', 'GROUP', 'PACKAGE', 'INTERIOR', 'EXTERIOR',
         'ACCENTS', 'GRAPHICS', 'BOARDS', 'COVER', 'SEATS', 'ENGINE',
         'TRANSMISSION', 'SUNROOF', 'UTILITY', 'LAKE', 'STYLE', 'SPEED',
@@ -686,7 +686,13 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'TWIN', 'TURBO', 'ADDITIONAL', 'LITRES', 'GAS', 'FEDERAL',
         'EXCISE', 'DESTINATION', 'CHARGE', 'FINANCED', 'SHIPPED',
         'ASSESSMENT', 'ALLOWANCE', 'MARKETING', 'PPA', 'CUSTOMER',
-        'PREFERRED', 'RUNNING', 'HOOD', 'OFF', 'ROAD'
+        'PREFERRED', 'RUNNING', 'HOOD', 'OFF', 'ROAD',
+        # Fragments OCR erronés des factures Grand Cherokee
+        'ACREE', 'COUCHE', 'NACREE', 'ETINCEL', 'SIEGES', 'SIMILICUIR', 'CAPRI',
+        'MOTEUR', 'PENTASTAR', 'TOIT', 'OUVR', 'PANO', 'PANN', 'COMMANDVIEW',
+        'SUPPLEMENTAIRES', 'ESSENCE', 'TAXE', 'ACCISE', 'FRAIS', 'TRANSPORT',
+        'ENSEMBLE', 'ATTELAGE', 'REMORQUE', 'ALLURE', 'NOIRE', 'VITESSES',
+        'AUTOMATIQUE', 'ECLAIR', 'COTISATION', 'ALLOCATION'
     }
     
     # Mots-clés d'adresse à ignorer dans la description
