@@ -144,20 +144,20 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
   2. Supprimé tous les mappings `description_to_code` pointant vers ces codes
   3. Ajouté check `skip_codes` aux deux boucles fallback (description_to_code + fca_descriptions)
   4. Nettoyé `equivalent_codes` (retiré YG4)
-  5. Ajouté DJ7H91 aux skip_codes (code modèle, pas une option)
-- **Tests**: 3 nouveaux tests `TestBlockedCodes` (28/28 tests passent)
+  5. Ajouté DJ7H91, DT6L98 aux skip_codes (codes modèles, pas des options)
+- **Tests**: 3 nouveaux tests `TestBlockedCodes` (29/29 tests passent)
 
 ### Phase 18: Impression Professionnelle (DONE - Feb 2026)
-- **Refonte complète** de `handlePrint` dans `index.tsx`
-- **Sur mobile**: Utilise `expo-print` pour ouvrir le dialogue d'impression natif (ne reste plus bloqué sur la page)
-- **Format professionnel** identique au courriel:
-  - En-tête CalcAuto AiPro avec branding
-  - Section véhicule (marque, modèle, trim, année, prix, VIN)
-  - Tableau des taux complet (36-96 mois, Option 1 & 2, terme sélectionné surligné)
-  - Détails du financement (rabais, bonus cash, frais dossier, taxe pneus, RDPRM, échange, comptant)
-  - Bannière "Meilleur choix" avec économies calculées
-  - Comparaison côte à côte Option 1 vs Option 2 (capital, taux, paiement, total)
-  - Note Bonus Cash et pied de page avec disclaimer
+- Utilise `expo-print` sur mobile (dialogue natif, plus de blocage)
+- Format professionnel identique au courriel
+
+### Phase 19: Filtrage En-tête Facture (DONE - Feb 2026)
+- **Bug fix critique**: Le parseur extrayait des mots de l'en-tête (ELITE, BANQUE, 596, TAN, HURRIC) comme options
+- **Corrections**:
+  1. Ajouté ELITE, BANQUE, DOMINION, AVENUE, OUELETTE, TAN, HURRIC, etc. aux skip_codes ET invalid_codes
+  2. Amélioré le filtre d'adresses: détecte maintenant les adresses à 3 chiffres (ex: "596 AVENUE")
+  3. Ajouté DT6L98 (code modèle Ram 1500 Tradesman) aux skip_codes
+- **Tests**: Nouveau test `TestHeaderFiltering` (29/29 passent)
 
 ## Backlog
 - (P0) Corriger l'ordre des options du parseur (options fallback ajoutées au début au lieu de la fin)
