@@ -941,6 +941,10 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
                 "amount": 0
             })
     
+    # ====== DÉDUPLICATION FINALE ======
+    # Supprime les doublons logiques (ex: deux transmissions)
+    found_options = deduplicate_options(found_options)
+    
     # ====== LES OPTIONS SONT DÉJÀ DANS L'ORDRE DE LA FACTURE ======
     # Pas de tri! On garde l'ordre d'apparition
     
