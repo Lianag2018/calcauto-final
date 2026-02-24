@@ -815,6 +815,8 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'GKRP',
         # Codes administratifs FCA (pas des options réelles)
         '999', '92HC1', '92HC2',
+        # Codes à ignorer (fallback incorrects ou non désirés)
+        'YG4', '4CP', '2TZ',
         # Villes québécoises et canadiennes courantes
         'LAVAL', 'QUEBEC', 'MONTREAL', 'TORONTO', 'OTTAWA', 'CALGARY', 'VANCOUVER',
         'LONGUEUIL', 'GATINEAU', 'SHERBROOKE', 'LEVIS', 'TROIS', 'SAGUENAY',
