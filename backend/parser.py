@@ -699,7 +699,7 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         # Codes modèles (pas des options)
         'DT6S98', 'DJ7L92', 'WLJP74', 'WLJH75', 'VF1L13',
         # Fragments de descriptions OCR erronés (mots seuls, pas des codes FCA)
-        'MODE', 'BED', 'RHO', 'RED', 'THIS', 'OR', '1F', '2F', '3F', '17', '20',
+        'MODE', 'BED', 'RHO', 'RED', 'THIS', 'OR', '1F', '2F', '3F', '17', '20', '15',
         'THE', 'TO', 'IS', 'IT', 'OF', 'IN', 'ON', 'AT', 'BY', 'AN', 'AS', '20L',
         'MOPAR', 'LEVEL', 'GROUP', 'PACKAGE', 'INTERIOR', 'EXTERIOR',
         'ACCENTS', 'GRAPHICS', 'BOARDS', 'COVER', 'SEATS', 'ENGINE',
@@ -720,7 +720,10 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         # Fragments OCR erronés des factures ProMaster
         'PORTES', 'ARR', 'BATTANTES', 'BATTANTS', 'GLACE', 'FIXE', 'TION',
         'HORS', 'CANADA', 'IMMATRICULATION', 'VENTE', 'HIGH', 'ROOF', 'CARGO',
-        'VAN', 'LOW', 'EXTENDED', 'SUPER', 'WB', '136WB', '159WB'
+        'VAN', 'LOW', 'EXTENDED', 'SUPER', 'WB', '136WB', '159WB',
+        # Fragments OCR erronés des factures Gladiator/Wrangler
+        'BAQ', 'DOSSIER', 'BAS', 'TISSU', 'RIGIDE', 'FREEDOM', 'TOP', 'SECT',
+        'NOIR', 'COMMODITES', 'CLIMATISEUR'
     }
     
     # Mots-clés d'adresse à ignorer dans la description
