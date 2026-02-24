@@ -622,7 +622,7 @@ class InventoryVehicle(BaseModel):
     pdco: float = 0                  # Prix dealer officiel
     ep_cost: float = 0               # Coût réel (Employee Price)
     holdback: float = 0              # Holdback (valeur facture, PAS calculé)
-    net_cost: float = 0              # ep_cost - holdback (calculé à l'import)
+    net_cost: float = 0              # = E.P. (le holdback est déjà déduit dans E.P. FCA)
     
     # Prix de vente
     msrp: float = 0                  # PDSF
