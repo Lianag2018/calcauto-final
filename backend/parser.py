@@ -563,9 +563,7 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'LHL': 'Commandes auxiliaires tableau bord',
         'LNC': 'Feux de gabarit',
         'MWH': 'Doublures passage roue arrière',
-        'YG4': '20L supplémentaires diesel',
         'Z7H': 'PNBV 4490 kg (9900 lb)',
-        '2TZ': 'Ensemble Éclair 2TZ',
         '24Z': 'Ensemble Éclair 24Z',
         # Équipements - Gladiator/Wrangler
         'AJK': 'Ensemble Commodités',
@@ -608,7 +606,6 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         '22Y': 'Customer Preferred Package 22Y',
         '2T1': 'Ensemble Éclair 2T1',
         # Taxes/Frais (gardés pour affichage mais pas comme options)
-        '4CP': 'Taxe Accise Fédérale Climatiseur',
         '801': 'Frais de Transport',
         # NOTE: 999, 92HC1, 92HC2 sont exclus via skip_codes (codes administratifs)
     }
@@ -717,12 +714,7 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'SUPPLEMENTAIRES ESSENCE': 'YGW',
         '15 L SUPPLEMENTAIRES': 'YGN',  # Gladiator
         '15L SUPPLEMENTAIRES': 'YGN',
-        # Diesel - Ram 2500/3500
-        '20L SUPPLEMENTAIRES DE DIESEL': 'YG4',
-        '20L SUPPLEMENTAIRES DIESEL': 'YG4',
-        'SUPPLEMENTAIRES DE DIESEL': 'YG4',
-        'SUPPLEMENTAIRES DIESEL': 'YG4',
-        'DE DIESEL': 'YG4',
+        # Diesel - Ram 2500/3500 (YG4 bloqué)
         
         # Packages/Ensembles
         'CUSTOMER PREFERRED PACKAGE 2TY': '2TY',
@@ -743,13 +735,7 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'GROUPE COMMODITE': '22B',
         'GROUPE APPARENCE': '27A',
         
-        # Taxes/Frais
-        'FEDERAL A/C EXCISE': '4CP',
-        'EXCISE TAX': '4CP',
-        'TAXE ACCISE FEDERALE': '4CP',
-        'ACCISE FEDERALE': '4CP',
-        "TAXE D'ACCISE FEDERALE": '4CP',
-        'CLIMATISEUR': '4CP',
+        # Taxes/Frais (4CP bloqué)
         'DESTINATION CHARGE': '801',
         'FRAIS DE TRANSPORT': '801',
         # NOTE: 999, 92HC1, 92HC2 sont exclus via skip_codes (codes administratifs)
@@ -984,10 +970,9 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'DFT': {'DFR', 'DFW'},  # Transmissions automatiques
         'DFR': {'DFT', 'DFW'},
         'DFW': {'DFT', 'DFR'},
-        'YGN': {'YGV', 'YGW', 'YG4'},  # Carburant supplémentaire
-        'YGV': {'YGN', 'YGW', 'YG4'},
-        'YGW': {'YGN', 'YGV', 'YG4'},
-        'YG4': {'YGN', 'YGV', 'YGW'},  # Diesel
+        'YGN': {'YGV', 'YGW'},  # Carburant supplémentaire
+        'YGV': {'YGN', 'YGW'},
+        'YGW': {'YGN', 'YGV'},
     }
     
     for desc_key, code in description_to_code.items():
