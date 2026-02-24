@@ -445,18 +445,19 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'PSC': 'Gris destroyer',
         'PGG': 'Gris granit cristal',
         'PBF': 'Bleu patriote',
-        'PGE': 'Vert sarge',
+        'PGE': 'Vert Sarge',  # Gladiator/Wrangler
         'PRM': 'Rouge velours',
         'PAR': 'Argent billet',
         'PYB': 'Jaune stinger',
         'PBJ': 'Bleu hydro',
         'PFQ': 'Granite cristal',
-        'PJ7': 'Canyon Lake',  # Couleur RAM
-        # Intérieur
+        'PJ7': 'Canyon Lake',
+        # Intérieur / Sièges
         'B6W7': 'Sièges en similicuir capri',
         'CLX9': 'Cuir Nappa ventilé',
         'YLX9': 'Premium Leather Bucket Seats',
         'CU2': 'Red Interior Accents',
+        'E7X9': 'Sièges baq dossier bas tissu',  # Gladiator
         # Équipements - RAM 1500 RHO
         'ANT': 'Bed Utility Group',
         'A6H': 'RHO Level 1 Equipment Group',
@@ -468,23 +469,30 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'MMB': 'MOPAR RHO Hood Graphics',
         'MTW': 'MOPAR Off-Road Style Running Boards',
         'YGV': '17 Additional Litres Of Gas',
+        # Équipements - Gladiator/Wrangler
+        'AJK': 'Ensemble Commodités',
+        'DFT': 'Transmission Automatique 8 Vitesses',
+        'ERC': 'Moteur V6 Pentastar 3.6L',
+        'HT1': 'Toit Rigide Freedom Top 3 Sect Noir',
+        'YGN': '15L Supplémentaires Essence',
+        '41G': 'Rabais',
         # Équipements généraux
         'ABR': 'Ensemble attelage de remorque',
         'ALC': 'Ensemble allure noire',
         'DFW': 'Transmission automatique 8 vitesses',
-        'ERC': 'Moteur V6 Pentastar 3.6L',
         'YGW': '20L supplémentaires essence',
         'ADE': 'Système de divertissement arrière',
         'ADG': 'Navigation et radio satellite',
         'UAQ': 'Groupe remorquage haute capacité',
         'RSD': 'Roues 20 pouces',
         'DMC': 'Climatisation 3 zones',
-        'AJK': 'Sièges avant chauffants et ventilés',
         'AHR': 'Volant chauffant',
         'AWL': 'Système audio premium Alpine',
-        # Packages
-        '2TE': 'Ensemble éclair 2TE',
-        '23E': 'Ensemble éclair 23E',
+        # Packages / Ensembles
+        '2TE': 'Ensemble Éclair 2TE',
+        '23E': 'Ensemble Éclair 23E',
+        '2TW': 'Ensemble Éclair 2TW',  # Gladiator
+        '24W': 'Ensemble Éclair 24W',  # Gladiator
         '2BZ': 'Groupe luxe',
         '2BX': 'Groupe technologie',
         '21D': 'Groupe remorquage',
@@ -494,11 +502,11 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         '2TY': 'Customer Preferred Package 2TY',
         '22Y': 'Customer Preferred Package 22Y',
         # Taxes/Frais
-        '4CP': 'Federal A/C Excise Tax',
-        '801': 'Destination Charge',
-        '999': 'Financed/Shipped',
-        '92HC1': 'PPA Assessment',
-        '92HC2': 'Marketing Allowance',
+        '4CP': 'Taxe Accise Fédérale Climatiseur',
+        '801': 'Frais de Transport',
+        '999': 'Finance/Expédié',
+        '92HC1': 'Cotisation P.P.',
+        '92HC2': 'Allocation de Marketing',
     }
     
     # Dictionnaire inversé: description partielle → code
