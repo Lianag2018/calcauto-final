@@ -2070,12 +2070,40 @@ export default function HomeScreen() {
               <TouchableOpacity
                 style={styles.sendEmailButton}
                 onPress={() => setShowEmailModal(true)}
+                data-testid="send-email-btn"
               >
                 <Ionicons name="mail-outline" size={20} color="#fff" />
                 <Text style={styles.sendEmailButtonText}>
                   {lang === 'fr' ? 'Envoyer par email' : 'Send by email'}
                 </Text>
               </TouchableOpacity>
+              
+              {/* Share Actions Row */}
+              <View style={styles.shareActionsRow}>
+                {/* Share via SMS Button */}
+                <TouchableOpacity
+                  style={styles.shareSmsButton}
+                  onPress={handleShareSMS}
+                  data-testid="share-sms-btn"
+                >
+                  <Ionicons name="chatbubble-outline" size={18} color="#fff" />
+                  <Text style={styles.shareButtonText}>
+                    {lang === 'fr' ? 'Partager par texto' : 'Share via SMS'}
+                  </Text>
+                </TouchableOpacity>
+                
+                {/* Print Button */}
+                <TouchableOpacity
+                  style={styles.printButton}
+                  onPress={handlePrint}
+                  data-testid="print-btn"
+                >
+                  <Ionicons name="print-outline" size={18} color="#fff" />
+                  <Text style={styles.shareButtonText}>
+                    {lang === 'fr' ? 'Imprimer' : 'Print'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
         </ScrollView>
