@@ -591,6 +591,8 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'VERT SARGE': 'PGE',
         'ROUGE VELOURS': 'PRM',
         'ARGENT BILLET': 'PAR',
+        'GRIS DE MER METALLISE': 'PAS',  # Grand Cherokee
+        'DE MER METALLISE': 'PAS',
         
         # Intérieur / Sièges
         'SIEGES EN SIMILICUIR CAPRI': 'B6W7',
@@ -602,6 +604,9 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'SIEGES BAQ DOSSIER BAS TISSU': 'E7X9',  # Gladiator
         'BAQ DOSSIER BAS TISSU': 'E7X9',
         'DOSSIER BAS TISSU': 'E7X9',
+        'SIEGES DESSUS EN CUIR NAPPA': 'FLX7',  # Grand Cherokee
+        'DESSUS EN CUIR NAPPA': 'FLX7',
+        'CUIR NAPPA': 'FLX7',
         
         # Équipements
         'BED UTILITY GROUP': 'ANT',
