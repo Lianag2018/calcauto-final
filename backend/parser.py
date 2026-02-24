@@ -508,12 +508,14 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'PBJ': 'Bleu hydro',
         'PFQ': 'Granite cristal',
         'PJ7': 'Canyon Lake',
+        'PAS': 'Gris de mer métallisé',  # Grand Cherokee
         # Intérieur / Sièges
         'B6W7': 'Sièges en similicuir capri',
         'CLX9': 'Cuir Nappa ventilé',
         'YLX9': 'Premium Leather Bucket Seats',
         'CU2': 'Red Interior Accents',
         'E7X9': 'Sièges baq dossier bas tissu',  # Gladiator
+        'FLX7': 'Sièges dessus en cuir Nappa',  # Grand Cherokee
         # Équipements - RAM 1500 RHO
         'ANT': 'Bed Utility Group',
         'A6H': 'RHO Level 1 Equipment Group',
