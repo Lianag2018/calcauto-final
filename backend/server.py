@@ -5087,7 +5087,10 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                 vin_info = decode_vin(vin_corrected) if len(vin_corrected) == 17 else {}
                 
                 # Parser le code modèle + DOUBLE VÉRIFICATION MASTER
-                model_code = parse_model_code(full_text) or ""
+                # Charger les codes master pour validation
+                from product_code_lookup import get_all_codes
+                master_codes = get_all_codes()
+                model_code = parse_model_code(full_text, master_codes) or ""
                 master_lookup = lookup_product_code(model_code) if model_code else None
                 product_info = master_lookup or (decode_product_code(model_code) if model_code else {})
                 
