@@ -978,6 +978,8 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
     for desc_key, code in description_to_code.items():
         if code in seen_codes:
             continue
+        if code in skip_codes:
+            continue
         # Vérifier si un code équivalent existe déjà
         if code in equivalent_codes:
             if any(eq in seen_codes for eq in equivalent_codes[code]):
@@ -997,6 +999,8 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         if code in seen_codes:
             continue
         if code in invalid_codes:
+            continue
+        if code in skip_codes:
             continue
         # Vérifier si un code équivalent existe déjà
         if code in equivalent_codes:
