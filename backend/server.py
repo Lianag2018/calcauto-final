@@ -5652,6 +5652,316 @@ async def require_admin(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
     return user
 
+
+# ============ EXCEL EXPORT/IMPORT ============
+
+class ExcelExportRequest(BaseModel):
+    """Données pour export Excel"""
+    vin: Optional[str] = None
+    model_code: Optional[str] = None
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    trim: Optional[str] = None
+    year: Optional[str] = None
+    stock_no: Optional[str] = None
+    ep_cost: Optional[float] = 0
+    pdco: Optional[float] = 0
+    pref: Optional[float] = 0
+    holdback: Optional[float] = 0
+    subtotal: Optional[float] = 0
+    total: Optional[float] = 0
+    options: Optional[List[Dict[str, Any]]] = []
+
+
+@api_router.post("/invoice/export-excel")
+async def export_invoice_to_excel(
+    data: ExcelExportRequest,
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Exporte les données de facture vers un fichier Excel.
+    Utilisé après un scan OCR pour permettre la révision/correction.
+    """
+    user = await get_current_user(authorization)
+    
+    if not EXCEL_AVAILABLE:
+        raise HTTPException(status_code=500, detail="openpyxl non disponible")
+    
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+        
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Facture FCA"
+        
+        # Styles
+        header_font = Font(bold=True, size=14, color="FFFFFF")
+        header_fill = PatternFill(start_color="1F4E79", end_color="1F4E79", fill_type="solid")
+        subheader_font = Font(bold=True, size=11)
+        subheader_fill = PatternFill(start_color="D9E2F3", end_color="D9E2F3", fill_type="solid")
+        thin_border = Border(
+            left=Side(style='thin'), right=Side(style='thin'),
+            top=Side(style='thin'), bottom=Side(style='thin')
+        )
+        
+        # Title
+        ws.merge_cells('A1:F1')
+        title = f"FACTURE FCA - {data.brand or ''} {data.model or ''} {data.trim or ''}"
+        ws['A1'] = title.strip()
+        ws['A1'].font = header_font
+        ws['A1'].fill = PatternFill(start_color="C00000", end_color="C00000", fill_type="solid")
+        ws['A1'].alignment = Alignment(horizontal='center')
+        
+        # Vehicle Info Section
+        ws['A3'] = "INFORMATIONS VÉHICULE"
+        ws['A3'].font = subheader_font
+        ws['A3'].fill = subheader_fill
+        ws.merge_cells('A3:B3')
+        
+        vehicle_fields = [
+            ("VIN", data.vin or ""),
+            ("Code Modèle", data.model_code or ""),
+            ("Marque", data.brand or ""),
+            ("Modèle", data.model or ""),
+            ("Trim", data.trim or ""),
+            ("Année", data.year or ""),
+            ("Stock#", data.stock_no or ""),
+        ]
+        
+        row = 4
+        for label, value in vehicle_fields:
+            ws[f'A{row}'] = label
+            ws[f'B{row}'] = value
+            ws[f'A{row}'].font = Font(bold=True)
+            ws[f'A{row}'].border = thin_border
+            ws[f'B{row}'].border = thin_border
+            row += 1
+        
+        # Financial Section
+        ws['D3'] = "INFORMATIONS FINANCIÈRES"
+        ws['D3'].font = subheader_font
+        ws['D3'].fill = subheader_fill
+        ws.merge_cells('D3:E3')
+        
+        financial_fields = [
+            ("E.P. (Coût Net)", data.ep_cost or 0),
+            ("PDCO (MSRP)", data.pdco or 0),
+            ("PREF", data.pref or 0),
+            ("Holdback", data.holdback or 0),
+            ("Sous-total", data.subtotal or 0),
+            ("Total Facture", data.total or 0),
+        ]
+        
+        row = 4
+        for label, value in financial_fields:
+            ws[f'D{row}'] = label
+            ws[f'E{row}'] = value
+            ws[f'D{row}'].font = Font(bold=True)
+            ws[f'D{row}'].border = thin_border
+            ws[f'E{row}'].border = thin_border
+            ws[f'E{row}'].number_format = '#,##0.00 $'
+            row += 1
+        
+        # Options Section
+        options_start = 13
+        ws[f'A{options_start}'] = "OPTIONS / ACCESSOIRES"
+        ws[f'A{options_start}'].font = Font(bold=True, size=12, color="FFFFFF")
+        ws[f'A{options_start}'].fill = header_fill
+        ws.merge_cells(f'A{options_start}:E{options_start}')
+        
+        # Options Headers
+        opt_headers = ["#", "Code", "Description", "Catégorie", "Montant"]
+        header_row = options_start + 1
+        for col, header in enumerate(opt_headers, 1):
+            cell = ws.cell(row=header_row, column=col, value=header)
+            cell.font = Font(bold=True)
+            cell.fill = subheader_fill
+            cell.border = thin_border
+            cell.alignment = Alignment(horizontal='center')
+        
+        # Options Data
+        row = header_row + 1
+        options = data.options or []
+        for i, opt in enumerate(options, 1):
+            ws.cell(row=row, column=1, value=i).border = thin_border
+            ws.cell(row=row, column=2, value=opt.get('product_code', opt.get('code', ''))).border = thin_border
+            ws.cell(row=row, column=3, value=opt.get('description', '')).border = thin_border
+            ws.cell(row=row, column=4, value=opt.get('category', '')).border = thin_border
+            amount_cell = ws.cell(row=row, column=5, value=opt.get('amount', 0))
+            amount_cell.border = thin_border
+            amount_cell.number_format = '#,##0.00 $'
+            row += 1
+        
+        # Add empty rows for manual additions
+        for i in range(len(options) + 1, 26):
+            for col in range(1, 6):
+                cell = ws.cell(row=row, column=col)
+                cell.border = thin_border
+                if col == 1:
+                    cell.value = i
+            row += 1
+        
+        # Column widths
+        ws.column_dimensions['A'].width = 18
+        ws.column_dimensions['B'].width = 25
+        ws.column_dimensions['C'].width = 40
+        ws.column_dimensions['D'].width = 22
+        ws.column_dimensions['E'].width = 15
+        
+        # Save to bytes
+        excel_buffer = io.BytesIO()
+        wb.save(excel_buffer)
+        excel_buffer.seek(0)
+        
+        # Encode as base64
+        excel_base64 = base64.b64encode(excel_buffer.read()).decode('utf-8')
+        
+        # Generate filename
+        vin_part = (data.vin or "NOVIN")[-6:]
+        filename = f"facture_{data.brand or 'FCA'}_{data.model or 'vehicle'}_{vin_part}.xlsx"
+        
+        return {
+            "success": True,
+            "filename": filename,
+            "excel_base64": excel_base64,
+            "message": "Fichier Excel généré avec succès"
+        }
+        
+    except Exception as e:
+        logger.error(f"Excel export error: {e}")
+        raise HTTPException(status_code=500, detail=f"Erreur export Excel: {str(e)}")
+
+
+@api_router.post("/invoice/import-excel")
+async def import_invoice_from_excel(
+    file: UploadFile = File(...),
+    authorization: Optional[str] = Header(None)
+):
+    """
+    Importe les données d'une facture depuis un fichier Excel.
+    Utilisé après révision/correction manuelle.
+    """
+    user = await get_current_user(authorization)
+    
+    if not EXCEL_AVAILABLE:
+        raise HTTPException(status_code=500, detail="openpyxl non disponible")
+    
+    if not file.filename.endswith('.xlsx'):
+        raise HTTPException(status_code=400, detail="Fichier .xlsx requis")
+    
+    try:
+        from openpyxl import load_workbook
+        
+        # Read file
+        content = await file.read()
+        excel_buffer = io.BytesIO(content)
+        wb = load_workbook(excel_buffer)
+        ws = wb.active
+        
+        # Parse Vehicle Info (rows 4-10, columns A-B)
+        vehicle_data = {}
+        field_mapping = {
+            "VIN": "vin",
+            "Code Modèle": "model_code",
+            "Marque": "brand",
+            "Modèle": "model",
+            "Trim": "trim",
+            "Année": "year",
+            "Stock#": "stock_no",
+        }
+        
+        for row in range(4, 12):
+            label = ws[f'A{row}'].value
+            value = ws[f'B{row}'].value
+            if label and label in field_mapping:
+                vehicle_data[field_mapping[label]] = value
+        
+        # Parse Financial Info (rows 4-10, columns D-E)
+        financial_mapping = {
+            "E.P. (Coût Net)": "ep_cost",
+            "PDCO (MSRP)": "pdco",
+            "PREF": "pref",
+            "Holdback": "holdback",
+            "Sous-total": "subtotal",
+            "Total Facture": "total",
+        }
+        
+        for row in range(4, 12):
+            label = ws[f'D{row}'].value
+            value = ws[f'E{row}'].value
+            if label and label in financial_mapping:
+                try:
+                    vehicle_data[financial_mapping[label]] = float(value) if value else 0
+                except:
+                    vehicle_data[financial_mapping[label]] = 0
+        
+        # Parse Options (starting from row 15)
+        options = []
+        row = 15  # After headers
+        while row < 50:  # Max 35 options
+            code = ws.cell(row=row, column=2).value
+            description = ws.cell(row=row, column=3).value
+            category = ws.cell(row=row, column=4).value
+            amount = ws.cell(row=row, column=5).value
+            
+            if code and description:  # Valid option
+                options.append({
+                    "product_code": str(code).strip(),
+                    "description": str(description).strip(),
+                    "category": str(category).strip() if category else "",
+                    "amount": float(amount) if amount else 0
+                })
+            elif not code and not description:
+                # Empty row, might be end of options
+                break
+            
+            row += 1
+        
+        vehicle_data["options"] = options
+        vehicle_data["import_source"] = "excel"
+        vehicle_data["imported_at"] = datetime.utcnow().isoformat()
+        
+        return {
+            "success": True,
+            "data": vehicle_data,
+            "options_count": len(options),
+            "message": f"Import réussi: {len(options)} options trouvées"
+        }
+        
+    except Exception as e:
+        logger.error(f"Excel import error: {e}")
+        raise HTTPException(status_code=500, detail=f"Erreur import Excel: {str(e)}")
+
+
+@api_router.get("/invoice/template-excel")
+async def get_invoice_template(authorization: Optional[str] = Header(None)):
+    """
+    Retourne un template Excel vide pour saisie manuelle.
+    """
+    user = await get_current_user(authorization)
+    
+    # Return empty template
+    empty_data = ExcelExportRequest(
+        vin="",
+        model_code="",
+        brand="",
+        model="",
+        trim="",
+        year="2026",
+        stock_no="",
+        ep_cost=0,
+        pdco=0,
+        pref=0,
+        holdback=0,
+        subtotal=0,
+        total=0,
+        options=[]
+    )
+    
+    return await export_invoice_to_excel(empty_data, authorization)
+
+
 # ============ Parsing Metrics & Monitoring ============
 
 @api_router.get("/admin/parsing-stats")
