@@ -1518,5 +1518,203 @@
     "raw": "GRANDCHEROKEELLIMITED4X4",
     "trim": "Limited",
     "year": "2025"
+  },
+  "LB7M29": {
+    "code": "LB7M29",
+    "brand": "Dodge",
+    "model": "Charger",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Dodge Charger   4x4",
+    "raw": "CODE PAGES CHARGER DAYTONA 2-DOOR AWD",
+    "year": "2025"
+  },
+  "WLJH74": {
+    "code": "WLJH74",
+    "brand": "Jeep",
+    "model": "Grand Cherokee L",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Cherokee L   4x4",
+    "raw": "CODE PAGES GRAND CHEROKEE LAREDO 4X4",
+    "year": "2025"
+  },
+  "WLXH74": {
+    "code": "WLXH74",
+    "brand": "Jeep",
+    "model": "Grand Cherokee",
+    "trim": "4Xe",
+    "cab": "",
+    "drive": "",
+    "full_description": "Jeep Grand Cherokee 4Xe",
+    "raw": "CODE PAGES GRAND CHEROKEE 4XE",
+    "year": "2025"
+  },
+  "WSJS75": {
+    "code": "WSJS75",
+    "brand": "Jeep",
+    "model": "Grand Wagoneer",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Wagoneer   4x4",
+    "raw": "PAGES GRAND WAGONEER 4X4 GRAND WAGONEER SERIES II 4X4",
+    "year": "2025"
+  },
+  "WSJS76": {
+    "code": "WSJS76",
+    "brand": "Jeep",
+    "model": "Grand Wagoneer L",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Wagoneer L   4x4",
+    "raw": "CODE PAGES GRAND WAGONEER L SERIES II 4X4",
+    "year": "2025"
+  },
+  "WSJT76": {
+    "code": "WSJT76",
+    "brand": "Jeep",
+    "model": "Grand Wagoneer L",
+    "trim": "",
+    "cab": "",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Wagoneer L   4x4",
+    "raw": "PAGES GRAND WAGONEER L SERIES II 4X4 GRAND WAGONEER L SERIES III 4X4",
+    "year": "2025"
+  },
+  "DD3L63": {
+    "code": "DD3L63",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "full_description": "Ram 3500  Regular Cab 4x2",
+    "raw": "CODE PAGES 3500 REG CAB CHASSIS 4X2 (143.5 in WB - CA of 60 in)",
+    "year": "2025"
+  },
+  "DD3L93": {
+    "code": "DD3L93",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "",
+    "cab": "Crew Cab",
+    "drive": "4x2",
+    "full_description": "Ram 3500  Crew Cab 4x2",
+    "raw": "3500 REG CAB CHASSIS 4X2 (167.5 in WB - CA of 84 in) 3500 CREW CAB CHASSIS 4X2 (172.4 in WB - CA of 60 in)",
+    "year": "2025"
+  },
+  "DP9L94": {
+    "code": "DP9L94",
+    "brand": "Ram",
+    "model": "4500",
+    "trim": "",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 4500  Crew Cab 4x4",
+    "raw": "4500 CREW CAB CHASSIS 4X4 (173.4 IN WB - CA of 60 IN) 4500 CREW CAB CHASSIS 4X4 (197.4 IN WB - CA of 84 IN)",
+    "year": "2025"
+  },
+  "DP4L64": {
+    "code": "DP4L64",
+    "brand": "Ram",
+    "model": "4500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "full_description": "Ram 4500  Regular Cab 4x2",
+    "raw": "PAGES 4500 REG CAB CHASSIS 4X2 (144.5 IN WB - CA of 60 IN) 4500 REG CAB CHASSIS 4X2 (168.5 IN WB - CA of 84 IN)",
+    "year": "2025"
+  },
+  "DP4L66": {
+    "code": "DP4L66",
+    "brand": "Ram",
+    "model": "4500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "full_description": "Ram 4500  Regular Cab 4x2",
+    "raw": "4500 REG CAB CHASSIS 4X2 (192.5 IN WB - CA of 108 IN) 4500 REG CAB CHASSIS 4X2 (204.5 IN WB - CA of 120 IN)",
+    "year": "2025"
+  },
+  "DP9L64": {
+    "code": "DP9L64",
+    "brand": "Ram",
+    "model": "4500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x4",
+    "full_description": "Ram 4500  Regular Cab 4x4",
+    "raw": "4500 REG CAB CHASSIS 4X4 (144.5 IN WB - CA of 60 IN) 4500 REG CAB CHASSIS 4X4 (168.5 IN WB - CA of 84 IN)",
+    "year": "2025"
+  },
+  "DP0L94": {
+    "code": "DP0L94",
+    "brand": "Ram",
+    "model": "5500",
+    "trim": "",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 5500  Crew Cab 4x4",
+    "raw": "5500 CREW CAB CHASSIS 4X4 (173.4 IN WB - CA of 60 IN) 5500 CREW CAB CHASSIS 4X4 (197.4 IN WB - CA of 84 IN)",
+    "year": "2025"
+  },
+  "DP5L64": {
+    "code": "DP5L64",
+    "brand": "Ram",
+    "model": "5500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "full_description": "Ram 5500  Regular Cab 4x2",
+    "raw": "PAGES 5500 REG CAB CHASSIS 4X2 (144.5 IN WB - CA of 60 IN) 5500 REG CAB CHASSIS 4X2 (168.5 IN WB - CA of 84 IN)",
+    "year": "2025"
+  },
+  "DP5L66": {
+    "code": "DP5L66",
+    "brand": "Ram",
+    "model": "5500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x2",
+    "full_description": "Ram 5500  Regular Cab 4x2",
+    "raw": "5500 REG CAB CHASSIS 4X2 (192.5 IN WB - CA of 108 IN) 5500 REG CAB CHASSIS 4X2 (204.5 IN WB - CA of 120 IN)",
+    "year": "2025"
+  },
+  "DP0L64": {
+    "code": "DP0L64",
+    "brand": "Ram",
+    "model": "5500",
+    "trim": "",
+    "cab": "Regular Cab",
+    "drive": "4x4",
+    "full_description": "Ram 5500  Regular Cab 4x4",
+    "raw": "5500 REG CAB CHASSIS 4X4 (144.5 IN WB - CA of 60 IN) 5500 REG CAB CHASSIS 4X4 (168.5 IN WB - CA of 84 IN)",
+    "year": "2025"
+  },
+  "JLXL74": {
+    "code": "JLXL74",
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "4Xe",
+    "cab": "",
+    "drive": "",
+    "full_description": "Jeep Wrangler 4Xe",
+    "raw": "CODE PAGES WRANGLER 4XE 4-DOOR",
+    "year": "2025"
+  },
+  "JLXP74": {
+    "code": "JLXP74",
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "Sahara",
+    "cab": "",
+    "drive": "",
+    "full_description": "Jeep Wrangler Sahara",
+    "raw": "PAGES WRANGLER 4XE 4-DOOR WRANGLER 4-DOOR SAHARA 4XE",
+    "year": "2025"
   }
 }
