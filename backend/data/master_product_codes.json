@@ -1439,5 +1439,27 @@
     "raw": "GRANDWAGONEERSERIESIII4X4",
     "trim": "Series I",
     "year": "2025"
+  },
+  "WLJP74": {
+    "brand": "Jeep",
+    "cab": "",
+    "code": "WLJP74",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Cherokee Limited 4x4",
+    "model": "Grand Cherokee",
+    "raw": "GRANDCHEROKEELIMITED4X4",
+    "trim": "Limited",
+    "year": "2026"
+  },
+  "WLJH75": {
+    "brand": "Jeep",
+    "cab": "",
+    "code": "WLJH75",
+    "drive": "4x4",
+    "full_description": "Jeep Grand Cherokee L Altitude 4x4",
+    "model": "Grand Cherokee L",
+    "raw": "GRANDCHEROKEELALTITUDE4X4",
+    "trim": "Altitude",
+    "year": "2026"
   }
 }
