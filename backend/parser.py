@@ -599,8 +599,12 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
             if code in seen_codes:
                 continue
             
-            # Ignorer si le code ressemble à un code postal (ex: G1K, H2X, etc.)
-            if re.match(r'^[A-Z]\d[A-Z]$', code):
+            # Ignorer si le code ressemble à un code postal canadien (ex: H2X, G1K)
+            # Mais pas A6H, M5V qui sont des options FCA valides
+            # Les codes postaux canadiens commencent par certaines lettres seulement:
+            # A (NL), B (NS), C (PE), E (NB), G-H (QC), J-K (QC/ON), L-N (ON), P-T (ON-West), V (BC), R (MB), S (SK), Y (YT), X (NT/NU)
+            # Les options FCA ne commencent généralement pas par ces lettres seules
+            if re.match(r'^[ABCEGHJ-NPR-VXY]\d[A-Z]$', code):
                 continue
             
             # Ignorer si la description contient des mots-clés d'adresse
