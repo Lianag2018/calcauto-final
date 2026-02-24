@@ -428,12 +428,12 @@ def parse_totals(text: str) -> Dict[str, Optional[float]]:
 # =====================================
 
 CATEGORY_GROUPS = {
-    "transmission": {"DFT", "DFW", "DFM", "DFD", "DFL", "DFH", "DFR"},
-    "engine": {"ERB", "ERC", "ETM", "ETK", "EZH", "ESG", "EFC"},
-    "color": {"PXJ", "PW7", "PAU", "PBF", "PSC", "PX8", "PWL", "PGG", "PWZ", "PGE", "PRM", "PAR", "PYB", "PBJ", "PFQ", "PJ7"},
+    "transmission": {"DFT", "DFW", "DFM", "DFD", "DFL", "DFH", "DFR", "DC1"},
+    "engine": {"ERB", "ERC", "ETM", "ETK", "EZH", "ESG", "EFC", "EC7"},
+    "color": {"PXJ", "PW7", "PAU", "PBF", "PSC", "PX8", "PWL", "PGG", "PWZ", "PGE", "PRM", "PAR", "PYB", "PBJ", "PFQ", "PJ7", "PAS"},
     "fuel": {"YGN", "YGV", "YGW"},
     "fee": {"801", "4CP"},
-    "package": {"2TE", "23E", "2TW", "24W", "2BZ", "2BX", "21D", "22B", "27A", "2TY", "22Y"},
+    "package": {"2TE", "23E", "2TW", "24W", "2BZ", "2BX", "21D", "22B", "27A", "2TY", "22Y", "2C1", "2T1"},
 }
 
 
