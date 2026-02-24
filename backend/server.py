@@ -3548,7 +3548,8 @@ async def create_inventory_bulk(vehicles: List[InventoryCreate], authorization: 
     for vehicle in vehicles:
         try:
             # Calculate net_cost
-            net_cost = vehicle.ep_cost - vehicle.holdback if vehicle.ep_cost and vehicle.holdback else 0
+            # NOTE: E.P. FCA inclut DÉJÀ la déduction du holdback, donc net_cost = E.P.
+            net_cost = vehicle.ep_cost if vehicle.ep_cost else 0
             
             vehicle_data = {
                 "id": str(uuid.uuid4()),
