@@ -108,47 +108,89 @@ def parse_vin(text: str) -> Optional[str]:
     return None
 
 
-def parse_model_code(text: str) -> Optional[str]:
+def parse_model_code(text: str, master_codes: dict = None) -> Optional[str]:
     """
-    Extrait le code modèle FCA.
+    Extrait le code modèle FCA avec validation contre la base de données.
+    
+    Stratégie:
+    1. D'abord, chercher les codes connus avec patterns regex
+    2. Ensuite, chercher TOUS les candidats de 6 caractères alphanumériques
+    3. Valider chaque candidat contre la base master_codes
     
     Patterns connus:
-    - WL**** (Grand Cherokee)
-    - WS**** (Wagoneer S)
-    - JT**** (Gladiator)
-    - DT**** (Ram 1500)
-    - DJ**** (Ram 2500)
-    - D2**** (Ram 3500)
-    - JL**** (Wrangler)
-    - MP**** (Compass)
-    - KM**** (Cherokee)
-    - WD**** (Durango)
-    - LB**** (Charger)
-    - RU**** (Pacifica)
-    - VF**** (ProMaster)
+    - WL**** (Grand Cherokee), WS**** (Wagoneer)
+    - JT**** (Gladiator), JL**** (Wrangler)
+    - DT**** (Ram 1500), DJ**** (Ram 2500), D2*/D3* (Ram 3500)
+    - MP**** (Compass), KM**** (Cherokee)
+    - WD**** (Durango), LB**** (Charger)
+    - RU**** (Pacifica), VF**** (ProMaster)
+    - GG**** (Hornet), FG**** (Fiat), EJ**** (Jeep EV)
+    - DP**** (Ram 4500/5500), DD**** (Ram 3500 Chassis)
     """
+    text_upper = text.upper()
+    
+    # Patterns prioritaires (les plus courants d'abord)
     patterns = [
-        r'\b(WL[A-Z]{2}\d{2})\b',  # Grand Cherokee
-        r'\b(WS[A-Z]{2}\d{2})\b',  # Wagoneer S
-        r'\b(JT[A-Z]{2}\d{2})\b',  # Gladiator
-        r'\b(DT[A-Z0-9]{2}\d{2})\b',  # Ram 1500
-        r'\b(DJ[A-Z0-9]{2}\d{2})\b',  # Ram 2500
-        r'\b(D2[A-Z0-9]{2}\d{2})\b',  # Ram 3500
-        r'\b(D[23][0-9][A-Z0-9]{3})\b',  # Ram 3500 alternative (D23L91, D28H92)
-        r'\b(JL[A-Z]{2}\d{2})\b',  # Wrangler
-        r'\b(KL[A-Z]{2}\d{2})\b',  # Cherokee old
-        r'\b(KM[A-Z]{2}\d{2})\b',  # Cherokee new
-        r'\b(WD[A-Z]{2}\d{2})\b',  # Durango
-        r'\b(MP[A-Z]{2}\d{2})\b',  # Compass
-        r'\b(LB[A-Z]{2}\d{2})\b',  # Charger
-        r'\b(RU[A-Z]{2}\d{2})\b',  # Pacifica
-        r'\b(VF[A-Z0-9]{2}\d{2})\b',  # ProMaster
+        # Ram Heavy Duty (les plus courants)
+        r'\b(DJ[0-9][A-Z][0-9]{2})\b',  # Ram 2500 (DJ7L92, DJ7H91)
+        r'\b(D[23][0-9][A-Z][0-9]{2})\b',  # Ram 3500 (D23L91, D28H92)
+        r'\b(DD[0-9][A-Z][0-9]{2})\b',  # Ram 3500 Chassis
+        r'\b(DP[0-9][A-Z][0-9]{2})\b',  # Ram 4500/5500
+        
+        # Ram 1500
+        r'\b(DT[0-9][A-Z][0-9]{2})\b',  # Ram 1500 (DT6H98, DT6L91)
+        
+        # Jeep SUVs
+        r'\b(WL[A-Z]{2}[0-9]{2})\b',  # Grand Cherokee
+        r'\b(WS[A-Z]{2}[0-9]{2})\b',  # Wagoneer
+        r'\b(KM[A-Z]{2}[0-9]{2})\b',  # Cherokee new
+        r'\b(MP[A-Z]{2}[0-9]{2})\b',  # Compass
+        
+        # Jeep Wrangler/Gladiator
+        r'\b(JL[A-Z]{2}[0-9]{2})\b',  # Wrangler
+        r'\b(JT[A-Z]{2}[0-9]{2})\b',  # Gladiator
+        r'\b(EJ[A-Z]{2}[0-9]{2})\b',  # Jeep EV
+        
+        # Dodge
+        r'\b(WD[A-Z]{2}[0-9]{2})\b',  # Durango
+        r'\b(LB[A-Z]{2}[0-9]{2})\b',  # Charger
+        r'\b(GG[A-Z]{2}[0-9]{2})\b',  # Hornet
+        
+        # Chrysler
+        r'\b(RU[A-Z]{2}[0-9]{2})\b',  # Pacifica
+        
+        # Ram Commercial
+        r'\b(VF[0-9A-Z]{2}[0-9]{2})\b',  # ProMaster
+        
+        # Fiat
+        r'\b(FG[A-Z]{2}[0-9]{2})\b',  # Fiat 500
     ]
     
+    # Étape 1: Chercher avec les patterns connus
     for pattern in patterns:
-        match = re.search(pattern, text.upper())
+        match = re.search(pattern, text_upper)
         if match:
-            return match.group(1)
+            code = match.group(1)
+            # Si on a la base master, vérifier que le code existe
+            if master_codes and code in master_codes:
+                return code
+            elif not master_codes:
+                # Pas de base master, retourner quand même
+                return code
+    
+    # Étape 2: Si on a la base master, chercher TOUS les codes de 6 caractères
+    # et vérifier lesquels sont dans la base
+    if master_codes:
+        # Trouver tous les mots de 6 caractères alphanumériques
+        all_6char = re.findall(r'\b([A-Z0-9]{6})\b', text_upper)
+        for candidate in all_6char:
+            if candidate in master_codes:
+                return candidate
+    
+    # Étape 3: Fallback - pattern générique pour 6 caractères (sans validation)
+    generic_match = re.search(r'\b([A-Z]{2}[A-Z0-9]{2}[0-9]{2})\b', text_upper)
+    if generic_match:
+        return generic_match.group(1)
     
     return None
 
