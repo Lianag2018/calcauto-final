@@ -602,7 +602,20 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'SOLD', 'SHIP', 'BILL', 'ATTN', 'PHONE', 'FAX', 'EMAIL', 'WWW', 'HTTP',
         'LTEE', 'LTD', 'ENRG', 'INC', 'CORP', 'AUTO', 'AUTOS',
         # Codes modèles (pas des options)
-        'DT6S98', 'DJ7L92', 'WLJP74', 'WLJH75', 'VF1L13'
+        'DT6S98', 'DJ7L92', 'WLJP74', 'WLJH75', 'VF1L13',
+        # Fragments de descriptions OCR erronés (mots seuls, pas des codes FCA)
+        'MODE', 'BED', 'RHO', 'RED', 'THIS', 'OR', '1F', '2F', '3F',
+        'THE', 'TO', 'IS', 'IT', 'OF', 'IN', 'ON', 'AT', 'BY', 'AN', 'AS',
+        'MOPAR', 'LEVEL', 'GROUP', 'PACKAGE', 'INTERIOR', 'EXTERIOR',
+        'ACCENTS', 'GRAPHICS', 'BOARDS', 'COVER', 'SEATS', 'ENGINE',
+        'TRANSMISSION', 'SUNROOF', 'UTILITY', 'LAKE', 'STYLE', 'SPEED',
+        'MANUFACTURED', 'MEET', 'REGISTRATION', 'OUTSIDE', 'SILOW',
+        'VEHICLE', 'EQUIPMENT', 'TONNEAU', 'PANORAMIC', 'AUTOMATIC',
+        'LEATHER', 'PREMIUM', 'BUCKET', 'SOFT', 'FOLD', 'DUAL', 'PANE',
+        'TWIN', 'TURBO', 'ADDITIONAL', 'LITRES', 'GAS', 'FEDERAL',
+        'EXCISE', 'DESTINATION', 'CHARGE', 'FINANCED', 'SHIPPED',
+        'ASSESSMENT', 'ALLOWANCE', 'MARKETING', 'PPA', 'CUSTOMER',
+        'PREFERRED', 'RUNNING', 'HOOD', 'OFF', 'ROAD'
     }
     
     # Mots-clés d'adresse à ignorer dans la description
