@@ -1189,6 +1189,13 @@ export default function InventoryScreen() {
 
                 <View style={styles.reviewActions}>
                   <TouchableOpacity 
+                    style={styles.exportExcelBtn}
+                    onPress={handleExportExcel}
+                  >
+                    <Ionicons name="document-outline" size={18} color="#fff" />
+                    <Text style={styles.exportExcelBtnText}>Excel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
                     style={styles.cancelBtn} 
                     onPress={() => { setShowReviewModal(false); setReviewData(null); }}
                   >
