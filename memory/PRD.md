@@ -137,7 +137,6 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
   - data-testid: `share-sms-btn`, `print-btn`, `send-email-btn`, `sms-preview-send-btn`
 
 ## Backlog
-- (P1) Restreindre extraction en-tête facture au VIN seulement
 - (P1) Refactoring index.tsx (fichier monolithique)
 - (P2) Interface historique scans
 - (P3) Refactoring server.py en structure routes/
@@ -149,9 +148,22 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
   - Catégories FCA: transmission, engine, color, fuel, fee, package
   - Priorisation: options avec montant > 0 prioritaires (OCR direct vs fallback)
   - Aucune suppression du code existant (VIN, fallback, skip_codes)
-- **CATEGORY_GROUPS**: 7 catégories avec ~40 codes FCA
+- **CATEGORY_GROUPS**: 7 catégories avec ~45 codes FCA
 - **Tests pytest**: 7 nouveaux tests dans `test_parser.py::TestDeduplication`
 - **Résultat**: 25 tests passent (0 régression)
+
+### Phase 15: Corrections Invoice Scan Grand Cherokee (DONE - Feb 2026)
+- **Coût Net = E.P.**: Le E.P. FCA inclut DÉJÀ la déduction holdback, ne plus soustraire
+  - Modifié: `server.py` aux lignes 3496, 3551, 4859, 5015, 5218
+  - Avant: `net_cost = ep_cost - holdback` 
+  - Après: `net_cost = ep_cost`
+- **Nouveaux codes FCA ajoutés** dans `parser.py`:
+  - Couleur: `PAS` (Gris de mer métallisé)
+  - Sièges: `FLX7` (Sièges dessus en cuir Nappa)
+  - Équipements Grand Cherokee: `ACX`, `ADT`, `DC1`, `EC7`
+  - Packages: `2C1`, `2T1` (Ensemble Éclair)
+- **CATEGORY_GROUPS enrichi**: Ajouté DC1 (transmission), EC7 (engine), PAS (color), 2C1/2T1 (package)
+- **Fichiers modifiés**: `backend/parser.py`, `backend/server.py`
 
 ## Test Credentials
 - Email: danielgiroux007@gmail.com
