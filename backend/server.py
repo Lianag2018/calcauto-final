@@ -3493,7 +3493,8 @@ async def create_inventory_vehicle(vehicle: InventoryCreate, authorization: Opti
             raise HTTPException(status_code=400, detail=f"Le VIN {vehicle.vin} existe déjà (Stock #{existing_vin.get('stock_no')})")
     
     # Calculate net_cost
-    net_cost = vehicle.ep_cost - vehicle.holdback if vehicle.ep_cost and vehicle.holdback else 0
+    # NOTE: E.P. FCA inclut DÉJÀ la déduction du holdback, donc net_cost = E.P.
+    net_cost = vehicle.ep_cost if vehicle.ep_cost else 0
     
     # ===== TÉLÉCHARGER LE WINDOW STICKER AUTOMATIQUEMENT =====
     window_sticker_available = False
