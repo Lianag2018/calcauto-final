@@ -147,6 +147,18 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
   5. Ajouté DJ7H91 aux skip_codes (code modèle, pas une option)
 - **Tests**: 3 nouveaux tests `TestBlockedCodes` (28/28 tests passent)
 
+### Phase 18: Impression Professionnelle (DONE - Feb 2026)
+- **Refonte complète** de `handlePrint` dans `index.tsx`
+- **Sur mobile**: Utilise `expo-print` pour ouvrir le dialogue d'impression natif (ne reste plus bloqué sur la page)
+- **Format professionnel** identique au courriel:
+  - En-tête CalcAuto AiPro avec branding
+  - Section véhicule (marque, modèle, trim, année, prix, VIN)
+  - Tableau des taux complet (36-96 mois, Option 1 & 2, terme sélectionné surligné)
+  - Détails du financement (rabais, bonus cash, frais dossier, taxe pneus, RDPRM, échange, comptant)
+  - Bannière "Meilleur choix" avec économies calculées
+  - Comparaison côte à côte Option 1 vs Option 2 (capital, taux, paiement, total)
+  - Note Bonus Cash et pied de page avec disclaimer
+
 ## Backlog
 - (P0) Corriger l'ordre des options du parseur (options fallback ajoutées au début au lieu de la fin)
 - (P1) Corriger visibilité bouton "Export Excel" dans le modal de révision
