@@ -137,12 +137,21 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
   - data-testid: `share-sms-btn`, `print-btn`, `send-email-btn`, `sms-preview-send-btn`
 
 ## Backlog
-- (P0) **Bug duplication d'options parser** - Le parser génère des options similaires en double (ex: DFT et DFW)
 - (P1) Restreindre extraction en-tête facture au VIN seulement
 - (P1) Refactoring index.tsx (fichier monolithique)
 - (P2) Interface historique scans
 - (P3) Refactoring server.py en structure routes/
 - (P3) Dashboard admin métriques parsing
+
+### Phase 14: Parser V6.5 - Déduplication (DONE - Feb 2026)
+- **Bug fix critique**: Résolu le problème de duplication d'options similaires
+- **Nouvelle fonction `deduplicate_options()`** dans `backend/parser.py`
+  - Catégories FCA: transmission, engine, color, fuel, fee, package
+  - Priorisation: options avec montant > 0 prioritaires (OCR direct vs fallback)
+  - Aucune suppression du code existant (VIN, fallback, skip_codes)
+- **CATEGORY_GROUPS**: 7 catégories avec ~40 codes FCA
+- **Tests pytest**: 7 nouveaux tests dans `test_parser.py::TestDeduplication`
+- **Résultat**: 25 tests passent (0 régression)
 
 ## Test Credentials
 - Email: danielgiroux007@gmail.com
