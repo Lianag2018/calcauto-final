@@ -767,6 +767,9 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         '1C4', 'S8', '806264', 'R100963941', 'GFBR', 'RETING', 'II', 'III',
         'IV', 'VI', 'VII', 'VIII', 'IX', 'XI', 'XII', 'NI', 'TAX', 'TAUX',
         'PAN', 'PANN',  # Fragments de descriptions (YGW retiré - c'est une option valide)
+        # En-tête facture - noms concessionnaires, banques, adresses
+        'ELITE', 'BANQUE', 'DOMINION', 'AVENUE', 'OUELETTE', 'TAN', 'HURRIC',
+        'AQUA', 'AQUESTA', 'GRANIT', 'RAPPORT', 'PONT', 'BITUR', 'EXPRESS',
     }
     
     text_upper = text.upper()
