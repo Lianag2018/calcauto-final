@@ -683,31 +683,67 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
             
             # Vérifier que c'est un code d'option valide (pas trop long de description)
             if len(description_clean) > 2 and len(description_clean) < 80:
-                seen_codes.add(code)
+                # Vérifier si le code est connu OU si c'est un code FCA valide (2-6 chars alnum)
+                # Si le "code" n'est pas valide mais la description l'est, chercher dans description_to_code
+                real_code = code
+                real_desc = description_clean
+                
+                # Si le code ressemble à un mot (pas un code FCA), chercher le vrai code
+                if len(code) > 3 and code.isalpha():
+                    # Le "code" est probablement un mot de la description
+                    # Reconstruire: "CODE DESC..." où CODE est perdu
+                    full_line = f"{code} {description_clean}".upper()
+                    
+                    # Chercher une description connue
+                    for desc_key, real_code_value in description_to_code.items():
+                        if desc_key in full_line:
+                            real_code = real_code_value
+                            # Garder la description complète
+                            real_desc = full_line.replace(desc_key, '').strip() or fca_descriptions.get(real_code, full_line)
+                            break
+                
+                # Éviter les doublons
+                if real_code in seen_codes:
+                    continue
+                    
+                seen_codes.add(real_code)
                 
                 # Format: "CODE - Description"
-                formatted = f"{code} - {description_clean.title()}"
+                formatted = f"{real_code} - {real_desc.title()}"
                 
                 found_options.append({
-                    "product_code": code,
+                    "product_code": real_code,
                     "description": formatted[:60],
                     "amount": 0
                 })
     
-    # Si on n'a pas trouvé assez d'options, fallback sur les codes connus
-    if len(found_options) < 3:
-        # Chercher les codes connus dans le texte
-        for code, desc in fca_descriptions.items():
-            if code in seen_codes:
-                continue
-            if re.search(rf'\b{re.escape(code)}\b', text_upper):
-                if code not in invalid_codes:
-                    seen_codes.add(code)
-                    found_options.append({
-                        "product_code": code,
-                        "description": f"{code} - {desc}",
-                        "amount": 0
-                    })
+    # ====== FALLBACK: Rechercher les descriptions connues dans le texte ======
+    # Quand l'OCR ne capture pas le code mais capture la description
+    for desc_key, code in description_to_code.items():
+        if code in seen_codes:
+            continue
+        if desc_key in text_upper:
+            seen_codes.add(code)
+            desc = fca_descriptions.get(code, desc_key.title())
+            found_options.append({
+                "product_code": code,
+                "description": f"{code} - {desc}",
+                "amount": 0
+            })
+    
+    # Fallback additionnel: chercher les codes connus directement
+    for code, desc in fca_descriptions.items():
+        if code in seen_codes:
+            continue
+        if code in invalid_codes:
+            continue
+        if re.search(rf'\b{re.escape(code)}\b', text_upper):
+            seen_codes.add(code)
+            found_options.append({
+                "product_code": code,
+                "description": f"{code} - {desc}",
+                "amount": 0
+            })
     
     # ====== LES OPTIONS SONT DÉJÀ DANS L'ORDRE DE LA FACTURE ======
     # Pas de tri! On garde l'ordre d'apparition
