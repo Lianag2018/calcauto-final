@@ -816,152 +816,225 @@ export default function HomeScreen() {
     const vin = selectedInventory?.vin || (manualVin && manualVin.length === 17 ? manualVin : '');
     const consumerCash = selectedProgram.consumer_cash;
     const bonusCash = parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0;
+    const price = parseFloat(vehiclePrice) || 0;
+    const dossier = parseFloat(fraisDossier) || 0;
+    const pneus = parseFloat(taxePneus) || 0;
+    const rdprm = parseFloat(fraisRDPRM) || 0;
+    const valeurEchange = parseFloat(prixEchange) || 0;
+    const comptant = parseFloat(comptantTxInclus) || 0;
+    const hasOption2 = selectedProgram.option2_rates !== null && localResult.option2Monthly !== null;
+    const bestOpt = localResult.bestOption;
+    const savingsAmt = localResult.savings || 0;
 
-    // Create printable HTML
+    // Format currency helper for inline HTML
+    const fmt = (v: number) => v.toLocaleString('fr-CA', { maximumFractionDigits: 0 });
+    const fmt2 = (v: number) => v.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    // Build rates table rows
+    const terms = [36, 48, 60, 72, 84, 96];
+    const ratesRows = terms.map(t => {
+      const r1 = getRateForTerm(selectedProgram.option1_rates, t);
+      const r2 = selectedProgram.option2_rates ? getRateForTerm(selectedProgram.option2_rates, t) : null;
+      const isSelected = t === selectedTerm;
+      return `<tr style="${isSelected ? 'background:#e8f5e9; font-weight:bold;' : ''}">
+        <td style="text-align:left; padding:8px; border-bottom:1px solid #eee;">${t} ${lang === 'fr' ? 'mois' : 'mo'}${isSelected ? ' ✓' : ''}</td>
+        <td style="text-align:center; padding:8px; border-bottom:1px solid #eee; color:#c0392b;">${r1.toFixed(2)}%</td>
+        ${hasOption2 ? `<td style="text-align:center; padding:8px; border-bottom:1px solid #eee; color:#1565C0;">${r2 !== null ? r2.toFixed(2) + '%' : '-'}</td>` : ''}
+      </tr>`;
+    }).join('');
+
+    // Option 1 payment details
+    const o1Monthly = localResult.option1Monthly;
+    const o1Biweekly = localResult.option1Biweekly;
+    const o1Weekly = localResult.option1Weekly;
+    const o1Total = localResult.option1Total;
+    const o1Payment = paymentFrequency === 'biweekly' ? o1Biweekly : paymentFrequency === 'weekly' ? o1Weekly : o1Monthly;
+
+    // Option 2 payment details
+    const o2Monthly = localResult.option2Monthly || 0;
+    const o2Biweekly = localResult.option2Biweekly || 0;
+    const o2Weekly = localResult.option2Weekly || 0;
+    const o2Total = localResult.option2Total || 0;
+    const o2Payment = paymentFrequency === 'biweekly' ? o2Biweekly : paymentFrequency === 'weekly' ? o2Weekly : o2Monthly;
+
+    // Create full professional print HTML (matching email format)
     const printContent = `
       <!DOCTYPE html>
       <html>
       <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>CalcAuto AiPro - Soumission</title>
         <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            color: #333;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #4ECDC4;
-          }
-          .logo {
-            font-size: 28px;
-            font-weight: bold;
-            color: #1a1a2e;
-          }
-          .logo span {
-            color: #4ECDC4;
-          }
-          .section {
-            margin-bottom: 25px;
-          }
-          .section-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #666;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-          }
-          .vehicle-name {
-            font-size: 24px;
-            font-weight: bold;
-            color: #1a1a2e;
-          }
-          .price {
-            font-size: 20px;
-            color: #4ECDC4;
-            font-weight: 600;
-          }
-          .vin {
-            font-size: 12px;
-            color: #888;
-            font-family: monospace;
-          }
-          .financing-box {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 15px;
-          }
-          .financing-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-          }
-          .financing-label {
-            color: #666;
-          }
-          .financing-value {
-            font-weight: 600;
-          }
-          .payment-highlight {
-            background: #4ECDC4;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            margin-top: 15px;
-          }
-          .payment-amount {
-            font-size: 32px;
-            font-weight: bold;
-          }
-          .payment-frequency {
-            font-size: 14px;
-            opacity: 0.9;
-          }
-          .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-            text-align: center;
-            font-size: 12px;
-            color: #999;
-          }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
+          .container { max-width: 640px; margin: 0 auto; background: #fff; }
+          .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 25px 20px; text-align: center; }
+          .header h1 { color: #fff; font-size: 26px; margin: 0; }
+          .header h1 span { color: #4ECDC4; }
+          .header p { color: rgba(255,255,255,0.7); font-size: 13px; margin-top: 4px; }
+          .content { padding: 20px; }
+          .section { margin-bottom: 20px; }
+          .section-title { font-size: 13px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; border-bottom: 2px solid #4ECDC4; padding-bottom: 5px; display: inline-block; }
+          
+          .vehicle-box { background: #f8f9fa; border-radius: 10px; padding: 15px; border-left: 4px solid #4ECDC4; }
+          .vehicle-brand { font-size: 13px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+          .vehicle-model { font-size: 22px; font-weight: 700; color: #1a1a2e; margin: 4px 0; }
+          .vehicle-price { font-size: 20px; color: #4ECDC4; font-weight: 700; }
+          .vehicle-vin { font-size: 11px; color: #888; font-family: monospace; margin-top: 4px; }
+          
+          .rates-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+          .rates-table th { background: #1a1a2e; color: #fff; padding: 10px; font-size: 12px; }
+          .rates-table td { padding: 8px; border-bottom: 1px solid #eee; }
+          
+          .info-table { width: 100%; font-size: 13px; }
+          .info-table td { padding: 8px 4px; border-bottom: 1px solid #f0f0f0; }
+          .info-table td:last-child { text-align: right; font-weight: 600; }
+          
+          .best-choice { background: #e8f5e9; border: 2px solid #4CAF50; border-radius: 10px; padding: 12px; text-align: center; margin-bottom: 20px; }
+          .best-choice-title { font-size: 16px; font-weight: 700; color: #2E7D32; }
+          .best-choice-savings { font-size: 13px; color: #388E3C; margin-top: 4px; }
+          
+          .options-grid { display: flex; gap: 10px; }
+          .option-card { flex: 1; border-radius: 10px; padding: 15px; border: 2px solid #ddd; }
+          .option-card.winner { border-color: #4CAF50; background: #f0fff4; }
+          .option-title { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+          .option-title.opt1 { color: #c0392b; }
+          .option-title.opt2 { color: #1565C0; }
+          .option-detail { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; color: #555; }
+          .winner-badge { display: inline-block; background: #4CAF50; color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: 5px; }
+          
+          .payment-box { background: #f8f9fa; border-radius: 8px; padding: 12px; margin-top: 10px; text-align: center; }
+          .payment-box.opt1 { border-top: 3px solid #c0392b; }
+          .payment-box.opt2 { border-top: 3px solid #1565C0; }
+          .payment-label { font-size: 11px; color: #666; }
+          .payment-amount { font-size: 24px; font-weight: 700; margin: 4px 0; }
+          .payment-amount.opt1 { color: #c0392b; }
+          .payment-amount.opt2 { color: #1565C0; }
+          .payment-total { font-size: 11px; color: #666; }
+          
+          .bonus-note { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 10px; font-size: 12px; color: #856404; margin-top: 15px; }
+          
+          .footer { background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #eee; margin-top: 20px; }
+          .footer .disclaimer { font-size: 10px; color: #999; margin-top: 8px; line-height: 1.4; }
+          
           @media print {
-            body { padding: 20px; }
+            body { background: #fff; }
+            .container { box-shadow: none; }
+            .no-print { display: none !important; }
           }
         </style>
       </head>
       <body>
-        <div class="header">
-          <div class="logo">CalcAuto <span>AiPro</span></div>
-          <p style="margin: 5px 0; color: #666;">${lang === 'fr' ? 'Soumission de financement' : 'Financing Submission'}</p>
-        </div>
-        
-        <div class="section">
-          <div class="section-title">${lang === 'fr' ? 'Véhicule' : 'Vehicle'}</div>
-          <div class="vehicle-name">${vehicle}</div>
-          <div class="price">${formatCurrency(parseFloat(vehiclePrice))}</div>
-          ${vin ? `<div class="vin">VIN: ${vin}</div>` : ''}
-        </div>
-        
-        <div class="section">
-          <div class="section-title">${lang === 'fr' ? 'Financement - Option' : 'Financing - Option'} ${option}</div>
-          <div class="financing-box">
-            <div class="financing-row">
-              <span class="financing-label">${lang === 'fr' ? 'Terme' : 'Term'}</span>
-              <span class="financing-value">${selectedTerm} ${lang === 'fr' ? 'mois' : 'months'}</span>
+        <div class="container">
+          <div class="header">
+            <h1>CalcAuto <span>AiPro</span></h1>
+            <p>${lang === 'fr' ? 'Soumission de financement' : 'Financing Submission'}</p>
+          </div>
+          
+          <div class="content">
+            <!-- VEHICLE -->
+            <div class="section">
+              <div class="section-title">${lang === 'fr' ? 'Véhicule' : 'Vehicle'}</div>
+              <div class="vehicle-box">
+                <div class="vehicle-brand">${selectedProgram.brand}</div>
+                <div class="vehicle-model">${selectedProgram.model} ${selectedProgram.trim || ''} ${selectedProgram.year}</div>
+                <div class="vehicle-price">${fmt(price)} $</div>
+                ${vin ? `<div class="vehicle-vin">VIN: ${vin}</div>` : ''}
+              </div>
             </div>
-            <div class="financing-row">
-              <span class="financing-label">${lang === 'fr' ? 'Taux' : 'Rate'}</span>
-              <span class="financing-value">${rate}%</span>
+            
+            <!-- RATES TABLE -->
+            <div class="section">
+              <div class="section-title">${lang === 'fr' ? 'Tableau des taux' : 'Rate Table'}</div>
+              <table class="rates-table">
+                <thead>
+                  <tr>
+                    <th style="text-align:left;">${lang === 'fr' ? 'Terme' : 'Term'}</th>
+                    <th>Option 1</th>
+                    ${hasOption2 ? '<th>Option 2</th>' : ''}
+                  </tr>
+                </thead>
+                <tbody>${ratesRows}</tbody>
+              </table>
             </div>
-            ${consumerCash > 0 ? `
-            <div class="financing-row">
-              <span class="financing-label">${lang === 'fr' ? 'Rabais consommateur' : 'Consumer rebate'}</span>
-              <span class="financing-value">${formatCurrency(consumerCash)}</span>
+            
+            <!-- FINANCING DETAILS -->
+            <div class="section">
+              <div class="section-title">${lang === 'fr' ? 'Détails du financement' : 'Financing Details'}</div>
+              <table class="info-table">
+                <tr><td>${lang === 'fr' ? 'Prix du véhicule' : 'Vehicle price'}</td><td>${fmt(price)} $</td></tr>
+                ${consumerCash > 0 ? `<tr><td>${lang === 'fr' ? 'Rabais (avant taxes)' : 'Rebate (before tax)'}</td><td style="color:#2E7D32;">-${fmt(consumerCash)} $</td></tr>` : ''}
+                ${bonusCash > 0 ? `<tr><td>Bonus Cash ${lang === 'fr' ? '(après taxes)' : '(after tax)'}</td><td style="color:#2E7D32;">-${fmt(bonusCash)} $</td></tr>` : ''}
+                ${dossier > 0 ? `<tr><td>${lang === 'fr' ? 'Frais dossier' : 'Admin fees'}</td><td>${fmt2(dossier)} $</td></tr>` : ''}
+                ${pneus > 0 ? `<tr><td>${lang === 'fr' ? 'Taxe pneus' : 'Tire tax'}</td><td>${fmt(pneus)} $</td></tr>` : ''}
+                ${rdprm > 0 ? `<tr><td>RDPRM</td><td>${fmt(rdprm)} $</td></tr>` : ''}
+                ${valeurEchange > 0 ? `<tr><td>${lang === 'fr' ? 'Valeur échange' : 'Trade-in value'}</td><td style="color:#2E7D32;">-${fmt(valeurEchange)} $</td></tr>` : ''}
+                ${comptant > 0 ? `<tr><td>${lang === 'fr' ? 'Comptant (tx inclus)' : 'Down payment (tax incl.)'}</td><td>-${fmt(comptant)} $</td></tr>` : ''}
+                <tr><td>${lang === 'fr' ? 'Terme sélectionné' : 'Selected term'}</td><td><strong>${selectedTerm} ${lang === 'fr' ? 'mois' : 'months'}</strong></td></tr>
+                <tr><td>${lang === 'fr' ? 'Fréquence' : 'Frequency'}</td><td><strong>${paymentLabel}</strong></td></tr>
+              </table>
             </div>
-            ` : ''}
-            ${bonusCash > 0 ? `
-            <div class="financing-row">
-              <span class="financing-label">Bonus Cash</span>
-              <span class="financing-value">${formatCurrency(bonusCash)}</span>
+
+            <!-- BEST CHOICE BANNER -->
+            ${hasOption2 && savingsAmt > 0 ? `
+            <div class="best-choice">
+              <div class="best-choice-title">Option ${bestOpt} = ${lang === 'fr' ? 'Meilleur choix!' : 'Best choice!'}</div>
+              <div class="best-choice-savings">${lang === 'fr' ? 'Économies de' : 'Savings of'} <strong>${fmt(savingsAmt)} $</strong> ${lang === 'fr' ? 'sur le coût total' : 'on total cost'}</div>
+            </div>` : ''}
+
+            <!-- OPTIONS COMPARISON -->
+            <div class="section">
+              <div class="section-title">${lang === 'fr' ? 'Comparaison des options' : 'Options Comparison'}</div>
+              <div class="options-grid">
+                <!-- OPTION 1 -->
+                <div class="option-card ${bestOpt === '1' ? 'winner' : ''}">
+                  <div class="option-title opt1">Option 1 ${bestOpt === '1' ? '<span class="winner-badge">✓</span>' : ''}</div>
+                  <div style="font-size:11px; color:#666; margin-bottom:8px;">${lang === 'fr' ? 'Rabais + Taux standard' : 'Rebate + Standard rate'}</div>
+                  <div class="option-detail"><span>${lang === 'fr' ? 'Rabais:' : 'Rebate:'}</span><span style="color:#2E7D32; font-weight:600;">${consumerCash > 0 ? '-' + fmt(consumerCash) + ' $' : '$0'}</span></div>
+                  <div class="option-detail"><span>${lang === 'fr' ? 'Capital:' : 'Principal:'}</span><span>${fmt(localResult.principalOption1 || 0)} $</span></div>
+                  <div class="option-detail"><span>${lang === 'fr' ? 'Taux:' : 'Rate:'}</span><span style="color:#c0392b;">${localResult.option1Rate}%</span></div>
+                  <div class="payment-box opt1">
+                    <div class="payment-label">${paymentLabel}</div>
+                    <div class="payment-amount opt1">${fmt2(o1Payment)} $</div>
+                    <div class="payment-total">Total (${selectedTerm} ${lang === 'fr' ? 'mois' : 'mo'}): <strong>${fmt(o1Total)} $</strong></div>
+                  </div>
+                </div>
+                
+                <!-- OPTION 2 -->
+                ${hasOption2 ? `
+                <div class="option-card ${bestOpt === '2' ? 'winner' : ''}">
+                  <div class="option-title opt2">Option 2 ${bestOpt === '2' ? '<span class="winner-badge">✓</span>' : ''}</div>
+                  <div style="font-size:11px; color:#666; margin-bottom:8px;">$0 ${lang === 'fr' ? 'rabais + Taux réduit' : 'rebate + Reduced rate'}</div>
+                  <div class="option-detail"><span>${lang === 'fr' ? 'Rabais:' : 'Rebate:'}</span><span>$0</span></div>
+                  <div class="option-detail"><span>${lang === 'fr' ? 'Capital:' : 'Principal:'}</span><span>${fmt(localResult.principalOption2 || 0)} $</span></div>
+                  <div class="option-detail"><span>${lang === 'fr' ? 'Taux:' : 'Rate:'}</span><span style="color:#1565C0;">${localResult.option2Rate}%</span></div>
+                  <div class="payment-box opt2">
+                    <div class="payment-label">${paymentLabel}</div>
+                    <div class="payment-amount opt2">${fmt2(o2Payment)} $</div>
+                    <div class="payment-total">Total (${selectedTerm} ${lang === 'fr' ? 'mois' : 'mo'}): <strong>${fmt(o2Total)} $</strong></div>
+                  </div>
+                </div>
+                ` : `
+                <div class="option-card" style="background:#f5f5f5; text-align:center; color:#999;">
+                  <div class="option-title" style="color:#999;">Option 2</div>
+                  <div style="padding:30px 0;">${lang === 'fr' ? 'Non disponible' : 'Not available'}<br/>${lang === 'fr' ? 'pour ce véhicule' : 'for this vehicle'}</div>
+                </div>
+                `}
+              </div>
             </div>
-            ` : ''}
-            <div class="payment-highlight">
-              <div class="payment-amount">${formatCurrencyDecimal(payment)}</div>
-              <div class="payment-frequency">${paymentLabel}</div>
+            
+            ${bonusCash > 0 ? `<div class="bonus-note">Bonus Cash de ${fmt(bonusCash)} $ ${lang === 'fr' ? 'sera déduit après taxes (au comptant)' : 'will be deducted after tax (as cash)'}</div>` : ''}
+          </div>
+          
+          <div class="footer">
+            <div style="font-size:12px; color:#666;">${lang === 'fr' ? 'Généré le' : 'Generated on'} ${new Date().toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA')}</div>
+            <div class="disclaimer">
+              ${lang === 'fr' 
+                ? 'Ce calcul est une estimation et ne constitue pas une offre de financement officielle. Les taux et conditions peuvent varier selon votre dossier de crédit.'
+                : 'This calculation is an estimate and does not constitute an official financing offer. Rates and conditions may vary based on your credit file.'}
             </div>
           </div>
-        </div>
-        
-        <div class="footer">
-          <p>${lang === 'fr' ? 'Généré le' : 'Generated on'} ${new Date().toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA')}</p>
-          <p>CalcAuto AiPro - ${lang === 'fr' ? 'Calculateur de financement automobile' : 'Auto financing calculator'}</p>
         </div>
       </body>
       </html>
@@ -979,21 +1052,15 @@ export default function HomeScreen() {
         }, 250);
       }
     } else {
-      // On mobile, share the text as there's no direct print API
-      // The user can then use their device's print functionality
-      Alert.alert(
-        lang === 'fr' ? 'Imprimer' : 'Print',
-        lang === 'fr' 
-          ? 'Sur mobile, utilisez le bouton "Partager" puis sélectionnez "Imprimer" dans les options.'
-          : 'On mobile, use the "Share" button then select "Print" from the options.',
-        [
-          { text: 'OK', style: 'default' },
-          { 
-            text: lang === 'fr' ? 'Partager' : 'Share', 
-            onPress: handleShareSMS 
-          }
-        ]
-      );
+      // On mobile, use expo-print for native print dialog
+      try {
+        await Print.printAsync({
+          html: printContent,
+        });
+      } catch (e) {
+        // User cancelled print or error - silently ignore
+        console.log('Print cancelled or error:', e);
+      }
     }
   };
 
