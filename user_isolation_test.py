@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 
 # Backend URL from frontend/.env
-BACKEND_URL = "https://invoice-scan-fix-1.preview.emergentagent.com/api"
+BACKEND_URL = "https://fca-vehicle-options.preview.emergentagent.com/api"
 
 class UserIsolationTester:
     def __init__(self):

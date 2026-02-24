@@ -1,101 +1,83 @@
 <analysis>**original_problem_statement:**
-The user wants to continue developing a mobile application for iOS and Android named CalcAuto AiPro, a comprehensive vehicle financing calculator.
+The user wants to continue developing a mobile application named CalcAuto AiPro. The primary goal is to perfect the invoice scanning feature to achieve flawless data extraction from Stellantis (FCA) invoices, ensuring all vehicle options are captured in the correct order and prices are formatted correctly.
 
-The primary goals have evolved to focus on high-fidelity data extraction from scanned invoices and enhancing the professionalism of client-facing communications.
-1.  **Invoice Scanning Perfection:** Achieve near-perfect data extraction for Stellantis (Chrysler, Jeep, Dodge, Ram) invoices. This involves parsing handwritten text, extracting product codes, and accurately identifying the vehicle's model, trim, holdback, and all accessories in the correct order. The parser must also be robust against extracting irrelevant information like dealer addresses.
-2.  **Automated Promotions:** Automatically link a scanned vehicle's product code to applicable financing programs (e.g., Consumer Cash, special interest rates) and display these promotions in the calculator UI.
-3.  **Window Sticker Integration:** Automatically fetch the Chrysler/FCA Window Sticker PDF using the VIN and embed it directly within the submission email.
-4.  **CRM Enhancements:** Add the ability for users to delete reminders, offers, and a client's entire interaction history from the CRM.
-5.  **Email CC:** Automatically send a copy (CC) of the submission email to the logged-in user.
+A new feature request has been introduced: the ability to send vehicle financing submissions via SMS text message, with a preference for a free implementation that uses the phone's native sharing capabilities.
 
 **PRODUCT REQUIREMENTS:**
-*   **Data Isolation (Multi-Tenancy):** Completed.
-*   **Save Submissions to Server:** Completed.
-*   **Smart Contact Management (Upsert):** Completed.
-*   **Logout Functionality:** Completed.
-*   **Production Deployment:** Completed.
-*   **Admin Panel (P0):** Completed.
-*   **Inventory Management (P0):** Implemented.
-*   **Invoice Scanning (P0):** Significantly enhanced. Migrated to Google Cloud Vision. Implemented a sophisticated, multi-layered parser using a custom-built product code database () for maximum accuracy. A dedicated lookup module () now ensures this database is the primary source of truth. Parser logic for accessories, holdback, and filtering unwanted text has been heavily refactored.
-*   **Calculator & Inventory Integration (P1):** Implemented.
-*   **Window Sticker Integration (P0):** Implemented.
-*   **Accessories in Calculator (P0):** Implemented and fixed.
-*   **Automated Promotions (P0):** Implemented. A new mapping file () links product codes to financing programs, with new backend APIs and frontend UI to display them.
-*   **CRM Deletions (P0):** Implemented. New backend endpoints and frontend UI buttons allow for deleting reminders, offers, and client history.
-*   **Email CC (P0):** Implemented. The backend logic was updated to CC the logged-in user on submission emails.
+*   **Invoice Scanning Perfection (P0):** The parser must be enhanced to handle OCR failures, especially for short option codes. It needs to correctly identify all accessories in the exact order they appear on the invoice, handle price formatting (e.g.,  -> ), and avoid extracting incorrect data. This involves enriching the product code and description databases and refining the parsing logic.
+*   **Add SMS Sharing (P0):** Implement a feature to share submissions via SMS. The user prefers a free method, such as using the device's native share functionality.
+*   **Complete Product Database (P1):** Ensure all 2025 and 2026 product codes and descriptions are loaded into the system and used by the calculator.
+*   **Restrict Invoice Header Parsing (P1):** A pending request to only extract the VIN from the invoice header and ignore other data from that section.
+*   **Code Refactoring (P2):** The monolithic files  and  are slated for refactoring.
 
 **User's preferred language**: French. The next agent MUST respond in French.
 
 **what currently exists?**
-A full-stack application with a React Native (Expo) frontend and a FastAPI backend. The user deploys to a production environment on Vercel/Render.
+A full-stack application with a React Native (Expo) frontend and a FastAPI backend. The application's core feature is an advanced invoice scanner for vehicle financing.
 
-The backend features a highly advanced invoice scanning pipeline that has undergone significant improvements:
-1.  **Consolidated Product Database:** All product codes for 2025 and 2026, extracted from user-provided PDFs, are now in a single  file.
-2.  **Reliable Lookup Module:** A new  module acts as the single source of truth for vehicle identification, ensuring the validated database is always prioritized over less reliable OCR text parsing.
-3.  **Automated Promotions:** A  file links vehicle codes to financing programs. New API endpoints () serve this data to the frontend.
-4.  **Accurate Parser ():** The parser has been heavily refactored to:
-    *   Correctly extract the holdback amount from a specific format on the invoice (e.g.,  -> ).
-    *   Extract *all* accessories and options in the exact order they appear on the invoice.
-    *   Filter out irrelevant text like dealer addresses and postal codes.
-5.  **CRM & Email Features:** The backend now includes APIs to delete CRM entries and to CC the logged-in user on submission emails. A comprehensive Pytest suite () with 18 tests ensures the parser's reliability.
+The backend  has been significantly enhanced with a multi-layered strategy to combat OCR inaccuracies. It now uses:
+1.  A primary  database for vehicle identification.
+2.  A fallback mechanism using a  dictionary to map option descriptions back to their correct codes when OCR fails to capture them.
+3.  An extensive list of  to filter out OCR noise and irrelevant text fragments.
+4.  Specific regex patterns to find critical data (VIN, prices) and to avoid accidentally filtering valid option codes that resemble postal codes.
 
-The frontend (, ) has been updated to:
-*   Display the new Automatic Promotions when a vehicle is selected.
-*   Include delete buttons in the CRM interface for managing reminders, offers, and client history.
+The frontend was fixed to correctly handle partial scans. Instead of showing a generic error, it now opens a review modal, pre-fills the successfully parsed data, and displays a banner listing the specific fields that require manual correction.
 
 **Last working item**:
-*   **Last item agent was working:** The user reported that scanning an invoice from a photo fails silently, returning the user to the previous screen without an error message (je ne suis pas encore capable de télécharger une facture à partir dune photo... et ça revient à lécran). The agent had started investigating this issue.
-*   **Status:** IN PROGRESS
-*   **Agent Testing Done:** N
-*   **Which testing method agent to use?** The agent cannot test the mobile photo-taking functionality directly. The next step should be to add robust  error handling with user-facing alerts (e.g., using  or a simple ) within the  and  functions in . This will reveal the silent error occurring on the user's device. The agent can also test the  endpoint with a base64 string to ensure the backend is not the cause.
+*   **Last item agent was working:** The user requested a new feature to send submissions via SMS. The agent analyzed the possible solutions (native sharing vs. a paid service like Twilio), recommended the free native sharing option, and asked the user for confirmation to proceed with implementation.
+*   **Status:** BLOCKED (awaiting user confirmation)
+*   **Agent Testing Done:** N/A
+*   **Which testing method agent to use?** Frontend testing agent (once implemented) to verify the new Share via SMS button triggers the native share dialog. Manual verification on a device would be required for a full E2E test, which the agent cannot perform.
 *   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-*   **Issue 1: Invoice photo scanning fails silently (P0)**
-    *   **Description:** When the user takes a photo of an invoice to scan it, the operation fails without any error message, and the app returns to the calculator screen.
-    *   **Attempted fixes:** The agent started investigating by reviewing the frontend () and backend () code but had not yet implemented a fix.
+*   **Issue 1: Invoice Parser Produces Duplicate/Similar Options (P0)**
+    *   **Description:** During the parsing of a Gladiator invoice, the agent noticed the fallback logic could introduce duplicate options for the same component (e.g., adding both  and  for the automatic transmission).
+    *   **Attempted fixes:** The agent identified the problem but was interrupted by the user's new feature request before a fix could be implemented.
     *   **Next debug checklist:**
-        1.  Edit .
-        2.  Wrap the logic inside the  and  functions in a  block.
-        3.  In the  block, display the error to the user using  or a toast notification. This will make the silent error visible.
-        4.  Based on the revealed error, determine if the issue is with image picking, base64 conversion, the API call (), or a timeout.
-    *   **Why fix this issue and what will be achieved with the fix?** This is a critical bug blocking a core feature of the application. Fixing it will restore the primary method of data entry.
+        1.  Modify the  function in .
+        2.  After the initial parsing and the description-based fallback have run, implement a deduplication step.
+        3.  This step should identify options that refer to the same vehicle part (e.g., transmission, engine) and keep only the most accurate one, likely the one with a code captured directly by OCR.
+        4.  Re-run the ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0
+rootdir: /app/frontend
+plugins: anyio-4.12.1
+collected 0 items
+
+============================ no tests ran in 0.01s ============================= suite and test against all sample invoices (RAM RHO, Gladiator, ProMaster, Grand Cherokee) to ensure no regressions.
+    *   **Why fix this issue and what will be achieved with the fix?** This is critical for achieving the user's goal of a perfect parser. It will clean up the final list of options and improve data accuracy.
     *   **Status:** IN PROGRESS
-    *   **Is recurring issue?** N
-    *   **Should Test frontend/backend/both after fix?** Frontend (The fix is in the frontend error handling, but the root cause might be on the backend).
+    *   **Is recurring issue?** Y
+    *   **Should Test frontend/backend/both after fix?** Backend
     *   **Blocked on other issue:** None.
 
 **In progress Task List**:
-None. The last work was a bug fix.
+*   **Task 1: Implement Share via SMS Feature (P0)**
+    *   **Where to resume:** Wait for the user to approve the proposed solution (using the native share API). Once approved, modify the frontend ( or a relevant component) to add a Partager par Texto button next to the email submission button. This button should invoke React Native's  API with the submission details.
+    *   **What will be achieved with this?** Fulfills the user's new feature request for a free way to send submissions via text.
+    *   **Status:** BLOCKED (awaiting user confirmation)
+    *   **Should Test frontend/backend/both after fix?** Frontend
+    *   **Blocked on something:** User confirmation.
 
 **Upcoming and Future Tasks**
-*   **(P1) Restrict Invoice Header Parsing:** Implement the user's request to only extract the VIN from the invoice header and ignore all other data from that section to improve accuracy. This requires modifying .
-*   **(P1) Finalize Frontend Refactoring Migration:** The logic in  is still monolithic. A migration plan exists in  but has not been executed.
+*   **(P1) Restrict Invoice Header Parsing:** Modify  to only extract the VIN from the invoice header, ignoring all other data from that section to improve accuracy.
+*   **(P1) Finalize Frontend Refactoring Migration:** Execute the migration plan from  to break down the monolithic .
 *   **(P2) Add Frontend Warning for Corrected VINs:** Add a visual indicator in the review modal for auto-corrected VINs.
 *   **(P3) Refactor :** Split the monolithic file into a  directory structure for better maintainability.
-*   **(P3) Admin Dashboard for Parsing Metrics:** Create a frontend dashboard to visualize data from the  and  endpoints.
-*   **(P3) Finalize App Store / Play Store Build Process.**
+*   **(P3) Admin Dashboard for Parsing Metrics:** Create a frontend dashboard to visualize data from the  endpoint.
 
 **Completed work in this session**
-- **Core Parser Reliability:**
-    - Created a unified  module to act as the single source of truth, prioritizing the validated database over OCR parsing.
-    - Fixed model/trim identification logic by correcting the priority of data sources ( > ).
-    - Fixed data inconsistencies by ensuring the JSON database from PDFs overrides outdated hardcoded values.
-    - Created a robust helper function () to prevent None None trims.
-- **Parser Accuracy Fixes:**
-    - **Holdback:** Correctly implemented parsing for the specific invoice format (e.g.,  -> 00), replacing the incorrect 3% calculation.
-    - **Accessories:** Rewrote the parser to extract ALL accessories in the correct order as they appear on the invoice.
-    - **Address Filtering:** Added regex filters to prevent the parser from incorrectly extracting dealer addresses and postal codes as accessories.
-- **New Feature: Automated Promotions:**
-    - Created a  to link product codes to financing programs.
-    - Added a new endpoint () to serve this data.
-    - Integrated a new UI section in the calculator to automatically display applicable promotions for a selected vehicle.
-- **New Feature: CRM Deletions & Email CC:**
-    - Added  endpoints to the backend for removing reminders, offers, and client history.
-    - Added corresponding delete buttons and functions to the CRM UI in .
-    - Modified the backend to automatically CC the logged-in user on submission emails.
-- **Testing & Stability:**
-    - Created a comprehensive Pytest suite () with 18 tests to validate parser logic and prevent regressions.
+- **Fixed Critical Scan Bug:** Resolved the silent photo scan failure by modifying the frontend to handle  responses, allowing users to manually correct partial scans instead of hitting a dead end. This was verified by the testing agent.
+- **Revolutionized Invoice Parser ():**
+    - Implemented a robust **description-to-code fallback** mechanism to reconstruct option codes that OCR fails to read, dramatically improving accuracy.
+    - Correctly identified and handled the GKRP price code as an alias for PDCO/MSRP and ensured it's not listed as an accessory.
+    - Fixed a bug where the postal code regex was incorrectly filtering the valid option code .
+    - Iteratively expanded the  and  lists based on 5+ real-world invoice examples provided by the user, making the parser smarter.
+    - Corrected product data in the master database (e.g., fixed  to be a ProMaster instead of Ram 1500).
+- **Consolidated Product Database:**
+    - Processed a user-provided zip file with 36 PDFs to extract and merge all 2025 product codes into the master .
+    - Fixed the  endpoint in  to correctly load data from the JSON file instead of a non-existent database collection.
+    - Expanded the  file to ensure all known product codes have associated financing programs.
 
 **Earlier issues found/mentioned but not fixed**
 *   **Issue 1: Large Monolithic Files (, )**
@@ -107,100 +89,82 @@ None. The last work was a bug fix.
 **Known issue recurrence from previous fork**
 - **Issue recurrence in previous fork**: OCR/Parser Accuracy
 - **Recurrence count**: High
-- **Status**: SIGNIFICANTLY IMPROVED. While the core issue of OCR being imperfect remains, the agent has built multiple layers of validation and logic (database-first approach, specific parsers for holdback/accessories, filtering) and a regression test suite to make the system far more reliable. It is no longer RESOLVED as new edge cases continue to appear, but it's much more robust.
+- **Status**: IN PROGRESS. While massively improved with the new fallback logic, the parser is not yet perfect, as shown by the duplicate option issue on the Gladiator invoice. The core challenge of imperfect OCR remains the primary driver of work.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Database-First Parsing:** Prioritizing a validated data source (JSON database) over real-time, fallible OCR results to ensure data accuracy.
-- **Modular Code Design:** Creating a dedicated  module to encapsulate and standardize a core piece of business logic.
-- **Regression Testing:** Using ============================= test session starts ==============================
-platform linux -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0
-rootdir: /app/frontend
-plugins: anyio-4.12.1
-collected 0 items
-
-============================ no tests ran in 0.01s ============================= to create a suite of tests that lock in correct behavior for the complex parser, preventing future changes from breaking past fixes.
-- **Robust String/Data Handling:** Creating helper functions () to gracefully handle  values and prevent malformed output.
-- **Targeted Regex Parsing:** Using specific regex patterns to extract structured data (like holdback) and filter out unstructured noise (like addresses).
+- **OCR Fallback Mechanism:** Using a  dictionary to reconstruct data when OCR is unreliable. This is the session's key innovation.
+- **Iterative Debugging with Real Data:** Using user-provided invoice images as test cases to incrementally find and fix parsing errors.
+- **Regex Specificity:** Fine-tuning regular expressions to be specific enough to find data (like prices) but not so broad that they filter valid codes (the  postal code issue).
+- **Data-Driven Parsing:** The accuracy of the parser is now heavily dependent on the completeness of the  and  files.
 
 **key DB schema**
 - No changes to the database schema.
 
 **changes in tech stack**
-- ============================= test session starts ==============================
-platform linux -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0
-rootdir: /app/frontend
-plugins: anyio-4.12.1
-collected 0 items
-
-============================ no tests ran in 0.01s ============================= was introduced for backend testing.
+- No changes.
 
 **All files of reference**
-- : The main FastAPI file, modified for new endpoints (finance, CRM delete), email CC, and integration of the new lookup module.
-- : The core parsing logic, heavily refactored for holdback, accessories, and address filtering.
-- : A new critical module that provides a reliable double-check for vehicle identification.
-- : A new Pytest file essential for maintaining parser reliability.
-- : The main calculator screen, modified to display automatic promotions and containing the buggy  function.
-- : The CRM screen, modified to include UI for the new deletion features.
+- : The heart of the application logic. Contains the new fallback and deduplication logic.
+- : A new, critical data file for the OCR fallback.
+- : The master list of all vehicles.
+- : Contains the API endpoints.
+- : Contains the UI logic for scanning and the review modal.
 
 **Areas that need refactoring**:
 - : Remains a large monolithic file.
 - : Remains a large monolithic component.
 
 **key api endpoints**
-- ****: The endpoint used by the mobile app's photo scanning feature, which is currently failing silently.
-- ****: **NEW** - Fetches applicable financial programs for a given vehicle model code.
-- ****: **NEW** - Deletes a specific reminder.
-- ****: **NEW** - Deletes a specific offer.
-- ****: **NEW** - Deletes all submissions for a client.
+- ****: The main endpoint for invoice parsing. Its behavior and response structure were central to the work done.
+- ****: This endpoint was fixed to read from the correct JSON data source.
 
 **Critical Info for New Agent**
 1.  **Parlez Français:** All communication with the user MUST be in French.
-2.  **Focus on the Photo Scan Bug:** Your immediate priority is to solve the silent failure in the invoice photo scanning feature. The key is to add frontend error handling in  to make the error visible.
-3.  **User Tests on Production:** The user tests on their own Render deployment. The agent's preview environment is not suitable for testing the Expo mobile app's native features like the camera. Changes must be saved to GitHub for the user to deploy and test.
-4.  **Parser is the Core Logic:** The invoice parser is the most complex and critical part of the backend. When debugging it, refer to  as the source of truth for vehicle data and  to ensure you don't cause regressions.
-5.  **Acknowledge Pending Tasks:** Remember that the user's request to *only* parse the VIN from the invoice header has not yet been implemented.
+2.  **Await User Confirmation for SMS Feature:** Your first action should be to wait for the user to respond to the proposal for the SMS feature. Do not start other work until the user replies.
+3.  **Parser Perfection is the Main Goal:** The user's primary expectation is a flawless invoice parser. After the SMS task, your priority is to fix the option deduplication bug in  ().
+4.  **Embrace the Iterative Cycle:** The established workflow is: user provides a failing invoice -> you analyze the OCR output and parser logic -> you update  and/or the data files (, ) -> you test against all known invoices to prevent regressions.
+5.  **The Fallback is Key:** The most important logic for parser accuracy is the description-to-code fallback in  within . Most new parsing fixes will likely involve improving this function or the data in .
 
 **documents and test reports created in this job**
 - 
 - 
+- Numerous temporary files in  from invoice and PDF analysis.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Asks to delete CRM items (reminders, offers, history).
-2.  **Agent:** Implements the CRM deletion features (backend and frontend).
-3.  **User:** Reports that scanning an invoice from a photo is failing silently.
-4.  **Agent:** Begins investigating the photo scanning bug.
-5.  **Agent:** Reviews frontend and backend code related to scanning.
-6.  **Agent:** Suspects a silent error in the frontend or a timeout.
-7.  **Agent:** Concludes the issue is likely on the user's production environment and plans to add better error handling.
-8.  **User:** Asks for an update on the failing upload.
-9.  **Agent:** States it will test the endpoint directly to find the problem.
-10. **Agent:** The session ends while the agent is investigating the photo scanning bug.
+1.  **User:** Provides Gladiator invoice, points out options are still wrong/out of order. (PENDING FIX)
+2.  **Agent:** Adds Gladiator codes, identifies a duplicate option issue (/).
+3.  **User:** Asks how to send submissions via SMS, for free. (NEW REQUEST)
+4.  **Agent:** Proposes using the phone's native Share API.
+5.  **Agent:** Asks user for confirmation to add a Share via SMS button. (AWAITING RESPONSE)
+6.  **User:** Uploads  with all product codes for that year.
+7.  **Agent:** Extracts and integrates the 2025 codes into the master database.
+8.  **User:** Provides another invoice image and states the option order is wrong.
+9.  **Agent:** Acknowledges the issue and improves the  fallback logic.
+10. **User:** Provides a detailed explanation of the expected logical flow of accessories under the model code.
 
 **Project Health Check:**
-*   **Broken:** The core feature of scanning an invoice from a photo is currently not working for the user.
-*   **Mocked:** None.
+*   **Broken:** The invoice parser still produces imperfect results on certain invoices (e.g., duplicate options on the Gladiator invoice), failing to meet the user's primary requirement.
 
 **3rd Party Integrations**
 *   **Google Cloud Vision**: Primary OCR engine.
 *   **OpenAI GPT-4o**: Fallback OCR engine.
-*   ****: Used for converting PDF window stickers to images.
-*   ****: Used for optimizing the generated sticker image.
-*   ****: Used as a *fallback* for fetching window stickers, but is an optional dependency.
+*   : Used for parsing PDF files.
 
 **Testing status**
-- **Testing agent used after significant changes:** NO
+- **Testing agent used after significant changes:** YES, successfully validated the initial bug fix for the review modal.
 - **Troubleshoot agent used after agent stuck in loop:** NO
 - **Test files created:**
-    - 
+    -  (now contains 145 tests)
 - **Known regressions:** None.
 
 **Credentials to test flow:**
 - **User:** 
 - **Password:** 
-- **Note**: These credentials are for the user's account on their production environment, not the agent's preview environment.
 
 **What agent forgot to execute**
-- The agent acknowledged but did not implement the user's request from message #431 to modify the parser to **only extract the VIN from the invoice header** and ignore other header data. This task is still pending.</analysis>
+- The agent identified but did not fix the issue of the parser creating duplicate but similar options (e.g.,  and ). This was superseded by the user's request for the SMS feature.
+- The long-standing refactoring tasks for  and  remain pending.
+- The request to restrict invoice header parsing to only the VIN is also still pending.</analysis>
