@@ -79,12 +79,17 @@ Application mobile iOS/Android de calcul de financement automobile avec gestion 
   - Support VINs avec espaces/erreurs OCR  
   - Correction automatique erreurs OCR (O→0, I→1)
 - **Améliorations Code Produit** :
-  - Validation contre base de 133 codes produits FCA
+  - Validation contre base de **140 codes produits FCA**
   - Recherche agressive de tous codes 6 caractères
-  - Ajout codes manquants: WLJP74, WLJH75
+  - Ajout codes manquants: WLJP74, WLJH75, et 24 autres
 - **Améliorations Financières** :
   - Support GKRP comme alias de PDCO
   - Extraction holdback format 070000 → $700
+- **Consolidation Base de Données** :
+  - 140 codes produits (2025: 20, 2026: 113, Autres: 7)
+  - 140 mappings code → programme financement
+  - Par marque: Ram (86), Jeep (35), Dodge (10), Chrysler (8), Fiat (1)
+- **API /product-codes** mise à jour pour retourner tous les codes
 - **Tests validés** :
   - 4 factures réelles testées: 100% succès
   - VIN, Code, EP, Stock# tous extraits correctement
