@@ -909,12 +909,25 @@ export default function InventoryScreen() {
 
             {reviewData && (
               <ScrollView style={styles.formScroll}>
-                <View style={styles.reviewBanner}>
-                  <Ionicons name="information-circle" size={20} color="#FFB347" />
-                  <Text style={styles.reviewBannerText}>
-                    Vérifiez les données extraites et corrigez si nécessaire
-                  </Text>
-                </View>
+                {/* Afficher les erreurs bloquantes si présentes */}
+                {reviewData.blocking_errors && reviewData.blocking_errors.length > 0 ? (
+                  <View style={styles.errorBanner}>
+                    <Ionicons name="warning" size={20} color="#FF6B6B" />
+                    <View style={{ flex: 1, marginLeft: 8 }}>
+                      <Text style={styles.errorBannerTitle}>Données incomplètes - Correction requise:</Text>
+                      {reviewData.blocking_errors.map((err: string, idx: number) => (
+                        <Text key={idx} style={styles.errorBannerItem}>• {err}</Text>
+                      ))}
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.reviewBanner}>
+                    <Ionicons name="information-circle" size={20} color="#FFB347" />
+                    <Text style={styles.reviewBannerText}>
+                      Vérifiez les données extraites et corrigez si nécessaire
+                    </Text>
+                  </View>
+                )}
 
                 <View style={styles.formRow}>
                   <View style={styles.formGroup}>
