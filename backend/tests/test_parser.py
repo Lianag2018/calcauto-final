@@ -382,6 +382,44 @@ YG4 20L SUPPLEMENTAIRES DIESEL SANS FRAIS
             assert exp in codes, f"{exp} devrait être dans les options"
 
 
+class TestHeaderFiltering:
+    """Tests pour vérifier que les données de l'en-tête de facture sont filtrées"""
+
+    HEADER_CODES = {'ELITE', 'BANQUE', '596', 'TAN', 'HURRIC', 'DC1', 'DT6L98'}
+
+    def test_header_codes_filtered(self):
+        """Les mots de l'en-tête ne doivent pas apparaître comme options"""
+        text = """
+SOLD TO ELITE CHRYSLER JEEP INC.
+6138 CH DE SAINT-ELIE
+BANQUE TORONTO DOMINION
+596 AVENUE OUELETTE
+WINDSOR ONTARIO N9A 1B7
+DT6L98 57,710.00
+PAU CRISTAL GRANIT METALLISE 524.00
+C5X9 BAQUETS AVANT DOSSIER HAUT EN TISSU SANS FRAIS
+AMQ ENSEMBLE EXPRESS NOIRE 1,104.00
+DFR TRANSMISSION AUTOMATIQUE 8 VITESSES
+EFH HURRIC BITUR 3L 6CYL LIGN RD STD ESS 3,340.00
+MWH DOUBLURES PASSAGE DE ROUE ARRIERE
+YGV 17 L SUPPLEMENTAIRES D ESSENCE
+21D ENSEMBLE ECLAIR 21D 1,320.00
+801 FRAIS DE TRANSPORT 2,595.00
+"""
+        options = parse_options(text)
+        codes = {opt["product_code"] for opt in options}
+
+        # Aucun code d'en-tête
+        assert codes.isdisjoint(self.HEADER_CODES), f"Codes d'en-tête trouvés: {codes & self.HEADER_CODES}"
+
+        # Les vrais codes doivent y être
+        assert "PAU" in codes
+        assert "DFR" in codes
+        assert "EFH" in codes
+        assert "MWH" in codes
+        assert "YGV" in codes
+
+
 if __name__ == "__main__":
     # Exécuter avec pytest
     pytest.main([__file__, "-v", "--tb=short"])
