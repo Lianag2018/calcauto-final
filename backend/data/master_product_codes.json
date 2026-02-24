@@ -1148,10 +1148,10 @@
     "cab": "",
     "code": "VF1L13",
     "drive": "",
-    "full_description": "Ram 1500",
-    "model": "1500",
+    "full_description": "Ram ProMaster Cargo Van High Roof 136WB",
+    "model": "ProMaster Cargo Van",
     "raw": "1500PROMASTERCARGOVANHIGHROOF(136WB)",
-    "trim": "",
+    "trim": "High Roof 136WB",
     "year": "2026"
   },
   "VF2L12": {
@@ -1159,10 +1159,10 @@
     "cab": "",
     "code": "VF2L12",
     "drive": "",
-    "full_description": "Ram 2500",
-    "model": "2500",
+    "full_description": "Ram ProMaster Cargo Van Low Roof 159WB",
+    "model": "ProMaster Cargo Van",
     "raw": "2500PROMASTERCARGOVANLOWROOF(136WB)",
-    "trim": "",
+    "trim": "Low Roof 159WB",
     "year": "2026"
   },
   "VF2L16": {
@@ -1170,10 +1170,10 @@
     "cab": "",
     "code": "VF2L16",
     "drive": "",
-    "full_description": "Ram 2500",
-    "model": "2500",
+    "full_description": "Ram ProMaster Cargo Van High Roof 159WB Extended",
+    "model": "ProMaster Cargo Van",
     "raw": "2500PROMASTERCARGOVANHIGHROOF(159WB)",
-    "trim": "",
+    "trim": "High Roof 159WB Extended",
     "year": "2026"
   },
   "VF3L12": {
@@ -1181,10 +1181,10 @@
     "cab": "",
     "code": "VF3L12",
     "drive": "",
-    "full_description": "Ram 3500",
-    "model": "3500",
+    "full_description": "Ram ProMaster Cargo Van Low Roof 159WB",
+    "model": "ProMaster Cargo Van",
     "raw": "3500PROMASTERCARGOVANLOWROOF(136WB)",
-    "trim": "",
+    "trim": "Low Roof 159WB",
     "year": "2026"
   },
   "VF3L13": {
@@ -1192,10 +1192,10 @@
     "cab": "",
     "code": "VF3L13",
     "drive": "",
-    "full_description": "Ram 3500",
-    "model": "3500",
+    "full_description": "Ram ProMaster Cargo Van High Roof 159WB",
+    "model": "ProMaster Cargo Van",
     "raw": "3500PROMASTERCARGOVANHIGHROOF(136WB)",
-    "trim": "",
+    "trim": "High Roof 159WB",
     "year": "2026"
   },
   "VF3L16": {
@@ -1203,10 +1203,10 @@
     "cab": "",
     "code": "VF3L16",
     "drive": "",
-    "full_description": "Ram 3500",
-    "model": "3500",
+    "full_description": "Ram ProMaster Cargo Van High Roof 159WB Extended",
+    "model": "ProMaster Cargo Van",
     "raw": "3500PROMASTERCARGOVANHIGHROOF(159WB)",
-    "trim": "",
+    "trim": "High Roof 159WB Extended",
     "year": "2026"
   },
   "VF3L17": {
@@ -1214,10 +1214,10 @@
     "cab": "",
     "code": "VF3L17",
     "drive": "",
-    "full_description": "Ram 3500",
-    "model": "3500",
+    "full_description": "Ram ProMaster Cargo Van High Roof 159WB Extended",
+    "model": "ProMaster Cargo Van",
     "raw": "3500PROMASTERCARGOVANHIGHROOF(159WBEXT)",
-    "trim": "",
+    "trim": "High Roof 159WB Extended",
     "year": "2026"
   },
   "VF3L19": {
@@ -1225,10 +1225,10 @@
     "cab": "",
     "code": "VF3L19",
     "drive": "",
-    "full_description": "Ram 3500",
-    "model": "3500",
+    "full_description": "Ram ProMaster Cargo Van Super High Roof",
+    "model": "ProMaster Cargo Van",
     "raw": "3500PROMASTERCARGOVANSUPERHIGHROOF(159WBEXT)",
-    "trim": "",
+    "trim": "Super High Roof",
     "year": "2026"
   },
   "VFLL17": {
@@ -1236,10 +1236,10 @@
     "cab": "",
     "code": "VFLL17",
     "drive": "",
-    "full_description": "Ram 3500",
-    "model": "3500",
+    "full_description": "Ram ProMaster Cargo Van High Roof 159WB Extended",
+    "model": "ProMaster Cargo Van",
     "raw": "3500PROMASTEREVCARGOVANHIGHROOF(159WBEXT)",
-    "trim": "",
+    "trim": "High Roof 159WB Extended",
     "year": "2026"
   },
   "VFLL59": {
@@ -1247,10 +1247,10 @@
     "cab": "",
     "code": "VFLL59",
     "drive": "",
-    "full_description": "Ram ProMaster EV",
-    "model": "ProMaster EV",
+    "full_description": "Ram ProMaster Cargo Van Super High Roof",
+    "model": "ProMaster Cargo Van",
     "raw": "3500PROMASTEREVSTEPVANSUPERHIGHROOF",
-    "trim": "",
+    "trim": "Super High Roof",
     "year": "2025"
   },
   "WDEE75": {
@@ -1476,27 +1476,31 @@
   },
   "VFLL16": {
     "brand": "Ram",
-    "model": "ProMaster",
-    "trim": "",
-    "raw": "3500PROMASTEREVCARGOVANHIGHROOF(159WB)"
+    "model": "ProMaster Cargo Van",
+    "trim": "High Roof 159WB",
+    "raw": "3500PROMASTEREVCARGOVANHIGHROOF(159WB)",
+    "full_description": "Ram ProMaster Cargo Van High Roof 159WB"
   },
   "VF1L11": {
     "brand": "Ram",
-    "model": "ProMaster",
-    "trim": "",
-    "raw": "1500PROMASTERCARGOVANLOWROOF(118WB)"
+    "model": "ProMaster Cargo Van",
+    "trim": "Low Roof 136WB",
+    "raw": "1500PROMASTERCARGOVANLOWROOF(118WB)",
+    "full_description": "Ram ProMaster Cargo Van Low Roof 136WB"
   },
   "VF1L12": {
     "brand": "Ram",
-    "model": "ProMaster",
-    "trim": "",
-    "raw": "1500PROMASTERCARGOVANLOWROOF(136WB)"
+    "model": "ProMaster Cargo Van",
+    "trim": "Low Roof 136WB",
+    "raw": "1500PROMASTERCARGOVANLOWROOF(136WB)",
+    "full_description": "Ram ProMaster Cargo Van Low Roof 136WB"
   },
   "VF2L13": {
     "brand": "Ram",
-    "model": "ProMaster",
-    "trim": "",
-    "raw": "2500PROMASTERCARGOVANHIGHROOF(136WB)"
+    "model": "ProMaster Cargo Van",
+    "trim": "High Roof 159WB",
+    "raw": "2500PROMASTERCARGOVANHIGHROOF(136WB)",
+    "full_description": "Ram ProMaster Cargo Van High Roof 159WB"
   },
   "DT6T91": {
     "brand": "Ram",
