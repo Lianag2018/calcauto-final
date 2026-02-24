@@ -566,12 +566,11 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         '3CC': 'Groupe 3CC',
         '2TY': 'Customer Preferred Package 2TY',
         '22Y': 'Customer Preferred Package 22Y',
-        # Taxes/Frais
+        '2T1': 'Ensemble Éclair 2T1',
+        # Taxes/Frais (gardés pour affichage mais pas comme options)
         '4CP': 'Taxe Accise Fédérale Climatiseur',
         '801': 'Frais de Transport',
-        '999': 'Finance/Expédié',
-        '92HC1': 'Cotisation P.P.',
-        '92HC2': 'Allocation de Marketing',
+        # NOTE: 999, 92HC1, 92HC2 sont exclus via skip_codes (codes administratifs)
     }
     
     # Dictionnaire inversé: description partielle → code
