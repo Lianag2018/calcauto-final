@@ -728,8 +728,8 @@ export default function HomeScreen() {
     return text;
   };
 
-  // Handle Share via SMS (native share)
-  const handleShareSMS = async () => {
+  // Handle Share via SMS - Open preview modal
+  const handleShareSMS = () => {
     if (!selectedProgram || !localResult || !vehiclePrice) {
       if (Platform.OS === 'web') {
         alert(lang === 'fr' ? 'Aucune soumission à partager' : 'No submission to share');
@@ -740,24 +740,29 @@ export default function HomeScreen() {
     }
 
     const message = generateSubmissionText();
-    
+    setSmsPreviewText(message);
+    setShowSmsPreview(true);
+  };
+
+  // Send the SMS message after preview
+  const handleSendSms = async () => {
     try {
       if (Platform.OS === 'web') {
         // On web, use the Web Share API if available, otherwise copy to clipboard
         if (navigator.share) {
           await navigator.share({
             title: 'CalcAuto AiPro - Soumission',
-            text: message,
+            text: smsPreviewText,
           });
         } else {
-          // Fallback: open SMS link (won't work well on desktop but okay for mobile web)
-          const smsBody = encodeURIComponent(message);
+          // Fallback: open SMS link
+          const smsBody = encodeURIComponent(smsPreviewText);
           window.open(`sms:?body=${smsBody}`, '_blank');
         }
       } else {
         // On mobile, use React Native's Share API
         const result = await Share.share({
-          message: message,
+          message: smsPreviewText,
         });
         
         if (result.action === Share.sharedAction) {
@@ -766,6 +771,7 @@ export default function HomeScreen() {
           }
         }
       }
+      setShowSmsPreview(false);
     } catch (error: any) {
       console.error('Share error:', error);
       if (error.message !== 'User did not share') {
