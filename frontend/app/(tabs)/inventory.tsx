@@ -403,6 +403,69 @@ export default function InventoryScreen() {
     }
   };
 
+  // Export to Excel
+  const handleExportExcel = async () => {
+    if (!reviewData) {
+      Platform.OS === 'web' 
+        ? alert('Aucune donnée à exporter') 
+        : Alert.alert('Erreur', 'Aucune donnée à exporter');
+      return;
+    }
+
+    try {
+      const token = await getToken();
+      const exportData = {
+        vin: reviewData.vin || '',
+        model_code: reviewData.model_code || '',
+        brand: reviewData.brand || '',
+        model: reviewData.model || '',
+        trim: reviewData.trim || '',
+        year: reviewData.year?.toString() || '',
+        stock_no: reviewData.stock_no || '',
+        ep_cost: parseFloat(reviewData.ep_cost) || 0,
+        pdco: parseFloat(reviewData.pdco) || parseFloat(reviewData.msrp) || 0,
+        pref: parseFloat(reviewData.pref) || 0,
+        holdback: parseFloat(reviewData.holdback) || 0,
+        subtotal: parseFloat(reviewData.subtotal) || 0,
+        total: parseFloat(reviewData.total) || 0,
+        options: reviewData.options || []
+      };
+
+      const response = await axios.post(`${API_URL}/api/invoice/export-excel`, exportData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.success && response.data.excel_base64) {
+        if (Platform.OS === 'web') {
+          // Download file
+          const byteCharacters = atob(response.data.excel_base64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+          
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = response.data.filename;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          
+          alert(`Fichier téléchargé: ${response.data.filename}`);
+        } else {
+          Alert.alert('Export Excel', 'Fichier Excel généré avec succès');
+        }
+      }
+    } catch (error: any) {
+      const msg = error.response?.data?.detail || error.message || 'Erreur export';
+      Platform.OS === 'web' ? alert(msg) : Alert.alert('Erreur', msg);
+    }
+  };
+
   const updateReviewField = (field: string, value: string | number) => {
     setReviewData((prev: any) => ({ ...prev, [field]: value }));
   };
