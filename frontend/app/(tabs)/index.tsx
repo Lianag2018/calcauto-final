@@ -3459,6 +3459,37 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
+  // Share actions row (SMS + Print)
+  shareActionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 12,
+  },
+  shareSmsButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#5C6BC0',
+    borderRadius: 10,
+    padding: 14,
+    gap: 6,
+  },
+  printButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#78909C',
+    borderRadius: 10,
+    padding: 14,
+    gap: 6,
+  },
+  shareButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+  },
   emailModalContent: {
     backgroundColor: '#1a1a2e',
     borderTopLeftRadius: 24,
