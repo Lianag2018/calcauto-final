@@ -1,0 +1,746 @@
+{
+  "WLJH74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Cherokee",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "WLJL74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Cherokee L",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "WLJP74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Cherokee",
+    "trim": "Overland",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "WLJS74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Cherokee",
+    "trim": "Summit",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "WLJT74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Cherokee",
+    "trim": "Summit Reserve",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "WLXH74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Cherokee 4Xe",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "WLXP74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Cherokee 4Xe",
+    "trim": "Overland",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "WLXS74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Cherokee 4Xe",
+    "trim": "Summit",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "WLJS75": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Cherokee L",
+    "trim": "Overland",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "WLJT75": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Cherokee L",
+    "trim": "Summit",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "WLJH75": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Cherokee L",
+    "trim": "Altitude",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "WLJP75": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Cherokee L",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "JLJL72": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "Sport",
+    "cab": "2-Door",
+    "drive": "4x4"
+  },
+  "JLJL74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "Sport",
+    "cab": "4-Door",
+    "drive": "4x4"
+  },
+  "JLJP72": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "Sahara",
+    "cab": "2-Door",
+    "drive": "4x4"
+  },
+  "JLJP74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "Sahara",
+    "cab": "4-Door",
+    "drive": "4x4"
+  },
+  "JLJS72": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "Rubicon",
+    "cab": "2-Door",
+    "drive": "4x4"
+  },
+  "JLJS74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "Rubicon",
+    "cab": "4-Door",
+    "drive": "4x4"
+  },
+  "JLJH74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wrangler",
+    "trim": "Willys",
+    "cab": "4-Door",
+    "drive": "4x4"
+  },
+  "JLXS74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wrangler 4xe",
+    "trim": "Rubicon",
+    "cab": "4-Door",
+    "drive": "4x4"
+  },
+  "JLXP74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wrangler 4xe",
+    "trim": "Sahara",
+    "cab": "4-Door",
+    "drive": "4x4"
+  },
+  "JTJL98": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Gladiator",
+    "trim": "Sport",
+    "cab": "Crew Cab",
+    "drive": "4x4"
+  },
+  "JTJH98": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Gladiator",
+    "trim": "Mojave",
+    "cab": "Crew Cab",
+    "drive": "4x4"
+  },
+  "JTJS98": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Gladiator",
+    "trim": "Rubicon",
+    "cab": "Crew Cab",
+    "drive": "4x4"
+  },
+  "JTJP98": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Gladiator",
+    "trim": "Overland",
+    "cab": "Crew Cab",
+    "drive": "4x4"
+  },
+  "MPJL74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Compass",
+    "trim": "Sport",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "MPJM74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Compass",
+    "trim": "North",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "MPJP74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Compass",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "MPJH74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Compass",
+    "trim": "Trailhawk",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "MPJE74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Compass",
+    "trim": "Altitude",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "KMJL74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Cherokee",
+    "trim": "Latitude",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "KMJM74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Cherokee",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "KMJP74": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Cherokee",
+    "trim": "Overland",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "DT6L41": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Tradesman",
+    "cab": "Quad Cab",
+    "drive": "4x4"
+  },
+  "DT6L91": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Tradesman",
+    "cab": "Crew Cab Short",
+    "drive": "4x4"
+  },
+  "DT6L98": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Tradesman",
+    "cab": "Crew Cab Long",
+    "drive": "4x4"
+  },
+  "DT6H41": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Big Horn",
+    "cab": "Quad Cab",
+    "drive": "4x4"
+  },
+  "DT6H91": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Big Horn",
+    "cab": "Crew Cab Short",
+    "drive": "4x4"
+  },
+  "DT6H98": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Big Horn",
+    "cab": "Crew Cab Long",
+    "drive": "4x4"
+  },
+  "DT6P91": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Laramie",
+    "cab": "Crew Cab Short",
+    "drive": "4x4"
+  },
+  "DT6P98": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Laramie",
+    "cab": "Crew Cab Long",
+    "drive": "4x4"
+  },
+  "DT6S91": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Limited",
+    "cab": "Crew Cab Short",
+    "drive": "4x4"
+  },
+  "DT6S98": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Limited",
+    "cab": "Crew Cab Long",
+    "drive": "4x4"
+  },
+  "DT6R91": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "Longhorn",
+    "cab": "Crew Cab Short",
+    "drive": "4x4"
+  },
+  "DT6T91": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "1500",
+    "trim": "RHO",
+    "cab": "Crew Cab Short",
+    "drive": "4x4"
+  },
+  "DJ2L62": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Tradesman",
+    "cab": "Regular Cab",
+    "drive": "4x4"
+  },
+  "DJ2L91": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Tradesman",
+    "cab": "Crew Cab",
+    "drive": "4x4"
+  },
+  "DJ2L92": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Tradesman",
+    "cab": "Mega Cab",
+    "drive": "4x4"
+  },
+  "DJ2H62": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Big Horn",
+    "cab": "Regular Cab",
+    "drive": "4x4"
+  },
+  "DJ2H91": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Big Horn",
+    "cab": "Crew Cab",
+    "drive": "4x4"
+  },
+  "DJ2H92": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Big Horn",
+    "cab": "Mega Cab",
+    "drive": "4x4"
+  },
+  "DJ2P91": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Laramie",
+    "cab": "Crew Cab",
+    "drive": "4x4"
+  },
+  "DJ2P92": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Laramie",
+    "cab": "Mega Cab",
+    "drive": "4x4"
+  },
+  "DJ2S91": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Limited",
+    "cab": "Crew Cab",
+    "drive": "4x4"
+  },
+  "DJ2S92": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Limited",
+    "cab": "Mega Cab",
+    "drive": "4x4"
+  },
+  "D23L62": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "Tradesman",
+    "cab": "Regular Cab",
+    "drive": "4x4"
+  },
+  "D23L91": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "Tradesman",
+    "cab": "Crew Cab",
+    "drive": "4x4"
+  },
+  "D23L92": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "Tradesman",
+    "cab": "Mega Cab",
+    "drive": "4x4"
+  },
+  "D23H62": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "Big Horn",
+    "cab": "Regular Cab",
+    "drive": "4x4"
+  },
+  "D23H91": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "Big Horn",
+    "cab": "Crew Cab",
+    "drive": "4x4"
+  },
+  "D23H92": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "Big Horn",
+    "cab": "Mega Cab",
+    "drive": "4x4"
+  },
+  "D23P91": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "Laramie",
+    "cab": "Crew Cab",
+    "drive": "4x4"
+  },
+  "D23P92": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "Laramie",
+    "cab": "Mega Cab",
+    "drive": "4x4"
+  },
+  "D23S91": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "Limited",
+    "cab": "Crew Cab",
+    "drive": "4x4"
+  },
+  "D23S92": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "3500",
+    "trim": "Limited",
+    "cab": "Mega Cab",
+    "drive": "4x4"
+  },
+  "VF1L13": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "ProMaster",
+    "trim": "High Roof 136WB",
+    "cab": "Cargo Van",
+    "drive": "FWD"
+  },
+  "VF2L12": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "ProMaster",
+    "trim": "Low Roof 159WB",
+    "cab": "Cargo Van",
+    "drive": "FWD"
+  },
+  "VF2L16": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "ProMaster",
+    "trim": "High Roof 159WB Extended",
+    "cab": "Cargo Van",
+    "drive": "FWD"
+  },
+  "VF3L12": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "ProMaster",
+    "trim": "Low Roof 159WB",
+    "cab": "Cargo Van",
+    "drive": "FWD"
+  },
+  "VF3L13": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "ProMaster",
+    "trim": "High Roof 159WB",
+    "cab": "Cargo Van",
+    "drive": "FWD"
+  },
+  "VF3L16": {
+    "year": "2025",
+    "brand": "Ram",
+    "model": "ProMaster",
+    "trim": "High Roof 159WB Extended",
+    "cab": "Cargo Van",
+    "drive": "FWD"
+  },
+  "WDEH75": {
+    "year": "2025",
+    "brand": "Dodge",
+    "model": "Durango",
+    "trim": "SXT",
+    "cab": "",
+    "drive": "AWD"
+  },
+  "WDEM75": {
+    "year": "2025",
+    "brand": "Dodge",
+    "model": "Durango",
+    "trim": "R/T",
+    "cab": "",
+    "drive": "AWD"
+  },
+  "WDES75": {
+    "year": "2025",
+    "brand": "Dodge",
+    "model": "Durango",
+    "trim": "GT",
+    "cab": "",
+    "drive": "AWD"
+  },
+  "WDEE75": {
+    "year": "2025",
+    "brand": "Dodge",
+    "model": "Durango",
+    "trim": "Pursuit",
+    "cab": "",
+    "drive": "AWD"
+  },
+  "GG7P49": {
+    "year": "2025",
+    "brand": "Dodge",
+    "model": "Hornet",
+    "trim": "GT",
+    "cab": "",
+    "drive": "AWD"
+  },
+  "GGEH49": {
+    "year": "2025",
+    "brand": "Dodge",
+    "model": "Hornet",
+    "trim": "R/T PHEV",
+    "cab": "",
+    "drive": "AWD"
+  },
+  "LBEL29": {
+    "year": "2025",
+    "brand": "Dodge",
+    "model": "Charger",
+    "trim": "R/T",
+    "cab": "2-Door",
+    "drive": "AWD"
+  },
+  "LBEL49": {
+    "year": "2025",
+    "brand": "Dodge",
+    "model": "Charger",
+    "trim": "GT",
+    "cab": "4-Door",
+    "drive": "AWD"
+  },
+  "LBEP29": {
+    "year": "2025",
+    "brand": "Dodge",
+    "model": "Charger",
+    "trim": "Scat Pack",
+    "cab": "2-Door",
+    "drive": "AWD"
+  },
+  "LBEP49": {
+    "year": "2025",
+    "brand": "Dodge",
+    "model": "Charger",
+    "trim": "Scat Pack",
+    "cab": "4-Door",
+    "drive": "AWD"
+  },
+  "RUCT53": {
+    "year": "2025",
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Limited",
+    "cab": "",
+    "drive": "FWD"
+  },
+  "RUES53": {
+    "year": "2025",
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Pinnacle",
+    "cab": "",
+    "drive": "FWD"
+  },
+  "RUET53": {
+    "year": "2025",
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Select PHEV",
+    "cab": "",
+    "drive": "AWD"
+  },
+  "RUFS53": {
+    "year": "2025",
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Pinnacle PHEV",
+    "cab": "",
+    "drive": "AWD"
+  },
+  "RUFT53": {
+    "year": "2025",
+    "brand": "Chrysler",
+    "model": "Pacifica",
+    "trim": "Limited PHEV",
+    "cab": "",
+    "drive": "AWD"
+  },
+  "RUCL53": {
+    "year": "2025",
+    "brand": "Chrysler",
+    "model": "Grand Caravan",
+    "trim": "CVP",
+    "cab": "",
+    "drive": "FWD"
+  },
+  "WSJH75": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wagoneer",
+    "trim": "Series I",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "WSJM75": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wagoneer",
+    "trim": "Series II",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "WSJP75": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Wagoneer",
+    "trim": "Series III",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "WSJR75": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Wagoneer",
+    "trim": "Series I",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "WSJS75": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Wagoneer",
+    "trim": "Series II",
+    "cab": "",
+    "drive": "4x4"
+  },
+  "WSJT75": {
+    "year": "2025",
+    "brand": "Jeep",
+    "model": "Grand Wagoneer",
+    "trim": "Series III",
+    "cab": "",
+    "drive": "4x4"
+  }
+}
