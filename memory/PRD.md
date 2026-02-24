@@ -72,6 +72,24 @@ Application mobile iOS/Android de calcul de financement automobile avec gestion 
 - **Tests** : 
   - `backend/tests/test_scan_invoice.py` - 7 tests de validation du fix
 
+### Phase 12: Amélioration Parser - Extraction Parfaite (DONE - Feb 2026)
+- **Objectif** : Atteindre 100% de précision sur les factures FCA Canada
+- **Améliorations VIN** :
+  - Ajout patterns pour Ram HD (3C6UR...)
+  - Support VINs avec espaces/erreurs OCR  
+  - Correction automatique erreurs OCR (O→0, I→1)
+- **Améliorations Code Produit** :
+  - Validation contre base de 133 codes produits FCA
+  - Recherche agressive de tous codes 6 caractères
+  - Ajout codes manquants: WLJP74, WLJH75
+- **Améliorations Financières** :
+  - Support GKRP comme alias de PDCO
+  - Extraction holdback format 070000 → $700
+- **Tests validés** :
+  - 4 factures réelles testées: 100% succès
+  - VIN, Code, EP, Stock# tous extraits correctement
+  - 145 tests unitaires passés
+
 ## Stockage Inventaire
 - **Collection MongoDB**: `inventory`
 - **Par utilisateur**: `owner_id` pour isolation des données
