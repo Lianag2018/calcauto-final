@@ -119,7 +119,9 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
 ### Phase 13: Partage SMS & Impression (DONE - Feb 2026)
 - **Partage SMS** via API native Share de React Native
   - Bouton "Partager par texto" / "Share via SMS"
+  - **Modal d'aperçu** avec texte modifiable avant envoi
   - Génère un texte formaté avec: véhicule, prix, VIN, terme, taux, paiement
+  - Compteur de caractères pour suivre la longueur du message
   - Sur mobile: utilise l'API Share native (peut ouvrir Messages, WhatsApp, etc.)
   - Sur web: utilise Web Share API ou ouvre sms: link
 - **Impression** des soumissions
@@ -129,9 +131,10 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
   - Sur mobile: guide l'utilisateur vers la fonction Partager -> Imprimer
 - **Fichiers modifiés**: `frontend/app/(tabs)/index.tsx`
   - Ajout imports: `Share`, `Linking` de react-native
-  - Nouvelles fonctions: `generateSubmissionText()`, `handleShareSMS()`, `handlePrint()`
-  - Nouveaux styles: `shareActionsRow`, `shareSmsButton`, `printButton`, `shareButtonText`
-  - data-testid: `share-sms-btn`, `print-btn`, `send-email-btn`
+  - États: `showSmsPreview`, `smsPreviewText`
+  - Nouvelles fonctions: `generateSubmissionText()`, `handleShareSMS()`, `handleSendSms()`, `handlePrint()`
+  - Styles: Modal aperçu SMS complet avec header, textarea, boutons
+  - data-testid: `share-sms-btn`, `print-btn`, `send-email-btn`, `sms-preview-send-btn`
 
 ## Backlog
 - (P0) **Bug duplication d'options parser** - Le parser génère des options similaires en double (ex: DFT et DFW)
