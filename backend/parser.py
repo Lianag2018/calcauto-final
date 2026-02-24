@@ -692,7 +692,11 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'MOTEUR', 'PENTASTAR', 'TOIT', 'OUVR', 'PANO', 'PANN', 'COMMANDVIEW',
         'SUPPLEMENTAIRES', 'ESSENCE', 'TAXE', 'ACCISE', 'FRAIS', 'TRANSPORT',
         'ENSEMBLE', 'ATTELAGE', 'REMORQUE', 'ALLURE', 'NOIRE', 'VITESSES',
-        'AUTOMATIQUE', 'ECLAIR', 'COTISATION', 'ALLOCATION'
+        'AUTOMATIQUE', 'ECLAIR', 'COTISATION', 'ALLOCATION',
+        # Fragments OCR erronés des factures ProMaster
+        'PORTES', 'ARR', 'BATTANTES', 'BATTANTS', 'GLACE', 'FIXE', 'TION',
+        'HORS', 'CANADA', 'IMMATRICULATION', 'VENTE', 'HIGH', 'ROOF', 'CARGO',
+        'VAN', 'LOW', 'EXTENDED', 'SUPER', 'WB', '136WB', '159WB'
     }
     
     # Mots-clés d'adresse à ignorer dans la description
