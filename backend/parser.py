@@ -699,9 +699,14 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         '17 ADDITIONAL LITRES': 'YGV',
         '20L SUPPLEMENTAIRES ESSENCE': 'YGW',
         'SUPPLEMENTAIRES ESSENCE': 'YGW',
-        '20L SUPPLEMENTAIRES': 'YGW',
         '15 L SUPPLEMENTAIRES': 'YGN',  # Gladiator
         '15L SUPPLEMENTAIRES': 'YGN',
+        # Diesel - Ram 2500/3500
+        '20L SUPPLEMENTAIRES DE DIESEL': 'YG4',
+        '20L SUPPLEMENTAIRES DIESEL': 'YG4',
+        'SUPPLEMENTAIRES DE DIESEL': 'YG4',
+        'SUPPLEMENTAIRES DIESEL': 'YG4',
+        'DE DIESEL': 'YG4',
         
         # Packages/Ensembles
         'CUSTOMER PREFERRED PACKAGE 2TY': '2TY',
