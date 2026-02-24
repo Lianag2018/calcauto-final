@@ -546,11 +546,18 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'DMC': 'Climatisation 3 zones',
         'AHR': 'Volant chauffant',
         'AWL': 'Système audio premium Alpine',
+        # Équipements - Grand Cherokee
+        'ACX': 'Ensemble finition Mopar',
+        'ADT': 'Ensemble Premium',
+        'DC1': 'Transmission automatique 8 vitesses',
+        'EC7': 'Mot 4cyl ligne 2,0L GME Evo A/A-D',
         # Packages / Ensembles
         '2TE': 'Ensemble Éclair 2TE',
         '23E': 'Ensemble Éclair 23E',
         '2TW': 'Ensemble Éclair 2TW',  # Gladiator
         '24W': 'Ensemble Éclair 24W',  # Gladiator
+        '2C1': 'Ensemble Éclair 2C1',  # Grand Cherokee
+        '2T1': 'Ensemble Éclair 2T1',  # Grand Cherokee
         '2BZ': 'Groupe luxe',
         '2BX': 'Groupe technologie',
         '21D': 'Groupe remorquage',
