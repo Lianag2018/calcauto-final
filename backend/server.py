@@ -3606,13 +3606,10 @@ async def update_inventory_vehicle(stock_no: str, update: InventoryUpdate, autho
     update_data = {k: v for k, v in update.dict().items() if v is not None}
     update_data["updated_at"] = datetime.utcnow()
     
-    # Recalculate net_cost if ep_cost or holdback changed
-    if "ep_cost" in update_data or "holdback" in update_data:
-        vehicle = await db.inventory.find_one({"stock_no": stock_no, "owner_id": user["id"]})
-        if vehicle:
-            ep_cost = update_data.get("ep_cost", vehicle.get("ep_cost", 0))
-            holdback = update_data.get("holdback", vehicle.get("holdback", 0))
-            update_data["net_cost"] = ep_cost - holdback
+    # Recalculate net_cost if ep_cost changed
+    # NOTE: E.P. FCA inclut DÉJÀ la déduction du holdback, donc net_cost = E.P.
+    if "ep_cost" in update_data:
+        update_data["net_cost"] = update_data.get("ep_cost", 0)
     
     result = await db.inventory.update_one(
         {"stock_no": stock_no, "owner_id": user["id"]},
