@@ -116,7 +116,26 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
 - `frontend/app/(tabs)/index.tsx` - Section Accessoires, VIN manuel, auto-financing banner, styles
 - `frontend/app/(tabs)/inventory.tsx` - VIN affiché dans cartes
 
+### Phase 13: Partage SMS & Impression (DONE - Feb 2026)
+- **Partage SMS** via API native Share de React Native
+  - Bouton "Partager par texto" / "Share via SMS"
+  - Génère un texte formaté avec: véhicule, prix, VIN, terme, taux, paiement
+  - Sur mobile: utilise l'API Share native (peut ouvrir Messages, WhatsApp, etc.)
+  - Sur web: utilise Web Share API ou ouvre sms: link
+- **Impression** des soumissions
+  - Bouton "Imprimer" / "Print"
+  - Génère un document HTML formaté avec logo CalcAuto AiPro
+  - Sur web: ouvre la fenêtre d'impression du navigateur
+  - Sur mobile: guide l'utilisateur vers la fonction Partager -> Imprimer
+- **Fichiers modifiés**: `frontend/app/(tabs)/index.tsx`
+  - Ajout imports: `Share`, `Linking` de react-native
+  - Nouvelles fonctions: `generateSubmissionText()`, `handleShareSMS()`, `handlePrint()`
+  - Nouveaux styles: `shareActionsRow`, `shareSmsButton`, `printButton`, `shareButtonText`
+  - data-testid: `share-sms-btn`, `print-btn`, `send-email-btn`
+
 ## Backlog
+- (P0) **Bug duplication d'options parser** - Le parser génère des options similaires en double (ex: DFT et DFW)
+- (P1) Restreindre extraction en-tête facture au VIN seulement
 - (P1) Refactoring index.tsx (fichier monolithique)
 - (P2) Interface historique scans
 - (P3) Refactoring server.py en structure routes/
