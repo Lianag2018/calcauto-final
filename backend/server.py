@@ -4128,7 +4128,7 @@ def decode_vin(vin: str) -> dict:
 import json as _json
 _FCA_CODES_2026 = {}
 try:
-    with open(os.path.join(os.path.dirname(__file__), 'fca_product_codes_2026.json'), 'r') as f:
+    with open(os.path.join(os.path.dirname(__file__), 'data', 'fca_product_codes_2026.json'), 'r') as f:
         _codes_raw = _json.load(f)
         for code, info in _codes_raw.items():
             _FCA_CODES_2026[code] = {
