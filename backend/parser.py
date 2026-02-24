@@ -811,7 +811,7 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'SOLD', 'SHIP', 'BILL', 'ATTN', 'PHONE', 'FAX', 'EMAIL', 'WWW', 'HTTP',
         'LTEE', 'LTD', 'ENRG', 'INC', 'CORP', 'AUTO', 'AUTOS',
         # Codes modèles (pas des options)
-        'DT6S98', 'DJ7L92', 'WLJP74', 'WLJH75', 'VF1L13',
+        'DT6S98', 'DJ7L92', 'DJ7H91', 'WLJP74', 'WLJH74', 'WLJH75', 'VF1L13',
         # Fragments de descriptions OCR erronés (mots seuls, pas des codes FCA)
         'MODE', 'BED', 'RHO', 'RED', 'THIS', 'OR', '1F', '2F', '3F', '17', '20', '15',
         'THE', 'TO', 'IS', 'IT', 'OF', 'IN', 'ON', 'AT', 'BY', 'AN', 'AS', '20L',
