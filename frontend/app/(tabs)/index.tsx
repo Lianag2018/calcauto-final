@@ -996,6 +996,87 @@ export default function HomeScreen() {
     }
   };
 
+  // Handle Export Excel
+  const handleExportExcel = async () => {
+    if (!selectedInventory && !selectedProgram) {
+      if (Platform.OS === 'web') {
+        alert(lang === 'fr' ? 'Aucune donnée à exporter' : 'No data to export');
+      } else {
+        Alert.alert('Erreur', lang === 'fr' ? 'Aucune donnée à exporter' : 'No data to export');
+      }
+      return;
+    }
+
+    try {
+      const exportData = {
+        vin: selectedInventory?.vin || manualVin || '',
+        model_code: selectedInventory?.model_code || selectedProgram?.code || '',
+        brand: selectedInventory?.brand || selectedProgram?.brand || '',
+        model: selectedInventory?.model || selectedProgram?.model || '',
+        trim: selectedInventory?.trim || selectedProgram?.trim || '',
+        year: selectedInventory?.year?.toString() || selectedProgram?.year || '',
+        stock_no: selectedInventory?.stock_no || '',
+        ep_cost: selectedInventory?.ep_cost || 0,
+        pdco: selectedInventory?.pdco || selectedInventory?.msrp || 0,
+        pref: selectedInventory?.pref || 0,
+        holdback: selectedInventory?.holdback || 0,
+        subtotal: selectedInventory?.subtotal || 0,
+        total: selectedInventory?.total || 0,
+        options: selectedInventory?.options || []
+      };
+
+      const response = await fetch(`${API_URL}/api/invoice/export-excel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userToken}`
+        },
+        body: JSON.stringify(exportData)
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.excel_base64) {
+        if (Platform.OS === 'web') {
+          // Download the file on web
+          const byteCharacters = atob(result.excel_base64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+          
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = result.filename;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          
+          alert(lang === 'fr' ? `Fichier téléchargé: ${result.filename}` : `File downloaded: ${result.filename}`);
+        } else {
+          // On mobile, share the file
+          Alert.alert(
+            lang === 'fr' ? 'Export Excel' : 'Excel Export',
+            lang === 'fr' ? 'Fichier Excel généré avec succès' : 'Excel file generated successfully'
+          );
+        }
+      } else {
+        throw new Error(result.detail || 'Export failed');
+      }
+    } catch (error: any) {
+      console.error('Excel export error:', error);
+      if (Platform.OS === 'web') {
+        alert(lang === 'fr' ? `Erreur export: ${error.message}` : `Export error: ${error.message}`);
+      } else {
+        Alert.alert('Erreur', error.message);
+      }
+    }
+  };
+
   // Calculate monthly payment
   const calculateMonthlyPayment = (principal: number, annualRate: number, months: number): number => {
     if (principal <= 0 || months <= 0) return 0;
