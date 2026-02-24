@@ -319,48 +319,40 @@
     "year": "2026"
   },
   "DJ7H91": {
+    "year": "2026",
     "brand": "Ram",
-    "cab": "Crew Cab",
-    "code": "DJ7H91",
-    "drive": "4x4",
-    "full_description": "Ram 2500 Big Horn Crew Cab 4x4",
     "model": "2500",
-    "raw": "2500BIGHORNCREWCAB4X4(149inWB6FT4INbox)",
     "trim": "Big Horn",
-    "year": "2026"
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Big Horn Crew Cab 4x4"
   },
   "DJ7H92": {
+    "year": "2026",
     "brand": "Ram",
-    "cab": "Crew Cab",
-    "code": "DJ7H92",
-    "drive": "4x4",
-    "full_description": "Ram 2500 Big Horn Crew Cab 4x4",
     "model": "2500",
-    "raw": "2500BIGHORNCREWCAB4X4(169inWB8FT0INbox)",
     "trim": "Big Horn",
-    "year": "2026"
+    "cab": "Mega Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Big Horn Mega Cab 4x4"
   },
   "DJ7L62": {
+    "year": "2026",
     "brand": "Ram",
-    "cab": "Regular Cab",
-    "code": "DJ7L62",
-    "drive": "4x4",
-    "full_description": "Ram 2500 Tradesman Regular Cab 4x4",
     "model": "2500",
-    "raw": "2500TRADESMANREGCAB4X4(140inWB8FT0INbox)",
     "trim": "Tradesman",
-    "year": "2026"
+    "cab": "Regular Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Tradesman Regular Cab 4x4"
   },
   "DJ7L91": {
+    "year": "2026",
     "brand": "Ram",
-    "cab": "Crew Cab",
-    "code": "DJ7L91",
-    "drive": "4x4",
-    "full_description": "Ram 2500 Tradesman Crew Cab 4x4",
     "model": "2500",
-    "raw": "2500TRADESMANCREWCAB4X4(149inWB6FT4INbox)",
     "trim": "Tradesman",
-    "year": "2026"
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Tradesman Crew Cab 4x4"
   },
   "DJ7L92": {
     "brand": "Ram",
@@ -418,26 +410,22 @@
     "year": "2026"
   },
   "DJ7P91": {
+    "year": "2026",
     "brand": "Ram",
-    "cab": "Crew Cab",
-    "code": "DJ7P91",
-    "drive": "4x4",
-    "full_description": "Ram 2500 Laramie Crew Cab 4x4",
     "model": "2500",
-    "raw": "2500LARAMIECREWCAB4X4(149inWB6FT4INbox)",
     "trim": "Laramie",
-    "year": "2026"
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Laramie Crew Cab 4x4"
   },
   "DJ7P92": {
+    "year": "2026",
     "brand": "Ram",
-    "cab": "Crew Cab",
-    "code": "DJ7P92",
-    "drive": "4x4",
-    "full_description": "Ram 2500 Laramie Crew Cab 4x4",
     "model": "2500",
-    "raw": "2500LARAMIECREWCAB4X4(169inWB8FT0INbox)",
     "trim": "Laramie",
-    "year": "2026"
+    "cab": "Mega Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Laramie Mega Cab 4x4"
   },
   "DJ7X91": {
     "brand": "Ram",
@@ -1719,5 +1707,23 @@
     "cab": "",
     "drive": "4x4",
     "full_description": "Jeep Grand Cherokee L Limited 4x4"
+  },
+  "DJ7S91": {
+    "year": "2026",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Limited",
+    "cab": "Crew Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Limited Crew Cab 4x4"
+  },
+  "DJ7S92": {
+    "year": "2026",
+    "brand": "Ram",
+    "model": "2500",
+    "trim": "Limited",
+    "cab": "Mega Cab",
+    "drive": "4x4",
+    "full_description": "Ram 2500 Limited Mega Cab 4x4"
   }
 }
