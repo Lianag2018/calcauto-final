@@ -694,7 +694,7 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         # Équipements Grand Cherokee
         'ENSEMBLE FINITION MOPAR': 'ACX',
         'FINITION MOPAR': 'ACX',
-        'MOPAR': 'ACX',
+        # NOTE: Ne pas mapper 'MOPAR' seul car MOPARMD = CLF (tapis), pas ACX
         'ENSEMBLE PREMIUM': 'ADT',
         'PREMIUM': 'ADT',
         'TRANSMISSION AUTOMATIQUE 8VITESSES': 'DC1',
