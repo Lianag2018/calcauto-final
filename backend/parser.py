@@ -651,6 +651,24 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'OFF-ROAD STYLE RUNNING': 'MTW',
         'RUNNING BOARDS': 'MTW',
         
+        # Équipements Grand Cherokee
+        'ENSEMBLE FINITION MOPAR': 'ACX',
+        'FINITION MOPAR': 'ACX',
+        'MOPAR': 'ACX',
+        'ENSEMBLE PREMIUM': 'ADT',
+        'PREMIUM': 'ADT',
+        'TRANSMISSION AUTOMATIQUE 8VITESSES': 'DC1',
+        'TRANSMISSION AUTOMATIQUE 8 VITESSES': 'DC1',
+        'AUTOMATIQUE 8VITESSES': 'DC1',
+        'MOT 4CYL LIGNE 2,0L GME EVO': 'EC7',
+        'MOT 4CYL LIGNE': 'EC7',
+        '4CYL LIGNE 2,0L': 'EC7',
+        'GME EVO': 'EC7',
+        'ENSEMBLE ECLAIR 2C1': '2C1',
+        'ECLAIR 2C1': '2C1',
+        'ENSEMBLE ECLAIR 2T1': '2T1',
+        'ECLAIR 2T1': '2T1',
+        
         # Carburant
         'ADDITIONAL LITRES': 'YGV',
         'LITRES OF GAS': 'YGV',
@@ -689,15 +707,7 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'CLIMATISEUR': '4CP',
         'DESTINATION CHARGE': '801',
         'FRAIS DE TRANSPORT': '801',
-        'FINANCED': '999',
-        'SHIPPED': '999',
-        'FINANCE': '999',
-        'EXPEDIE': '999',
-        'PPA ASSESSMENT': '92HC1',
-        'COTISATION P.P.': '92HC1',
-        'COTISATION P.P': '92HC1',
-        'MARKETING ALLOWANCE': '92HC2',
-        'ALLOCATION DE MARKETING': '92HC2',
+        # NOTE: 999, 92HC1, 92HC2 sont exclus via skip_codes (codes administratifs)
         'ALLOCATION MARKETING': '92HC2',
     }
     
