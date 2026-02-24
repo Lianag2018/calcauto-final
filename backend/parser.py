@@ -582,7 +582,8 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         
         # Chercher un code au début de la ligne
         # Format: CODE + espace + description
-        match = re.match(r'^([A-Z0-9]{2,5})\s+(.+)$', line)
+        # Accepte codes de 2-6 caractères (pour 92HC1, 92HC2, DT6S98 etc.)
+        match = re.match(r'^([A-Z0-9]{2,6})\s+(.+)$', line)
         if match:
             code = match.group(1)
             description_raw = match.group(2).strip()
