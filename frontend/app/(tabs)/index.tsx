@@ -3655,6 +3655,16 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 6,
   },
+  exportExcelButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#217346',
+    borderRadius: 10,
+    padding: 14,
+    gap: 6,
+  },
   shareButtonText: {
     fontSize: 14,
     fontWeight: '600',
