@@ -789,54 +789,57 @@ export default function HomeScreen() {
 
     setLeaseResult(results);
 
-    // === CALCUL MEILLEUR CHOIX: toutes combinaisons terme × option ===
+    // === CALCUL MEILLEUR CHOIX: toutes combinaisons km × terme × option ===
     const availableTerms = [24, 27, 36, 39, 42, 48, 51, 54, 60];
+    const availableKms = [12000, 18000, 24000];
     let bestOption: any = null;
 
-    for (const t of availableTerms) {
-      const resPct = residualVehicle.residual_percentages?.[String(t)] || 0;
-      if (resPct === 0) continue;
+    for (const km of availableKms) {
+      for (const t of availableTerms) {
+        const resPct = residualVehicle.residual_percentages?.[String(t)] || 0;
+        if (resPct === 0) continue;
 
-      // km adjustment for this term
-      let kmAdj2 = 0;
-      if (leaseKmPerYear !== 24000 && kmAdj) {
-        kmAdj2 = kmAdj[String(leaseKmPerYear)]?.[String(t)] || 0;
-      }
-      const adjResPct = resPct + kmAdj2;
-      const resVal = pdsf * (adjResPct / 100);
-
-      const stdRate = rateEntry?.standard_rates?.[String(t)] ?? null;
-      const altRate = rateEntry?.alternative_rates?.[String(t)] ?? null;
-
-      const calcForTerm = (rate: number, cash: number, termLen: number) => {
-        const rabaisC = parseFloat(leaseRabaisConcess) || 0;
-        const sp = price + totalAccessoires - rabaisC;
-        const dossierOnly = parseFloat(fraisDossier) || 0;
-        const cc = sp + dossierOnly - cash;
-        let sn = 0;
-        if (soldeReporte < 0) sn = Math.abs(soldeReporte) * 1.14975;
-        else if (soldeReporte > 0) sn = soldeReporte;
-        const ncc = cc + sn + tradeOwed - tradeVal - comptant - bonusCash;
-        const dep = (ncc - resVal) / termLen;
-        const mf = rate / 2400;
-        const fc = (ncc + resVal) * mf;
-        const bt = dep + fc;
-        const monthly = bt + bt * 0.05 + bt * 0.09975;
-        return { monthly, monthlyBeforeTax: bt, rate, term: termLen, residualPct: adjResPct, residualValue: resVal, coutEmprunt: fc * termLen, leaseCash: cash };
-      };
-
-      // Standard
-      if (stdRate !== null) {
-        const r = calcForTerm(stdRate, leaseCash, t);
-        if (!bestOption || r.monthly < bestOption.monthly) {
-          bestOption = { ...r, option: 'standard', optionLabel: 'Std + Lease Cash' };
+        // km adjustment for this term and km
+        let kmAdj2 = 0;
+        if (km !== 24000 && kmAdj) {
+          kmAdj2 = kmAdj[String(km)]?.[String(t)] || 0;
         }
-      }
-      // Alternative
-      if (altRate !== null) {
-        const r = calcForTerm(altRate, 0, t);
-        if (!bestOption || r.monthly < bestOption.monthly) {
-          bestOption = { ...r, option: 'alternative', optionLabel: 'Taux Alternatif' };
+        const adjResPct = resPct + kmAdj2;
+        const resVal = pdsf * (adjResPct / 100);
+
+        const stdRate = rateEntry?.standard_rates?.[String(t)] ?? null;
+        const altRate = rateEntry?.alternative_rates?.[String(t)] ?? null;
+
+        const calcForTerm = (rate: number, cash: number, termLen: number) => {
+          const rabaisC = parseFloat(leaseRabaisConcess) || 0;
+          const sp = price + totalAccessoires - rabaisC;
+          const dossierOnly = parseFloat(fraisDossier) || 0;
+          const cc = sp + dossierOnly - cash;
+          let sn = 0;
+          if (soldeReporte < 0) sn = Math.abs(soldeReporte) * 1.14975;
+          else if (soldeReporte > 0) sn = soldeReporte;
+          const ncc = cc + sn + tradeOwed - tradeVal - comptant - bonusCash;
+          const dep = (ncc - resVal) / termLen;
+          const mf = rate / 2400;
+          const fc = (ncc + resVal) * mf;
+          const bt = dep + fc;
+          const monthly = bt + bt * 0.05 + bt * 0.09975;
+          return { monthly, monthlyBeforeTax: bt, rate, term: termLen, residualPct: adjResPct, residualValue: resVal, coutEmprunt: fc * termLen, leaseCash: cash, kmPerYear: km };
+        };
+
+        // Standard
+        if (stdRate !== null) {
+          const r = calcForTerm(stdRate, leaseCash, t);
+          if (!bestOption || r.monthly < bestOption.monthly) {
+            bestOption = { ...r, option: 'standard', optionLabel: 'Std + Lease Cash' };
+          }
+        }
+        // Alternative
+        if (altRate !== null) {
+          const r = calcForTerm(altRate, 0, t);
+          if (!bestOption || r.monthly < bestOption.monthly) {
+            bestOption = { ...r, option: 'alternative', optionLabel: 'Taux Alternatif' };
+          }
         }
       }
     }
