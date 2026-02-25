@@ -764,6 +764,7 @@ class InventoryUpdate(BaseModel):
     brand: Optional[str] = None
     model: Optional[str] = None
     trim: Optional[str] = None
+    body_style: Optional[str] = None
     year: Optional[int] = None
     type: Optional[str] = None
     pdco: Optional[float] = None
