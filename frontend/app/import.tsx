@@ -1194,11 +1194,15 @@ export default function ImportScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {currentStep === 'login' ? renderLoginStep() : null}
+          {currentStep === 'choose-type' ? renderChooseTypeStep() : null}
           {currentStep === 'upload' ? renderUploadStep() : null}
           {currentStep === 'select-pages' ? renderSelectPagesStep() : null}
           {currentStep === 'preview' ? renderPreviewStep() : null}
           {currentStep === 'email-sent' ? renderEmailSentStep() : null}
           {currentStep === 'success' ? renderSuccessStep() : null}
+          {currentStep === 'residual-upload' ? renderResidualUploadStep() : null}
+          {currentStep === 'residual-processing' ? renderResidualProcessingStep() : null}
+          {currentStep === 'residual-success' ? renderResidualSuccessStep() : null}
         </ScrollView>
         
         {renderEditModal()}
