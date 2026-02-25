@@ -2887,6 +2887,31 @@ export default function HomeScreen() {
                             montant_du: parseFloat(montantDuEchange) || 0,
                           },
                           rates_table: {},
+                          // Lease SCI data
+                          lease_data: showLease && leaseResult && (leaseResult.standard || leaseResult.alternative) ? {
+                            term: leaseTerm,
+                            km_per_year: leaseKmPerYear,
+                            residual_pct: leaseResult.residualPct,
+                            residual_value: leaseResult.residualValue,
+                            km_adjustment: leaseResult.kmAdjustment || 0,
+                            best_lease: leaseResult.bestLease,
+                            lease_savings: leaseResult.leaseSavings || 0,
+                            standard: leaseResult.standard ? {
+                              rate: leaseResult.standard.rate,
+                              lease_cash: leaseResult.standard.leaseCash,
+                              monthly: leaseResult.standard.monthly,
+                              biweekly: leaseResult.standard.biweekly,
+                              weekly: leaseResult.standard.weekly,
+                              total: leaseResult.standard.total,
+                            } : null,
+                            alternative: leaseResult.alternative ? {
+                              rate: leaseResult.alternative.rate,
+                              monthly: leaseResult.alternative.monthly,
+                              biweekly: leaseResult.alternative.biweekly,
+                              weekly: leaseResult.alternative.weekly,
+                              total: leaseResult.alternative.total,
+                            } : null,
+                          } : null,
                         }),
                       });
                       
