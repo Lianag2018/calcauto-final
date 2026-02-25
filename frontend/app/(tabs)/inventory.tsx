@@ -1446,6 +1446,34 @@ export default function InventoryScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* SCI Picker Modal */}
+      <Modal visible={pickerConfig.visible} transparent animationType="slide">
+        <View style={sciStyles.pickerOverlay}>
+          <View style={sciStyles.pickerContainer}>
+            <View style={sciStyles.pickerHeader}>
+              <Text style={sciStyles.pickerTitle}>{pickerConfig.label}</Text>
+              <TouchableOpacity onPress={() => setPickerConfig(p => ({ ...p, visible: false }))}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={sciStyles.pickerScroll}>
+              {pickerConfig.options.map((opt: string) => (
+                <TouchableOpacity
+                  key={opt}
+                  style={sciStyles.pickerItem}
+                  onPress={() => {
+                    pickerConfig.onSelect(opt);
+                    setPickerConfig(p => ({ ...p, visible: false }));
+                  }}
+                >
+                  <Text style={sciStyles.pickerItemText}>{opt}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
