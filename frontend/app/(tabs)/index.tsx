@@ -2738,6 +2738,17 @@ export default function HomeScreen() {
                                   leaseResult.alternative.weeklyBeforeTax
                                 )}
                               </Text>
+                              {paymentFrequency === 'monthly' && (
+                                <View style={styles.leaseCardTaxBreakdown}>
+                                  <Text style={styles.leaseCardTaxLine}>TPS (5%): {formatCurrencyDecimal(leaseResult.alternative.tpsOnPayment)}</Text>
+                                  <Text style={styles.leaseCardTaxLine}>TVQ (9.975%): {formatCurrencyDecimal(leaseResult.alternative.tvqOnPayment)}</Text>
+                                </View>
+                              )}
+                              {leaseResult.alternative.rabaisConcess > 0 && (
+                                <Text style={styles.leaseCardRabaisLine}>
+                                  {lang === 'fr' ? 'Rabais concess.' : 'Dealer disc.'}: -{formatCurrency(leaseResult.alternative.rabaisConcess)}
+                                </Text>
+                              )}
                             </View>
                             <View style={styles.leaseCardDetail}>
                               <Text style={styles.leaseCardDetailLabel}>Total ({leaseTerm} {lang === 'fr' ? 'mois' : 'mo'}):</Text>
