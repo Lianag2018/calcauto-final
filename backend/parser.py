@@ -953,10 +953,15 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
     
     # Groupes de codes équivalents (ne pas ajouter si un code similaire existe déjà)
     equivalent_codes = {
-        'DFT': {'DFR', 'DFW'},  # Transmissions automatiques
-        'DFR': {'DFT', 'DFW'},
-        'DFW': {'DFT', 'DFR'},
-        'YGN': {'YGV', 'YGW'},  # Carburant supplémentaire
+        # Transmissions automatiques (toutes équivalentes entre elles)
+        'DFT': {'DFR', 'DFW', 'DFM', 'DFD', 'DFL', 'DFH', 'DC1', 'DEX', 'DFQ', 'DF2', 'DF8'},
+        'DFR': {'DFT', 'DFW', 'DFM', 'DFD', 'DFL', 'DFH', 'DC1', 'DEX', 'DFQ', 'DF2', 'DF8'},
+        'DFW': {'DFT', 'DFR', 'DFM', 'DFD', 'DFL', 'DFH', 'DC1', 'DEX', 'DFQ', 'DF2', 'DF8'},
+        'DFM': {'DFT', 'DFR', 'DFW', 'DFD', 'DFL', 'DFH', 'DC1', 'DEX', 'DFQ', 'DF2', 'DF8'},
+        'DC1': {'DFT', 'DFR', 'DFW', 'DFM', 'DFD', 'DFL', 'DFH', 'DEX', 'DFQ', 'DF2', 'DF8'},
+        'DFH': {'DFT', 'DFR', 'DFW', 'DFM', 'DFD', 'DFL', 'DC1', 'DEX', 'DFQ', 'DF2', 'DF8'},
+        # Carburant supplémentaire
+        'YGN': {'YGV', 'YGW'},
         'YGV': {'YGN', 'YGW'},
         'YGW': {'YGN', 'YGV'},
     }
