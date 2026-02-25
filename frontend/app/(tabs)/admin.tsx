@@ -15,11 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 
-// Force the production backend URL for Vercel deployments
 const getApiUrl = (): string => {
-  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
-    return 'https://calcauto-final-backend.onrender.com';
-  }
   if (process.env.EXPO_PUBLIC_BACKEND_URL) {
     return process.env.EXPO_PUBLIC_BACKEND_URL;
   }
