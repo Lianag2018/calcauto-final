@@ -1858,13 +1858,16 @@ async def extract_pdf(
     program_month: int = Form(...),
     program_year: int = Form(...),
     start_page: int = Form(1),
-    end_page: int = Form(9999)
+    end_page: int = Form(9999),
+    lease_start_page: Optional[int] = Form(None),
+    lease_end_page: Optional[int] = Form(None)
 ):
     """
     Extrait les données de financement d'un PDF via OpenAI GPT-4
     Retourne les programmes pour prévisualisation/modification avant sauvegarde
     
-    start_page et end_page permettent de limiter l'extraction à certaines pages
+    start_page/end_page = pages Retail
+    lease_start_page/lease_end_page = pages SCI Lease (optionnel)
     (indexation commence à 1)
     """
     if password != ADMIN_PASSWORD:
