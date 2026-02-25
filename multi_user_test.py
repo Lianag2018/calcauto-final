@@ -8,7 +8,7 @@ import json
 import uuid
 from datetime import datetime
 
-BACKEND_URL = "https://lease-residual-fix.preview.emergentagent.com/api"
+BACKEND_URL = "https://residual-value-tool.preview.emergentagent.com/api"
 
 def test_multi_user_isolation():
     print("🔒 MULTI-USER DATA ISOLATION TEST")
