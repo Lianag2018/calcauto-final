@@ -5221,6 +5221,15 @@ Retourne UNIQUEMENT un JSON valide (pas de markdown, pas de commentaires):
                         if pdco == 0: pdco = financial.get("pdco", 0) or 0
                         if pref == 0: pref = financial.get("pref", 0) or 0
                         if holdback == 0: holdback = financial.get("holdback", 0) or 0
+                    
+                    # Holdback: GPT-4o ne reconnaît souvent pas le format FCA (070000 = $700)
+                    # Toujours essayer le regex fallback si holdback == 0
+                    if holdback == 0:
+                        financial_hb = parse_financial_data(full_text)
+                        holdback = financial_hb.get("holdback", 0) or 0
+                        if holdback > 0:
+                            logger.info(f"Holdback extracted via regex fallback: {holdback}")
+                    
                     if subtotal == 0 or invoice_total == 0:
                         totals = parse_totals(full_text)
                         if subtotal == 0: subtotal = totals.get("subtotal", 0) or 0
