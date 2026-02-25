@@ -432,6 +432,8 @@ export default function HomeScreen() {
   const [leaseRates, setLeaseRates] = useState<any>(null);
   const [leaseResult, setLeaseResult] = useState<any>(null);
   const [leaseLoading, setLeaseLoading] = useState(false);
+  const [leasePdsf, setLeasePdsf] = useState('');  // PDSF/PDOC pour calcul résiduel
+  const [leaseSoldeReporte, setLeaseSoldeReporte] = useState('');  // Solde reporté (négatif = dette)
   const leaseTerms = [24, 27, 36, 39, 42, 48, 51, 54, 60];
   const leaseKmOptions = [12000, 18000, 24000];
 
