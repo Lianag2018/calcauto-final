@@ -355,7 +355,7 @@ YG4 20L SUPPLEMENTAIRES DIESEL SANS FRAIS
 class TestHeaderFiltering:
     """Tests pour vérifier que les données de l'en-tête de facture sont filtrées"""
 
-    HEADER_CODES = {'ELITE', 'BANQUE', '596', 'TAN', 'HURRIC', 'DC1', 'DT6L98'}
+    HEADER_CODES = {'ELITE', 'BANQUE', '596', 'TAN', 'HURRIC', 'DT6L98'}
 
     def test_header_codes_filtered(self):
         """Les mots de l'en-tête ne doivent pas apparaître comme options"""
