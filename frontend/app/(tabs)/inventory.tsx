@@ -1253,38 +1253,23 @@ export default function InventoryScreen() {
 
                 <View style={styles.formRow}>
                   <View style={styles.formGroup}>
-                    <Text style={styles.formLabel}>Marque *</Text>
-                    <TextInput
-                      style={styles.formInput}
-                      value={reviewData.brand}
-                      onChangeText={(v) => updateReviewField('brand', v)}
-                      placeholder="Ram"
-                      placeholderTextColor="#666"
-                    />
+                    {renderSciDropdown('Marque *', 'brand', reviewData.brand || '', (v) => handleReviewSciSelect('brand', v), reviewData, 'review')}
                   </View>
                   <View style={styles.formGroup}>
-                    <Text style={styles.formLabel}>Modèle *</Text>
-                    <TextInput
-                      style={styles.formInput}
-                      value={reviewData.model}
-                      onChangeText={(v) => updateReviewField('model', v)}
-                      placeholder="2500 Express"
-                      placeholderTextColor="#666"
-                    />
+                    {renderSciDropdown('Modèle *', 'model', reviewData.model || '', (v) => handleReviewSciSelect('model', v), reviewData, 'review')}
                   </View>
                 </View>
 
                 <View style={styles.formRow}>
                   <View style={styles.formGroup}>
-                    <Text style={styles.formLabel}>Trim</Text>
-                    <TextInput
-                      style={styles.formInput}
-                      value={reviewData.trim}
-                      onChangeText={(v) => updateReviewField('trim', v)}
-                      placeholder="Crew Cab 4x4"
-                      placeholderTextColor="#666"
-                    />
+                    {renderSciDropdown('Trim', 'trim', reviewData.trim || '', (v) => handleReviewSciSelect('trim', v), reviewData, 'review')}
                   </View>
+                  <View style={styles.formGroup}>
+                    {renderSciDropdown('Carrosserie', 'body_style', reviewData.body_style || '', (v) => handleReviewSciSelect('body_style', v), reviewData, 'review')}
+                  </View>
+                </View>
+
+                <View style={styles.formRow}>
                   <View style={styles.formGroup}>
                     <Text style={styles.formLabel}>Année</Text>
                     <TextInput
@@ -1295,6 +1280,23 @@ export default function InventoryScreen() {
                       placeholder="2025"
                       placeholderTextColor="#666"
                     />
+                  </View>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Type</Text>
+                    <View style={styles.typeSelector}>
+                      <TouchableOpacity
+                        style={[styles.typeBtn, reviewData.type === 'neuf' && styles.typeBtnActive]}
+                        onPress={() => updateReviewField('type', 'neuf')}
+                      >
+                        <Text style={[styles.typeBtnText, reviewData.type === 'neuf' && styles.typeBtnTextActive]}>Neuf</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.typeBtn, reviewData.type === 'occasion' && styles.typeBtnActive]}
+                        onPress={() => updateReviewField('type', 'occasion')}
+                      >
+                        <Text style={[styles.typeBtnText, reviewData.type === 'occasion' && styles.typeBtnTextActive]}>Occasion</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
 
