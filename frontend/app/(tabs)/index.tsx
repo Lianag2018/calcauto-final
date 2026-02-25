@@ -5300,6 +5300,52 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontWeight: '500',
   },
+  bestLeaseBox: {
+    backgroundColor: '#1a1a2e',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#FFD700',
+    padding: 12,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  bestLeaseHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  bestLeaseTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFD700',
+    letterSpacing: 1,
+  },
+  bestLeaseContent: {
+    gap: 4,
+  },
+  bestLeaseRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  bestLeaseLabel: {
+    fontSize: 11,
+    color: '#999',
+  },
+  bestLeaseValue: {
+    fontSize: 11,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  bestLeaseTap: {
+    fontSize: 9,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 6,
+    fontStyle: 'italic',
+  },
   leaseCardTotalValue: {
     fontSize: 12,
     color: '#4ECDC4',
