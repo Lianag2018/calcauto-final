@@ -616,15 +616,26 @@ export default function HomeScreen() {
     const year = selectedProgram.year;
     const vehicleList = year === 2025 ? leaseRates.vehicles_2025 : leaseRates.vehicles_2026;
     
-    // Find best matching rate entry
-    const rateEntry = vehicleList?.find((v: any) => {
+    // Find best matching rate entry - prioritize trim match
+    let rateEntry = vehicleList?.find((v: any) => {
       const vModel = v.model.toLowerCase();
       const vBrand = v.brand.toLowerCase();
       if (vBrand !== brandLower) return false;
-      // Check if model matches
-      return vModel.includes(modelLower) || modelLower.includes(vModel) ||
-        (trimLower && vModel.includes(trimLower));
+      // Must match model AND trim
+      const hasModel = vModel.includes(modelLower) || modelLower.includes(vModel);
+      if (!hasModel) return false;
+      if (!trimLower) return true;
+      return vModel.includes(trimLower) || trimLower.split(',').some((t: string) => vModel.includes(t.trim()));
     });
+    // Fallback: match just model if no trim match
+    if (!rateEntry) {
+      rateEntry = vehicleList?.find((v: any) => {
+        const vModel = v.model.toLowerCase();
+        const vBrand = v.brand.toLowerCase();
+        if (vBrand !== brandLower) return false;
+        return vModel.includes(modelLower) || modelLower.includes(vModel);
+      });
+    }
 
     // Get rates for standard and alternative
     const termKey = String(leaseTerm);
