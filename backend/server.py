@@ -5229,7 +5229,7 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                     "net_cost": ep_cost,  # E.P. = Coût Net (holdback déjà déduit)
                     "subtotal": subtotal,
                     "invoice_total": invoice_total,
-                    "color": color_map.get(color_code, color_code),
+                    "color": final_color,
                     "options": options,
                     "file_hash": file_hash,
                     "parse_method": "google_vision_hybrid",
