@@ -1117,6 +1117,11 @@ export default function HomeScreen() {
 
             <div style="text-align:center;margin-top:14px;padding-top:10px;border-top:1px solid #eee;">
               <div style="font-size:10px;color:#999;">Généré le ${new Date().toLocaleDateString('fr-CA')} - CalcAuto AiPro</div>
+              <div style="font-size:8px;color:#999;margin-top:6px;line-height:1.3;text-align:justify;padding:0 8px;">
+                ${lang === 'fr' 
+                  ? 'AVIS IMPORTANT: Les montants présentés sont à titre indicatif seulement et ne constituent pas une offre officielle. Les versements réels peuvent différer selon l\'évaluation de crédit, les programmes en vigueur et les frais applicables. Le concessionnaire ne peut être tenu responsable de toute erreur de calcul. Sujet à l\'approbation du crédit.'
+                  : 'IMPORTANT: Amounts shown are for informational purposes only and do not constitute an official offer. Actual payments may differ. Subject to credit approval.'}
+              </div>
             </div>
           </div>
         </div>
