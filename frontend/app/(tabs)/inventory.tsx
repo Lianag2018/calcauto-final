@@ -747,7 +747,7 @@ export default function InventoryScreen() {
       </View>
 
       <Text style={styles.vehicleTitle}>{item.year} {item.brand} {item.model}</Text>
-      {item.trim && <Text style={styles.vehicleTrim}>{item.trim}</Text>}
+      {item.trim && <Text style={styles.vehicleTrim}>{item.trim}{item.body_style ? ` - ${item.body_style}` : ''}</Text>}
       {item.vin && <Text style={styles.vehicleVin}>VIN: {item.vin}</Text>}
 
       <View style={styles.priceGrid}>
