@@ -398,6 +398,7 @@ export default function InventoryScreen() {
         brand: reviewData.brand,
         model: reviewData.model,
         trim: reviewData.trim,
+        body_style: reviewData.body_style || '',
         year: parseInt(reviewData.year) || new Date().getFullYear(),
         type: reviewData.type,
         pdco: parseFloat(reviewData.pdco) || 0,
