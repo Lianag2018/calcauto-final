@@ -2309,6 +2309,8 @@ class SendCalculationEmailRequest(BaseModel):
     # Window Sticker
     include_window_sticker: bool = True  # Inclure le Window Sticker automatiquement
     vin: str = ""  # VIN pour récupérer le Window Sticker
+    # Lease SCI data
+    lease_data: Optional[Dict[str, Any]] = None  # Location SCI comparison data
 
 class SendReportEmailRequest(BaseModel):
     """Requête pour envoyer un rapport après import"""
