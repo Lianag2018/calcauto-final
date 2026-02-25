@@ -478,7 +478,71 @@ export default function InventoryScreen() {
     }
   };
 
-  const updateReviewField = (field: string, value: string | number) => {
+  // Import from Excel (fichier corrigé manuellement)
+  const handleImportExcel = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets?.[0]) return;
+
+      setScanning(true);
+      const token = await getToken();
+      const file = result.assets[0];
+
+      const formData = new FormData();
+      formData.append('file', {
+        uri: file.uri,
+        name: file.name || 'import.xlsx',
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      } as any);
+
+      const response = await axios.post(`${API_URL}/api/invoice/import-excel`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.data.success) {
+        const data = response.data.data;
+        // Ouvrir le modal review avec les données importées (pas de re-parsing)
+        setReviewData({
+          vin: data.vin || '',
+          model_code: data.model_code || '',
+          brand: data.brand || '',
+          model: data.model || '',
+          trim: data.trim || '',
+          year: data.year || new Date().getFullYear(),
+          stock_no: data.stock_no || '',
+          ep_cost: data.ep_cost || 0,
+          pdco: data.pdco || 0,
+          msrp: data.pdco || 0,
+          pref: data.pref || 0,
+          holdback: data.holdback || 0,
+          net_cost: data.ep_cost || 0,
+          subtotal: data.subtotal || 0,
+          total: data.total || 0,
+          color: data.color || '',
+          options: data.options || [],
+          import_source: 'excel',
+        });
+        setShowReviewModal(true);
+        setShowScanModal(false);
+        Alert.alert(
+          'Import Excel',
+          `${response.data.options_count} options importées. Vérifiez et confirmez.`
+        );
+      }
+    } catch (error: any) {
+      const msg = error.response?.data?.detail || error.message || 'Erreur import';
+      Platform.OS === 'web' ? alert(msg) : Alert.alert('Erreur Import', msg);
+    } finally {
+      setScanning(false);
+    }
+  }; = (field: string, value: string | number) => {
     setReviewData((prev: any) => ({ ...prev, [field]: value }));
   };
 
