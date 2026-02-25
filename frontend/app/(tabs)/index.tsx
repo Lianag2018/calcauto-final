@@ -2233,9 +2233,254 @@ export default function HomeScreen() {
               </View>
             </View>
           )}
-        </ScrollView>
 
-        {/* Import Modal */}
+          {/* ============ LOCATION SCI ============ */}
+          {selectedProgram && vehiclePrice && (
+            <View style={styles.section} data-testid="lease-section">
+              {/* Toggle Lease */}
+              <TouchableOpacity
+                style={[styles.leaseToggle, showLease && styles.leaseToggleActive]}
+                onPress={() => setShowLease(!showLease)}
+                data-testid="lease-toggle-btn"
+              >
+                <Ionicons name="car-sport" size={20} color={showLease ? '#fff' : '#4ECDC4'} />
+                <Text style={[styles.leaseToggleText, showLease && styles.leaseToggleTextActive]}>
+                  {lang === 'fr' ? 'Location SCI' : 'SCI Lease'}
+                </Text>
+                <Ionicons name={showLease ? 'chevron-up' : 'chevron-down'} size={18} color={showLease ? '#fff' : '#4ECDC4'} />
+              </TouchableOpacity>
+
+              {showLease && (
+                <View style={styles.leaseContent}>
+                  {/* Km per year selection */}
+                  <View style={styles.leaseRow}>
+                    <Text style={styles.leaseLabel}>{lang === 'fr' ? 'Kilométrage / an' : 'Km / year'}</Text>
+                    <View style={styles.leaseKmButtons}>
+                      {leaseKmOptions.map(km => (
+                        <TouchableOpacity
+                          key={km}
+                          style={[styles.leaseKmBtn, leaseKmPerYear === km && styles.leaseKmBtnActive]}
+                          onPress={() => setLeaseKmPerYear(km)}
+                          data-testid={`lease-km-${km}`}
+                        >
+                          <Text style={[styles.leaseKmBtnText, leaseKmPerYear === km && styles.leaseKmBtnTextActive]}>
+                            {(km / 1000).toFixed(0)}k
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+
+                  {/* Lease term selection */}
+                  <View style={styles.leaseRow}>
+                    <Text style={styles.leaseLabel}>{lang === 'fr' ? 'Terme location' : 'Lease term'}</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.leaseTermScroll}>
+                      {leaseTerms.map(t => (
+                        <TouchableOpacity
+                          key={t}
+                          style={[styles.leaseTermBtn, leaseTerm === t && styles.leaseTermBtnActive]}
+                          onPress={() => setLeaseTerm(t)}
+                          data-testid={`lease-term-${t}`}
+                        >
+                          <Text style={[styles.leaseTermBtnText, leaseTerm === t && styles.leaseTermBtnTextActive]}>
+                            {t}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+
+                  {/* Lease Results */}
+                  {leaseResult ? (
+                    <View style={styles.leaseResults}>
+                      {/* Residual info */}
+                      <View style={styles.leaseResidualInfo}>
+                        <Text style={styles.leaseResidualLabel}>
+                          {lang === 'fr' ? 'Résiduel' : 'Residual'}: {leaseResult.residualPct}%
+                          {leaseResult.kmAdjustment > 0 ? ` (+${leaseResult.kmAdjustment}%)` : ''}
+                        </Text>
+                        <Text style={styles.leaseResidualValue}>
+                          {formatCurrency(leaseResult.residualValue)}
+                        </Text>
+                      </View>
+
+                      {/* Best lease banner */}
+                      {leaseResult.bestLease && leaseResult.standard && leaseResult.alternative && (
+                        <View style={styles.leaseBestBanner}>
+                          <Ionicons name="trophy" size={16} color="#1a1a2e" />
+                          <Text style={styles.leaseBestText}>
+                            {leaseResult.bestLease === 'standard' 
+                              ? (lang === 'fr' ? 'Std + Lease Cash' : 'Std + Lease Cash')
+                              : (lang === 'fr' ? 'Taux Alternatif' : 'Alternative Rate')
+                            } = {lang === 'fr' ? 'Meilleur choix' : 'Best choice'}
+                          </Text>
+                          {leaseResult.leaseSavings > 0 && (
+                            <Text style={styles.leaseBestSavings}>
+                              {lang === 'fr' ? 'Économie' : 'Savings'}: {formatCurrency(leaseResult.leaseSavings)}
+                            </Text>
+                          )}
+                        </View>
+                      )}
+
+                      {/* Lease options cards */}
+                      <View style={styles.leaseCardsRow}>
+                        {/* Standard Rate + Lease Cash */}
+                        {leaseResult.standard && (
+                          <View style={[
+                            styles.leaseCard,
+                            leaseResult.bestLease === 'standard' && styles.leaseCardBest
+                          ]}>
+                            <View style={styles.leaseCardHeader}>
+                              <Text style={styles.leaseCardTitle}>
+                                {lang === 'fr' ? 'Std + Lease Cash' : 'Std + Lease Cash'}
+                              </Text>
+                              {leaseResult.bestLease === 'standard' && (
+                                <Ionicons name="checkmark-circle" size={16} color="#4ECDC4" />
+                              )}
+                            </View>
+                            {leaseResult.standard.leaseCash > 0 && (
+                              <View style={styles.leaseCardDetail}>
+                                <Text style={styles.leaseCardDetailLabel}>Lease Cash:</Text>
+                                <Text style={styles.leaseCardDetailValue}>{formatCurrency(leaseResult.standard.leaseCash)}</Text>
+                              </View>
+                            )}
+                            <View style={styles.leaseCardDetail}>
+                              <Text style={styles.leaseCardDetailLabel}>{lang === 'fr' ? 'Taux' : 'Rate'}:</Text>
+                              <Text style={styles.leaseCardRateValue}>{leaseResult.standard.rate}%</Text>
+                            </View>
+                            <View style={styles.leaseCardMainResult}>
+                              <Text style={styles.leaseCardPaymentLabel}>
+                                {paymentFrequency === 'monthly' ? (lang === 'fr' ? 'Mensuel' : 'Monthly') : 
+                                 paymentFrequency === 'biweekly' ? (lang === 'fr' ? 'Aux 2 sem.' : 'Bi-weekly') : 
+                                 (lang === 'fr' ? 'Hebdo' : 'Weekly')}
+                              </Text>
+                              <Text style={styles.leaseCardPaymentValue}>
+                                {formatCurrencyDecimal(
+                                  paymentFrequency === 'monthly' ? leaseResult.standard.monthly :
+                                  paymentFrequency === 'biweekly' ? leaseResult.standard.biweekly :
+                                  leaseResult.standard.weekly
+                                )}
+                              </Text>
+                            </View>
+                            <View style={styles.leaseCardDetail}>
+                              <Text style={styles.leaseCardDetailLabel}>Total ({leaseTerm} {lang === 'fr' ? 'mois' : 'mo'}):</Text>
+                              <Text style={styles.leaseCardTotalValue}>{formatCurrency(leaseResult.standard.total)}</Text>
+                            </View>
+                          </View>
+                        )}
+
+                        {/* Alternative Rate */}
+                        {leaseResult.alternative && (
+                          <View style={[
+                            styles.leaseCard,
+                            styles.leaseCardAlt,
+                            leaseResult.bestLease === 'alternative' && styles.leaseCardBest
+                          ]}>
+                            <View style={styles.leaseCardHeader}>
+                              <Text style={styles.leaseCardTitle}>
+                                {lang === 'fr' ? 'Taux Alternatif' : 'Alt. Rate'}
+                              </Text>
+                              {leaseResult.bestLease === 'alternative' && (
+                                <Ionicons name="checkmark-circle" size={16} color="#4ECDC4" />
+                              )}
+                            </View>
+                            <View style={styles.leaseCardDetail}>
+                              <Text style={styles.leaseCardDetailLabel}>Lease Cash:</Text>
+                              <Text style={styles.leaseCardDetailValue}>$0</Text>
+                            </View>
+                            <View style={styles.leaseCardDetail}>
+                              <Text style={styles.leaseCardDetailLabel}>{lang === 'fr' ? 'Taux' : 'Rate'}:</Text>
+                              <Text style={styles.leaseCardRateValue}>{leaseResult.alternative.rate}%</Text>
+                            </View>
+                            <View style={styles.leaseCardMainResult}>
+                              <Text style={styles.leaseCardPaymentLabel}>
+                                {paymentFrequency === 'monthly' ? (lang === 'fr' ? 'Mensuel' : 'Monthly') : 
+                                 paymentFrequency === 'biweekly' ? (lang === 'fr' ? 'Aux 2 sem.' : 'Bi-weekly') : 
+                                 (lang === 'fr' ? 'Hebdo' : 'Weekly')}
+                              </Text>
+                              <Text style={styles.leaseCardPaymentValue}>
+                                {formatCurrencyDecimal(
+                                  paymentFrequency === 'monthly' ? leaseResult.alternative.monthly :
+                                  paymentFrequency === 'biweekly' ? leaseResult.alternative.biweekly :
+                                  leaseResult.alternative.weekly
+                                )}
+                              </Text>
+                            </View>
+                            <View style={styles.leaseCardDetail}>
+                              <Text style={styles.leaseCardDetailLabel}>Total ({leaseTerm} {lang === 'fr' ? 'mois' : 'mo'}):</Text>
+                              <Text style={styles.leaseCardTotalValue}>{formatCurrency(leaseResult.alternative.total)}</Text>
+                            </View>
+                          </View>
+                        )}
+                      </View>
+
+                      {/* No lease options available */}
+                      {!leaseResult.standard && !leaseResult.alternative && (
+                        <View style={styles.leaseNoOption}>
+                          <Ionicons name="information-circle" size={24} color="#666" />
+                          <Text style={styles.leaseNoOptionText}>
+                            {lang === 'fr' ? 'Aucun taux de location disponible pour ce véhicule' : 'No lease rates available for this vehicle'}
+                          </Text>
+                        </View>
+                      )}
+
+                      {/* Comparison with financing */}
+                      {localResult && (leaseResult.standard || leaseResult.alternative) && (
+                        <View style={styles.leaseVsFinance}>
+                          <Text style={styles.leaseVsFinanceTitle}>
+                            {lang === 'fr' ? 'Location vs Financement' : 'Lease vs Finance'}
+                          </Text>
+                          <View style={styles.leaseVsFinanceRow}>
+                            <View style={styles.leaseVsFinanceCol}>
+                              <Text style={styles.leaseVsFinanceLabel}>
+                                {lang === 'fr' ? 'Meilleure Location' : 'Best Lease'}
+                              </Text>
+                              <Text style={styles.leaseVsFinanceValue}>
+                                {formatCurrencyDecimal(
+                                  paymentFrequency === 'monthly' 
+                                    ? (leaseResult.bestLease === 'standard' ? leaseResult.standard?.monthly : leaseResult.alternative?.monthly) || 0
+                                    : paymentFrequency === 'biweekly'
+                                    ? (leaseResult.bestLease === 'standard' ? leaseResult.standard?.biweekly : leaseResult.alternative?.biweekly) || 0
+                                    : (leaseResult.bestLease === 'standard' ? leaseResult.standard?.weekly : leaseResult.alternative?.weekly) || 0
+                                )}
+                              </Text>
+                              <Text style={styles.leaseVsFinanceSub}>{leaseTerm} {lang === 'fr' ? 'mois' : 'mo'}</Text>
+                            </View>
+                            <View style={styles.leaseVsFinanceDivider} />
+                            <View style={styles.leaseVsFinanceCol}>
+                              <Text style={styles.leaseVsFinanceLabel}>
+                                {lang === 'fr' ? 'Meilleur Financement' : 'Best Finance'}
+                              </Text>
+                              <Text style={styles.leaseVsFinanceValue}>
+                                {formatCurrencyDecimal(
+                                  paymentFrequency === 'monthly' 
+                                    ? (localResult.bestOption === '2' && localResult.option2Monthly ? localResult.option2Monthly : localResult.option1Monthly)
+                                    : paymentFrequency === 'biweekly'
+                                    ? (localResult.bestOption === '2' && localResult.option2Biweekly ? localResult.option2Biweekly : localResult.option1Biweekly)
+                                    : (localResult.bestOption === '2' && localResult.option2Weekly ? localResult.option2Weekly : localResult.option1Weekly)
+                                )}
+                              </Text>
+                              <Text style={styles.leaseVsFinanceSub}>{selectedTerm} {lang === 'fr' ? 'mois' : 'mo'}</Text>
+                            </View>
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  ) : showLease ? (
+                    <View style={styles.leaseNoOption}>
+                      <Ionicons name="alert-circle" size={24} color="#FF6B6B" />
+                      <Text style={styles.leaseNoOptionText}>
+                        {lang === 'fr' 
+                          ? 'Données de location non disponibles pour ce véhicule. Vérifiez la marque/modèle.'
+                          : 'Lease data not available for this vehicle. Check brand/model.'}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              )}
+            </View>
+          )}
+        </ScrollView>
         <Modal
           visible={showImportModal}
           transparent
