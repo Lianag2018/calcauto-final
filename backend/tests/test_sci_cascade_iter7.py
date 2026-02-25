@@ -208,7 +208,7 @@ class TestInventoryWithBodyStyle:
         
         result = response.json()
         created = result.get("vehicle", result)
-        vehicle_id = created["id"]
+        stock_no = created["stock_no"]
         
         # Verify all cascade fields
         assert created["brand"] == "Ram"
@@ -219,7 +219,7 @@ class TestInventoryWithBodyStyle:
         print(f"✓ Created Ram 1500 Sport - Crew Cab 4WD")
         
         # Cleanup
-        requests.delete(f"{BASE_URL}/api/inventory/{vehicle_id}", headers=headers)
+        requests.delete(f"{BASE_URL}/api/inventory/{stock_no}", headers=headers)
         print(f"✓ Cleanup: deleted Ram test vehicle")
     
     def test_update_vehicle_body_style(self, auth_token):
@@ -243,18 +243,18 @@ class TestInventoryWithBodyStyle:
         assert create_response.status_code in [200, 201]
         result = create_response.json()
         created = result.get("vehicle", result)
-        vehicle_id = created["id"]
+        stock_no = created["stock_no"]
         
-        # Update body_style
+        # Update body_style (API uses stock_no)
         update_response = requests.put(
-            f"{BASE_URL}/api/inventory/{vehicle_id}",
+            f"{BASE_URL}/api/inventory/{stock_no}",
             json={"trim": "R/T", "body_style": "4D Utility AWD"},
             headers=headers
         )
         assert update_response.status_code == 200
         
         # Verify update
-        get_response = requests.get(f"{BASE_URL}/api/inventory/{vehicle_id}", headers=headers)
+        get_response = requests.get(f"{BASE_URL}/api/inventory/{stock_no}", headers=headers)
         updated = get_response.json()
         assert updated["trim"] == "R/T"
         assert updated["body_style"] == "4D Utility AWD"
@@ -262,7 +262,7 @@ class TestInventoryWithBodyStyle:
         print(f"✓ Updated vehicle trim/body_style successfully")
         
         # Cleanup
-        requests.delete(f"{BASE_URL}/api/inventory/{vehicle_id}", headers=headers)
+        requests.delete(f"{BASE_URL}/api/inventory/{stock_no}", headers=headers)
 
 
 class TestCascadingLogic:
