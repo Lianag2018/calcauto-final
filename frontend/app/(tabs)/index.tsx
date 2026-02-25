@@ -427,9 +427,6 @@ export default function HomeScreen() {
   const [prixEchange, setPrixEchange] = useState('');
   const [montantDuEchange, setMontantDuEchange] = useState('');
   
-  // Taux de taxe (TPS + TVQ Québec)
-  const tauxTaxe = 0.14975; // 5% TPS + 9.975% TVQ
-  
   // Calcul de financement (logique extraite dans useCalculator)
   const { localResult } = useCalculator({
     selectedProgram,
