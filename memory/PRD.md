@@ -203,6 +203,14 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
 - **Frontend serve**: Expo tunnel → Static export (`npx expo export --platform web`) + Python HTTP server sur port 3000
 - **Résultat**: Toutes les pages (Calcul, CRM, Inventaire, Admin) fonctionnent avec le backend
 
+### Phase 25: Fix Prix FCA — GPT-4o Décodage (DONE - Feb 2026)
+- **Bug critique**: E.P., PDCO et PDSF affichés incorrectement (ex: 7158000 au lieu de 71580)
+- **Cause**: GPT-4o retournait les valeurs brutes FCA sans décoder le format 8-chiffres (0XXXXXXXX → dollars)
+- **Fix double**:
+  1. Prompt GPT-4o enrichi avec instructions de décodage FCA (enlever premier 0, enlever 2 derniers chiffres)
+  2. Filet de sécurité post-GPT: si valeur > 500000, applique `clean_fca_price()` automatiquement
+- **Résultat vérifié**: E.P.=66979, PDCO=71580, MSRP=71580 (facture Ram 1500 testée)
+
 ## Backlog
 - (P1) Continuer refactoring index.tsx → extraire `usePrograms.ts`
 - (P1) Validation utilisateur du parser Vision+GPT-4o
