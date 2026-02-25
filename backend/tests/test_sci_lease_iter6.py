@@ -30,7 +30,7 @@ class TestBackendAPIs:
         # Check Ram 1500 Sport/Rebel exists
         ram_found = False
         for v in data["vehicles"]:
-            if v.get("brand") == "Ram" and "1500" in v.get("model_name", "") and "Sport" in v.get("trim", ""):
+            if v.get("brand") == "Ram" and "1500" in v.get("model_name", "") and "Sport" in (v.get("trim") or ""):
                 ram_found = True
                 assert "48" in v.get("residual_percentages", {}), "Should have 48-month residual"
                 break
@@ -50,7 +50,8 @@ class TestBackendAPIs:
         vehicles = data.get("vehicles_2026", [])
         ram_found = False
         for v in vehicles:
-            if v.get("brand") == "Ram" and "Sport" in v.get("model", "") and "Rebel" in v.get("model", ""):
+            model = v.get("model", "") or ""
+            if v.get("brand") == "Ram" and "Sport" in model and "Rebel" in model:
                 ram_found = True
                 assert v.get("lease_cash") == 8250, f"Ram 1500 Sport/Rebel should have 8250 lease cash, got {v.get('lease_cash')}"
                 assert "standard_rates" in v or "alternative_rates" in v, "Should have rates"
@@ -83,7 +84,8 @@ class TestBackendAPIs:
         # Find Ram 1500 Sport, Rebel
         ram_found = False
         for p in data:
-            if p.get("brand") == "Ram" and "Sport" in p.get("trim", "") and "Rebel" in p.get("trim", ""):
+            trim = p.get("trim") or ""
+            if p.get("brand") == "Ram" and "Sport" in trim and "Rebel" in trim:
                 ram_found = True
                 assert p.get("consumer_cash") == 8250, f"Ram 1500 Sport/Rebel consumer_cash should be 8250, got {p.get('consumer_cash')}"
                 break
