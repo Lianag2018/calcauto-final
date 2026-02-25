@@ -749,6 +749,8 @@ export default function HomeScreen() {
         creditPerdu: Math.round(creditPerdu * 100) / 100,
         pdsf,
         rabaisConcess,
+        coutEmprunt: Math.round(financeCharge * leaseTerm * 100) / 100,
+        fraisDossierOnly,
       };
     };
 
