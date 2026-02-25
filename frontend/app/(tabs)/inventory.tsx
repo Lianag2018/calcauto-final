@@ -170,6 +170,7 @@ export default function InventoryScreen() {
         brand: formData.brand,
         model: formData.model,
         trim: formData.trim,
+        body_style: formData.body_style,
         year: parseInt(formData.year) || new Date().getFullYear(),
         type: formData.type,
         pdco: parseFloat(formData.pdco) || 0,
