@@ -1836,6 +1836,7 @@ class ExtractedDataResponse(BaseModel):
     message: str
     programs: List[Dict[str, Any]] = []
     raw_text: str = ""
+    sci_lease_count: int = 0
 
 class SaveProgramsRequest(BaseModel):
     password: str
