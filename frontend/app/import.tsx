@@ -80,6 +80,10 @@ export default function ImportScreen() {
   const [pageStart, setPageStart] = useState('20');
   const [pageEnd, setPageEnd] = useState('21');
   
+  // Page selection for SCI Lease extraction (from same PDF)
+  const [leasePageStart, setLeasePageStart] = useState('28');
+  const [leasePageEnd, setLeasePageEnd] = useState('29');
+  
   // Loading states
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
