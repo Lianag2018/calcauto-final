@@ -201,6 +201,7 @@ export default function InventoryScreen() {
       brand: '',
       model: '',
       trim: '',
+      body_style: '',
       year: new Date().getFullYear().toString(),
       type: 'neuf',
       pdco: '',
@@ -211,6 +212,7 @@ export default function InventoryScreen() {
       km: '0',
       color: '',
     });
+    setOpenDropdown(null);
   };
 
   const handleStatusChange = async (stockNo: string, newStatus: string) => {
