@@ -2112,11 +2112,162 @@ VÉRIFIE LE BONUS CASH POUR CHAQUE VÉHICULE INDIVIDUELLEMENT!"""
             except Exception as save_error:
                 logger.error(f"Error auto-saving programs: {str(save_error)}")
             
+            # ============ SCI LEASE RATES EXTRACTION ============
+            sci_lease_count = 0
+            if lease_start_page and lease_end_page:
+                try:
+                    # Extract text from SCI Lease pages
+                    lease_text = ""
+                    with open(tmp_path, 'rb') as pdf_file:
+                        reader = PyPDF2.PdfReader(pdf_file)
+                        total_pages = len(reader.pages)
+                        lease_start_idx = max(0, lease_start_page - 1)
+                        lease_end_idx = min(total_pages, lease_end_page)
+                        
+                        logger.info(f"Extracting SCI Lease pages {lease_start_page} to {lease_end_page}")
+                        
+                        for page_num in range(lease_start_idx, lease_end_idx):
+                            page = reader.pages[page_num]
+                            page_text = page.extract_text()
+                            lease_text += f"\n--- PAGE {page_num + 1} ---\n{page_text}\n"
+                        
+                        logger.info(f"SCI Lease: Extracted {lease_end_idx - lease_start_idx} pages, {len(lease_text)} chars")
+                    
+                    if lease_text.strip():
+                        # Use GPT-4o to extract SCI Lease rates
+                        lease_extraction_prompt = f"""EXTRAIS TOUS les véhicules et leurs taux de LOCATION SCI (SCI Lease) de ce PDF.
+
+TEXTE DU PDF (pages SCI Lease):
+{lease_text}
+
+=== CONTEXTE ===
+Ce sont les programmes de LOCATION (lease) SCI Lease Corp pour concessionnaires FCA Canada.
+Chaque véhicule peut avoir:
+- Un "Standard Rate" (taux standard SCI, stackable avec Lease Cash seulement)
+- Un "Alternative Rate" (taux alternatif, stackable avec Alternative Lease Cash)
+- Un "Lease Cash" (rabais avant taxes pour la location)
+- Un "Bonus Cash" / "Alt Lease Cash" (rabais supplémentaire)
+
+Les termes de location sont: 24, 27, 36, 39, 42, 48, 51, 54, 60 mois.
+
+=== IMPORTANT ===
+- Si un taux montre "- -" ou est vide = null (pas disponible)
+- Si "Standard Rate" n'est pas disponible, standard_rates = null
+- Si "Alternative Rate" n'est pas disponible, alternative_rates = null
+- Le Lease Cash peut varier par véhicule ($0, $3500, $7500, $10000, etc.)
+- SÉPARER les véhicules 2026 et 2025
+
+=== MARQUES À EXTRAIRE ===
+- CHRYSLER: Grand Caravan, Pacifica
+- JEEP: Compass, Cherokee, Wrangler, Gladiator, Grand Cherokee, Grand Wagoneer
+- DODGE: Durango, Charger, Hornet
+- RAM: ProMaster, 1500, 2500, 3500
+- FIAT: 500e
+
+=== JSON REQUIS ===
+{{
+    "vehicles_2026": [
+        {{
+            "model": "Grand Caravan SXT",
+            "brand": "Chrysler",
+            "lease_cash": 0,
+            "standard_rates": null,
+            "alternative_rates": {{"24": 4.99, "27": 4.99, "36": 5.49, "39": 5.49, "42": 5.49, "48": 6.49, "51": 6.49, "54": 6.49, "60": 6.99}}
+        }}
+    ],
+    "vehicles_2025": [
+        {{
+            "model": "Compass North",
+            "brand": "Jeep",
+            "lease_cash": 7500,
+            "standard_rates": {{"24": 8.79, "27": 8.79, "36": 8.29, "39": 8.29, "42": 8.29, "48": 8.29, "51": 8.29, "54": 8.29, "60": 8.29}},
+            "alternative_rates": {{"24": 1.99, "27": 1.99, "36": 1.99, "39": 1.99, "42": 1.99, "48": 1.99, "51": 1.99, "54": 1.99, "60": 1.99}}
+        }}
+    ]
+}}
+
+EXTRAIS ABSOLUMENT TOUS LES VÉHICULES. JSON valide uniquement."""
+
+                        lease_response = client.chat.completions.create(
+                            model="gpt-4o",
+                            messages=[
+                                {"role": "system", "content": "Tu extrais les taux de location SCI Lease d'un PDF FCA Canada. CHAQUE véhicule = 1 entrée. N'oublie AUCUN véhicule. JSON valide uniquement."},
+                                {"role": "user", "content": lease_extraction_prompt}
+                            ],
+                            temperature=0.1,
+                            max_tokens=16000,
+                            response_format={"type": "json_object"}
+                        )
+                        
+                        lease_response_text = lease_response.choices[0].message.content.strip()
+                        
+                        # Clean up response
+                        if lease_response_text.startswith("```"):
+                            lines = lease_response_text.split("\n")
+                            lease_response_text = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
+                            lease_response_text = lease_response_text.strip()
+                        if lease_response_text.endswith("```"):
+                            lease_response_text = lease_response_text[:-3].strip()
+                        
+                        lease_response_text = lease_response_text.replace('\n', ' ').replace('\r', '')
+                        lease_response_text = re.sub(r',\s*}', '}', lease_response_text)
+                        lease_response_text = re.sub(r',\s*]', ']', lease_response_text)
+                        
+                        lease_data = json.loads(lease_response_text)
+                        
+                        vehicles_2026 = lease_data.get("vehicles_2026", [])
+                        vehicles_2025 = lease_data.get("vehicles_2025", [])
+                        sci_lease_count = len(vehicles_2026) + len(vehicles_2025)
+                        
+                        if sci_lease_count > 0:
+                            # Build the SCI lease rates JSON
+                            month_names_local = ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+                                           "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+                            
+                            sci_lease_rates = {
+                                "program_period": f"{month_names_local[program_month]} {program_year}",
+                                "source": "FCA Canada QBC Retail Lease Incentive Program",
+                                "terms": [24, 27, 36, 39, 42, 48, 51, 54, 60],
+                                "notes": {
+                                    "standard_rates": "SCI Standard Rate - Stackable with Lease Cash only (Type of Sale L)",
+                                    "alternative_rates": "SCI Alternative Rate - Stackable with Alternative Lease Cash (Type of Sale L)",
+                                    "lease_cash": "Before Tax discount - reduce selling price",
+                                    "bonus_cash": "After Tax discount - shown as line item on Bill of Sale",
+                                    "dealer_reserve": "$200 flat fee from SCI Lease Corp per funded lease deal"
+                                },
+                                "vehicles_2026": vehicles_2026,
+                                "vehicles_2025": vehicles_2025
+                            }
+                            
+                            # Save to JSON file
+                            month_abbrev = month_names_local[program_month][:3].lower()
+                            sci_filename = f"sci_lease_rates_{month_abbrev}{program_year}.json"
+                            sci_path = ROOT_DIR / "data" / sci_filename
+                            
+                            with open(sci_path, 'w', encoding='utf-8') as f:
+                                json.dump(sci_lease_rates, f, indent=2, ensure_ascii=False)
+                            
+                            logger.info(f"SCI Lease rates saved: {sci_path} ({sci_lease_count} vehicles)")
+                            
+                            # Also update the standard reference file
+                            ref_path = ROOT_DIR / "data" / f"sci_lease_rates_feb{program_year}.json"
+                            if program_month == 2:
+                                import shutil
+                                shutil.copy2(sci_path, ref_path)
+                                logger.info(f"Updated reference file: {ref_path}")
+                        
+                except json.JSONDecodeError as je:
+                    logger.error(f"SCI Lease JSON parse error: {str(je)}")
+                except Exception as lease_error:
+                    logger.error(f"Error extracting SCI Lease rates: {str(lease_error)}")
+            
+            lease_msg = f" + {sci_lease_count} taux SCI Lease" if sci_lease_count > 0 else ""
             return ExtractedDataResponse(
                 success=True,
-                message=f"Extrait et sauvegardé {len(valid_programs)} programmes" + (" - Excel envoyé par email!" if excel_sent else ""),
+                message=f"Extrait et sauvegardé {len(valid_programs)} programmes{lease_msg}" + (" - Excel envoyé par email!" if excel_sent else ""),
                 programs=valid_programs,
-                raw_text=""
+                raw_text="",
+                sci_lease_count=sci_lease_count
             )
             
         finally:
