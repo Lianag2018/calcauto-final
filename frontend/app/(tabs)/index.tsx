@@ -601,7 +601,7 @@ export default function HomeScreen() {
   const clearSelection = () => {
     setSelectedProgram(null);
     setResults(null);
-    setLocalResult(null);
+    // localResult se réinitialise automatiquement via useCalculator quand selectedProgram = null
   };
 
   // Generate submission text for sharing
