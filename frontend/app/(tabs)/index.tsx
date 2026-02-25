@@ -560,6 +560,156 @@ export default function HomeScreen() {
     loadAutoFinancing();
   }, [selectedInventory?.model_code]);
 
+  // Load SCI lease data
+  useEffect(() => {
+    const loadLeaseData = async () => {
+      try {
+        const [residualsRes, ratesRes] = await Promise.all([
+          axios.get(`${API_URL}/api/sci/residuals`),
+          axios.get(`${API_URL}/api/sci/lease-rates`),
+        ]);
+        setLeaseResiduals(residualsRes.data);
+        setLeaseRates(ratesRes.data);
+      } catch (e) {
+        console.log('Could not load SCI lease data:', e);
+      }
+    };
+    loadLeaseData();
+  }, []);
+
+  // Calculate lease when parameters change
+  useEffect(() => {
+    if (!showLease || !selectedProgram || !vehiclePrice || !leaseResiduals || !leaseRates) {
+      setLeaseResult(null);
+      return;
+    }
+
+    const price = parseFloat(vehiclePrice);
+    if (isNaN(price) || price <= 0) return;
+
+    // Find matching residual vehicle
+    const brandLower = selectedProgram.brand.toLowerCase();
+    const modelLower = selectedProgram.model.toLowerCase();
+    const trimLower = (selectedProgram.trim || '').toLowerCase();
+
+    const residualVehicle = leaseResiduals.vehicles?.find((v: any) => {
+      const vBrand = v.brand.toLowerCase();
+      const vModel = v.model_name.toLowerCase();
+      const vTrim = (v.trim || '').toLowerCase();
+      return vBrand === brandLower && 
+        (vModel.includes(modelLower) || modelLower.includes(vModel)) &&
+        (vTrim.includes(trimLower) || trimLower.includes(vTrim) || !trimLower);
+    });
+
+    if (!residualVehicle) {
+      setLeaseResult(null);
+      return;
+    }
+
+    const residualPct = residualVehicle.residual_percentages?.[String(leaseTerm)] || 0;
+    if (residualPct === 0) {
+      setLeaseResult(null);
+      return;
+    }
+
+    // Find matching lease rate vehicle
+    const year = selectedProgram.year;
+    const vehicleList = year === 2025 ? leaseRates.vehicles_2025 : leaseRates.vehicles_2026;
+    
+    // Find best matching rate entry
+    const rateEntry = vehicleList?.find((v: any) => {
+      const vModel = v.model.toLowerCase();
+      const vBrand = v.brand.toLowerCase();
+      if (vBrand !== brandLower) return false;
+      // Check if model matches
+      return vModel.includes(modelLower) || modelLower.includes(vModel) ||
+        (trimLower && vModel.includes(trimLower));
+    });
+
+    // Get rates for standard and alternative
+    const termKey = String(leaseTerm);
+    const standardRate = rateEntry?.standard_rates?.[termKey] ?? null;
+    const alternativeRate = rateEntry?.alternative_rates?.[termKey] ?? null;
+    const leaseCash = rateEntry?.lease_cash || 0;
+
+    // km adjustment
+    const kmAdj = leaseResiduals.km_adjustments?.adjustments;
+    let kmAdjustment = 0;
+    if (leaseKmPerYear !== 24000 && kmAdj) {
+      const kmKey = String(leaseKmPerYear);
+      kmAdjustment = kmAdj[kmKey]?.[termKey] || 0;
+    }
+
+    const adjustedResidualPct = residualPct + kmAdjustment;
+    const msrp = parseFloat(vehiclePrice); // Use selling price as MSRP proxy
+    const residualValue = msrp * (adjustedResidualPct / 100);
+
+    // Calculate for both options
+    const bonusCash = parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0;
+    const comptant = parseFloat(comptantTxInclus) || 0;
+    const dossier = parseFloat(fraisDossier) || 0;
+    const pneus = parseFloat(taxePneus) || 0;
+    const rdprm = parseFloat(fraisRDPRM) || 0;
+    const fraisTax = dossier + pneus + rdprm;
+    const tradeVal = parseFloat(prixEchange) || 0;
+    const tradeOwed = parseFloat(montantDuEchange) || 0;
+    const totalAccessoires = accessories.reduce((sum: number, acc: {description: string; price: string}) => sum + (parseFloat(acc.price) || 0), 0);
+
+    const calcLease = (rate: number, cash: number) => {
+      const taux = 0.14975;
+      const sellingPrice = price + totalAccessoires;
+      const capCost = sellingPrice + fraisTax - cash - tradeVal;
+      const taxesOnCap = capCost * taux;
+      const netCapCost = capCost + taxesOnCap + tradeOwed - comptant - bonusCash;
+      const depreciation = (netCapCost - residualValue) / leaseTerm;
+      const moneyFactor = rate / 2400;
+      const financeCharge = (netCapCost + residualValue) * moneyFactor;
+      const monthly = depreciation + financeCharge;
+      return {
+        monthly: Math.max(0, monthly),
+        biweekly: Math.max(0, monthly * 12 / 26),
+        weekly: Math.max(0, monthly * 12 / 52),
+        total: Math.max(0, monthly * leaseTerm),
+        rate,
+        netCapCost,
+        residualValue,
+        leaseCash: cash,
+      };
+    };
+
+    const results: any = {
+      vehicleName: `${residualVehicle.brand} ${residualVehicle.model_name} ${residualVehicle.trim}`,
+      residualPct: adjustedResidualPct,
+      residualValue,
+      kmAdjustment,
+      term: leaseTerm,
+      kmPerYear: leaseKmPerYear,
+    };
+
+    // Standard option (with lease cash)
+    if (standardRate !== null) {
+      results.standard = calcLease(standardRate, leaseCash);
+    }
+
+    // Alternative option (lower rate, no lease cash typically)
+    if (alternativeRate !== null) {
+      results.alternative = calcLease(alternativeRate, 0);
+    }
+
+    // Determine best lease option
+    if (results.standard && results.alternative) {
+      results.bestLease = results.standard.total < results.alternative.total ? 'standard' : 'alternative';
+      results.leaseSavings = Math.abs(results.standard.total - results.alternative.total);
+    } else if (results.standard) {
+      results.bestLease = 'standard';
+    } else if (results.alternative) {
+      results.bestLease = 'alternative';
+    }
+
+    setLeaseResult(results);
+  }, [showLease, selectedProgram, vehiclePrice, leaseTerm, leaseKmPerYear, leaseResiduals, leaseRates, 
+      customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories]);
+
   // Filter programs when year or brand changes
   useEffect(() => {
     let filtered = [...programs];
