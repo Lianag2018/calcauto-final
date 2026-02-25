@@ -642,6 +642,19 @@ export default function InventoryScreen() {
     return [];
   };
 
+  // State for picker modal
+  const [pickerConfig, setPickerConfig] = useState<{
+    visible: boolean;
+    label: string;
+    options: string[];
+    onSelect: (value: string) => void;
+  }>({ visible: false, label: '', options: [], onSelect: () => {} });
+
+  const openPicker = (label: string, options: string[], onSelect: (v: string) => void) => {
+    if (options.length === 0) return;
+    setPickerConfig({ visible: true, label, options, onSelect });
+  };
+
   const renderSciDropdown = (
     label: string,
     field: 'brand' | 'model' | 'trim' | 'body_style',
@@ -651,49 +664,25 @@ export default function InventoryScreen() {
     testIdPrefix: string
   ) => {
     const options = getSciOptions(field, formOrReview);
-    const isOpen = openDropdown === `${testIdPrefix}-${field}`;
-    const dropdownId = `${testIdPrefix}-${field}`;
+    const hasOptions = options.length > 0;
     
     return (
-      <View style={sciStyles.dropdownContainer} data-testid={`${testIdPrefix}-${field}-container`}>
+      <View data-testid={`${testIdPrefix}-${field}-container`}>
         <Text style={styles.formLabel}>{label}</Text>
         <TouchableOpacity
-          style={[sciStyles.dropdownButton, isOpen && sciStyles.dropdownButtonActive]}
-          onPress={() => setOpenDropdown(isOpen ? null : dropdownId)}
+          style={[sciStyles.dropdownButton, !hasOptions && sciStyles.dropdownDisabled]}
+          onPress={() => {
+            if (hasOptions) {
+              openPicker(label, options, onSelect);
+            }
+          }}
           data-testid={`${testIdPrefix}-${field}-button`}
         >
-          <Text style={[sciStyles.dropdownButtonText, !currentValue && sciStyles.dropdownPlaceholder]}>
-            {currentValue || `Sélectionner ${label.toLowerCase()}`}
+          <Text style={[sciStyles.dropdownButtonText, !currentValue && sciStyles.dropdownPlaceholder]} numberOfLines={1}>
+            {currentValue || (hasOptions ? `Choisir...` : `Choisir ${field === 'brand' ? 'marque' : field === 'model' ? 'modèle' : field === 'trim' ? 'trim' : 'carrosserie'}`)}
           </Text>
-          <Text style={sciStyles.dropdownArrow}>{isOpen ? '\u25B2' : '\u25BC'}</Text>
+          <Text style={sciStyles.dropdownArrow}>{'\u25BC'}</Text>
         </TouchableOpacity>
-        {isOpen && (
-          <View style={sciStyles.dropdownList}>
-            <ScrollView style={sciStyles.dropdownScroll} nestedScrollEnabled>
-              {options.length === 0 ? (
-                <Text style={sciStyles.dropdownEmpty}>
-                  {field === 'brand' ? 'Chargement...' : 'Sélectionnez d\'abord le champ précédent'}
-                </Text>
-              ) : (
-                options.map((opt: string) => (
-                  <TouchableOpacity
-                    key={opt}
-                    style={[sciStyles.dropdownItem, currentValue === opt && sciStyles.dropdownItemSelected]}
-                    onPress={() => {
-                      onSelect(opt);
-                      setOpenDropdown(null);
-                    }}
-                    data-testid={`${testIdPrefix}-${field}-option-${opt.replace(/\s+/g, '-')}`}
-                  >
-                    <Text style={[sciStyles.dropdownItemText, currentValue === opt && sciStyles.dropdownItemTextSelected]}>
-                      {opt}
-                    </Text>
-                  </TouchableOpacity>
-                ))
-              )}
-            </ScrollView>
-          </View>
-        )}
       </View>
     );
   };
@@ -705,11 +694,12 @@ export default function InventoryScreen() {
     } else if (field === 'model') {
       setFormData(prev => ({ ...prev, model: value, trim: '', body_style: '' }));
     } else if (field === 'trim') {
-      setFormData(prev => ({ ...prev, trim: value, body_style: '' }));
       // Auto-select body_style if only one option
-      const bodyOpts = sciHierarchy?.[formData.brand]?.[value === formData.model ? formData.model : formData.model]?.trims?.[value] || [];
+      const bodyOpts = sciHierarchy?.[formData.brand]?.[formData.model]?.trims?.[value] || [];
       if (bodyOpts.length === 1) {
         setFormData(prev => ({ ...prev, trim: value, body_style: bodyOpts[0] }));
+      } else {
+        setFormData(prev => ({ ...prev, trim: value, body_style: '' }));
       }
     } else if (field === 'body_style') {
       setFormData(prev => ({ ...prev, body_style: value }));
@@ -729,13 +719,13 @@ export default function InventoryScreen() {
       updateReviewField('body_style', '');
     } else if (field === 'trim') {
       updateReviewField('trim', value);
-      updateReviewField('body_style', '');
-      // Auto-select body_style if only one option
       const brand = reviewData?.brand || '';
       const model = reviewData?.model || '';
       const bodyOpts = sciHierarchy?.[brand]?.[model]?.trims?.[value] || [];
       if (bodyOpts.length === 1) {
         updateReviewField('body_style', bodyOpts[0]);
+      } else {
+        updateReviewField('body_style', '');
       }
     } else if (field === 'body_style') {
       updateReviewField('body_style', value);
