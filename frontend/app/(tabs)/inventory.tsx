@@ -611,6 +611,138 @@ export default function InventoryScreen() {
     }
   };
 
+  // ===================== SCI Cascading Dropdown Helpers =====================
+  
+  const getSciOptions = (level: 'brand' | 'model' | 'trim' | 'body_style', formOrReview: any) => {
+    if (!sciHierarchy) return [];
+    
+    if (level === 'brand') {
+      return Object.keys(sciHierarchy).sort();
+    }
+    
+    const brand = formOrReview.brand || '';
+    if (level === 'model') {
+      if (!brand || !sciHierarchy[brand]) return [];
+      return Object.keys(sciHierarchy[brand]).sort();
+    }
+    
+    const model = formOrReview.model || '';
+    const modelData = sciHierarchy[brand]?.[model];
+    if (!modelData) return [];
+    
+    if (level === 'trim') {
+      return Object.keys(modelData.trims || {}).sort();
+    }
+    
+    if (level === 'body_style') {
+      const trim = formOrReview.trim || '';
+      return (modelData.trims?.[trim] || []).sort();
+    }
+    
+    return [];
+  };
+
+  const renderSciDropdown = (
+    label: string,
+    field: 'brand' | 'model' | 'trim' | 'body_style',
+    currentValue: string,
+    onSelect: (value: string) => void,
+    formOrReview: any,
+    testIdPrefix: string
+  ) => {
+    const options = getSciOptions(field, formOrReview);
+    const isOpen = openDropdown === `${testIdPrefix}-${field}`;
+    const dropdownId = `${testIdPrefix}-${field}`;
+    
+    return (
+      <View style={sciStyles.dropdownContainer} data-testid={`${testIdPrefix}-${field}-container`}>
+        <Text style={styles.formLabel}>{label}</Text>
+        <TouchableOpacity
+          style={[sciStyles.dropdownButton, isOpen && sciStyles.dropdownButtonActive]}
+          onPress={() => setOpenDropdown(isOpen ? null : dropdownId)}
+          data-testid={`${testIdPrefix}-${field}-button`}
+        >
+          <Text style={[sciStyles.dropdownButtonText, !currentValue && sciStyles.dropdownPlaceholder]}>
+            {currentValue || `Sélectionner ${label.toLowerCase()}`}
+          </Text>
+          <Text style={sciStyles.dropdownArrow}>{isOpen ? '\u25B2' : '\u25BC'}</Text>
+        </TouchableOpacity>
+        {isOpen && (
+          <View style={sciStyles.dropdownList}>
+            <ScrollView style={sciStyles.dropdownScroll} nestedScrollEnabled>
+              {options.length === 0 ? (
+                <Text style={sciStyles.dropdownEmpty}>
+                  {field === 'brand' ? 'Chargement...' : 'Sélectionnez d\'abord le champ précédent'}
+                </Text>
+              ) : (
+                options.map((opt: string) => (
+                  <TouchableOpacity
+                    key={opt}
+                    style={[sciStyles.dropdownItem, currentValue === opt && sciStyles.dropdownItemSelected]}
+                    onPress={() => {
+                      onSelect(opt);
+                      setOpenDropdown(null);
+                    }}
+                    data-testid={`${testIdPrefix}-${field}-option-${opt.replace(/\s+/g, '-')}`}
+                  >
+                    <Text style={[sciStyles.dropdownItemText, currentValue === opt && sciStyles.dropdownItemTextSelected]}>
+                      {opt}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  // Handlers for form cascading - reset child fields when parent changes
+  const handleFormSciSelect = (field: 'brand' | 'model' | 'trim' | 'body_style', value: string) => {
+    if (field === 'brand') {
+      setFormData(prev => ({ ...prev, brand: value, model: '', trim: '', body_style: '' }));
+    } else if (field === 'model') {
+      setFormData(prev => ({ ...prev, model: value, trim: '', body_style: '' }));
+    } else if (field === 'trim') {
+      setFormData(prev => ({ ...prev, trim: value, body_style: '' }));
+      // Auto-select body_style if only one option
+      const bodyOpts = sciHierarchy?.[formData.brand]?.[value === formData.model ? formData.model : formData.model]?.trims?.[value] || [];
+      if (bodyOpts.length === 1) {
+        setFormData(prev => ({ ...prev, trim: value, body_style: bodyOpts[0] }));
+      }
+    } else if (field === 'body_style') {
+      setFormData(prev => ({ ...prev, body_style: value }));
+    }
+  };
+
+  // Handlers for review modal cascading
+  const handleReviewSciSelect = (field: 'brand' | 'model' | 'trim' | 'body_style', value: string) => {
+    if (field === 'brand') {
+      updateReviewField('brand', value);
+      updateReviewField('model', '');
+      updateReviewField('trim', '');
+      updateReviewField('body_style', '');
+    } else if (field === 'model') {
+      updateReviewField('model', value);
+      updateReviewField('trim', '');
+      updateReviewField('body_style', '');
+    } else if (field === 'trim') {
+      updateReviewField('trim', value);
+      updateReviewField('body_style', '');
+      // Auto-select body_style if only one option
+      const brand = reviewData?.brand || '';
+      const model = reviewData?.model || '';
+      const bodyOpts = sciHierarchy?.[brand]?.[model]?.trims?.[value] || [];
+      if (bodyOpts.length === 1) {
+        updateReviewField('body_style', bodyOpts[0]);
+      }
+    } else if (field === 'body_style') {
+      updateReviewField('body_style', value);
+    }
+  };
+  // ===================== End SCI Dropdown =====================
+
   const renderVehicleCard = ({ item }: { item: InventoryVehicle }) => (
     <View style={styles.vehicleCard}>
       <View style={styles.cardHeader}>
