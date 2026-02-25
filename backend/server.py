@@ -2251,9 +2251,9 @@ EXTRAIS ABSOLUMENT TOUS LES VÉHICULES. JSON valide uniquement."""
                             
                             logger.info(f"SCI Lease rates saved: {sci_path} ({sci_lease_count} vehicles)")
                             
-                            # Also update the standard reference file
-                            ref_path = ROOT_DIR / "data" / f"sci_lease_rates_feb{program_year}.json"
-                            if program_month == 2:
+                            # Also update the standard reference file used by the app
+                            ref_path = ROOT_DIR / "data" / f"sci_lease_rates_{en_month_abbrev[program_month]}{program_year}.json"
+                            if sci_path != ref_path:
                                 import shutil
                                 shutil.copy2(sci_path, ref_path)
                                 logger.info(f"Updated reference file: {ref_path}")
