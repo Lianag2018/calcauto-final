@@ -115,6 +115,109 @@ def convert_pdf_to_images(pdf_bytes: bytes, max_pages: int = 2, dpi: int = 100) 
         return []
 
 
+
+def generate_lease_email_html(lease_data, freq, freq_label, fmt, fmt2):
+    """Génère le HTML pour la section Location SCI dans l'email."""
+    if not lease_data:
+        return ""
+    
+    term = lease_data.get('term', 0)
+    km_per_year = lease_data.get('km_per_year', 24000)
+    residual_pct = lease_data.get('residual_pct', 0)
+    residual_value = lease_data.get('residual_value', 0)
+    km_adj = lease_data.get('km_adjustment', 0)
+    best_lease = lease_data.get('best_lease', '')
+    lease_savings = lease_data.get('lease_savings', 0)
+    standard = lease_data.get('standard')
+    alternative = lease_data.get('alternative')
+    
+    if not standard and not alternative:
+        return ""
+    
+    def get_payment(option_data):
+        if not option_data:
+            return 0
+        if freq == 'weekly':
+            return option_data.get('weekly', 0)
+        elif freq == 'biweekly':
+            return option_data.get('biweekly', 0)
+        return option_data.get('monthly', 0)
+    
+    # Best choice banner
+    best_banner = ""
+    if best_lease and standard and alternative:
+        best_label = "Std + Lease Cash" if best_lease == 'standard' else "Taux Alternatif"
+        savings_text = f"<div style='font-size:13px; color:#F57F17; margin-top:4px;'>Économies de <strong>{fmt(round(lease_savings))} $</strong></div>" if lease_savings > 0 else ""
+        best_banner = f"""
+        <div style="background:#fffde7; border:2px solid #FFD700; border-radius:8px; padding:12px; text-align:center; margin:10px 0;">
+            <div style="font-size:16px; font-weight:bold; color:#F57F17;">🏆 {best_label} = Meilleur choix location!</div>
+            {savings_text}
+        </div>
+        """
+    
+    # Standard option card
+    std_card = ""
+    if standard:
+        std_payment = get_payment(standard)
+        std_winner = "border-color:#FFD700; background:#fffff0;" if best_lease == 'standard' else ""
+        std_badge = '<span style="display:inline-block; background:#FFD700; color:#000; font-size:10px; padding:2px 8px; border-radius:10px; margin-left:5px;">✓</span>' if best_lease == 'standard' else ""
+        lease_cash_row = f"<div style='display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;'><span style='color:#666;'>Lease Cash:</span><span style='color:#2E7D32; font-weight:600;'>-{fmt(round(standard.get('lease_cash', 0)))} $</span></div>" if standard.get('lease_cash', 0) > 0 else ""
+        std_card = f"""
+        <div style="flex:1; border:2px solid #ddd; border-radius:8px; padding:15px; background:#fafafa; {std_winner}">
+            <div style="font-size:15px; font-weight:bold; color:#E65100; margin-bottom:8px;">Std + Lease Cash {std_badge}</div>
+            {lease_cash_row}
+            <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span style="color:#666;">Taux:</span><span style="color:#E65100; font-weight:600;">{standard.get('rate', 0)}%</span></div>
+            <div style="background:#fff5ee; border-radius:6px; padding:12px; text-align:center; margin-top:10px; border-top:3px solid #E65100;">
+                <div style="font-size:12px; color:#666;">{freq_label}</div>
+                <div style="font-size:24px; font-weight:bold; color:#E65100; margin:5px 0;">{fmt2(std_payment)} $</div>
+                <div style="font-size:12px; color:#666;">Total ({term} mois): <strong>{fmt(round(standard.get('total', 0)))} $</strong></div>
+            </div>
+        </div>
+        """
+    
+    # Alternative option card
+    alt_card = ""
+    if alternative:
+        alt_payment = get_payment(alternative)
+        alt_winner = "border-color:#FFD700; background:#fffff0;" if best_lease == 'alternative' else ""
+        alt_badge = '<span style="display:inline-block; background:#FFD700; color:#000; font-size:10px; padding:2px 8px; border-radius:10px; margin-left:5px;">✓</span>' if best_lease == 'alternative' else ""
+        alt_card = f"""
+        <div style="flex:1; border:2px solid #ddd; border-radius:8px; padding:15px; background:#fafafa; {alt_winner}">
+            <div style="font-size:15px; font-weight:bold; color:#0277BD; margin-bottom:8px;">Taux Alternatif {alt_badge}</div>
+            <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span style="color:#666;">Lease Cash:</span><span>$0</span></div>
+            <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span style="color:#666;">Taux:</span><span style="color:#0277BD; font-weight:600;">{alternative.get('rate', 0)}%</span></div>
+            <div style="background:#f0f7ff; border-radius:6px; padding:12px; text-align:center; margin-top:10px; border-top:3px solid #0277BD;">
+                <div style="font-size:12px; color:#666;">{freq_label}</div>
+                <div style="font-size:24px; font-weight:bold; color:#0277BD; margin:5px 0;">{fmt2(alt_payment)} $</div>
+                <div style="font-size:12px; color:#666;">Total ({term} mois): <strong>{fmt(round(alternative.get('total', 0)))} $</strong></div>
+            </div>
+        </div>
+        """
+    
+    km_adj_text = f" (+{km_adj}%)" if km_adj > 0 else ""
+    
+    return f"""
+    <div style="margin-top:25px; border-top:2px solid #FFD700; padding-top:20px;">
+        <div style="font-size:12px; color:#666; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:5px;">
+            📋 Location SCI
+        </div>
+        
+        <table style="width:100%; border-collapse:collapse; margin-bottom:12px;">
+            <tr><td style="padding:8px 0; border-bottom:1px solid #eee; color:#666;">Kilométrage / an</td><td style="padding:8px 0; border-bottom:1px solid #eee; text-align:right; font-weight:600;">{int(km_per_year/1000)}k km</td></tr>
+            <tr><td style="padding:8px 0; border-bottom:1px solid #eee; color:#666;">Terme location</td><td style="padding:8px 0; border-bottom:1px solid #eee; text-align:right; font-weight:600;">{term} mois</td></tr>
+            <tr><td style="padding:8px 0; border-bottom:1px solid #eee; color:#666;">Résiduel</td><td style="padding:8px 0; border-bottom:1px solid #eee; text-align:right; font-weight:600;">{residual_pct}%{km_adj_text} = {fmt(round(residual_value))} $</td></tr>
+        </table>
+        
+        {best_banner}
+        
+        <div style="display:flex; gap:10px;">
+            {std_card}
+            {alt_card}
+        </div>
+    </div>
+    """
+
+
 def generate_window_sticker_html(vin: str, images: list, pdf_url: str, pdf_bytes: bytes = None) -> str:
     """
     Génère le HTML pour afficher le Window Sticker avec l'image du PDF.
