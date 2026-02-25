@@ -176,7 +176,7 @@ export function useCalculator(inputs: CalculatorInputs) {
       comptant,
       bonusCash,
     });
-  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories]);
+  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, rabaisConcess]);
 
   useEffect(() => {
     calculateForTerm();
