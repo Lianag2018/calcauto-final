@@ -2123,6 +2123,345 @@ VÉRIFIE LE BONUS CASH POUR CHAQUE VÉHICULE INDIVIDUELLEMENT!"""
         logger.error(f"Error extracting PDF: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erreur d'extraction: {str(e)}")
 
+        raise HTTPException(status_code=500, detail=f"Erreur d'extraction: {str(e)}")
+
+# ============ Residual Guide PDF Upload ============
+
+@api_router.post("/upload-residual-guide")
+async def upload_residual_guide(
+    file: UploadFile = File(...),
+    password: str = Form(...),
+    effective_month: int = Form(...),
+    effective_year: int = Form(...)
+):
+    """
+    Upload et parse automatiquement un PDF du guide des valeurs résiduelles SCI.
+    Génère un Excel de vérification et l'envoie par email.
+    """
+    if password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Mot de passe incorrect")
+    
+    import tempfile
+    import os as os_module
+    
+    tmp_path = None
+    try:
+        # Save uploaded file temporarily
+        content = await file.read()
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+        
+        # Parse PDF using our existing parser logic
+        import fitz
+        TERMS = ["24", "27", "36", "39", "42", "48", "51", "54", "60"]
+        BODY_STYLES = [
+            "4D Wagon AWD", "4D Wagon", "3D Hatchback",
+            "2D Coupe AWD", "4D Sedan AWD",
+            "4D Utility 4WD", "4D Utility AWD", "4D Utility",
+            "2D Utility 4WD", "2D Utility AWD", "2D Utility",
+            "Crew Cab LWB 2WD", "Crew Cab LWB 4WD",
+            "Crew Cab SWB 2WD", "Crew Cab SWB 4WD",
+            "Crew Cab 4WD",
+            "Quad Cab SWB 4WD", "Quad Cab SWB 2WD",
+            "Mega Cab 4WD", "Mega Cab 2WD",
+            "Reg Cab LWB 2WD", "Reg Cab LWB 4WD",
+            "Reg Cab 2WD", "Reg Cab 4WD",
+        ]
+        
+        def is_number(s):
+            try:
+                int(s)
+                return True
+            except:
+                return False
+        
+        def is_body_style(s):
+            return s in BODY_STYLES
+        
+        doc = fitz.open(tmp_path)
+        all_vehicles = []
+        
+        for page_num in range(doc.page_count):
+            page = doc[page_num]
+            text = page.get_text()
+            lines_raw = [l.strip() for l in text.split('\n') if l.strip()]
+            
+            clean = []
+            for l in lines_raw:
+                if '675 Cochrane' in l or 'scileasecorp' in l or 'T: 1-888' in l or 'F: 1-866' in l:
+                    continue
+                if l in ('LEASE RESIDUAL VALUES', 'STANDARD', 'FEBRUARY 2026', 'RESIDUAL VALUE GUIDE') or l.startswith('Effective:'):
+                    continue
+                clean.append(l)
+            
+            current_brand = None
+            current_model = None
+            current_year = None
+            
+            i = 0
+            while i < len(clean):
+                line = clean[i]
+                
+                if line in ('CHRYSLER', 'DODGE', 'JEEP', 'RAM', 'FIAT'):
+                    current_brand = line.title()
+                    i += 1
+                    if i < len(clean) and (clean[i] == '24' or clean[i].startswith('24 27')):
+                        if clean[i] == '24':
+                            skip = 0
+                            while i + skip < len(clean) and clean[i + skip] in TERMS:
+                                skip += 1
+                            i += skip
+                        else:
+                            i += 1
+                    continue
+                
+                if line.startswith('MODEL YEAR'):
+                    i += 1
+                    continue
+                
+                import re
+                year_match = re.match(r'^(20\d{2})\s+(.+)$', line)
+                if year_match:
+                    current_year = int(year_match.group(1))
+                    model_raw = year_match.group(2).strip()
+                    
+                    if i + 1 < len(clean):
+                        next_line = clean[i + 1]
+                        if (not is_body_style(next_line) and not is_number(next_line) and
+                            not re.match(r'^(20\d{2})\s+', next_line) and
+                            next_line not in ('CHRYSLER', 'DODGE', 'JEEP', 'RAM', 'FIAT') and
+                            next_line not in TERMS and not next_line.startswith('24 27')):
+                            if i + 2 < len(clean) and (is_body_style(clean[i + 2]) or is_number(clean[i + 2])):
+                                current_model = model_raw
+                            else:
+                                current_model = model_raw + ' ' + next_line
+                                i += 1
+                        else:
+                            current_model = model_raw
+                    else:
+                        current_model = model_raw
+                    
+                    i += 1
+                    continue
+                
+                if current_brand and current_model and current_year:
+                    trim = line
+                    
+                    if i + 1 < len(clean):
+                        next_line = clean[i + 1]
+                        
+                        if is_body_style(next_line):
+                            body_style = next_line
+                            vals = []
+                            j = i + 2
+                            while j < len(clean) and len(vals) < 9:
+                                if is_number(clean[j]):
+                                    vals.append(int(clean[j]))
+                                    j += 1
+                                else:
+                                    break
+                            
+                            if len(vals) == 9:
+                                all_vehicles.append({
+                                    "brand": current_brand,
+                                    "model_year": current_year,
+                                    "model_name": current_model,
+                                    "trim": trim,
+                                    "body_style": body_style,
+                                    "residual_percentages": dict(zip(TERMS, vals))
+                                })
+                                i = j
+                                continue
+                        
+                        if not is_body_style(next_line) and not is_number(next_line):
+                            combined_trim = trim + ' ' + next_line
+                            if i + 2 < len(clean) and is_body_style(clean[i + 2]):
+                                body_style = clean[i + 2]
+                                vals = []
+                                j = i + 3
+                                while j < len(clean) and len(vals) < 9:
+                                    if is_number(clean[j]):
+                                        vals.append(int(clean[j]))
+                                        j += 1
+                                    else:
+                                        break
+                                
+                                if len(vals) == 9:
+                                    all_vehicles.append({
+                                        "brand": current_brand,
+                                        "model_year": current_year,
+                                        "model_name": current_model,
+                                        "trim": combined_trim,
+                                        "body_style": body_style,
+                                        "residual_percentages": dict(zip(TERMS, vals))
+                                    })
+                                    i = j
+                                    continue
+                
+                i += 1
+        
+        doc.close()
+        
+        if len(all_vehicles) == 0:
+            raise HTTPException(status_code=400, detail="Aucun véhicule trouvé dans le PDF. Vérifiez le format du document.")
+        
+        # Build JSON result
+        month_names = ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+                       "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+        
+        result = {
+            "effective_from": f"{effective_year}-{effective_month:02d}-01",
+            "source": f"SCI Lease Corp Stellantis Residual Guide - {month_names[effective_month]} {effective_year}",
+            "km_adjustments": {
+                "standard_km": 24000,
+                "adjustments": {
+                    "18000": {"24": 1, "27": 1, "36": 2, "39": 2, "42": 2, "48": 3, "51": 3, "54": 3, "60": 4},
+                    "12000": {"24": 2, "27": 2, "36": 3, "39": 3, "42": 3, "48": 4, "51": 4, "54": 4, "60": 5}
+                },
+                "max_km_per_year": 36000
+            },
+            "vehicles": all_vehicles
+        }
+        
+        # Save JSON file
+        month_lower = month_names[effective_month].lower()
+        json_filename = f"sci_residuals_{month_lower}{effective_year}.json"
+        json_path = ROOT_DIR / "data" / json_filename
+        with open(json_path, 'w') as f:
+            json.dump(result, f, indent=2, ensure_ascii=False)
+        
+        # Also update the current reference file
+        current_path = ROOT_DIR / "data" / f"sci_residuals_{month_lower}{effective_year}.json"
+        logger.info(f"Residual guide saved: {json_path} ({len(all_vehicles)} vehicles)")
+        
+        # Generate Excel for verification
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from io import BytesIO
+        
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Valeurs résiduelles"
+        
+        headers = ["Marque", "Année", "Modèle", "Trim", "Carrosserie", "24m", "27m", "36m", "39m", "42m", "48m", "51m", "54m", "60m"]
+        header_fill = PatternFill(start_color="1a1a2e", end_color="1a1a2e", fill_type="solid")
+        header_font = Font(color="4ECDC4", bold=True, size=11)
+        thin_border = Border(
+            left=Side(style='thin'), right=Side(style='thin'),
+            top=Side(style='thin'), bottom=Side(style='thin')
+        )
+        
+        for col, h in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=h)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal='center')
+            cell.border = thin_border
+        
+        for idx, v in enumerate(all_vehicles, 2):
+            ws.cell(row=idx, column=1, value=v["brand"]).border = thin_border
+            ws.cell(row=idx, column=2, value=v["model_year"]).border = thin_border
+            ws.cell(row=idx, column=3, value=v["model_name"]).border = thin_border
+            ws.cell(row=idx, column=4, value=v["trim"]).border = thin_border
+            ws.cell(row=idx, column=5, value=v["body_style"]).border = thin_border
+            for ti, term in enumerate(TERMS):
+                val = v["residual_percentages"].get(term, 0)
+                cell = ws.cell(row=idx, column=6 + ti, value=val)
+                cell.border = thin_border
+                cell.alignment = Alignment(horizontal='center')
+        
+        # Auto-width columns
+        for col in range(1, len(headers) + 1):
+            max_len = max(len(str(ws.cell(row=r, column=col).value or '')) for r in range(1, len(all_vehicles) + 2))
+            ws.column_dimensions[ws.cell(row=1, column=col).column_letter].width = max_len + 3
+        
+        excel_buffer = BytesIO()
+        wb.save(excel_buffer)
+        excel_data = excel_buffer.getvalue()
+        
+        # Send verification email
+        email_sent = False
+        if SMTP_EMAIL and SMTP_PASSWORD:
+            try:
+                import smtplib
+                from email.mime.multipart import MIMEMultipart
+                from email.mime.text import MIMEText
+                from email.mime.base import MIMEBase
+                from email import encoders
+                
+                msg = MIMEMultipart()
+                msg['From'] = SMTP_EMAIL
+                msg['To'] = SMTP_EMAIL
+                msg['Subject'] = f"CalcAuto - Guide Résiduel {month_names[effective_month]} {effective_year} ({len(all_vehicles)} véhicules)"
+                
+                # Count by brand
+                brands = {}
+                for v in all_vehicles:
+                    b = v["brand"]
+                    brands[b] = brands.get(b, 0) + 1
+                brand_summary = "\n".join([f"  • {b}: {c} véhicules" for b, c in sorted(brands.items())])
+                
+                body = f"""Bonjour,
+
+Le guide des valeurs résiduelles a été importé avec succès.
+
+📊 Résumé:
+• Période: {month_names[effective_month]} {effective_year}
+• Total: {len(all_vehicles)} véhicules extraits
+
+Par marque:
+{brand_summary}
+
+Le fichier Excel est joint pour vérification.
+
+⚠️ IMPORTANT: Vérifiez les données avant utilisation dans les calculs de location.
+
+---
+CalcAuto AiPro"""
+                
+                msg.attach(MIMEText(body, 'plain', 'utf-8'))
+                
+                attachment = MIMEBase('application', 'vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                attachment.set_payload(excel_data)
+                encoders.encode_base64(attachment)
+                att_filename = f"residuels_{month_lower}_{effective_year}.xlsx"
+                attachment.add_header('Content-Disposition', f'attachment; filename={att_filename}')
+                msg.attach(attachment)
+                
+                server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+                server.starttls()
+                server.login(SMTP_EMAIL, SMTP_PASSWORD)
+                server.send_message(msg)
+                server.quit()
+                email_sent = True
+                logger.info(f"Residual guide email sent to {SMTP_EMAIL}")
+            except Exception as e:
+                logger.error(f"Error sending residual email: {str(e)}")
+        
+        # Count by brand for response
+        brands_count = {}
+        for v in all_vehicles:
+            brands_count[v["brand"]] = brands_count.get(v["brand"], 0) + 1
+        
+        return {
+            "success": True,
+            "total_vehicles": len(all_vehicles),
+            "brands": brands_count,
+            "json_file": json_filename,
+            "email_sent": email_sent,
+            "message": f"{len(all_vehicles)} véhicules extraits et sauvegardés"
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error processing residual guide: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
+    finally:
+        if tmp_path and os_module.path.exists(tmp_path):
+            os_module.unlink(tmp_path)
+
 @api_router.post("/save-programs")
 async def save_programs(request: SaveProgramsRequest):
     """
