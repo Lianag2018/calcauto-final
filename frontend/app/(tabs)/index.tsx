@@ -2826,54 +2826,53 @@ export default function HomeScreen() {
                           </View>
                         </View>
                       )}
-                    </View>
 
-                    {/* Share Actions for Lease Section */}
-                    <TouchableOpacity
-                      style={styles.sendEmailButton}
-                      onPress={() => setShowEmailModal(true)}
-                      data-testid="lease-send-email-btn"
-                    >
-                      <Ionicons name="mail-outline" size={20} color="#fff" />
-                      <Text style={styles.sendEmailButtonText}>
-                        {lang === 'fr' ? 'Envoyer par email' : 'Send by email'}
-                      </Text>
-                    </TouchableOpacity>
-                    
-                    <View style={styles.shareActionsRow}>
+                      {/* Share Actions for Lease Section */}
                       <TouchableOpacity
-                        style={styles.shareSmsButton}
-                        onPress={handleShareSMS}
-                        data-testid="lease-share-sms-btn"
+                        style={styles.sendEmailButton}
+                        onPress={() => setShowEmailModal(true)}
+                        data-testid="lease-send-email-btn"
                       >
-                        <Ionicons name="chatbubble-outline" size={18} color="#fff" />
-                        <Text style={styles.shareButtonText}>
-                          {lang === 'fr' ? 'Texto' : 'SMS'}
+                        <Ionicons name="mail-outline" size={20} color="#fff" />
+                        <Text style={styles.sendEmailButtonText}>
+                          {lang === 'fr' ? 'Envoyer par email' : 'Send by email'}
                         </Text>
                       </TouchableOpacity>
                       
-                      <TouchableOpacity
-                        style={styles.printButton}
-                        onPress={handlePrint}
-                        data-testid="lease-print-btn"
-                      >
-                        <Ionicons name="print-outline" size={18} color="#fff" />
-                        <Text style={styles.shareButtonText}>
-                          {lang === 'fr' ? 'Imprimer' : 'Print'}
-                        </Text>
-                      </TouchableOpacity>
-                      
-                      <TouchableOpacity
-                        style={styles.exportExcelButton}
-                        onPress={handleExportExcel}
-                        data-testid="lease-export-excel-btn"
-                      >
-                        <Ionicons name="document-outline" size={18} color="#fff" />
-                        <Text style={styles.shareButtonText}>
-                          Excel
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
+                      <View style={styles.shareActionsRow}>
+                        <TouchableOpacity
+                          style={styles.shareSmsButton}
+                          onPress={handleShareSMS}
+                          data-testid="lease-share-sms-btn"
+                        >
+                          <Ionicons name="chatbubble-outline" size={18} color="#fff" />
+                          <Text style={styles.shareButtonText}>
+                            {lang === 'fr' ? 'Texto' : 'SMS'}
+                          </Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity
+                          style={styles.printButton}
+                          onPress={handlePrint}
+                          data-testid="lease-print-btn"
+                        >
+                          <Ionicons name="print-outline" size={18} color="#fff" />
+                          <Text style={styles.shareButtonText}>
+                            {lang === 'fr' ? 'Imprimer' : 'Print'}
+                          </Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity
+                          style={styles.exportExcelButton}
+                          onPress={handleExportExcel}
+                          data-testid="lease-export-excel-btn"
+                        >
+                          <Ionicons name="document-outline" size={18} color="#fff" />
+                          <Text style={styles.shareButtonText}>
+                            Excel
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   ) : showLease ? (
                     <View style={styles.leaseNoOption}>
