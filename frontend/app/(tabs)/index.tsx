@@ -2763,6 +2763,10 @@ export default function HomeScreen() {
                               <Text style={styles.leaseCardDetailLabel}>Total ({leaseTerm} {lang === 'fr' ? 'mois' : 'mo'}):</Text>
                               <Text style={styles.leaseCardTotalValue}>{formatCurrency(leaseResult.alternative.total)}</Text>
                             </View>
+                            <View style={styles.leaseCardDetail}>
+                              <Text style={[styles.leaseCardDetailLabel, { color: '#FF6B6B' }]}>{lang === 'fr' ? "Coût d'emprunt:" : 'Cost of borrowing:'}</Text>
+                              <Text style={[styles.leaseCardTotalValue, { color: '#FF6B6B' }]}>{formatCurrencyDecimal(leaseResult.alternative.coutEmprunt)}</Text>
+                            </View>
                           </View>
                         )}
                       </View>
