@@ -5719,6 +5719,13 @@ RÈGLES IMPORTANTES:
 - Garde l'ORDRE EXACT des options comme elles apparaissent sur la facture
 - Pour la couleur, le code commence par P (ex: PAU, PW7, PDN) et est suivi de la description de la couleur
 
+BODY STYLE (CARROSSERIE):
+- Cherche le type de carrosserie du véhicule dans la facture
+- Exemples: "Crew Cab SWB 4WD", "Quad Cab SWB 4WD", "4D Utility 4WD", "4D Wagon AWD", "2D Coupe AWD"
+- Souvent indiqué près de la description du modèle ou dans les détails du véhicule
+- "SWB" = Short Wheel Base, "LWB" = Long Wheel Base
+- Si pas trouvé explicitement, déduis-le du modèle: Ram 1500/2500/3500 = Crew/Quad/Reg Cab, Jeep = Utility, etc.
+
 PRIX FCA IMPORTANT:
 - E.P., PDCO et PREF sont en format FCA encodé (8 chiffres avec premier 0 et 2 derniers = cents)
 - Exemple: 07158000 = $71,580.00, 06697900 = $66,979.00
@@ -5734,6 +5741,7 @@ Retourne UNIQUEMENT un JSON valide (pas de markdown, pas de commentaires):
 {{
   "vin": "le VIN 17 caractères ou vide",
   "model_code": "code modèle 6 chars (ex: DT6L98)",
+  "body_style": "type de carrosserie (ex: Crew Cab SWB 4WD, 4D Utility 4WD) ou vide",
   "color_code": "code couleur 3 chars (ex: PAU)",
   "color_description": "description couleur complète",
   "ep_cost": nombre_dollars_entiers ou 0,
