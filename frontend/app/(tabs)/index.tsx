@@ -2254,6 +2254,23 @@ export default function HomeScreen() {
                   />
                 </View>
               </View>
+
+              {/* Rabais concessionnaire (partagé financement + location) */}
+              <View style={styles.inputRow}>
+                <Text style={styles.inputLabel}>{lang === 'fr' ? 'Rabais concess.' : 'Dealer discount'}</Text>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.currencySymbol}>$</Text>
+                  <TextInput
+                    style={styles.priceInput}
+                    placeholder="0"
+                    placeholderTextColor="#666"
+                    keyboardType="numeric"
+                    value={leaseRabaisConcess}
+                    onChangeText={setLeaseRabaisConcess}
+                    data-testid="rabais-concess-input"
+                  />
+                </View>
+              </View>
               
               {/* Bonus Cash optionnel */}
               <View style={styles.inputRow}>
