@@ -2755,21 +2755,6 @@ export default function HomeScreen() {
                     />
                   </View>
                   
-                  {/* Rabais concessionnaire */}
-                  <View style={styles.leaseInputRow}>
-                    <Text style={styles.leaseInputLabel}>{lang === 'fr' ? 'Rabais concess.' : 'Dealer discount'}</Text>
-                    <TextInput
-                      style={[styles.leaseInput, { borderColor: leaseRabaisConcess ? '#4ECDC4' : '#333' }]}
-                      value={leaseRabaisConcess}
-                      onChangeText={setLeaseRabaisConcess}
-                      placeholder="0"
-                      placeholderTextColor="#555"
-                      keyboardType="numeric"
-                      data-testid="lease-rabais-input"
-                    />
-                    <Text style={styles.leaseInputHint}>{lang === 'fr' ? 'Avant taxes' : 'Before tax'}</Text>
-                  </View>
-
                   {/* Solde reporté */}
                   <View style={styles.leaseInputRow}>
                     <Text style={styles.leaseInputLabel}>{lang === 'fr' ? 'Solde reporté' : 'Carried balance'}</Text>
