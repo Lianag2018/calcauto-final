@@ -646,8 +646,134 @@
     {
       "brand": "Jeep",
       "model_year": 2026,
+      "model_name": "Gladiator",
+      "trim": "Mojave X",
+      "body_style": "Crew Cab 4WD",
+      "residual_percentages": {
+        "24": 62,
+        "27": 60,
+        "36": 55,
+        "39": 54,
+        "42": 52,
+        "48": 50,
+        "51": 49,
+        "54": 48,
+        "60": 46
+      }
+    },
+    {
+      "brand": "Jeep",
+      "model_year": 2026,
+      "model_name": "Gladiator",
+      "trim": "Rubicon X",
+      "body_style": "Crew Cab 4WD",
+      "residual_percentages": {
+        "24": 62,
+        "27": 60,
+        "36": 55,
+        "39": 54,
+        "42": 52,
+        "48": 50,
+        "51": 49,
+        "54": 48,
+        "60": 46
+      }
+    },
+    {
+      "brand": "Jeep",
+      "model_year": 2026,
+      "model_name": "Gladiator",
+      "trim": "Willys",
+      "body_style": "Crew Cab 4WD",
+      "residual_percentages": {
+        "24": 58,
+        "27": 57,
+        "36": 53,
+        "39": 52,
+        "42": 50,
+        "48": 48,
+        "51": 48,
+        "54": 46,
+        "60": 44
+      }
+    },
+    {
+      "brand": "Jeep",
+      "model_year": 2026,
       "model_name": "Grand Wagoneer",
       "trim": "Base",
+      "body_style": "4D Utility",
+      "residual_percentages": {
+        "24": 60,
+        "27": 58,
+        "36": 51,
+        "39": 49,
+        "42": 48,
+        "48": 45,
+        "51": 44,
+        "54": 42,
+        "60": 40
+      }
+    },
+    {
+      "brand": "Jeep",
+      "model_year": 2026,
+      "model_name": "Grand Wagoneer",
+      "trim": "Limited Altitude",
+      "body_style": "4D Utility",
+      "residual_percentages": {
+        "24": 59,
+        "27": 57,
+        "36": 51,
+        "39": 49,
+        "42": 48,
+        "48": 45,
+        "51": 44,
+        "54": 42,
+        "60": 40
+      }
+    },
+    {
+      "brand": "Jeep",
+      "model_year": 2026,
+      "model_name": "Grand Wagoneer",
+      "trim": "Limited Reserve",
+      "body_style": "4D Utility",
+      "residual_percentages": {
+        "24": 59,
+        "27": 57,
+        "36": 51,
+        "39": 49,
+        "42": 48,
+        "48": 45,
+        "51": 44,
+        "54": 42,
+        "60": 40
+      }
+    },
+    {
+      "brand": "Jeep",
+      "model_year": 2026,
+      "model_name": "Grand Wagoneer",
+      "trim": "Summit Obsidian",
+      "body_style": "4D Utility",
+      "residual_percentages": {
+        "24": 59,
+        "27": 57,
+        "36": 50,
+        "39": 48,
+        "42": 47,
+        "48": 44,
+        "51": 43,
+        "54": 41,
+        "60": 39
+      }
+    },
+    {
+      "brand": "Jeep",
+      "model_year": 2026,
+      "model_name": "Grand Wagoneer",
+      "trim": "Upland",
       "body_style": "4D Utility",
       "residual_percentages": {
         "24": 60,
