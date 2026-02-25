@@ -714,15 +714,15 @@ export default function ImportScreen() {
           <View style={styles.extractingContainer}>
             <ActivityIndicator size="large" color="#4ECDC4" />
             <Text style={styles.extractingText}>Extraction en cours...</Text>
-            <Text style={styles.extractingSubtext}>⏳ L'IA analyse les pages {pageStart || '1'} à {pageEnd || totalPages}</Text>
-            <Text style={styles.extractingSubtext}>📧 Un fichier Excel sera envoyé par email</Text>
+            <Text style={styles.extractingSubtext}>Retail: pages {pageStart}-{pageEnd} | SCI Lease: pages {leasePageStart}-{leasePageEnd}</Text>
+            <Text style={styles.extractingSubtext}>Un fichier Excel sera envoyé par email</Text>
             <Text style={styles.extractingWait}>Veuillez patienter (2-4 minutes)</Text>
           </View>
         ) : (
           <>
             <Ionicons name="analytics" size={24} color="#fff" />
             <Text style={styles.extractButtonText}>
-              Extraire les pages {pageStart || '1'} à {pageEnd || totalPages}
+              Extraire les programmes
             </Text>
           </>
         )}
