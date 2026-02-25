@@ -2478,14 +2478,31 @@ export default function HomeScreen() {
                     <View style={styles.leaseResults}>
                       {/* Residual info */}
                       <View style={styles.leaseResidualInfo}>
-                        <Text style={styles.leaseResidualLabel}>
-                          {lang === 'fr' ? 'Résiduel' : 'Residual'}: {leaseResult.residualPct}%
-                          {leaseResult.kmAdjustment > 0 ? ` (+${leaseResult.kmAdjustment}%)` : ''}
-                        </Text>
+                        <View>
+                          <Text style={styles.leaseResidualLabel}>
+                            {lang === 'fr' ? 'PDSF' : 'MSRP'}: {formatCurrency(leaseResult.standard?.pdsf || leaseResult.alternative?.pdsf || 0)}
+                          </Text>
+                          <Text style={styles.leaseResidualLabel}>
+                            {lang === 'fr' ? 'Résiduel' : 'Residual'}: {leaseResult.residualPct}%
+                            {leaseResult.kmAdjustment !== 0 ? ` (${leaseResult.kmAdjustment > 0 ? '+' : ''}${leaseResult.kmAdjustment}%)` : ''}
+                          </Text>
+                        </View>
                         <Text style={styles.leaseResidualValue}>
                           {formatCurrency(leaseResult.residualValue)}
                         </Text>
                       </View>
+
+                      {/* Tax credit warning for trade-in */}
+                      {(leaseResult.standard?.creditPerdu > 0 || leaseResult.alternative?.creditPerdu > 0) && (
+                        <View style={styles.leaseWarningBar}>
+                          <Ionicons name="warning" size={14} color="#FF6B6B" />
+                          <Text style={styles.leaseWarningText}>
+                            {lang === 'fr' 
+                              ? `Crédit taxe échange: ${formatCurrency((leaseResult.standard || leaseResult.alternative).creditTaxeEchange)} - Surplus perdu: ${formatCurrency((leaseResult.standard || leaseResult.alternative).creditPerdu)}`
+                              : `Trade tax credit: ${formatCurrency((leaseResult.standard || leaseResult.alternative).creditTaxeEchange)} - Lost surplus: ${formatCurrency((leaseResult.standard || leaseResult.alternative).creditPerdu)}`}
+                          </Text>
+                        </View>
+                      )}
 
                       {/* Best lease banner */}
                       {leaseResult.bestLease && leaseResult.standard && leaseResult.alternative && (
