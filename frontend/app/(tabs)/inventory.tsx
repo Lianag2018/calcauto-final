@@ -38,6 +38,7 @@ interface InventoryVehicle {
   brand: string;
   model: string;
   trim: string;
+  body_style: string;
   year: number;
   type: 'neuf' | 'occasion';
   pdco: number;
