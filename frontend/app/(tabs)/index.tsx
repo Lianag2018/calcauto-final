@@ -815,7 +815,7 @@ export default function HomeScreen() {
         const cc = sp + dossierOnly - cash;
         let sn = 0;
         if (soldeReporte < 0) sn = Math.abs(soldeReporte) * 1.14975;
-        else if (soldeReporte > 0) sn = -soldeReporte;
+        else if (soldeReporte > 0) sn = soldeReporte;
         const ncc = cc + sn + tradeOwed - tradeVal - comptant - bonusCash;
         const dep = (ncc - resVal) / termLen;
         const mf = rate / 2400;
