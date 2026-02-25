@@ -4800,6 +4800,68 @@ const styles = StyleSheet.create({
     color: '#888',
     minWidth: 55,
   },
+  // Residual by km table
+  residualKmTable: {
+    backgroundColor: '#1e2a3a',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#2d3d54',
+  },
+  residualKmTitle: {
+    fontSize: 12,
+    color: '#8899aa',
+    fontWeight: '600',
+    marginBottom: 8,
+    textTransform: 'uppercase' as any,
+    letterSpacing: 0.5,
+  },
+  residualKmRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    marginBottom: 2,
+  },
+  residualKmRowSelected: {
+    backgroundColor: 'rgba(78, 205, 196, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(78, 205, 196, 0.3)',
+  },
+  residualKmHeader: {
+    flex: 1,
+    alignItems: 'center' as any,
+  },
+  residualKmHeaderText: {
+    fontSize: 10,
+    color: '#556677',
+    fontWeight: '700',
+    textTransform: 'uppercase' as any,
+  },
+  residualKmCell: {
+    flex: 1,
+    alignItems: 'center' as any,
+  },
+  residualKmText: {
+    fontSize: 13,
+    color: '#aabbcc',
+    fontWeight: '500',
+  },
+  residualKmTextSelected: {
+    color: '#4ECDC4',
+    fontWeight: '700',
+  },
+  residualKmValue: {
+    fontSize: 13,
+    color: '#aabbcc',
+    fontWeight: '500',
+  },
+  residualKmValueSelected: {
+    color: '#4ECDC4',
+    fontWeight: '700',
+  },
   leaseInfoBar: {
     flexDirection: 'row',
     alignItems: 'center',
