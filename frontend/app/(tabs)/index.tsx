@@ -2098,12 +2098,12 @@ export default function HomeScreen() {
                         )}
                       </TouchableOpacity>
                     ))}
-                  {inventoryList.filter(v => v.brand?.toLowerCase() === selectedProgram.brand?.toLowerCase()).length === 0 && (
+                  {inventoryList.filter(v => v.brand?.toLowerCase() === selectedProgram.brand?.toLowerCase() && String(v.year) === String(selectedProgram.year)).length === 0 && (
                     <View style={styles.noInventoryContainer}>
                       <Text style={styles.noInventoryText}>
                         {lang === 'fr' 
-                          ? `Aucun véhicule ${selectedProgram.brand} en inventaire`
-                          : `No ${selectedProgram.brand} vehicles in inventory`}
+                          ? `Aucun véhicule ${selectedProgram.brand} ${selectedProgram.year} en inventaire`
+                          : `No ${selectedProgram.brand} ${selectedProgram.year} vehicles in inventory`}
                       </Text>
                       <View style={styles.manualVinContainer}>
                         <Text style={styles.manualVinLabel}>
