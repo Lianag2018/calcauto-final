@@ -966,11 +966,15 @@ export default function ImportScreen() {
             <Text style={styles.headerTitle}>Import PDF</Text>
             <Text style={styles.headerSubtitle}>
               {currentStep === 'login' ? 'Authentification' : 
-               currentStep === 'upload' ? 'Sélection du fichier' :
+               currentStep === 'choose-type' ? 'Type de document' :
+               currentStep === 'upload' ? 'Programmes de financement' :
                currentStep === 'select-pages' ? 'Choix des pages' :
                currentStep === 'preview' ? 'Vérification des données' :
                currentStep === 'email-sent' ? 'Email envoyé' :
-               currentStep === 'success' ? 'Terminé' : ''}
+               currentStep === 'success' ? 'Terminé' :
+               currentStep === 'residual-upload' ? 'Guide des résiduels' :
+               currentStep === 'residual-processing' ? 'Traitement en cours...' :
+               currentStep === 'residual-success' ? 'Terminé' : ''}
             </Text>
           </View>
         </View>
