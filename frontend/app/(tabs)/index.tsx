@@ -434,6 +434,7 @@ export default function HomeScreen() {
   const [leaseLoading, setLeaseLoading] = useState(false);
   const [leasePdsf, setLeasePdsf] = useState('');  // PDSF/PDOC pour calcul résiduel
   const [leaseSoldeReporte, setLeaseSoldeReporte] = useState('');  // Solde reporté (négatif = dette)
+  const [leaseRabaisConcess, setLeaseRabaisConcess] = useState('');  // Rabais concessionnaire avant taxes
   const leaseTerms = [24, 27, 36, 39, 42, 48, 51, 54, 60];
   const leaseKmOptions = [12000, 18000, 24000];
 
