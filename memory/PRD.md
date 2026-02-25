@@ -151,7 +151,13 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
 - Utilise `expo-print` sur mobile (dialogue natif, plus de blocage)
 - Format professionnel identique au courriel
 
-### Phase 19: Filtrage En-tête Facture + Couleur Dynamique (DONE - Feb 2026)
+### Phase 20: Simplification Déduplication (DONE - Feb 2026)
+- **Remplacé** `deduplicate_options()` (CATEGORY_GROUPS complexe) par `deduplicate_by_equivalence()` (minimal, stable)
+- **Principe**: Dédup par `equivalent_codes` existant + priorité OCR (montant > 0)
+- **Étendu `equivalent_codes`**: Ajouté DC1, DFM, DFH et famille transmission complète
+- **Supprimé**: CATEGORY_GROUPS (système parallèle inutile)
+- **Résultat**: DFR OCR gagne sur DC1 fallback, une seule transmission par facture
+- **Tests**: 6 nouveaux tests `TestDeduplicationByEquivalence` (28/28 passent)
 - **Bug fix critique**: Le parseur extrayait des mots de l'en-tête (ELITE, BANQUE, 596, TAN, HURRIC) comme options
 - **Bug fix couleur**: PAU hardcodé "Rouge Flamme" dans `server.py` color_map → remplacé par extraction dynamique depuis le texte OCR. Priorité: description OCR > mapping statique > code brut
 - **Corrections parser.py**:
