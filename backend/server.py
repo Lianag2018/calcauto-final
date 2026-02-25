@@ -5984,6 +5984,7 @@ Retourne UNIQUEMENT un JSON valide (pas de markdown, pas de commentaires):
                     "brand": product_info.get("brand") or vin_brand or "Stellantis",
                     "model": product_info.get("model") or "",
                     "trim": _build_trim_string(product_info),
+                    "body_style": (structured_data or {}).get("body_style", "") if structured_data else "",
                     "ep_cost": ep_cost,
                     "pdco": pdco,
                     "pref": pref,
