@@ -2278,8 +2278,6 @@ EXTRAIS ABSOLUMENT TOUS LES VÉHICULES. JSON valide uniquement."""
         logger.error(f"Error extracting PDF: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erreur d'extraction: {str(e)}")
 
-        raise HTTPException(status_code=500, detail=f"Erreur d'extraction: {str(e)}")
-
 # ============ Residual Guide PDF Upload ============
 
 @api_router.post("/upload-residual-guide")
