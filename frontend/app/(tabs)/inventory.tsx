@@ -460,7 +460,16 @@ export default function InventoryScreen() {
           
           alert(`Fichier téléchargé: ${response.data.filename}`);
         } else {
-          Alert.alert('Export Excel', 'Fichier Excel généré avec succès');
+          // Mobile: sauvegarder et partager le fichier
+          const filename = response.data.filename || 'facture_export.xlsx';
+          const fileUri = FileSystem.documentDirectory + filename;
+          await FileSystem.writeAsStringAsync(fileUri, response.data.excel_base64, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            dialogTitle: 'Exporter Excel',
+          });
         }
       }
     } catch (error: any) {
