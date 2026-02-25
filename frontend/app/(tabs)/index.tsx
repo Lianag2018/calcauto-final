@@ -2483,6 +2483,76 @@ export default function HomeScreen() {
                     </ScrollView>
                   </View>
 
+                  {/* Residual by km/year table */}
+                  {(() => {
+                    if (!selectedProgram || !leaseResiduals?.vehicles) return null;
+                    const brandL = selectedProgram.brand.toLowerCase();
+                    const modelL = selectedProgram.model.toLowerCase();
+                    const trimL = (selectedProgram.trim || '').toLowerCase();
+                    const rv = leaseResiduals.vehicles?.find((v: any) => {
+                      const vB = v.brand.toLowerCase();
+                      const vM = v.model_name.toLowerCase();
+                      const vT = (v.trim || '').toLowerCase();
+                      return vB === brandL && (vM.includes(modelL) || modelL.includes(vM)) &&
+                        (vT.includes(trimL) || trimL.includes(vT) || !trimL);
+                    });
+                    if (!rv) return null;
+                    const basePct = rv.residual_percentages?.[String(leaseTerm)] || 0;
+                    if (basePct === 0) return null;
+                    const kmAdj = leaseResiduals.km_adjustments?.adjustments || {};
+                    const pdsf = parseFloat(leasePdsf) || parseFloat(vehiclePrice) || 0;
+                    
+                    return (
+                      <View style={styles.residualKmTable} data-testid="residual-km-table">
+                        <Text style={styles.residualKmTitle}>
+                          {lang === 'fr' ? 'Résiduel selon kilométrage' : 'Residual by mileage'}
+                          {rv.body_style ? ` — ${rv.body_style}` : ''}
+                        </Text>
+                        <View style={styles.residualKmRow}>
+                          <View style={styles.residualKmHeader}>
+                            <Text style={styles.residualKmHeaderText}>km/an</Text>
+                          </View>
+                          <View style={styles.residualKmHeader}>
+                            <Text style={styles.residualKmHeaderText}>%</Text>
+                          </View>
+                          <View style={styles.residualKmHeader}>
+                            <Text style={styles.residualKmHeaderText}>$</Text>
+                          </View>
+                        </View>
+                        {[12000, 18000, 24000].map(km => {
+                          const adj = km === 24000 ? 0 : (kmAdj[String(km)]?.[String(leaseTerm)] || 0);
+                          const pct = basePct + adj;
+                          const val = pdsf * (pct / 100);
+                          const isSelected = km === leaseKmPerYear;
+                          return (
+                            <TouchableOpacity
+                              key={km}
+                              style={[styles.residualKmRow, isSelected && styles.residualKmRowSelected]}
+                              onPress={() => setLeaseKmPerYear(km)}
+                              data-testid={`residual-km-row-${km}`}
+                            >
+                              <View style={styles.residualKmCell}>
+                                <Text style={[styles.residualKmText, isSelected && styles.residualKmTextSelected]}>
+                                  {(km / 1000).toFixed(0)}k
+                                </Text>
+                              </View>
+                              <View style={styles.residualKmCell}>
+                                <Text style={[styles.residualKmText, isSelected && styles.residualKmTextSelected]}>
+                                  {pct}%{adj !== 0 ? ` (+${adj})` : ''}
+                                </Text>
+                              </View>
+                              <View style={styles.residualKmCell}>
+                                <Text style={[styles.residualKmValue, isSelected && styles.residualKmValueSelected]}>
+                                  {formatCurrency(val)}
+                                </Text>
+                              </View>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    );
+                  })()}
+
                   {/* Info: fees auto-included */}
                   <View style={styles.leaseInfoBar}>
                     <Ionicons name="information-circle" size={14} color="#4ECDC4" />
