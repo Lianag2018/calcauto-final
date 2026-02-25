@@ -56,15 +56,16 @@ const months = [
 ];
 
 // Steps for the import wizard
-type Step = 'login' | 'upload' | 'select-pages' | 'preview' | 'email-sent' | 'success';
+type Step = 'login' | 'choose-type' | 'upload' | 'select-pages' | 'preview' | 'email-sent' | 'success' | 'residual-upload' | 'residual-processing' | 'residual-success';
 
 export default function ImportScreen() {
   const router = useRouter();
   
-  // Wizard state - Added 'select-pages' step
+  // Wizard state
   const [currentStep, setCurrentStep] = useState<Step>('login');
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [docType, setDocType] = useState<'programs' | 'residuals'>('programs');
   
   // Period selection
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
