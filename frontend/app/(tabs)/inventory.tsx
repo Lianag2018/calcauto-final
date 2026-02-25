@@ -92,6 +92,7 @@ export default function InventoryScreen() {
     brand: '',
     model: '',
     trim: '',
+    body_style: '',
     year: new Date().getFullYear().toString(),
     type: 'neuf',
     pdco: '',
@@ -102,6 +103,10 @@ export default function InventoryScreen() {
     km: '0',
     color: '',
   });
+
+  // SCI vehicle hierarchy for cascading dropdowns
+  const [sciHierarchy, setSciHierarchy] = useState<any>(null);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
