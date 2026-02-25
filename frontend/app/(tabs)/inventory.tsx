@@ -136,6 +136,19 @@ export default function InventoryScreen() {
     fetchData();
   }, [fetchData]);
 
+  // Load SCI vehicle hierarchy for cascading dropdowns
+  useEffect(() => {
+    const loadHierarchy = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/api/sci/vehicle-hierarchy`);
+        setSciHierarchy(res.data);
+      } catch (e) {
+        console.log('Could not load SCI hierarchy:', e);
+      }
+    };
+    loadHierarchy();
+  }, []);
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchData();
