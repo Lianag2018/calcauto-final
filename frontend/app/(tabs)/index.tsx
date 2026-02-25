@@ -278,61 +278,6 @@ const loadingStyles = StyleSheet.create({
   },
 });
 
-// ============ Interfaces ============
-
-interface FinancingRates {
-  rate_36: number;
-  rate_48: number;
-  rate_60: number;
-  rate_72: number;
-  rate_84: number;
-  rate_96: number;
-}
-
-interface VehicleProgram {
-  id: string;
-  brand: string;
-  model: string;
-  trim: string | null;
-  year: number;
-  consumer_cash: number;
-  option1_rates: FinancingRates;
-  option2_rates: FinancingRates | null;
-  bonus_cash: number;
-  program_month: number;
-  program_year: number;
-}
-
-interface PaymentComparison {
-  term_months: number;
-  option1_rate: number;
-  option1_monthly: number;
-  option1_total: number;
-  option1_rebate: number;
-  option2_rate: number | null;
-  option2_monthly: number | null;
-  option2_total: number | null;
-  best_option: string | null;
-  savings: number | null;
-}
-
-interface CalculationResult {
-  vehicle_price: number;
-  consumer_cash: number;
-  bonus_cash: number;
-  brand: string;
-  model: string;
-  trim: string | null;
-  year: number;
-  comparisons: PaymentComparison[];
-}
-
-interface ProgramPeriod {
-  month: number;
-  year: number;
-  count: number;
-}
-
 // Translations are now loaded from locales/*.json files
 const translations = {
   fr: frTranslations,
