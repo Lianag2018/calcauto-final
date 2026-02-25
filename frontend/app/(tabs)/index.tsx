@@ -2396,6 +2396,35 @@ export default function HomeScreen() {
 
               {showLease && (
                 <View style={styles.leaseContent}>
+                  {/* PDSF / PDOC */}
+                  <View style={styles.leaseInputRow}>
+                    <Text style={styles.leaseInputLabel}>{lang === 'fr' ? 'PDSF / PDOC' : 'MSRP'}</Text>
+                    <TextInput
+                      style={styles.leaseInput}
+                      value={leasePdsf}
+                      onChangeText={setLeasePdsf}
+                      placeholder={vehiclePrice || '71580'}
+                      placeholderTextColor="#555"
+                      keyboardType="numeric"
+                      data-testid="lease-pdsf-input"
+                    />
+                  </View>
+                  
+                  {/* Solde reporté */}
+                  <View style={styles.leaseInputRow}>
+                    <Text style={styles.leaseInputLabel}>{lang === 'fr' ? 'Solde reporté' : 'Carried balance'}</Text>
+                    <TextInput
+                      style={styles.leaseInput}
+                      value={leaseSoldeReporte}
+                      onChangeText={setLeaseSoldeReporte}
+                      placeholder="0"
+                      placeholderTextColor="#555"
+                      keyboardType="numeric"
+                      data-testid="lease-solde-input"
+                    />
+                    <Text style={styles.leaseInputHint}>{lang === 'fr' ? '(-) si dette' : '(-) if owed'}</Text>
+                  </View>
+
                   {/* Km per year selection */}
                   <View style={styles.leaseRow}>
                     <Text style={styles.leaseLabel}>{lang === 'fr' ? 'Kilométrage / an' : 'Km / year'}</Text>
@@ -2432,6 +2461,16 @@ export default function HomeScreen() {
                         </TouchableOpacity>
                       ))}
                     </ScrollView>
+                  </View>
+
+                  {/* Info: fees auto-included */}
+                  <View style={styles.leaseInfoBar}>
+                    <Ionicons name="information-circle" size={14} color="#4ECDC4" />
+                    <Text style={styles.leaseInfoText}>
+                      {lang === 'fr' 
+                        ? `Frais inclus: ${formatCurrency(parseFloat(fraisDossier) || 0)} dossier + ${formatCurrency(parseFloat(taxePneus) || 0)} pneus + ${formatCurrency(parseFloat(fraisRDPRM) || 0)} RDPRM`
+                        : `Fees included: ${formatCurrency(parseFloat(fraisDossier) || 0)} admin + ${formatCurrency(parseFloat(taxePneus) || 0)} tires + ${formatCurrency(parseFloat(fraisRDPRM) || 0)} RDPRM`}
+                    </Text>
                   </View>
 
                   {/* Lease Results */}
