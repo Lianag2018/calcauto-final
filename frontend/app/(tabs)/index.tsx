@@ -1254,7 +1254,9 @@ export default function HomeScreen() {
                   <div class="payment-box" style="border-top:3px solid #0277BD;">
                     <div class="payment-label">${paymentLabel}</div>
                     <div class="payment-amount" style="color:#0277BD;">${fmt2(paymentFrequency === 'biweekly' ? leaseResult.alternative.biweekly : paymentFrequency === 'weekly' ? leaseResult.alternative.weekly : leaseResult.alternative.monthly)} $</div>
+                    <div class="payment-total">${lang === 'fr' ? 'Avant taxes' : 'Before tax'}: ${fmt2(leaseResult.alternative.monthlyBeforeTax)} $ | TPS: ${fmt2(leaseResult.alternative.tpsOnPayment)} $ | TVQ: ${fmt2(leaseResult.alternative.tvqOnPayment)} $</div>
                     <div class="payment-total">Total (${leaseTerm} ${lang === 'fr' ? 'mois' : 'mo'}): <strong>${fmt(Math.round(leaseResult.alternative.total))} $</strong></div>
+                    <div class="payment-total" style="color:#c00;">${lang === 'fr' ? "Coût d'emprunt" : 'Borrowing cost'}: <strong>${fmt2(leaseResult.alternative.coutEmprunt)} $</strong></div>
                   </div>
                 </div>
                 ` : ''}
