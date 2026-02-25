@@ -41,6 +41,7 @@ Application mobile "CalcAuto AiPro" pour les concessionnaires automobiles Stella
 - Added POST /api/upload-residual-guide endpoint (PDF parsing + Excel generation + email)
 - Modified import.tsx wizard with "Type de document" choice step
 - Added residual-upload, residual-processing, residual-success steps
+- Added residual-by-km table below lease term selector (shows body style, % adjustments for 12k/18k/24k, clickable rows to change km)
 
 ## Build Process
 ```bash
