@@ -687,12 +687,14 @@ export default function HomeScreen() {
       const fraisDossierOnly = parseFloat(fraisDossier) || 0;
       const capCost = sellingPrice + fraisDossierOnly - cash;
       
-      // 2. Solde reporté (dette ancienne location, avec taxes si négatif)
+      // 2. Solde reporté = montant à AJOUTER au prix de vente (balance à reporter)
+      //    Positif = ajouter au cap cost (solde à financer)
+      //    Négatif = dette, ajouter avec taxes
       let soldeNet = 0;
       if (soldeReporte < 0) {
         soldeNet = Math.abs(soldeReporte) * (1 + tauxTaxe); // dette avec taxes
       } else if (soldeReporte > 0) {
-        soldeNet = -soldeReporte; // crédit
+        soldeNet = soldeReporte; // solde à reporter = augmente le cap cost
       }
       
       // 3. Net cap cost = cap + solde + montant_dû - échange - comptant
