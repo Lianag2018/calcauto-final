@@ -109,6 +109,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error: any) {
       console.error('Login error:', error);
+      if (error.code === 'ERR_NETWORK' || !error.response) {
+        return { success: false, error: 'Impossible de joindre le serveur. Vérifiez votre connexion.' };
+      }
       const message = error.response?.data?.detail || error.response?.data?.error || 'Email ou mot de passe incorrect';
       return { success: false, error: message };
     }
