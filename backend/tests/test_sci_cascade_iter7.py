@@ -166,17 +166,18 @@ class TestInventoryWithBodyStyle:
         assert created["model"] == "Grand Wagoneer"
         
         vehicle_id = created["id"]
+        stock_no = created["stock_no"]
         print(f"✓ Created vehicle with body_style: {created['brand']} {created['model']} {created['trim']} - {created['body_style']}")
         
-        # Verify with GET
-        get_response = requests.get(f"{BASE_URL}/api/inventory/{vehicle_id}", headers=headers)
+        # Verify with GET (API uses stock_no not id)
+        get_response = requests.get(f"{BASE_URL}/api/inventory/{stock_no}", headers=headers)
         assert get_response.status_code == 200
         fetched = get_response.json()
         assert fetched["body_style"] == "4D Utility", "body_style not persisted"
         print(f"✓ GET verified body_style is persisted")
         
         # Cleanup
-        delete_response = requests.delete(f"{BASE_URL}/api/inventory/{vehicle_id}", headers=headers)
+        delete_response = requests.delete(f"{BASE_URL}/api/inventory/{stock_no}", headers=headers)
         assert delete_response.status_code in [200, 204]
         print(f"✓ Cleanup: deleted test vehicle")
     
