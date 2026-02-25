@@ -1126,11 +1126,16 @@ export default function HomeScreen() {
           
           alert(lang === 'fr' ? `Fichier téléchargé: ${result.filename}` : `File downloaded: ${result.filename}`);
         } else {
-          // On mobile, share the file
-          Alert.alert(
-            lang === 'fr' ? 'Export Excel' : 'Excel Export',
-            lang === 'fr' ? 'Fichier Excel généré avec succès' : 'Excel file generated successfully'
-          );
+          // Mobile: sauvegarder et partager le fichier
+          const filename = result.filename || 'facture_export.xlsx';
+          const fileUri = FileSystem.documentDirectory + filename;
+          await FileSystem.writeAsStringAsync(fileUri, result.excel_base64, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            dialogTitle: lang === 'fr' ? 'Exporter Excel' : 'Export Excel',
+          });
         }
       } else {
         throw new Error(result.detail || 'Export failed');
