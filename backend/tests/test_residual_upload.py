@@ -112,67 +112,86 @@ class TestVehicleHierarchy:
     """Test the vehicle hierarchy endpoint after upload"""
     
     def test_get_vehicle_hierarchy(self, api_client):
-        """Test GET /api/sci/vehicle-hierarchy returns valid hierarchy"""
+        """Test GET /api/sci/vehicle-hierarchy returns valid hierarchy
+        
+        Structure: {
+            "Chrysler": {"Grand Caravan": {...}, "Pacifica": {...}},
+            "Dodge": {...},
+            ...
+        }
+        """
         url = f"{BASE_URL}/api/sci/vehicle-hierarchy"
         response = api_client.get(url, timeout=10)
         
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         
         result = response.json()
-        assert 'brands' in result, f"Missing 'brands' key in response: {result.keys()}"
         
-        brands = result['brands']
-        assert len(brands) > 0, f"Expected some brands, got empty list"
+        # Result should be a dict with brand names as keys
+        assert isinstance(result, dict), f"Expected dict, got {type(result)}"
+        assert len(result) > 0, f"Expected some brands, got empty dict"
         
-        # Each brand should have models
-        for brand in brands[:3]:  # Check first 3 brands
-            assert 'name' in brand, f"Missing 'name' in brand: {brand}"
-            assert 'models' in brand, f"Missing 'models' in brand: {brand}"
-            
-            # Each model should have model_year and trims
-            if brand['models']:
-                model = brand['models'][0]
-                assert 'model_name' in model or 'name' in model, f"Missing model name in: {model}"
+        # Check for expected Stellantis brands
+        expected_brands = ['Chrysler', 'Dodge', 'Jeep', 'Ram', 'Fiat']
+        found_brands = list(result.keys())
         
-        print(f"SUCCESS: Vehicle hierarchy returned {len(brands)} brands")
-        brand_names = [b['name'] for b in brands]
-        print(f"Brands: {brand_names}")
+        # At least 3 brands should be present
+        matching_brands = [b for b in expected_brands if b in found_brands]
+        assert len(matching_brands) >= 3, f"Expected at least 3 Stellantis brands, got {found_brands}"
+        
+        # Each brand should have models (as dict with model names as keys)
+        for brand_name in found_brands[:3]:
+            brand_data = result[brand_name]
+            assert isinstance(brand_data, dict), f"Brand {brand_name} should be dict, got {type(brand_data)}"
+            assert len(brand_data) > 0, f"Brand {brand_name} should have models"
+        
+        print(f"SUCCESS: Vehicle hierarchy returned {len(found_brands)} brands")
+        print(f"Brands: {found_brands}")
     
     def test_vehicle_hierarchy_structure(self, api_client):
-        """Test that hierarchy has correct nested structure: brand->model->trim->body_style"""
+        """Test that hierarchy has correct nested structure: brand->model->trims->body_styles"""
         url = f"{BASE_URL}/api/sci/vehicle-hierarchy"
         response = api_client.get(url, timeout=10)
         
         assert response.status_code == 200
         result = response.json()
         
-        # Find a brand with models
-        brands = result.get('brands', [])
-        assert len(brands) > 0, "No brands found"
+        # Result is dict: {brand_name: {model_name: {...}}}
+        assert isinstance(result, dict), f"Expected dict, got {type(result)}"
+        assert len(result) > 0, "No brands found"
         
-        brand_with_models = None
-        for b in brands:
-            if b.get('models') and len(b['models']) > 0:
-                brand_with_models = b
-                break
+        # Pick a brand and check model structure
+        brand_name = list(result.keys())[0]
+        brand_models = result[brand_name]
+        assert isinstance(brand_models, dict), f"Brand models should be dict"
         
-        assert brand_with_models is not None, "No brand with models found"
-        print(f"Testing brand: {brand_with_models['name']}")
+        # Pick a model and check structure
+        model_name = list(brand_models.keys())[0]
+        model_data = brand_models[model_name]
         
-        # Check model structure
-        model = brand_with_models['models'][0]
-        model_name = model.get('model_name') or model.get('name', 'Unknown')
-        print(f"Testing model: {model_name}")
+        print(f"Testing brand: {brand_name}, model: {model_name}")
+        print(f"Model data keys: {list(model_data.keys())}")
         
-        # Check for trims or years structure
-        has_structure = (
-            'trims' in model or 
-            'years' in model or 
-            'body_styles' in model or
-            'model_year' in model
-        )
-        assert has_structure, f"Model lacks expected structure: {model.keys()}"
-        print(f"SUCCESS: Model has valid structure with keys: {list(model.keys())}")
+        # Model should have trims and years
+        assert 'trims' in model_data, f"Model should have 'trims' key"
+        assert 'years' in model_data, f"Model should have 'years' key"
+        
+        # Trims is a dict: {trim_name: [body_styles]}
+        trims = model_data['trims']
+        assert isinstance(trims, dict), f"Trims should be dict"
+        
+        if trims:
+            trim_name = list(trims.keys())[0]
+            body_styles = trims[trim_name]
+            assert isinstance(body_styles, list), f"Body styles should be list"
+            print(f"Sample trim: {trim_name} -> Body styles: {body_styles}")
+        
+        # Years is a list
+        years = model_data['years']
+        assert isinstance(years, list), f"Years should be list"
+        assert all(isinstance(y, int) for y in years), f"Years should be integers"
+        
+        print(f"SUCCESS: Model structure valid - {len(trims)} trims, years: {years}")
 
 
 class TestVerifyPasswordEndpoint:
