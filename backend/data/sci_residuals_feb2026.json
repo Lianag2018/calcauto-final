@@ -485,6 +485,42 @@
       "brand": "Jeep",
       "model_year": 2026,
       "model_name": "Wrangler",
+      "trim": "Moab 392",
+      "body_style": "4D Utility 4WD",
+      "residual_percentages": {
+        "24": 66,
+        "27": 64,
+        "36": 60,
+        "39": 58,
+        "42": 57,
+        "48": 54,
+        "51": 52,
+        "54": 51,
+        "60": 48
+      }
+    },
+    {
+      "brand": "Jeep",
+      "model_year": 2026,
+      "model_name": "Wrangler",
+      "trim": "Rubicon",
+      "body_style": "2D Utility 4WD",
+      "residual_percentages": {
+        "24": 65,
+        "27": 64,
+        "36": 61,
+        "39": 60,
+        "42": 58,
+        "48": 56,
+        "51": 54,
+        "54": 53,
+        "60": 50
+      }
+    },
+    {
+      "brand": "Jeep",
+      "model_year": 2026,
+      "model_name": "Wrangler",
       "trim": "Rubicon",
       "body_style": "4D Utility 4WD",
       "residual_percentages": {
@@ -496,6 +532,42 @@
         "48": 54,
         "51": 52,
         "54": 51,
+        "60": 48
+      }
+    },
+    {
+      "brand": "Jeep",
+      "model_year": 2026,
+      "model_name": "Wrangler",
+      "trim": "Rubicon X",
+      "body_style": "2D Utility 4WD",
+      "residual_percentages": {
+        "24": 64,
+        "27": 63,
+        "36": 60,
+        "39": 58,
+        "42": 57,
+        "48": 54,
+        "51": 53,
+        "54": 51,
+        "60": 49
+      }
+    },
+    {
+      "brand": "Jeep",
+      "model_year": 2026,
+      "model_name": "Wrangler",
+      "trim": "Rubicon X",
+      "body_style": "4D Utility 4WD",
+      "residual_percentages": {
+        "24": 65,
+        "27": 63,
+        "36": 59,
+        "39": 57,
+        "42": 56,
+        "48": 53,
+        "51": 52,
+        "54": 50,
         "60": 48
       }
     },
@@ -522,6 +594,24 @@
       "model_year": 2026,
       "model_name": "Wrangler",
       "trim": "Sport",
+      "body_style": "2D Utility 4WD",
+      "residual_percentages": {
+        "24": 66,
+        "27": 65,
+        "36": 61,
+        "39": 60,
+        "42": 58,
+        "48": 56,
+        "51": 55,
+        "54": 53,
+        "60": 51
+      }
+    },
+    {
+      "brand": "Jeep",
+      "model_year": 2026,
+      "model_name": "Wrangler",
+      "trim": "Sport",
       "body_style": "4D Utility 4WD",
       "residual_percentages": {
         "24": 65,
@@ -540,6 +630,24 @@
       "model_year": 2026,
       "model_name": "Wrangler",
       "trim": "Sport S",
+      "body_style": "2D Utility 4WD",
+      "residual_percentages": {
+        "24": 66,
+        "27": 64,
+        "36": 60,
+        "39": 59,
+        "42": 57,
+        "48": 55,
+        "51": 54,
+        "54": 52,
+        "60": 50
+      }
+    },
+    {
+      "brand": "Jeep",
+      "model_year": 2026,
+      "model_name": "Wrangler",
+      "trim": "Sport S",
       "body_style": "4D Utility 4WD",
       "residual_percentages": {
         "24": 65,
@@ -551,6 +659,24 @@
         "51": 52,
         "54": 50,
         "60": 48
+      }
+    },
+    {
+      "brand": "Jeep",
+      "model_year": 2026,
+      "model_name": "Wrangler",
+      "trim": "Willys",
+      "body_style": "2D Utility 4WD",
+      "residual_percentages": {
+        "24": 66,
+        "27": 64,
+        "36": 60,
+        "39": 58,
+        "42": 57,
+        "48": 54,
+        "51": 53,
+        "54": 51,
+        "60": 49
       }
     },
     {
