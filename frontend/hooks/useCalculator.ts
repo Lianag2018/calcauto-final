@@ -77,7 +77,7 @@ export function useCalculator(inputs: CalculatorInputs) {
   const {
     selectedProgram, vehiclePrice, selectedTerm, customBonusCash,
     comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM,
-    prixEchange, montantDuEchange, accessories,
+    prixEchange, montantDuEchange, accessories, rabaisConcess,
   } = inputs;
 
   const calculateForTerm = useCallback(() => {
