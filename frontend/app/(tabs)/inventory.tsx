@@ -542,7 +542,9 @@ export default function InventoryScreen() {
     } finally {
       setScanning(false);
     }
-  }; = (field: string, value: string | number) => {
+  };
+
+  const updateReviewField = (field: string, value: string | number) => {
     setReviewData((prev: any) => ({ ...prev, [field]: value }));
   };
 
