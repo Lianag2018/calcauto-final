@@ -1778,4 +1778,88 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1a1a2e',
   },
+  // Document type choice styles
+  docTypeCard: {
+    backgroundColor: '#2d2d44',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#3d3d54',
+  },
+  docTypeIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 12,
+    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  docTypeTextWrap: {
+    flex: 1,
+  },
+  docTypeTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 3,
+  },
+  docTypeDesc: {
+    fontSize: 12,
+    color: '#aaa',
+    marginBottom: 2,
+  },
+  docTypeHint: {
+    fontSize: 10,
+    color: '#666',
+    fontStyle: 'italic',
+  },
+  // Residual success styles
+  residualSummary: {
+    backgroundColor: '#2d2d44',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 20,
+    width: '100%',
+  },
+  residualSummaryTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#4ECDC4',
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  residualBrandRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#3d3d54',
+  },
+  residualBrandName: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '500',
+  },
+  residualBrandCount: {
+    fontSize: 14,
+    color: '#4ECDC4',
+    fontWeight: '600',
+  },
+  residualEmailStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#3d3d54',
+  },
+  residualEmailText: {
+    fontSize: 13,
+    flex: 1,
+  },
 });
