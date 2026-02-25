@@ -5334,7 +5334,7 @@ Retourne UNIQUEMENT un JSON valide (pas de markdown, pas de commentaires):
                     "vin_brand": vin_brand,
                     "vin_consistent": vin_consistent,
                     "model_code": model_code,
-                    "model_code_validated": master_lookup is not None,  # Flag de validation master
+                    "model_code_validated": master_lookup is not None,
                     "year": vin_info.get("year") or datetime.now().year,
                     "brand": product_info.get("brand") or vin_brand or "Stellantis",
                     "model": product_info.get("model") or "",
@@ -5344,18 +5344,18 @@ Retourne UNIQUEMENT un JSON valide (pas de markdown, pas de commentaires):
                     "pref": pref,
                     "holdback": calculate_holdback(product_info.get("brand") or vin_brand or "Ram", pdco, holdback),
                     "msrp": pdco,
-                    "net_cost": ep_cost,  # E.P. = Coût Net (holdback déjà déduit)
+                    "net_cost": ep_cost,
                     "subtotal": subtotal,
                     "invoice_total": invoice_total,
                     "color": final_color,
                     "options": options,
                     "file_hash": file_hash,
-                    "parse_method": "google_vision_hybrid",
+                    "parse_method": f"google_vision_{parse_method_detail}",
                     "metrics": {
                         "parse_duration_sec": parse_duration,
                         "validation_score": validation.get("score", 0),
                         "ocr_confidence": ocr_confidence,
-                        "cost_estimate": "~$0.0015"  # Google Vision est ~85% moins cher que GPT-4
+                        "cost_estimate": cost_estimate
                     }
                 }
                 
