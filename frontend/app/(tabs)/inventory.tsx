@@ -1025,6 +1025,17 @@ export default function InventoryScreen() {
                   </TouchableOpacity>
                 )}
 
+                <TouchableOpacity style={[styles.scanOptionBtn, { borderColor: '#217346' }]} onPress={handleImportExcel}>
+                  <View style={[styles.scanOptionIcon, { backgroundColor: 'rgba(33, 115, 70, 0.1)' }]}>
+                    <Ionicons name="grid-outline" size={32} color="#217346" />
+                  </View>
+                  <View style={styles.scanOptionText}>
+                    <Text style={styles.scanOptionTitle}>Importer un Excel</Text>
+                    <Text style={styles.scanOptionDesc}>Fichier .xlsx corrigé manuellement</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={24} color="#666" />
+                </TouchableOpacity>
+
                 <View style={styles.scanTips}>
                   <Text style={styles.scanTipsTitle}>💡 Conseils pour un meilleur scan:</Text>
                   <Text style={styles.scanTip}>• Photo bien éclairée</Text>
