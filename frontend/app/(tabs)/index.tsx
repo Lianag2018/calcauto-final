@@ -604,23 +604,6 @@ export default function HomeScreen() {
     setLocalResult(null);
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('fr-CA', {
-      style: 'currency',
-      currency: 'CAD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const formatCurrencyDecimal = (value: number) => {
-    return new Intl.NumberFormat('fr-CA', {
-      style: 'currency',
-      currency: 'CAD',
-      minimumFractionDigits: 2,
-    }).format(value);
-  };
-
   // Generate submission text for sharing
   const generateSubmissionText = () => {
     if (!selectedProgram || !localResult || !vehiclePrice) return '';
