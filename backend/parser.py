@@ -1016,8 +1016,8 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
     found_options.extend(fallback_options)
     
     # ====== DÉDUPLICATION FINALE ======
-    # Supprime les doublons logiques (ex: deux transmissions)
-    found_options = deduplicate_options(found_options)
+    # Par équivalence existante + priorité OCR (montant > 0)
+    found_options = deduplicate_by_equivalence(found_options, equivalent_codes)
     
     # ====== LES OPTIONS SONT DÉJÀ DANS L'ORDRE DE LA FACTURE ======
     # Pas de tri! On garde l'ordre d'apparition
