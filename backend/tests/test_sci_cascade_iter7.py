@@ -144,7 +144,10 @@ class TestInventoryWithBodyStyle:
         response = requests.post(f"{BASE_URL}/api/inventory", json=vehicle_data, headers=headers)
         assert response.status_code in [200, 201], f"Create failed: {response.status_code} - {response.text}"
         
-        created = response.json()
+        result = response.json()
+        # API returns {"success": true, "vehicle": {...}}
+        created = result.get("vehicle", result)
+        
         assert created["body_style"] == "4D Utility", f"body_style not saved correctly: {created.get('body_style')}"
         assert created["trim"] == "Summit Obsidian", f"trim not saved: {created.get('trim')}"
         assert created["brand"] == "Jeep"
@@ -190,7 +193,8 @@ class TestInventoryWithBodyStyle:
         response = requests.post(f"{BASE_URL}/api/inventory", json=vehicle_data, headers=headers)
         assert response.status_code in [200, 201], f"Create failed: {response.text}"
         
-        created = response.json()
+        result = response.json()
+        created = result.get("vehicle", result)
         vehicle_id = created["id"]
         
         # Verify all cascade fields
@@ -224,7 +228,9 @@ class TestInventoryWithBodyStyle:
         
         create_response = requests.post(f"{BASE_URL}/api/inventory", json=vehicle_data, headers=headers)
         assert create_response.status_code in [200, 201]
-        vehicle_id = create_response.json()["id"]
+        result = create_response.json()
+        created = result.get("vehicle", result)
+        vehicle_id = created["id"]
         
         # Update body_style
         update_response = requests.put(
