@@ -5115,6 +5115,14 @@ RÈGLES IMPORTANTES:
 - Garde l'ORDRE EXACT des options comme elles apparaissent sur la facture
 - Pour la couleur, le code commence par P (ex: PAU, PW7, PDN) et est suivi de la description de la couleur
 
+PRIX FCA IMPORTANT:
+- E.P., PDCO et PREF sont en format FCA encodé (8 chiffres avec premier 0 et 2 derniers = cents)
+- Exemple: 07158000 = $71,580.00, 06697900 = $66,979.00
+- Pour décoder: enlever le premier 0, enlever les 2 derniers chiffres
+- Retourne les montants E.P., PDCO, PREF DÉJÀ DÉCODÉS en dollars entiers (ex: 71580, PAS 7158000)
+- Pour les montants d'options (ex: 524.00, 1104.00, 3340.00), retourne-les tels quels en nombre
+- Le subtotal et invoice_total sont en format normal (ex: 67679.00 → retourne 67679)
+
 TEXTE OCR:
 {full_text}
 
@@ -5124,9 +5132,9 @@ Retourne UNIQUEMENT un JSON valide (pas de markdown, pas de commentaires):
   "model_code": "code modèle 6 chars (ex: DT6L98)",
   "color_code": "code couleur 3 chars (ex: PAU)",
   "color_description": "description couleur complète",
-  "ep_cost": nombre ou 0,
-  "pdco": nombre ou 0,
-  "pref": nombre ou 0,
+  "ep_cost": nombre_dollars_entiers ou 0,
+  "pdco": nombre_dollars_entiers ou 0,
+  "pref": nombre_dollars_entiers ou 0,
   "holdback": nombre ou 0,
   "subtotal": nombre ou 0,
   "invoice_total": nombre ou 0,
