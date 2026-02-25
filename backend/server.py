@@ -2660,6 +2660,8 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
                     
                     {f"<div style='background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-top: 15px;'><span style='color: #856404;'>ℹ️ Bonus Cash de {fmt(bonus_cash)} $ sera déduit après taxes (au comptant)</span></div>" if bonus_cash > 0 else ""}
                     
+                    {generate_lease_email_html(request.lease_data, freq, freq_label, fmt, fmt2)}
+                    
                     <!-- WINDOW STICKER SECTION WITH IMAGES -->
                     {generate_window_sticker_html(vin, window_sticker_images, window_sticker_url, window_sticker_pdf)}
                 </div>
