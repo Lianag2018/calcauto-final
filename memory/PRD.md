@@ -151,13 +151,16 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
 - Utilise `expo-print` sur mobile (dialogue natif, plus de blocage)
 - Format professionnel identique au courriel
 
-### Phase 19: Filtrage En-tête Facture (DONE - Feb 2026)
+### Phase 19: Filtrage En-tête Facture + Couleur Dynamique (DONE - Feb 2026)
 - **Bug fix critique**: Le parseur extrayait des mots de l'en-tête (ELITE, BANQUE, 596, TAN, HURRIC) comme options
-- **Corrections**:
-  1. Ajouté ELITE, BANQUE, DOMINION, AVENUE, OUELETTE, TAN, HURRIC, etc. aux skip_codes ET invalid_codes
-  2. Amélioré le filtre d'adresses: détecte maintenant les adresses à 3 chiffres (ex: "596 AVENUE")
-  3. Ajouté DT6L98 (code modèle Ram 1500 Tradesman) aux skip_codes
-- **Tests**: Nouveau test `TestHeaderFiltering` (29/29 passent)
+- **Bug fix couleur**: PAU hardcodé "Rouge Flamme" dans `server.py` color_map → remplacé par extraction dynamique depuis le texte OCR. Priorité: description OCR > mapping statique > code brut
+- **Corrections parser.py**:
+  1. Ajouté ELITE, BANQUE, DOMINION, AVENUE, OUELETTE, TAN, HURRIC, ADIAN, etc. aux skip_codes ET invalid_codes
+  2. Amélioré filtre d'adresses 3 chiffres
+  3. Ajouté DT6L98 aux skip_codes (code modèle Ram 1500)
+  4. Le fallback fca_descriptions extrait maintenant la description réelle du texte OCR au lieu d'utiliser le mapping hardcodé
+- **Corrections server.py**: Couleur dynamique extraite du texte OCR, PAU retiré du color_map hardcodé, PDN ajouté
+- **Tests**: 29/29 passent + validations manuelles Ram 1500 et Ram 2500
 
 ## Backlog
 - (P0) Corriger l'ordre des options du parseur (options fallback ajoutées au début au lieu de la fin)
