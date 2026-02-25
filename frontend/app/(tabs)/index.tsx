@@ -2060,13 +2060,13 @@ export default function HomeScreen() {
               </Text>
               <Text style={styles.inventorySubtitle}>
                 {lang === 'fr' 
-                  ? `Véhicules ${selectedProgram.brand} en stock`
-                  : `${selectedProgram.brand} vehicles in stock`}
+                  ? `Véhicules ${selectedProgram.brand} ${selectedProgram.year} en stock`
+                  : `${selectedProgram.brand} ${selectedProgram.year} vehicles in stock`}
               </Text>
               {inventoryList.length > 0 ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.inventoryScroll}>
                   {inventoryList
-                    .filter(v => v.brand?.toLowerCase() === selectedProgram.brand?.toLowerCase())
+                    .filter(v => v.brand?.toLowerCase() === selectedProgram.brand?.toLowerCase() && String(v.year) === String(selectedProgram.year))
                     .map((vehicle) => (
                       <TouchableOpacity
                         key={vehicle.id}
