@@ -5198,6 +5198,22 @@ Retourne UNIQUEMENT un JSON valide (pas de markdown, pas de commentaires):
                     subtotal = float(structured_data.get("subtotal", 0) or 0)
                     invoice_total = float(structured_data.get("invoice_total", 0) or 0)
                     
+                    # Sécurité: si GPT-4o a retourné des valeurs en format FCA brut (non décodé)
+                    # Les prix véhicules FCA Canada sont entre 20000$ et 200000$
+                    # Si > 500000, c'est probablement en format FCA brut (ex: 7158000 au lieu de 71580)
+                    if ep_cost > 500000:
+                        ep_cost = clean_fca_price(str(int(ep_cost)))
+                        logger.info(f"GPT-4o ep_cost was in raw FCA format, decoded to: {ep_cost}")
+                    if pdco > 500000:
+                        pdco = clean_fca_price(str(int(pdco)))
+                        logger.info(f"GPT-4o pdco was in raw FCA format, decoded to: {pdco}")
+                    if pref > 500000:
+                        pref = clean_fca_price(str(int(pref)))
+                        logger.info(f"GPT-4o pref was in raw FCA format, decoded to: {pref}")
+                    if holdback > 50000:
+                        holdback = clean_fca_price(str(int(holdback)))
+                        logger.info(f"GPT-4o holdback was in raw FCA format, decoded to: {holdback}")
+                    
                     # Fallback financier si GPT-4o a retourné 0
                     if ep_cost == 0 or pdco == 0:
                         financial = parse_financial_data(full_text)
