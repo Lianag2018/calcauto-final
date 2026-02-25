@@ -1576,3 +1576,81 @@ const styles = StyleSheet.create({
   submitBtnDisabled: { opacity: 0.6 },
   costHint: { fontSize: 10, color: '#FFB347', marginTop: 4, fontStyle: 'italic' },
 });
+
+const sciStyles = StyleSheet.create({
+  dropdownContainer: {
+    position: 'relative' as any,
+    zIndex: 100,
+  },
+  dropdownButton: {
+    backgroundColor: '#2d2d44',
+    borderRadius: 8,
+    padding: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#3d3d54',
+  },
+  dropdownButtonActive: {
+    borderColor: '#4ECDC4',
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+  },
+  dropdownButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    flex: 1,
+  },
+  dropdownPlaceholder: {
+    color: '#666',
+  },
+  dropdownArrow: {
+    color: '#4ECDC4',
+    fontSize: 10,
+    marginLeft: 8,
+  },
+  dropdownList: {
+    position: 'absolute' as any,
+    top: '100%' as any,
+    left: 0,
+    right: 0,
+    backgroundColor: '#2d2d44',
+    borderWidth: 1,
+    borderColor: '#4ECDC4',
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+    zIndex: 999,
+    elevation: 10,
+    maxHeight: 200,
+    overflow: 'hidden' as any,
+  },
+  dropdownScroll: {
+    maxHeight: 200,
+  },
+  dropdownItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#3d3d54',
+  },
+  dropdownItemSelected: {
+    backgroundColor: '#1a3a3a',
+  },
+  dropdownItemText: {
+    color: '#ddd',
+    fontSize: 13,
+  },
+  dropdownItemTextSelected: {
+    color: '#4ECDC4',
+    fontWeight: '600',
+  },
+  dropdownEmpty: {
+    color: '#666',
+    fontSize: 12,
+    fontStyle: 'italic',
+    padding: 12,
+    textAlign: 'center',
+  },
+});
