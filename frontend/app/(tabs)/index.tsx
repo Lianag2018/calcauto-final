@@ -424,6 +424,17 @@ export default function HomeScreen() {
   const [prixEchange, setPrixEchange] = useState('');
   const [montantDuEchange, setMontantDuEchange] = useState('');
   
+  // ============ LEASE SCI STATE ============
+  const [showLease, setShowLease] = useState(false);
+  const [leaseKmPerYear, setLeaseKmPerYear] = useState<number>(24000);
+  const [leaseTerm, setLeaseTerm] = useState<number>(48);
+  const [leaseResiduals, setLeaseResiduals] = useState<any>(null);
+  const [leaseRates, setLeaseRates] = useState<any>(null);
+  const [leaseResult, setLeaseResult] = useState<any>(null);
+  const [leaseLoading, setLeaseLoading] = useState(false);
+  const leaseTerms = [24, 27, 36, 39, 42, 48, 51, 54, 60];
+  const leaseKmOptions = [12000, 18000, 24000];
+
   // Calcul de financement (logique extraite dans useCalculator)
   const { localResult } = useCalculator({
     selectedProgram,
