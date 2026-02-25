@@ -454,6 +454,7 @@ export default function HomeScreen() {
     prixEchange,
     montantDuEchange,
     accessories,
+    rabaisConcess: leaseRabaisConcess,
   });
 
   const loadPrograms = useCallback(async (month?: number, year?: number) => {
