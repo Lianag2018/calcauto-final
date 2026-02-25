@@ -939,24 +939,19 @@ export default function InventoryScreen() {
 
               <View style={styles.formRow}>
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Marque *</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    value={formData.brand}
-                    onChangeText={(v) => setFormData({ ...formData, brand: v })}
-                    placeholder="Ram"
-                    placeholderTextColor="#666"
-                  />
+                  {renderSciDropdown('Marque *', 'brand', formData.brand, (v) => handleFormSciSelect('brand', v), formData, 'add')}
                 </View>
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Modèle *</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    value={formData.model}
-                    onChangeText={(v) => setFormData({ ...formData, model: v })}
-                    placeholder="2500 Express"
-                    placeholderTextColor="#666"
-                  />
+                  {renderSciDropdown('Modèle *', 'model', formData.model, (v) => handleFormSciSelect('model', v), formData, 'add')}
+                </View>
+              </View>
+
+              <View style={styles.formRow}>
+                <View style={styles.formGroup}>
+                  {renderSciDropdown('Trim', 'trim', formData.trim, (v) => handleFormSciSelect('trim', v), formData, 'add')}
+                </View>
+                <View style={styles.formGroup}>
+                  {renderSciDropdown('Carrosserie', 'body_style', formData.body_style, (v) => handleFormSciSelect('body_style', v), formData, 'add')}
                 </View>
               </View>
 
