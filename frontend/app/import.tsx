@@ -360,6 +360,196 @@ export default function ImportScreen() {
     </View>
   );
 
+  // Render choose document type step
+  const renderChooseTypeStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={styles.iconContainer}>
+        <Ionicons name="folder-open" size={60} color="#4ECDC4" />
+      </View>
+      <Text style={styles.stepTitle}>Type de document</Text>
+      <Text style={styles.stepDescription}>
+        Quel document souhaitez-vous importer ce mois-ci ?
+      </Text>
+
+      <TouchableOpacity
+        style={styles.docTypeCard}
+        onPress={() => { setDocType('programs'); setCurrentStep('upload'); }}
+        data-testid="choose-programs-btn"
+      >
+        <View style={styles.docTypeIconWrap}>
+          <Ionicons name="calculator" size={32} color="#4ECDC4" />
+        </View>
+        <View style={styles.docTypeTextWrap}>
+          <Text style={styles.docTypeTitle}>Programmes de financement</Text>
+          <Text style={styles.docTypeDesc}>Taux Option 1 & 2, Consumer Cash, Bonus Cash</Text>
+          <Text style={styles.docTypeHint}>Vous indiquerez les pages Vente et SCI Lease</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={24} color="#4ECDC4" />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.docTypeCard}
+        onPress={() => { setDocType('residuals'); setCurrentStep('residual-upload'); }}
+        data-testid="choose-residuals-btn"
+      >
+        <View style={styles.docTypeIconWrap}>
+          <Ionicons name="car-sport" size={32} color="#FFB347" />
+        </View>
+        <View style={styles.docTypeTextWrap}>
+          <Text style={styles.docTypeTitle}>Guide des valeurs résiduelles</Text>
+          <Text style={styles.docTypeDesc}>Résiduels par marque, modèle, trim, carrosserie</Text>
+          <Text style={styles.docTypeHint}>Extraction automatique + email de vérification</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={24} color="#FFB347" />
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Handle residual guide upload
+  const handleResidualUpload = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets?.[0]) return;
+
+      const file = result.assets[0];
+      setCurrentStep('residual-processing');
+
+      const now = new Date();
+      const formDataUpload = new FormData();
+      
+      if (Platform.OS === 'web') {
+        const response = await fetch(file.uri);
+        const blob = await response.blob();
+        formDataUpload.append('file', blob, file.name || 'residual_guide.pdf');
+      } else {
+        formDataUpload.append('file', {
+          uri: file.uri,
+          name: file.name || 'residual_guide.pdf',
+          type: 'application/pdf',
+        } as any);
+      }
+      
+      formDataUpload.append('password', password);
+      formDataUpload.append('effective_month', String(now.getMonth() + 1));
+      formDataUpload.append('effective_year', String(now.getFullYear()));
+
+      const res = await axios.post(`${API_URL}/api/upload-residual-guide`, formDataUpload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 120000,
+      });
+
+      if (res.data.success) {
+        setResidualResult(res.data);
+        setCurrentStep('residual-success');
+      }
+    } catch (error: any) {
+      const msg = error.response?.data?.detail || error.message || 'Erreur inconnue';
+      Platform.OS === 'web' ? alert(`Erreur: ${msg}`) : Alert.alert('Erreur', msg);
+      setCurrentStep('residual-upload');
+    }
+  };
+
+  // Render residual upload step
+  const renderResidualUploadStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={styles.iconContainer}>
+        <Ionicons name="car-sport" size={60} color="#FFB347" />
+      </View>
+      <Text style={styles.stepTitle}>Guide des résiduels SCI</Text>
+      <Text style={styles.stepDescription}>
+        Sélectionnez le PDF du guide des valeurs résiduelles Stellantis.
+        L'extraction est automatique.
+      </Text>
+
+      <TouchableOpacity
+        style={[styles.primaryButton, { backgroundColor: '#FFB347' }]}
+        onPress={handleResidualUpload}
+        data-testid="upload-residual-btn"
+      >
+        <Ionicons name="cloud-upload" size={20} color="#1a1a2e" />
+        <Text style={styles.primaryButtonText}>Choisir le PDF</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.secondaryButton}
+        onPress={() => setCurrentStep('choose-type')}
+      >
+        <Ionicons name="arrow-back" size={18} color="#888" />
+        <Text style={styles.secondaryButtonText}>Retour</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Render residual processing step
+  const renderResidualProcessingStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={styles.iconContainer}>
+        <ActivityIndicator size="large" color="#FFB347" />
+      </View>
+      <Text style={styles.stepTitle}>Extraction en cours...</Text>
+      <Text style={styles.stepDescription}>
+        Analyse du PDF et extraction des valeurs résiduelles.
+        Cela peut prendre quelques secondes.
+      </Text>
+    </View>
+  );
+
+  // Render residual success step
+  const renderResidualSuccessStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={[styles.iconContainer, { backgroundColor: 'rgba(78, 205, 196, 0.15)' }]}>
+        <Ionicons name="checkmark-circle" size={60} color="#4ECDC4" />
+      </View>
+      <Text style={styles.stepTitle}>Import réussi !</Text>
+
+      {residualResult && (
+        <View style={styles.residualSummary}>
+          <Text style={styles.residualSummaryTitle}>
+            {residualResult.total_vehicles} véhicules extraits
+          </Text>
+          {residualResult.brands && Object.entries(residualResult.brands).map(([brand, count]: [string, any]) => (
+            <View key={brand} style={styles.residualBrandRow}>
+              <Text style={styles.residualBrandName}>{brand}</Text>
+              <Text style={styles.residualBrandCount}>{count}</Text>
+            </View>
+          ))}
+          <View style={styles.residualEmailStatus}>
+            <Ionicons 
+              name={residualResult.email_sent ? "mail" : "mail-unread"} 
+              size={18} 
+              color={residualResult.email_sent ? "#4ECDC4" : "#888"} 
+            />
+            <Text style={[styles.residualEmailText, { color: residualResult.email_sent ? "#4ECDC4" : "#888" }]}>
+              {residualResult.email_sent 
+                ? "Email de vérification envoyé avec fichier Excel" 
+                : "Email non envoyé (SMTP non configuré)"}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      <TouchableOpacity
+        style={styles.primaryButton}
+        onPress={() => { setCurrentStep('choose-type'); setResidualResult(null); }}
+      >
+        <Ionicons name="add-circle" size={20} color="#1a1a2e" />
+        <Text style={styles.primaryButtonText}>Importer un autre document</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.secondaryButton}
+        onPress={() => router.back()}
+      >
+        <Ionicons name="home" size={18} color="#888" />
+        <Text style={styles.secondaryButtonText}>Retour au calculateur</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   // Render upload step
   const renderUploadStep = () => (
     <View style={styles.stepContainer}>
