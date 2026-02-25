@@ -9,8 +9,13 @@ Tests:
 import pytest
 import requests
 import os
+import time
 
 BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://lease-residual-fix.preview.emergentagent.com')
+
+def unique_stock():
+    """Generate unique stock number"""
+    return f"TEST_{int(time.time()*1000)}"
 
 class TestSciVehicleHierarchy:
     """Tests for /api/sci/vehicle-hierarchy endpoint"""
@@ -124,7 +129,7 @@ class TestInventoryWithBodyStyle:
         
         # Create test vehicle with body_style
         vehicle_data = {
-            "stock_no": f"TEST_CASCADE_001",
+            "stock_no": unique_stock(),
             "vin": "1C4RJKBG6N8000001",
             "brand": "Jeep",
             "model": "Grand Wagoneer",
@@ -173,7 +178,7 @@ class TestInventoryWithBodyStyle:
         headers = {"Authorization": f"Bearer {auth_token}"}
         
         vehicle_data = {
-            "stock_no": f"TEST_CASCADE_002",
+            "stock_no": unique_stock(),
             "vin": "1C6SRFLT0RN000002",
             "brand": "Ram",
             "model": "1500",
@@ -215,7 +220,7 @@ class TestInventoryWithBodyStyle:
         
         # Create vehicle first
         vehicle_data = {
-            "stock_no": f"TEST_CASCADE_003",
+            "stock_no": unique_stock(),
             "brand": "Dodge",
             "model": "Durango",
             "trim": "GT",
