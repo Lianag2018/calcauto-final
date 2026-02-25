@@ -5163,19 +5163,30 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                 
                 # Couleur - Extraire le code couleur (3 caractères commençant par P)
                 raw_color = ""
+                color_desc = ""
                 color_match = re.search(r'\b(P[A-Z0-9]{2})\b', full_text)
                 if color_match:
                     raw_color = color_match.group(1)
+                    # Chercher la description de la couleur directement dans le texte OCR
+                    # Pattern: CODE_COULEUR + description (ex: "PAU CRISTAL GRANIT METALLISE")
+                    color_desc_match = re.search(
+                        rf'\b{re.escape(raw_color)}\s+([A-Z][A-Z\s]+?)(?:\s+\d|SANS\s+FRAIS|\s*$)',
+                        full_text
+                    )
+                    if color_desc_match:
+                        color_desc = color_desc_match.group(1).strip().title()
                 
-                # Mapping des codes couleur FCA
+                # Mapping des codes couleur FCA (fallback si pas trouvé dans OCR)
                 color_map = {
                     "PW7": "Blanc Vif", "PWZ": "Blanc Vif", "PXJ": "Noir Cristal", 
-                    "PX8": "Noir Diamant", "PAU": "Rouge Flamme", "PSC": "Gris Destroyer", 
+                    "PX8": "Noir Diamant", "PSC": "Gris Destroyer", 
                     "PWL": "Blanc Perle", "PGG": "Gris Granit", "PBF": "Bleu Patriote", 
                     "PGE": "Vert Sarge", "PRM": "Rouge Velours", "PAR": "Argent Billet",
-                    "PYB": "Jaune Stinger", "PBJ": "Bleu Hydro", "PFQ": "Granite Cristal"
+                    "PYB": "Jaune Stinger", "PBJ": "Bleu Hydro", "PFQ": "Granite Cristal",
+                    "PDN": "Gris Ceramique",
                 }
-                color_code = raw_color if raw_color in color_map else raw_color
+                # Priorité: description OCR > mapping statique > code brut
+                final_color = color_desc or color_map.get(raw_color, raw_color)
                 
                 parse_duration = round(time.time() - start_time, 3)
                 
