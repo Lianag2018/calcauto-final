@@ -2581,6 +2581,13 @@ export default function HomeScreen() {
                                   leaseResult.standard.weekly
                                 )}
                               </Text>
+                              <Text style={styles.leaseCardTaxDetail}>
+                                {lang === 'fr' ? 'Avant taxes' : 'Before tax'}: {formatCurrencyDecimal(
+                                  paymentFrequency === 'monthly' ? leaseResult.standard.monthlyBeforeTax :
+                                  paymentFrequency === 'biweekly' ? leaseResult.standard.biweeklyBeforeTax :
+                                  leaseResult.standard.weeklyBeforeTax
+                                )}
+                              </Text>
                             </View>
                             <View style={styles.leaseCardDetail}>
                               <Text style={styles.leaseCardDetailLabel}>Total ({leaseTerm} {lang === 'fr' ? 'mois' : 'mo'}):</Text>
