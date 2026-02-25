@@ -1596,10 +1596,6 @@ const styles = StyleSheet.create({
 });
 
 const sciStyles = StyleSheet.create({
-  dropdownContainer: {
-    position: 'relative' as any,
-    zIndex: 100,
-  },
   dropdownButton: {
     backgroundColor: '#2d2d44',
     borderRadius: 8,
@@ -1610,10 +1606,8 @@ const sciStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#3d3d54',
   },
-  dropdownButtonActive: {
-    borderColor: '#4ECDC4',
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
+  dropdownDisabled: {
+    opacity: 0.5,
   },
   dropdownButtonText: {
     color: '#fff',
@@ -1628,47 +1622,42 @@ const sciStyles = StyleSheet.create({
     fontSize: 10,
     marginLeft: 8,
   },
-  dropdownList: {
-    position: 'absolute' as any,
-    top: '100%' as any,
-    left: 0,
-    right: 0,
-    backgroundColor: '#2d2d44',
-    borderWidth: 1,
-    borderColor: '#4ECDC4',
-    borderTopWidth: 0,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-    zIndex: 999,
-    elevation: 10,
-    maxHeight: 200,
-    overflow: 'hidden' as any,
+  pickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'flex-end',
   },
-  dropdownScroll: {
-    maxHeight: 200,
+  pickerContainer: {
+    backgroundColor: '#1a1a2e',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '60%' as any,
+    paddingBottom: 30,
   },
-  dropdownItem: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+  pickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#3d3d54',
+    borderBottomColor: '#2d2d44',
   },
-  dropdownItemSelected: {
-    backgroundColor: '#1a3a3a',
-  },
-  dropdownItemText: {
-    color: '#ddd',
-    fontSize: 13,
-  },
-  dropdownItemTextSelected: {
-    color: '#4ECDC4',
+  pickerTitle: {
+    color: '#fff',
+    fontSize: 18,
     fontWeight: '600',
   },
-  dropdownEmpty: {
-    color: '#666',
-    fontSize: 12,
-    fontStyle: 'italic',
-    padding: 12,
-    textAlign: 'center',
+  pickerScroll: {
+    maxHeight: 400,
+  },
+  pickerItem: {
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2d2d44',
+  },
+  pickerItemText: {
+    color: '#fff',
+    fontSize: 16,
   },
 });
