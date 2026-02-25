@@ -4932,6 +4932,11 @@ const styles = StyleSheet.create({
     color: '#4ECDC4',
     marginTop: 2,
   },
+  leaseCardTaxDetail: {
+    fontSize: 10,
+    color: '#777',
+    marginTop: 2,
+  },
   leaseCardTotalValue: {
     fontSize: 12,
     color: '#4ECDC4',
