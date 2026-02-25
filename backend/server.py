@@ -6620,6 +6620,45 @@ async def get_sci_lease_rates():
         data = json.load(f)
     return data
 
+@api_router.get("/sci/vehicle-hierarchy")
+async def get_sci_vehicle_hierarchy():
+    """Retourne la hiérarchie des véhicules SCI: marque -> modèle -> trim -> body_style"""
+    residuals_path = ROOT_DIR / "data" / "sci_residuals_feb2026.json"
+    if not residuals_path.exists():
+        raise HTTPException(status_code=404, detail="Residual data not found")
+    with open(residuals_path, 'r') as f:
+        data = json.load(f)
+    
+    hierarchy = {}
+    for v in data.get("vehicles", []):
+        brand = v["brand"]
+        model = v["model_name"]
+        trim = v.get("trim", "")
+        body = v.get("body_style", "")
+        year = v.get("model_year", 2026)
+        
+        if brand not in hierarchy:
+            hierarchy[brand] = {}
+        if model not in hierarchy[brand]:
+            hierarchy[brand][model] = {"years": set(), "trims": {}}
+        hierarchy[brand][model]["years"].add(year)
+        if trim not in hierarchy[brand][model]["trims"]:
+            hierarchy[brand][model]["trims"][trim] = []
+        if body and body not in hierarchy[brand][model]["trims"][trim]:
+            hierarchy[brand][model]["trims"][trim].append(body)
+    
+    # Convert sets to sorted lists
+    result = {}
+    for brand, models in hierarchy.items():
+        result[brand] = {}
+        for model, info in models.items():
+            result[brand][model] = {
+                "years": sorted(list(info["years"]), reverse=True),
+                "trims": info["trims"]
+            }
+    
+    return result
+
 @api_router.post("/sci/calculate-lease")
 async def calculate_lease(payload: dict):
     """
