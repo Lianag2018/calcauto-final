@@ -229,8 +229,10 @@ export default function ImportScreen() {
       
       if (response.data.success) {
         setPrograms(response.data.programs);
+        const leaseCount = response.data.sci_lease_count || 0;
+        const leaseMsg = leaseCount > 0 ? `\n+ ${leaseCount} taux SCI Lease sauvegardés!` : '';
         setCurrentStep('preview');
-        showAlert('Succès', `${response.data.programs.length} programmes extraits avec succès!\n\nUn fichier Excel a été envoyé à votre email pour vérification.`);
+        showAlert('Succès', `${response.data.programs.length} programmes extraits avec succès!${leaseMsg}\n\nUn fichier Excel a été envoyé à votre email pour vérification.`);
       } else {
         showAlert('Erreur', response.data.message);
       }
