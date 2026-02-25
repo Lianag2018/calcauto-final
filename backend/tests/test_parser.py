@@ -18,7 +18,8 @@ from parser import (
     clean_fca_price,
     parse_vin,
     parse_financial_data,
-    parse_options
+    parse_options,
+    deduplicate_by_equivalence
 )
 from validation import (
     validate_ep_pdco,
