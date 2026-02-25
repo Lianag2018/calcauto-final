@@ -2874,7 +2874,7 @@ export default function HomeScreen() {
                         </Text>
                       </TouchableOpacity>
                     </View>
-                    </>
+                    </View>
                   ) : showLease ? (
                     <View style={styles.leaseNoOption}>
                       <Ionicons name="alert-circle" size={24} color="#FF6B6B" />
