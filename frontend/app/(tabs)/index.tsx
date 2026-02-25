@@ -795,27 +795,52 @@ export default function HomeScreen() {
     
     const vin = selectedInventory?.vin || (manualVin && manualVin.length === 17 ? manualVin : '');
     
+    // Build lease section for SMS
+    let leaseSection = '';
+    if (showLease && leaseResult && (leaseResult.standard || leaseResult.alternative)) {
+      const bestLease = leaseResult.bestLease === 'standard' ? leaseResult.standard : leaseResult.alternative;
+      const bestLeaseLabel = leaseResult.bestLease === 'standard' 
+        ? (lang === 'fr' ? 'Std + Lease Cash' : 'Std + Lease Cash')
+        : (lang === 'fr' ? 'Taux Alternatif' : 'Alt. Rate');
+      const bestLeasePayment = paymentFrequency === 'biweekly' ? bestLease.biweekly :
+        paymentFrequency === 'weekly' ? bestLease.weekly : bestLease.monthly;
+      
+      leaseSection = lang === 'fr'
+        ? `\n\n📋 LOCATION SCI (${bestLeaseLabel})\n` +
+          `Terme: ${leaseTerm} mois • ${leaseKmPerYear/1000}k km/an\n` +
+          `Résiduel: ${leaseResult.residualPct}% (${formatCurrency(leaseResult.residualValue)})\n` +
+          `Taux: ${bestLease.rate}%\n` +
+          `Paiement ${frequencyText}: ${formatCurrencyDecimal(bestLeasePayment)}`
+        : `\n\n📋 SCI LEASE (${bestLeaseLabel})\n` +
+          `Term: ${leaseTerm} mo • ${leaseKmPerYear/1000}k km/yr\n` +
+          `Residual: ${leaseResult.residualPct}% (${formatCurrency(leaseResult.residualValue)})\n` +
+          `Rate: ${bestLease.rate}%\n` +
+          `${frequencyText} payment: ${formatCurrencyDecimal(bestLeasePayment)}`;
+    }
+    
     const text = lang === 'fr' 
-      ? `🚗 SOUMISSION CalcAuto AiPro\n\n` +
+      ? `SOUMISSION CalcAuto AiPro\n\n` +
         `Véhicule: ${vehicle}\n` +
         `Prix: ${formatCurrency(parseFloat(vehiclePrice))}\n` +
         (vin ? `VIN: ${vin}\n` : '') +
-        `\n📊 FINANCEMENT Option ${option}\n` +
+        `\nFINANCEMENT Option ${option}\n` +
         `Terme: ${selectedTerm} mois\n` +
         `Taux: ${rate}%\n` +
         `Paiement ${frequencyText}: ${formatCurrencyDecimal(payment)}\n` +
         (selectedProgram.consumer_cash > 0 ? `Rabais: ${formatCurrency(selectedProgram.consumer_cash)}\n` : '') +
-        `\n✉️ Envoyé via CalcAuto AiPro`
-      : `🚗 CalcAuto AiPro SUBMISSION\n\n` +
+        leaseSection +
+        `\n\nEnvoyé via CalcAuto AiPro`
+      : `CalcAuto AiPro SUBMISSION\n\n` +
         `Vehicle: ${vehicle}\n` +
         `Price: ${formatCurrency(parseFloat(vehiclePrice))}\n` +
         (vin ? `VIN: ${vin}\n` : '') +
-        `\n📊 FINANCING Option ${option}\n` +
+        `\nFINANCING Option ${option}\n` +
         `Term: ${selectedTerm} months\n` +
         `Rate: ${rate}%\n` +
         `${frequencyText} payment: ${formatCurrencyDecimal(payment)}\n` +
         (selectedProgram.consumer_cash > 0 ? `Rebate: ${formatCurrency(selectedProgram.consumer_cash)}\n` : '') +
-        `\n✉️ Sent via CalcAuto AiPro`;
+        leaseSection +
+        `\n\nSent via CalcAuto AiPro`;
     
     return text;
   };
