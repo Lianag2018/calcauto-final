@@ -2576,13 +2576,13 @@ export default function HomeScreen() {
                     );
                   })()}
 
-                  {/* Info: fees auto-included */}
+                  {/* Info: only frais de dossier capitalized in lease */}
                   <View style={styles.leaseInfoBar}>
                     <Ionicons name="information-circle" size={14} color="#4ECDC4" />
                     <Text style={styles.leaseInfoText}>
                       {lang === 'fr' 
-                        ? `Frais inclus: ${formatCurrency(parseFloat(fraisDossier) || 0)} dossier + ${formatCurrency(parseFloat(taxePneus) || 0)} pneus + ${formatCurrency(parseFloat(fraisRDPRM) || 0)} RDPRM`
-                        : `Fees included: ${formatCurrency(parseFloat(fraisDossier) || 0)} admin + ${formatCurrency(parseFloat(taxePneus) || 0)} tires + ${formatCurrency(parseFloat(fraisRDPRM) || 0)} RDPRM`}
+                        ? `Capitalisé: ${formatCurrency(parseFloat(fraisDossier) || 0)} dossier | Pneus (${formatCurrency(parseFloat(taxePneus) || 0)}) + RDPRM (${formatCurrency(parseFloat(fraisRDPRM) || 0)}) payés à la livraison`
+                        : `Capitalized: ${formatCurrency(parseFloat(fraisDossier) || 0)} admin | Tires (${formatCurrency(parseFloat(taxePneus) || 0)}) + RDPRM (${formatCurrency(parseFloat(fraisRDPRM) || 0)}) paid at delivery`}
                     </Text>
                   </View>
 
