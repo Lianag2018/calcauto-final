@@ -794,6 +794,7 @@ export default function HomeScreen() {
     const availableTerms = [24, 27, 36, 39, 42, 48, 51, 54, 60];
     const availableKms = [12000, 18000, 24000];
     let bestOption: any = null;
+    const grid: any[] = [];
 
     for (const km of availableKms) {
       for (const t of availableTerms) {
@@ -829,12 +830,14 @@ export default function HomeScreen() {
 
         if (altRate !== null) {
           const r = calcForTerm(altRate, 0, t);
+          grid.push({ ...r, option: 'alt', optionLabel: 'Alt' });
           if (!bestOption || r.monthly < bestOption.monthly) {
             bestOption = { ...r, option: 'alternative', optionLabel: 'Taux Alternatif' };
           }
         }
         if (stdRate !== null) {
           const r = calcForTerm(stdRate, leaseCash, t);
+          grid.push({ ...r, option: 'std', optionLabel: 'Std' });
           if (!bestOption || r.monthly < bestOption.monthly) {
             bestOption = { ...r, option: 'standard', optionLabel: 'Std + Lease Cash' };
           }
@@ -843,6 +846,7 @@ export default function HomeScreen() {
     }
 
     setBestLeaseOption(bestOption);
+    setLeaseAnalysisGrid(grid);
   }, [showLease, selectedProgram, vehiclePrice, leaseTerm, leaseKmPerYear, leaseResiduals, leaseRates, 
       customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, leasePdsf, leaseSoldeReporte, leaseRabaisConcess]);
 
