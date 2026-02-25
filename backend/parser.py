@@ -1021,9 +1021,20 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
                 continue
         if re.search(rf'\b{re.escape(code)}\b', text_upper):
             seen_codes.add(code)
+            # Essayer d'extraire la vraie description depuis le texte OCR
+            actual_desc = desc
+            ocr_desc_match = re.search(
+                rf'\b{re.escape(code)}\s+([A-Z][A-Z\s\-/,\'\d]+?)(?:\s+\d{{3,}}|\s+SANS\s+FRAIS|\s*$)',
+                text_upper,
+                re.MULTILINE
+            )
+            if ocr_desc_match:
+                raw_desc = ocr_desc_match.group(1).strip()
+                if len(raw_desc) > 3:
+                    actual_desc = raw_desc.title()
             fallback_options.append({
                 "product_code": code,
-                "description": f"{code} - {desc}",
+                "description": f"{code} - {actual_desc}",
                 "amount": 0,
                 "source": "fallback"
             })
