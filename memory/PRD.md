@@ -178,6 +178,16 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
 - **Cycle complet**: Scan → Export → Correction manuelle → Import → Review
 - **Testé**: Export et Import via curl, 28/28 tests pytest passent
 
+### Phase 22: Refactor index.tsx — Étape 1 (DONE - Feb 2026)
+- **Extrait** types dans `types/calculator.ts` (79 lignes)
+- **Extrait** logique calcul dans `hooks/useCalculator.ts` (184 lignes)
+  - `calculateMonthlyPayment()` — formule PMT standard
+  - `getRateForTerm()` — lookup taux par terme
+  - `formatCurrency()` / `formatCurrencyDecimal()` — formatage devise
+  - `useCalculator()` — hook réactif avec calcul Option 1/2, taxes, échange, accessoires
+- **index.tsx**: 4216 → 4007 lignes (-209 lignes, logique calcul isolée)
+- **Aucune régression**: 28/28 tests pytest, backend OK, imports vérifiés
+
 ## Backlog
 - (P0) Corriger l'ordre des options du parseur (options fallback ajoutées au début au lieu de la fin)
 - (P1) Corriger visibilité bouton "Export Excel" dans le modal de révision
