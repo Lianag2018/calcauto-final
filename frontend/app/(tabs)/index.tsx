@@ -790,13 +790,15 @@ export default function HomeScreen() {
 
     setLeaseResult(results);
 
-    // === CALCUL MEILLEUR CHOIX: toutes combinaisons km × terme × option ===
+    // === CALCUL MEILLEUR CHOIX: itère TOUS les termes avec 12k km par défaut ===
+    // Logique: 12000 km donne toujours le meilleur résiduel, donc le meilleur paiement
     const availableTerms = [24, 27, 36, 39, 42, 48, 51, 54, 60];
-    const availableKms = [12000, 18000, 24000];
+    const bestKm = 12000;
     let bestOption: any = null;
     const grid: any[] = [];
 
-    for (const km of availableKms) {
+    // Calculer la grille complète pour affichage (tous les km × termes)
+    for (const km of [12000, 18000, 24000]) {
       for (const t of availableTerms) {
         const resPct = residualVehicle.residual_percentages?.[String(t)] || 0;
         if (resPct === 0) continue;
@@ -831,14 +833,15 @@ export default function HomeScreen() {
         if (altRate !== null) {
           const r = calcForTerm(altRate, 0, t);
           grid.push({ ...r, option: 'alt', optionLabel: 'Alt' });
-          if (!bestOption || r.monthly < bestOption.monthly) {
+          // Meilleur choix: seulement 12k km (meilleur résiduel = meilleur paiement)
+          if (km === bestKm && (!bestOption || r.monthly < bestOption.monthly)) {
             bestOption = { ...r, option: 'alternative', optionLabel: 'Taux Alternatif' };
           }
         }
         if (stdRate !== null) {
           const r = calcForTerm(stdRate, leaseCash, t);
           grid.push({ ...r, option: 'std', optionLabel: 'Std' });
-          if (!bestOption || r.monthly < bestOption.monthly) {
+          if (km === bestKm && (!bestOption || r.monthly < bestOption.monthly)) {
             bestOption = { ...r, option: 'standard', optionLabel: 'Std + Lease Cash' };
           }
         }
