@@ -122,7 +122,7 @@ export default function ImportScreen() {
       });
       
       setIsAuthenticated(true);
-      setCurrentStep('upload');
+      setCurrentStep('choose-type');
     } catch (error: any) {
       showAlert('Erreur', error.response?.data?.detail || 'Mot de passe incorrect');
     } finally {
