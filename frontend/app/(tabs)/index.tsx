@@ -2787,6 +2787,17 @@ export default function HomeScreen() {
                         localResult.option1Monthly || 0
                       ) : formatCurrency(0)}{paymentFrequency === 'weekly' ? '/sem.' : paymentFrequency === 'biweekly' ? '/2 sem.' : '/mois'}
                     </Text>
+                    {showLease && leaseResult && (leaseResult.standard || leaseResult.alternative) && (
+                      <Text style={[styles.emailPreviewText, {color: '#FFD700', marginTop: 6}]}>
+                        + Location SCI: {formatCurrencyDecimal(
+                          paymentFrequency === 'monthly' 
+                            ? (leaseResult.bestLease === 'standard' ? leaseResult.standard?.monthly : leaseResult.alternative?.monthly) || 0
+                            : paymentFrequency === 'biweekly'
+                            ? (leaseResult.bestLease === 'standard' ? leaseResult.standard?.biweekly : leaseResult.alternative?.biweekly) || 0
+                            : (leaseResult.bestLease === 'standard' ? leaseResult.standard?.weekly : leaseResult.alternative?.weekly) || 0
+                        )}{paymentFrequency === 'weekly' ? '/sem.' : paymentFrequency === 'biweekly' ? '/2 sem.' : '/mois'} ({leaseTerm} mois)
+                      </Text>
+                    )}
                   </View>
                 )}
               </View>
