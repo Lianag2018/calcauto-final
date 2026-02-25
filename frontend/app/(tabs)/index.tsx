@@ -1141,6 +1141,76 @@ export default function HomeScreen() {
             </div>
             
             ${bonusCash > 0 ? `<div class="bonus-note">Bonus Cash de ${fmt(bonusCash)} $ ${lang === 'fr' ? 'sera déduit après taxes (au comptant)' : 'will be deducted after tax (as cash)'}</div>` : ''}
+            
+            ${showLease && leaseResult && (leaseResult.standard || leaseResult.alternative) ? `
+            <!-- LOCATION SCI -->
+            <div class="section" style="margin-top:20px;">
+              <div class="section-title" style="border-color:#FFD700;">
+                ${lang === 'fr' ? 'Location SCI' : 'SCI Lease'}
+              </div>
+              
+              <table class="info-table" style="margin-bottom:12px;">
+                <tr><td>${lang === 'fr' ? 'Kilométrage / an' : 'Km / year'}</td><td><strong>${(leaseKmPerYear/1000).toFixed(0)}k km</strong></td></tr>
+                <tr><td>${lang === 'fr' ? 'Terme location' : 'Lease term'}</td><td><strong>${leaseTerm} ${lang === 'fr' ? 'mois' : 'months'}</strong></td></tr>
+                <tr><td>${lang === 'fr' ? 'Résiduel' : 'Residual'}</td><td><strong>${leaseResult.residualPct}%${leaseResult.kmAdjustment ? ` (+${leaseResult.kmAdjustment}%)` : ''} = ${fmt(Math.round(leaseResult.residualValue))} $</strong></td></tr>
+              </table>
+              
+              ${leaseResult.bestLease && leaseResult.standard && leaseResult.alternative ? `
+              <div class="best-choice" style="border-color:#FFD700; background:#fffde7;">
+                <div class="best-choice-title" style="color:#F57F17;">
+                  ${leaseResult.bestLease === 'standard' ? 'Std + Lease Cash' : (lang === 'fr' ? 'Taux Alternatif' : 'Alt. Rate')} = ${lang === 'fr' ? 'Meilleur choix location!' : 'Best lease choice!'}
+                </div>
+                ${leaseResult.leaseSavings > 0 ? `<div class="best-choice-savings" style="color:#F9A825;">${lang === 'fr' ? 'Économies de' : 'Savings of'} <strong>${fmt(Math.round(leaseResult.leaseSavings))} $</strong></div>` : ''}
+              </div>
+              ` : ''}
+              
+              <div class="options-grid">
+                ${leaseResult.standard ? `
+                <div class="option-card ${leaseResult.bestLease === 'standard' ? 'winner' : ''}">
+                  <div class="option-title" style="color:#E65100;">Std + Lease Cash ${leaseResult.bestLease === 'standard' ? '<span class="winner-badge" style="background:#FFD700;color:#000;">✓</span>' : ''}</div>
+                  ${leaseResult.standard.leaseCash > 0 ? `<div class="option-detail"><span>Lease Cash:</span><span style="color:#2E7D32; font-weight:600;">-${fmt(leaseResult.standard.leaseCash)} $</span></div>` : ''}
+                  <div class="option-detail"><span>${lang === 'fr' ? 'Taux:' : 'Rate:'}</span><span style="color:#E65100;">${leaseResult.standard.rate}%</span></div>
+                  <div class="payment-box" style="border-top:3px solid #E65100;">
+                    <div class="payment-label">${paymentLabel}</div>
+                    <div class="payment-amount" style="color:#E65100;">${fmt2(paymentFrequency === 'biweekly' ? leaseResult.standard.biweekly : paymentFrequency === 'weekly' ? leaseResult.standard.weekly : leaseResult.standard.monthly)} $</div>
+                    <div class="payment-total">Total (${leaseTerm} ${lang === 'fr' ? 'mois' : 'mo'}): <strong>${fmt(Math.round(leaseResult.standard.total))} $</strong></div>
+                  </div>
+                </div>
+                ` : ''}
+                
+                ${leaseResult.alternative ? `
+                <div class="option-card ${leaseResult.bestLease === 'alternative' ? 'winner' : ''}">
+                  <div class="option-title" style="color:#0277BD;">${lang === 'fr' ? 'Taux Alternatif' : 'Alt. Rate'} ${leaseResult.bestLease === 'alternative' ? '<span class="winner-badge" style="background:#FFD700;color:#000;">✓</span>' : ''}</div>
+                  <div class="option-detail"><span>Lease Cash:</span><span>$0</span></div>
+                  <div class="option-detail"><span>${lang === 'fr' ? 'Taux:' : 'Rate:'}</span><span style="color:#0277BD;">${leaseResult.alternative.rate}%</span></div>
+                  <div class="payment-box" style="border-top:3px solid #0277BD;">
+                    <div class="payment-label">${paymentLabel}</div>
+                    <div class="payment-amount" style="color:#0277BD;">${fmt2(paymentFrequency === 'biweekly' ? leaseResult.alternative.biweekly : paymentFrequency === 'weekly' ? leaseResult.alternative.weekly : leaseResult.alternative.monthly)} $</div>
+                    <div class="payment-total">Total (${leaseTerm} ${lang === 'fr' ? 'mois' : 'mo'}): <strong>${fmt(Math.round(leaseResult.alternative.total))} $</strong></div>
+                  </div>
+                </div>
+                ` : ''}
+              </div>
+              
+              <!-- Lease vs Finance summary -->
+              <div style="margin-top:15px; background:#f8f9fa; border-radius:10px; padding:15px; text-align:center;">
+                <div style="font-size:14px; font-weight:700; color:#F57F17; margin-bottom:10px;">${lang === 'fr' ? 'Location vs Financement' : 'Lease vs Finance'}</div>
+                <div style="display:flex; gap:20px; justify-content:center;">
+                  <div>
+                    <div style="font-size:11px; color:#666;">${lang === 'fr' ? 'Meilleure Location' : 'Best Lease'}</div>
+                    <div style="font-size:20px; font-weight:700; color:#E65100;">${fmt2(paymentFrequency === 'biweekly' ? (leaseResult.bestLease === 'standard' ? leaseResult.standard?.biweekly : leaseResult.alternative?.biweekly) || 0 : paymentFrequency === 'weekly' ? (leaseResult.bestLease === 'standard' ? leaseResult.standard?.weekly : leaseResult.alternative?.weekly) || 0 : (leaseResult.bestLease === 'standard' ? leaseResult.standard?.monthly : leaseResult.alternative?.monthly) || 0)} $</div>
+                    <div style="font-size:10px; color:#999;">${leaseTerm} ${lang === 'fr' ? 'mois' : 'mo'}</div>
+                  </div>
+                  <div style="width:1px; background:#ddd;"></div>
+                  <div>
+                    <div style="font-size:11px; color:#666;">${lang === 'fr' ? 'Meilleur Financement' : 'Best Finance'}</div>
+                    <div style="font-size:20px; font-weight:700; color:#4ECDC4;">${fmt2(paymentFrequency === 'biweekly' ? (localResult.bestOption === '2' && localResult.option2Biweekly ? localResult.option2Biweekly : localResult.option1Biweekly) : paymentFrequency === 'weekly' ? (localResult.bestOption === '2' && localResult.option2Weekly ? localResult.option2Weekly : localResult.option1Weekly) : (localResult.bestOption === '2' && localResult.option2Monthly ? localResult.option2Monthly : localResult.option1Monthly))} $</div>
+                    <div style="font-size:10px; color:#999;">${selectedTerm} ${lang === 'fr' ? 'mois' : 'mo'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            ` : ''}
           </div>
           
           <div class="footer">
