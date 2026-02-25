@@ -3270,8 +3270,7 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
                     <div class="dealer">{request.dealer_name}</div>
                     {f"<div style='color: #666; margin-top: 5px;'>{request.dealer_phone}</div>" if request.dealer_phone else ""}
                     <div class="disclaimer">
-                        Ce calcul est une estimation et ne constitue pas une offre de financement officielle.<br>
-                        Les taux et conditions peuvent varier selon votre dossier de crédit.
+                        <strong>AVIS IMPORTANT:</strong> Les montants de paiements présentés dans cette soumission sont fournis à titre indicatif seulement et ne constituent en aucun cas une offre de financement ou de location officielle. Les versements réels peuvent différer en fonction de l'évaluation de crédit, des programmes en vigueur au moment de la transaction, des ajustements de résiduel et des frais applicables. Le concessionnaire et ses représentants ne peuvent être tenus responsables de toute erreur de calcul ou d'écart entre la présente estimation et les conditions finales du contrat. Toute transaction est sujette à l'approbation du crédit par l'institution financière.
                     </div>
                 </div>
             </div>
