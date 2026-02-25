@@ -1170,7 +1170,8 @@ export default function HomeScreen() {
         if (bestLease) shareText += `\nLocation ${leaseTerm}m: ${fmt2(bestLease.monthly)} $/mois`;
       }
       if (stickerUrl) shareText += `\n\nWindow Sticker: ${stickerUrl}`;
-      shareText += `\n\n- CalcAuto AiPro`;
+      shareText += `\n\n---\nAVIS: Montants à titre indicatif seulement. Sujet à l'approbation du crédit. Le concessionnaire ne peut être tenu responsable d'erreurs de calcul.`;
+      shareText += `\n- CalcAuto AiPro`;
 
       // 5. Share via native share sheet
       if (navigator.share && navigator.canShare && navigator.canShare({ files: filesToShare })) {
