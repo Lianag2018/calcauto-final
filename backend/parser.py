@@ -834,6 +834,7 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
         'RAPPORT', 'PONT', 'BITUR', 'EXPRESS',
         'COMMANDE', 'FABRIQUE', 'REPONDRE', 'EXIGENCES', 'CANADIENNES',
         'SPECIFIQUES', 'CETTE', 'FABRIQUE',
+        'ADIAN', 'NADIAN', 'CANAD',  # Fragments OCR de "CANADIENNES"
         # Fragments OCR erronés des factures Grand Cherokee
         'ACREE', 'COUCHE', 'NACREE', 'ETINCEL', 'SIEGES', 'SIMILICUIR', 'CAPRI',
         'MOTEUR', 'PENTASTAR', 'TOIT', 'OUVR', 'PANO', 'PANN', 'COMMANDVIEW',
