@@ -2518,8 +2518,8 @@ export default function HomeScreen() {
                           <Ionicons name="warning" size={14} color="#FF6B6B" />
                           <Text style={styles.leaseWarningText}>
                             {lang === 'fr' 
-                              ? `Crédit taxe échange: ${formatCurrency((leaseResult.standard || leaseResult.alternative).creditTaxeEchange)} - Surplus perdu: ${formatCurrency((leaseResult.standard || leaseResult.alternative).creditPerdu)}`
-                              : `Trade tax credit: ${formatCurrency((leaseResult.standard || leaseResult.alternative).creditTaxeEchange)} - Lost surplus: ${formatCurrency((leaseResult.standard || leaseResult.alternative).creditPerdu)}`}
+                              ? `Crédit taxe échange: surplus perdu de ${formatCurrency((leaseResult.standard || leaseResult.alternative).creditPerdu)} / mois`
+                              : `Trade tax credit: lost surplus of ${formatCurrency((leaseResult.standard || leaseResult.alternative).creditPerdu)} / mo`}
                           </Text>
                         </View>
                       )}
