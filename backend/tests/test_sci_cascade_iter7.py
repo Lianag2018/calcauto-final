@@ -17,6 +17,13 @@ def unique_stock():
     """Generate unique stock number"""
     return f"TEST_{int(time.time()*1000)}"
 
+def unique_vin():
+    """Generate unique VIN (17 chars)"""
+    import random
+    import string
+    # Keep some fixed prefix for valid VIN structure
+    return f"1C4TEST{random.randint(10000000, 99999999)}"
+
 class TestSciVehicleHierarchy:
     """Tests for /api/sci/vehicle-hierarchy endpoint"""
     
@@ -130,7 +137,7 @@ class TestInventoryWithBodyStyle:
         # Create test vehicle with body_style
         vehicle_data = {
             "stock_no": unique_stock(),
-            "vin": "1C4RJKBG6N8000001",
+            "vin": unique_vin(),
             "brand": "Jeep",
             "model": "Grand Wagoneer",
             "trim": "Summit Obsidian",
@@ -179,7 +186,7 @@ class TestInventoryWithBodyStyle:
         
         vehicle_data = {
             "stock_no": unique_stock(),
-            "vin": "1C6SRFLT0RN000002",
+            "vin": unique_vin(),
             "brand": "Ram",
             "model": "1500",
             "trim": "Sport",
