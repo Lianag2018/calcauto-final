@@ -1,4 +1,4 @@
-import http.server, socketserver, os
+import http.server, socketserver, os, socket
 
 os.chdir('/app/frontend/dist')
 
@@ -10,8 +10,14 @@ class SPAHandler(http.server.SimpleHTTPRequestHandler):
             self.path = '/index.html'
         return super().do_GET()
     def log_message(self, format, *args):
-        pass  # Suppress logs
+        pass
 
-with socketserver.TCPServer(('0.0.0.0', 3000), SPAHandler) as httpd:
+class ReusableTCPServer(socketserver.TCPServer):
+    allow_reuse_address = True
+    def server_bind(self):
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        super().server_bind()
+
+with ReusableTCPServer(('0.0.0.0', 3000), SPAHandler) as httpd:
     print("Serving on port 3000")
     httpd.serve_forever()
