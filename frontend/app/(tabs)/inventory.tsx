@@ -195,7 +195,6 @@ export default function InventoryScreen() {
   };
 
   const resetForm = () => {
-    setOpenDropdown: undefined, // removed
     setFormData({
       stock_no: '',
       vin: '',
