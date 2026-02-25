@@ -110,7 +110,7 @@ class TestLoginAndInventory:
             "email": "danielgiroux007@gmail.com",
             "password": "Liana2018$"
         }
-        response = requests.post(f"{BASE_URL}/api/login", json=login_data)
+        response = requests.post(f"{BASE_URL}/api/auth/login", json=login_data)
         if response.status_code == 200:
             return response.json().get("token")
         pytest.skip(f"Login failed with status {response.status_code}")
@@ -121,7 +121,7 @@ class TestLoginAndInventory:
             "email": "danielgiroux007@gmail.com",
             "password": "Liana2018$"
         }
-        response = requests.post(f"{BASE_URL}/api/login", json=login_data)
+        response = requests.post(f"{BASE_URL}/api/auth/login", json=login_data)
         assert response.status_code == 200, f"Login failed: {response.status_code} - {response.text}"
         
         data = response.json()
