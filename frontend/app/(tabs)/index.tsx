@@ -745,6 +745,7 @@ export default function HomeScreen() {
         creditTaxeParMois: Math.round(creditTaxeParMois * 100) / 100,
         creditPerdu: Math.round(creditPerdu * 100) / 100,
         pdsf,
+        rabaisConcess,
       };
     };
 
