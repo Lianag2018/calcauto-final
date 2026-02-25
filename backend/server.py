@@ -718,6 +718,7 @@ class InventoryVehicle(BaseModel):
     brand: str
     model: str
     trim: str = ""
+    body_style: str = ""
     year: int
     type: str = "neuf"               # neuf | occasion
     
