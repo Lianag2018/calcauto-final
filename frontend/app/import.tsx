@@ -1169,23 +1169,34 @@ export default function ImportScreen() {
           </View>
         </View>
 
-        {/* Progress Steps - 4 étapes */}
+        {/* Progress Steps - adapts to flow */}
         <View style={styles.progressContainer}>
-          {['login', 'upload', 'select-pages', 'email-sent'].map((step, index) => (
-            <View key={step} style={styles.progressStep}>
-              <View style={[
-                styles.progressDot,
-                currentStep === step && styles.progressDotActive,
-                (currentStep === 'email-sent' || currentStep === 'success') ? styles.progressDotCompleted :
-                ['upload', 'select-pages', 'email-sent'].indexOf(currentStep) >= index && styles.progressDotCompleted
-              ]} />
-              {index < 3 ? <View style={[
-                styles.progressLine,
-                (currentStep === 'email-sent' || currentStep === 'success') ? styles.progressLineCompleted :
-                ['upload', 'select-pages', 'email-sent'].indexOf(currentStep) > index && styles.progressLineCompleted
-              ]} /> : null}
-            </View>
-          ))}
+          {(docType === 'residuals' 
+            ? ['login', 'choose-type', 'residual-upload', 'residual-success']
+            : ['login', 'choose-type', 'upload', 'email-sent']
+          ).map((step, index) => {
+            const allSteps = docType === 'residuals'
+              ? ['login', 'choose-type', 'residual-upload', 'residual-processing', 'residual-success']
+              : ['login', 'choose-type', 'upload', 'select-pages', 'preview', 'email-sent', 'success'];
+            const currentIndex = allSteps.indexOf(currentStep);
+            const stepIndex = allSteps.indexOf(step);
+            const isActive = currentStep === step || (step === 'residual-upload' && currentStep === 'residual-processing');
+            const isCompleted = currentIndex > stepIndex;
+            
+            return (
+              <View key={step} style={styles.progressStep}>
+                <View style={[
+                  styles.progressDot,
+                  isActive && styles.progressDotActive,
+                  isCompleted && styles.progressDotCompleted
+                ]} />
+                {index < 3 ? <View style={[
+                  styles.progressLine,
+                  isCompleted && styles.progressLineCompleted
+                ]} /> : null}
+              </View>
+            );
+          })}
         </View>
 
         <ScrollView
