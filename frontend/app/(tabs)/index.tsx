@@ -2883,6 +2883,61 @@ export default function HomeScreen() {
                       )}
 
                       {/* Share Actions for Lease Section */}
+                      {bestLeaseOption && (
+                        <TouchableOpacity 
+                          style={styles.bestLeaseBox}
+                          onPress={() => {
+                            // Auto-select the best term
+                            setLeaseTerm(bestLeaseOption.term);
+                          }}
+                          data-testid="best-lease-option"
+                        >
+                          <View style={styles.bestLeaseHeader}>
+                            <Ionicons name="trophy" size={18} color="#FFD700" />
+                            <Text style={styles.bestLeaseTitle}>
+                              {lang === 'fr' ? 'MEILLEUR CHOIX LOCATION' : 'BEST LEASE OPTION'}
+                            </Text>
+                            <Ionicons name="trophy" size={18} color="#FFD700" />
+                          </View>
+                          <View style={styles.bestLeaseContent}>
+                            <View style={styles.bestLeaseRow}>
+                              <Text style={styles.bestLeaseLabel}>{lang === 'fr' ? 'Terme:' : 'Term:'}</Text>
+                              <Text style={styles.bestLeaseValue}>{bestLeaseOption.term} {lang === 'fr' ? 'mois' : 'mo'}</Text>
+                            </View>
+                            <View style={styles.bestLeaseRow}>
+                              <Text style={styles.bestLeaseLabel}>Option:</Text>
+                              <Text style={[styles.bestLeaseValue, { color: bestLeaseOption.option === 'standard' ? '#E65100' : '#0277BD' }]}>
+                                {bestLeaseOption.optionLabel}
+                              </Text>
+                            </View>
+                            <View style={styles.bestLeaseRow}>
+                              <Text style={styles.bestLeaseLabel}>{lang === 'fr' ? 'Taux:' : 'Rate:'}</Text>
+                              <Text style={styles.bestLeaseValue}>{bestLeaseOption.rate}%</Text>
+                            </View>
+                            {bestLeaseOption.leaseCash > 0 && (
+                              <View style={styles.bestLeaseRow}>
+                                <Text style={styles.bestLeaseLabel}>Lease Cash:</Text>
+                                <Text style={styles.bestLeaseValue}>{formatCurrency(bestLeaseOption.leaseCash)}</Text>
+                              </View>
+                            )}
+                            <View style={styles.bestLeaseRow}>
+                              <Text style={styles.bestLeaseLabel}>{lang === 'fr' ? 'Résiduel:' : 'Residual:'}</Text>
+                              <Text style={styles.bestLeaseValue}>{bestLeaseOption.residualPct}% ({formatCurrency(bestLeaseOption.residualValue)})</Text>
+                            </View>
+                            <View style={[styles.bestLeaseRow, { borderTopWidth: 1, borderTopColor: '#444', paddingTop: 6, marginTop: 4 }]}>
+                              <Text style={[styles.bestLeaseLabel, { fontSize: 13 }]}>{lang === 'fr' ? 'Avant taxes:' : 'Before tax:'}</Text>
+                              <Text style={[styles.bestLeaseValue, { fontSize: 13 }]}>{formatCurrencyDecimal(bestLeaseOption.monthlyBeforeTax)} / {lang === 'fr' ? 'mois' : 'mo'}</Text>
+                            </View>
+                            <View style={styles.bestLeaseRow}>
+                              <Text style={[styles.bestLeaseLabel, { fontSize: 16, fontWeight: '700' }]}>{lang === 'fr' ? 'MENSUEL:' : 'MONTHLY:'}</Text>
+                              <Text style={[styles.bestLeaseValue, { fontSize: 16, fontWeight: '700', color: '#4ECDC4' }]}>{formatCurrencyDecimal(bestLeaseOption.monthly)} / {lang === 'fr' ? 'mois' : 'mo'}</Text>
+                            </View>
+                          </View>
+                          <Text style={styles.bestLeaseTap}>
+                            {lang === 'fr' ? 'Toucher pour sélectionner ce terme' : 'Tap to select this term'}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
                       <TouchableOpacity
                         style={styles.sendEmailButton}
                         onPress={() => setShowEmailModal(true)}
