@@ -188,6 +188,14 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
 - **index.tsx**: 4216 → 4007 lignes (-209 lignes, logique calcul isolée)
 - **Aucune régression**: 28/28 tests pytest, backend OK, imports vérifiés
 
+### Phase 23: Pipeline Hybride Google Vision + GPT-4o (DONE - Feb 2026)
+- **Nouveau pipeline**: Google Vision (lecture OCR gratuite 1000/mois) → GPT-4o TEXTE (structuration ~0.003$)
+- **GPT-4o ne lit pas l'image** — il reçoit le texte déjà lu par Google Vision et le structure en JSON
+- Le prompt GPT-4o est spécifique FCA Canada : ignore concessionnaire/banque/adresse, extrait options dans l'ordre exact
+- **Fallback automatique** : si GPT-4o indisponible → ancien regex parser (tout est préservé)
+- **Avantages** : plus de skip_codes pour structurer, plus de regex fragile pour les options, couleur correcte automatiquement
+- **Coût** : ~0.006$/scan (Vision gratuit + GPT-4o texte 0.003$)
+
 ## Backlog
 - (P0) Corriger l'ordre des options du parseur (options fallback ajoutées au début au lieu de la fin)
 - (P1) Corriger visibilité bouton "Export Excel" dans le modal de révision
