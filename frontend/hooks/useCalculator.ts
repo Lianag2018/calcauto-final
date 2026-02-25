@@ -95,6 +95,7 @@ export function useCalculator(inputs: CalculatorInputs) {
     const bonusCash = parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0;
     const consumerCash = selectedProgram.consumer_cash;
     const comptant = parseFloat(comptantTxInclus) || 0;
+    const rabais = parseFloat(rabaisConcess) || 0;
 
     // Frais taxables
     const dossier = parseFloat(fraisDossier) || 0;
