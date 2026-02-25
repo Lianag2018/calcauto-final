@@ -1,79 +1,52 @@
 # CalcAuto AiPro - Product Requirements Document
 
 ## Original Problem Statement
-Mobile application for auto dealers (Quebec, Stellantis/FCA vehicles) that scans invoices via OCR and calculates financing options. The app supports a hybrid OCR workflow (Google Vision + GPT-4o), Excel export/import, SMS/email sharing, printing, and lease comparison (SCI).
-
-## Core Requirements
-- Invoice scanner with hybrid OCR (Vision + GPT-4o)
-- Financing calculator with Option 1 (Rabais + Taux) and Option 2 (Taux réduits)
-- Payment frequency: Monthly, Bi-weekly, Weekly
-- Excel export/import workflow
-- SMS, Email, Print sharing (includes lease data)
-- **Location SCI**: Lease comparison integrated into calculator with proper Quebec tax handling
-- Admin panel, CRM, Inventory management
-
-## Tech Stack
-- Frontend: React Native (Expo) served as static web build
-- Backend: FastAPI (Python) + MongoDB
-- OCR: Google Cloud Vision + OpenAI GPT-4o
-- PDF parsing: PyMuPDF
+Mobile application for auto dealers (Quebec, Stellantis/FCA vehicles) that scans invoices via OCR and calculates financing options. Supports hybrid OCR (Google Vision + GPT-4o), Excel export/import, SMS/email sharing, printing, and SCI lease comparison.
 
 ## What's Been Implemented
 
 ### Phase 1-24 (Previous sessions)
-- Full auth system, programs management, inventory, CRM
-- Invoice scanner with hybrid OCR pipeline
-- Calculator with Option 1/2, frequency toggle, term selection
-- Excel export/import, SMS sharing, Print, Email sending, Holdback
+- Full auth, programs, inventory, CRM, OCR pipeline, Calculator, Excel, SMS, Print, Email, Holdback
 
-### Phase 25 - Location SCI Feature (Feb 25, 2026)
+### Phase 25 - Location SCI Feature
 - Backend: 3 API endpoints (residuals, rates, calculate-lease)
 - Frontend: Integrated lease section with km/term selectors, dual comparison cards
-- Data: 64 vehicles residual + 69 vehicles rates (2025 & 2026)
 
-### Phase 26 - Lease in SMS/Email/Print (Feb 25, 2026)
-- SMS (Texto), Print (Imprimer), Email include lease data when toggled on
+### Phase 26 - Lease in SMS/Email/Print
+- All sharing channels include lease data when toggled on
 
-### Phase 27 - Lease Calculation Corrections (Feb 25, 2026)
-- **PDSF séparé**: New input field, résiduel calculé sur PDSF (pas prix de vente)
-- **Solde reporté**: New field for carried-over balance from previous lease
-- **Crédit taxe échange**: Limited to total lease taxes, surplus is lost (with warning)
-- **Frais auto-inclus**: Info bar showing dossier + pneus + RDPRM automatically
-- **Quebec tax handling**: Proper 14.975% TPS+TVQ calculation with trade-in credit limits
+### Phase 27 - Corrected Lease Calculation (Feb 25, 2026)
+- **PDSF séparé** from selling price (PDSF for residual, selling price for cap cost)
+- **Taxes SUR le paiement** (not capitalized) — matches real SCI calculator
+- **TPS 5% + TVQ 9.975%** displayed separately on cards
+- **Crédit taxe échange** per payment, limited to monthly tax (surplus lost with warning)
+- **Solde reporté** field for previous lease balance
+- **Frais auto-inclus** (dossier + pneus + RDPRM shown in info bar)
+- **Validated against real SCI**: Ram 1500 Express 2026, 42mo, 1.49%
+  - My calc: 179.47$/sem before tax vs SCI: 179.48$/sem — **0.01$ diff**
 
-## Key Lease Calculation Fields
-1. Prix de vente (selling price) - for capitalized cost
-2. PDSF / PDOC (MSRP) - for residual value calculation
-3. Solde reporté - balance from previous lease (negative = debt with taxes)
-4. Échange (trade-in value) - tax credit limited to lease taxes
-5. Montant dû (amount owed on trade)
-6. Comptant (cash down)
-7. Frais (auto-included: dossier + pneus + RDPRM)
-8. Lease Cash / Taux (from program data)
-9. Kilométrage / an (affects residual %)
-10. Terme (24-60 months)
+## Lease Calculation Formula (Quebec SCI)
+```
+1. Cap cost = selling_price + fees - lease_cash
+2. Net cap = cap_cost + solde_reporté + montant_dû - échange - comptant - bonus
+3. Residual = PDSF × residual% (adjusted for km)
+4. Depreciation = (net_cap - residual) / term
+5. Finance = (net_cap + residual) × (rate / 2400)
+6. Monthly before tax = depreciation + finance
+7. TPS = monthly × 5%, TVQ = monthly × 9.975%
+8. Trade credit/month = min(échange/term × 14.975%, TPS+TVQ)
+9. Monthly after tax = monthly + TPS + TVQ - trade_credit
+```
 
 ## Prioritized Backlog
+### P1
+- User validation of all SCI calculations with real deals
+- Parser fixes validation
 
-### P1 - Validation Required
-- User validation of Location SCI calculations with real deals
-- User validation of parser fixes (MSRP, Net Cost, holdback)
+### P2
+- Refactor server.py and index.tsx
+- Code cleanup
 
-### P2 - Refactoring
-- Refactor `server.py` into routes/ directory
-- Continue refactoring `index.tsx`
-- Clean up dead code
-
-### P3 - Future
-- Automated frontend rebuild
-- Compare all terms table
-- Enhanced lease reporting
-
-## Key API Endpoints
-- `POST /api/auth/login`
-- `GET /api/programs`
-- `POST /api/inventory/scan-invoice`
-- `GET /api/sci/residuals`
-- `GET /api/sci/lease-rates`
-- `POST /api/sci/calculate-lease`
-- `POST /api/send-calculation-email`
+### P3
+- All-terms comparison table
+- Enhanced reporting
