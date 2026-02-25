@@ -430,28 +430,20 @@ export default function HomeScreen() {
   // Taux de taxe (TPS + TVQ Québec)
   const tauxTaxe = 0.14975; // 5% TPS + 9.975% TVQ
   
-  // Local calculation result (calculated on frontend)
-  const [localResult, setLocalResult] = useState<{
-    option1Monthly: number;
-    option1Biweekly: number;
-    option1Weekly: number;
-    option1Total: number;
-    option1Rate: number;
-    option2Monthly: number | null;
-    option2Biweekly: number | null;
-    option2Weekly: number | null;
-    option2Total: number | null;
-    option2Rate: number | null;
-    bestOption: string | null;
-    savings: number;
-    principalOption1: number;
-    principalOption2: number;
-    fraisTaxables: number;
-    taxes: number;
-    echangeNet: number;
-    comptant?: number;
-    bonusCash?: number;
-  } | null>(null);
+  // Calcul de financement (logique extraite dans useCalculator)
+  const { localResult } = useCalculator({
+    selectedProgram,
+    vehiclePrice,
+    selectedTerm,
+    customBonusCash,
+    comptantTxInclus,
+    fraisDossier,
+    taxePneus,
+    fraisRDPRM,
+    prixEchange,
+    montantDuEchange,
+    accessories,
+  });
 
   const loadPrograms = useCallback(async (month?: number, year?: number) => {
     const startTime = Date.now();
