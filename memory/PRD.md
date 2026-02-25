@@ -168,6 +168,16 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
 - **Corrections server.py**: Couleur dynamique extraite du texte OCR, PAU retiré du color_map hardcodé, PDN ajouté
 - **Tests**: 29/29 passent + validations manuelles Ram 1500 et Ram 2500
 
+### Phase 21: Excel Workflow Complet (DONE - Feb 2026)
+- **Export mobile corrigé**: Utilise `expo-file-system` + `expo-sharing` pour sauvegarder et partager le .xlsx (avant: juste un Alert vide)
+- **Import Excel implémenté**: Nouveau bouton "Importer un Excel" dans le modal scan (inventory.tsx)
+  - Utilise `expo-document-picker` pour choisir un .xlsx
+  - Envoie à `/api/invoice/import-excel` (backend existant)
+  - Ouvre le modal review avec les données importées
+  - **AUCUN re-parsing, AUCUNE dédup** (données brutes du fichier)
+- **Cycle complet**: Scan → Export → Correction manuelle → Import → Review
+- **Testé**: Export et Import via curl, 28/28 tests pytest passent
+
 ## Backlog
 - (P0) Corriger l'ordre des options du parseur (options fallback ajoutées au début au lieu de la fin)
 - (P1) Corriger visibilité bouton "Export Excel" dans le modal de révision
