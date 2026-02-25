@@ -5092,101 +5092,219 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
                     full_text = vision_result["full_text"]
                     ocr_confidence = vision_result["confidence"]
                 
-                # ====== PARSING STRUCTURÉ (parser.py) ======
-                # Utiliser les parsers regex existants sur le texte brut de Google Vision
-                logger.info("Parsing structured data from Google Vision text...")
+                # ====== STRUCTURATION GPT-4o (texte → JSON) ======
+                # Google Vision a lu le texte. GPT-4o le structure intelligemment.
+                logger.info("Structuring invoice text with GPT-4o...")
                 
-                # Parser le VIN
-                vin_raw = parse_vin(full_text)
-                if not vin_raw:
-                    # Chercher dans le texte brut avec un pattern plus permissif
-                    vin_match = re.search(r'1C4[A-Z0-9]{14}', full_text.replace("-", "").replace(" ", "").upper())
-                    if vin_match:
-                        vin_raw = vin_match.group()
-                vin_raw = str(vin_raw or "").replace("-", "").replace(" ", "").upper()[:17]
+                structured_data = None
+                try:
+                    from openai import OpenAI
+                    openai_key = os.environ.get("OPENAI_API_KEY")
+                    if openai_key:
+                        client = OpenAI(api_key=openai_key)
+                        
+                        gpt_prompt = f"""Tu es un expert en factures de véhicules FCA Canada (Stellantis).
+Voici le texte OCR brut d'une facture. Extrais les données structurées.
+
+RÈGLES IMPORTANTES:
+- Les OPTIONS VÉHICULE sont les lignes avec un CODE (2-4 caractères alphanumériques) suivi d'une DESCRIPTION
+- IGNORE complètement: le nom du concessionnaire, l'adresse, la banque, les termes de paiement, les mentions légales
+- Les codes comme 999, 92HC1, 92HC2 sont des codes administratifs, PAS des options véhicule
+- 4CP (Taxe Accise Climatiseur) n'est PAS une option véhicule
+- Le code modèle (6 caractères comme DT6L98, DJ7H91) n'est PAS une option
+- Garde l'ORDRE EXACT des options comme elles apparaissent sur la facture
+- Pour la couleur, le code commence par P (ex: PAU, PW7, PDN) et est suivi de la description de la couleur
+
+TEXTE OCR:
+{full_text}
+
+Retourne UNIQUEMENT un JSON valide (pas de markdown, pas de commentaires):
+{{
+  "vin": "le VIN 17 caractères ou vide",
+  "model_code": "code modèle 6 chars (ex: DT6L98)",
+  "color_code": "code couleur 3 chars (ex: PAU)",
+  "color_description": "description couleur complète",
+  "ep_cost": nombre ou 0,
+  "pdco": nombre ou 0,
+  "pref": nombre ou 0,
+  "holdback": nombre ou 0,
+  "subtotal": nombre ou 0,
+  "invoice_total": nombre ou 0,
+  "options": [
+    {{"code": "XXX", "description": "description complète", "amount": nombre_ou_0}}
+  ]
+}}"""
+                        
+                        gpt_response = client.chat.completions.create(
+                            model="gpt-4o",
+                            messages=[{"role": "user", "content": gpt_prompt}],
+                            temperature=0.0,
+                            max_tokens=2000,
+                        )
+                        
+                        raw_json = gpt_response.choices[0].message.content.strip()
+                        # Nettoyer si GPT ajoute des backticks markdown
+                        if raw_json.startswith("```"):
+                            raw_json = raw_json.split("\n", 1)[1] if "\n" in raw_json else raw_json[3:]
+                            if raw_json.endswith("```"):
+                                raw_json = raw_json[:-3]
+                            raw_json = raw_json.strip()
+                        
+                        structured_data = json.loads(raw_json)
+                        logger.info(f"GPT-4o structured: {len(structured_data.get('options', []))} options extracted")
+                    else:
+                        logger.warning("OPENAI_API_KEY non configurée, fallback vers parsing regex")
+                except Exception as gpt_err:
+                    logger.error(f"GPT-4o structuring error: {gpt_err}, fallback vers parsing regex")
+                    structured_data = None
                 
-                # Valider et corriger le VIN
-                vin_result = validate_and_correct_vin(vin_raw) if len(vin_raw) == 17 else {"corrected": vin_raw, "is_valid": False, "was_corrected": False}
-                vin_corrected = vin_result.get("corrected", vin_raw)
-                vin_valid = vin_result.get("is_valid", False)
-                vin_was_corrected = vin_result.get("was_corrected", False)
-                vin_info = decode_vin(vin_corrected) if len(vin_corrected) == 17 else {}
+                # ====== EXTRACTION DES DONNÉES ======
+                if structured_data:
+                    # === MODE GPT-4o (structuration intelligente) ===
+                    logger.info("Using GPT-4o structured data")
+                    
+                    # VIN: GPT-4o + validation existante
+                    vin_raw = structured_data.get("vin", "")
+                    if not vin_raw:
+                        vin_raw = parse_vin(full_text) or ""
+                    vin_raw = str(vin_raw).replace("-", "").replace(" ", "").upper()[:17]
+                    
+                    vin_result = validate_and_correct_vin(vin_raw) if len(vin_raw) == 17 else {"corrected": vin_raw, "is_valid": False, "was_corrected": False}
+                    vin_corrected = vin_result.get("corrected", vin_raw)
+                    vin_valid = vin_result.get("is_valid", False)
+                    vin_was_corrected = vin_result.get("was_corrected", False)
+                    vin_info = decode_vin(vin_corrected) if len(vin_corrected) == 17 else {}
+                    
+                    # Code modèle: GPT-4o + validation master
+                    from product_code_lookup import get_all_codes
+                    master_codes = get_all_codes()
+                    model_code = structured_data.get("model_code", "") or parse_model_code(full_text, master_codes) or ""
+                    master_lookup = lookup_product_code(model_code) if model_code else None
+                    product_info = master_lookup or (decode_product_code(model_code) if model_code else {})
+                    
+                    # Financier: GPT-4o
+                    ep_cost = float(structured_data.get("ep_cost", 0) or 0)
+                    pdco = float(structured_data.get("pdco", 0) or 0)
+                    pref = float(structured_data.get("pref", 0) or 0)
+                    holdback = float(structured_data.get("holdback", 0) or 0)
+                    subtotal = float(structured_data.get("subtotal", 0) or 0)
+                    invoice_total = float(structured_data.get("invoice_total", 0) or 0)
+                    
+                    # Fallback financier si GPT-4o a retourné 0
+                    if ep_cost == 0 or pdco == 0:
+                        financial = parse_financial_data(full_text)
+                        if ep_cost == 0: ep_cost = financial.get("ep_cost", 0) or 0
+                        if pdco == 0: pdco = financial.get("pdco", 0) or 0
+                        if pref == 0: pref = financial.get("pref", 0) or 0
+                        if holdback == 0: holdback = financial.get("holdback", 0) or 0
+                    if subtotal == 0 or invoice_total == 0:
+                        totals = parse_totals(full_text)
+                        if subtotal == 0: subtotal = totals.get("subtotal", 0) or 0
+                        if invoice_total == 0: invoice_total = totals.get("invoice_total", 0) or 0
+                    
+                    # Options: GPT-4o (dans l'ordre exact de la facture)
+                    options = []
+                    for opt in structured_data.get("options", []):
+                        code = str(opt.get("code", "")).strip()
+                        desc = str(opt.get("description", "")).strip()
+                        amt = float(opt.get("amount", 0) or 0)
+                        if code and len(code) >= 2:
+                            options.append({
+                                "product_code": code,
+                                "description": f"{code} - {desc[:70]}",
+                                "amount": amt
+                            })
+                    
+                    # Couleur: GPT-4o
+                    color_code = structured_data.get("color_code", "")
+                    color_desc_gpt = structured_data.get("color_description", "")
+                    final_color = color_desc_gpt or color_code
+                    
+                    # Stock
+                    stock_no = parse_stock_number(full_text) or ""
+                    if not stock_no:
+                        stock_match = re.search(r'\b(\d{5})\b', full_text)
+                        if stock_match:
+                            stock_no = stock_match.group(1)
+                    
+                    parse_method_detail = "gpt4o_structured"
+                    cost_estimate = "~$0.006"
+                    
+                else:
+                    # === MODE REGEX FALLBACK (si GPT-4o indisponible) ===
+                    logger.info("Fallback: parsing with regex from Google Vision text...")
+                    
+                    vin_raw = parse_vin(full_text)
+                    if not vin_raw:
+                        vin_match = re.search(r'1C4[A-Z0-9]{14}', full_text.replace("-", "").replace(" ", "").upper())
+                        if vin_match:
+                            vin_raw = vin_match.group()
+                    vin_raw = str(vin_raw or "").replace("-", "").replace(" ", "").upper()[:17]
+                    
+                    vin_result = validate_and_correct_vin(vin_raw) if len(vin_raw) == 17 else {"corrected": vin_raw, "is_valid": False, "was_corrected": False}
+                    vin_corrected = vin_result.get("corrected", vin_raw)
+                    vin_valid = vin_result.get("is_valid", False)
+                    vin_was_corrected = vin_result.get("was_corrected", False)
+                    vin_info = decode_vin(vin_corrected) if len(vin_corrected) == 17 else {}
+                    
+                    from product_code_lookup import get_all_codes
+                    master_codes = get_all_codes()
+                    model_code = parse_model_code(full_text, master_codes) or ""
+                    master_lookup = lookup_product_code(model_code) if model_code else None
+                    product_info = master_lookup or (decode_product_code(model_code) if model_code else {})
+                    
+                    financial = parse_financial_data(full_text)
+                    ep_cost = financial.get("ep_cost", 0) or 0
+                    pdco = financial.get("pdco", 0) or 0
+                    pref = financial.get("pref", 0) or 0
+                    holdback = financial.get("holdback", 0) or 0
+                    
+                    totals = parse_totals(full_text)
+                    subtotal = totals.get("subtotal", 0) or 0
+                    invoice_total = totals.get("invoice_total", 0) or 0
+                    
+                    options = []
+                    for opt in parse_options(full_text):
+                        options.append({
+                            "product_code": opt.get("product_code", ""),
+                            "description": opt.get("description", "")[:80],
+                            "amount": 0
+                        })
+                    
+                    stock_no = parse_stock_number(full_text) or ""
+                    if not stock_no:
+                        stock_match = re.search(r'\b(\d{5})\b', full_text)
+                        if stock_match:
+                            stock_no = stock_match.group(1)
+                    
+                    raw_color = ""
+                    color_desc = ""
+                    color_match_re = re.search(r'\b(P[A-Z0-9]{2})\b', full_text)
+                    if color_match_re:
+                        raw_color = color_match_re.group(1)
+                        color_desc_match = re.search(
+                            rf'\b{re.escape(raw_color)}\s+([A-Z][A-Z\s]+?)(?:\s+\d|SANS\s+FRAIS|\s*$)',
+                            full_text
+                        )
+                        if color_desc_match:
+                            color_desc = color_desc_match.group(1).strip().title()
+                    
+                    color_map = {
+                        "PW7": "Blanc Vif", "PWZ": "Blanc Vif", "PXJ": "Noir Cristal", 
+                        "PX8": "Noir Diamant", "PSC": "Gris Destroyer", 
+                        "PWL": "Blanc Perle", "PGG": "Gris Granit", "PBF": "Bleu Patriote", 
+                        "PGE": "Vert Sarge", "PRM": "Rouge Velours", "PAR": "Argent Billet",
+                        "PYB": "Jaune Stinger", "PBJ": "Bleu Hydro", "PFQ": "Granite Cristal",
+                        "PDN": "Gris Ceramique",
+                    }
+                    final_color = color_desc or color_map.get(raw_color, raw_color)
+                    parse_method_detail = "regex_fallback"
+                    cost_estimate = "~$0.0015"
                 
-                # Parser le code modèle + DOUBLE VÉRIFICATION MASTER
-                # Charger les codes master pour validation
-                from product_code_lookup import get_all_codes
-                master_codes = get_all_codes()
-                model_code = parse_model_code(full_text, master_codes) or ""
-                master_lookup = lookup_product_code(model_code) if model_code else None
-                product_info = master_lookup or (decode_product_code(model_code) if model_code else {})
-                
-                if master_lookup:
-                    logger.info(f"[GV - MASTER OK] Code {model_code} validé: {master_lookup.get('full_description')}")
-                elif model_code:
-                    logger.warning(f"[GV - MASTER MISS] Code {model_code} non trouvé dans la base master")
-                
-                # Validation cohérence VIN ↔ marque
+                # ====== VALIDATION COMMUNE ======
                 vin_brand = decode_vin_brand(vin_corrected)
                 expected_brand = product_info.get("brand")
                 vin_consistent = validate_vin_brand_consistency(vin_corrected, expected_brand) if vin_brand else True
-                
-                # Parser les données financières
-                financial = parse_financial_data(full_text)
-                ep_cost = financial.get("ep_cost", 0) or 0
-                pdco = financial.get("pdco", 0) or 0
-                pref = financial.get("pref", 0) or 0
-                holdback = financial.get("holdback", 0) or 0
-                
-                # Parser les totaux
-                totals = parse_totals(full_text)
-                subtotal = totals.get("subtotal", 0) or 0
-                invoice_total = totals.get("invoice_total", 0) or 0
-                
-                # Parser les options
-                options = []
-                for opt in parse_options(full_text):
-                    options.append({
-                        "product_code": opt.get("product_code", ""),
-                        "description": opt.get("description", "")[:80],
-                        "amount": 0  # Pas de prix accessoires comme demandé
-                    })
-                
-                # Parser le numéro de stock (souvent manuscrit)
-                stock_no = parse_stock_number(full_text) or ""
-                
-                # Chercher le stock manuscrit avec un pattern plus large si non trouvé
-                if not stock_no:
-                    # Chercher un nombre de 5 chiffres isolé (souvent le stock manuscrit)
-                    stock_match = re.search(r'\b(\d{5})\b', full_text)
-                    if stock_match:
-                        stock_no = stock_match.group(1)
-                
-                # Couleur - Extraire le code couleur (3 caractères commençant par P)
-                raw_color = ""
-                color_desc = ""
-                color_match = re.search(r'\b(P[A-Z0-9]{2})\b', full_text)
-                if color_match:
-                    raw_color = color_match.group(1)
-                    # Chercher la description de la couleur directement dans le texte OCR
-                    # Pattern: CODE_COULEUR + description (ex: "PAU CRISTAL GRANIT METALLISE")
-                    color_desc_match = re.search(
-                        rf'\b{re.escape(raw_color)}\s+([A-Z][A-Z\s]+?)(?:\s+\d|SANS\s+FRAIS|\s*$)',
-                        full_text
-                    )
-                    if color_desc_match:
-                        color_desc = color_desc_match.group(1).strip().title()
-                
-                # Mapping des codes couleur FCA (fallback si pas trouvé dans OCR)
-                color_map = {
-                    "PW7": "Blanc Vif", "PWZ": "Blanc Vif", "PXJ": "Noir Cristal", 
-                    "PX8": "Noir Diamant", "PSC": "Gris Destroyer", 
-                    "PWL": "Blanc Perle", "PGG": "Gris Granit", "PBF": "Bleu Patriote", 
-                    "PGE": "Vert Sarge", "PRM": "Rouge Velours", "PAR": "Argent Billet",
-                    "PYB": "Jaune Stinger", "PBJ": "Bleu Hydro", "PFQ": "Granite Cristal",
-                    "PDN": "Gris Ceramique",
-                }
-                # Priorité: description OCR > mapping statique > code brut
-                final_color = color_desc or color_map.get(raw_color, raw_color)
                 
                 parse_duration = round(time.time() - start_time, 3)
                 
