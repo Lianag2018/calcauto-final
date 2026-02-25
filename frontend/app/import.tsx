@@ -641,10 +641,10 @@ export default function ImportScreen() {
         </View>
       </View>
       
-      {/* Page Selection */}
+      {/* Page Selection - Retail */}
       <View style={styles.periodSection}>
-        <Text style={styles.periodLabel}>Pages à extraire</Text>
-        <Text style={styles.pageHint}>💡 Choisissez les pages contenant les programmes Retail</Text>
+        <Text style={styles.periodLabel}>Programme Retail (Financement)</Text>
+        <Text style={styles.pageHint}>Pages contenant les taux Option 1 & 2 + Consumer Cash</Text>
         <View style={styles.pageRow}>
           <View style={styles.pageField}>
             <Text style={styles.pageLabel}>De la page:</Text>
@@ -653,7 +653,7 @@ export default function ImportScreen() {
               value={pageStart}
               onChangeText={setPageStart}
               keyboardType="numeric"
-              placeholder="1"
+              placeholder="20"
               placeholderTextColor="#666"
             />
           </View>
@@ -664,15 +664,46 @@ export default function ImportScreen() {
               value={pageEnd}
               onChangeText={setPageEnd}
               keyboardType="numeric"
-              placeholder={String(totalPages)}
+              placeholder="21"
               placeholderTextColor="#666"
             />
           </View>
         </View>
-        <Text style={styles.pageValidation}>
-          Pages sélectionnées: {pageStart || '1'} à {pageEnd || totalPages}
-        </Text>
       </View>
+      
+      {/* Page Selection - SCI Lease */}
+      <View style={[styles.periodSection, { borderColor: '#FFB347' }]}>
+        <Text style={[styles.periodLabel, { color: '#FFB347' }]}>Programme SCI Lease (Location)</Text>
+        <Text style={styles.pageHint}>Pages contenant les taux location + Lease Cash / Bonus Cash</Text>
+        <View style={styles.pageRow}>
+          <View style={styles.pageField}>
+            <Text style={styles.pageLabel}>De la page:</Text>
+            <TextInput
+              style={[styles.pageInput, { borderColor: '#FFB347' }]}
+              value={leasePageStart}
+              onChangeText={setLeasePageStart}
+              keyboardType="numeric"
+              placeholder="28"
+              placeholderTextColor="#666"
+            />
+          </View>
+          <View style={styles.pageField}>
+            <Text style={styles.pageLabel}>À la page:</Text>
+            <TextInput
+              style={[styles.pageInput, { borderColor: '#FFB347' }]}
+              value={leasePageEnd}
+              onChangeText={setLeasePageEnd}
+              keyboardType="numeric"
+              placeholder="29"
+              placeholderTextColor="#666"
+            />
+          </View>
+        </View>
+      </View>
+      
+      <Text style={styles.pageValidation}>
+        Retail: pages {pageStart || '20'}-{pageEnd || '21'}  |  SCI Lease: pages {leasePageStart || '28'}-{leasePageEnd || '29'}
+      </Text>
       
       <TouchableOpacity
         style={[styles.extractButton, extracting && styles.buttonDisabled]}
