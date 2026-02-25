@@ -675,7 +675,8 @@ export default function HomeScreen() {
       const tps = 0.05;
       const tvq = 0.09975;
       const tauxTaxe = tps + tvq; // 14.975%
-      const sellingPrice = price + totalAccessoires;
+      const rabaisConcess = parseFloat(leaseRabaisConcess) || 0;
+      const sellingPrice = price + totalAccessoires - rabaisConcess;
       
       // === CALCUL LOCATION SCI QUÉBEC ===
       // 1. Coût capitalisé = prix vente + frais - lease cash (PAS DE TAXES sur le cap)
