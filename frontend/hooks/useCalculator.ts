@@ -33,21 +33,23 @@ export function getRateForTerm(rates: FinancingRates, term: number): number {
  * Formater en devise canadienne (sans décimales)
  */
 export function formatCurrency(value: number): string {
-  if (isNaN(value)) return '$0';
-  const formatted = Math.round(Math.abs(value)).toLocaleString('fr-CA');
-  return value < 0 ? `-${formatted} $` : `${formatted} $`;
+  return new Intl.NumberFormat('fr-CA', {
+    style: 'currency',
+    currency: 'CAD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 
 /**
  * Formater en devise canadienne (avec décimales)
  */
 export function formatCurrencyDecimal(value: number): string {
-  if (isNaN(value)) return '$0.00';
-  const formatted = Math.abs(value).toLocaleString('fr-CA', {
+  return new Intl.NumberFormat('fr-CA', {
+    style: 'currency',
+    currency: 'CAD',
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-  return value < 0 ? `-${formatted} $` : `${formatted} $`;
+  }).format(value);
 }
 
 interface CalculatorInputs {
