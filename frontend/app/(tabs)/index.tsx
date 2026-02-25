@@ -968,7 +968,7 @@ export default function HomeScreen() {
   };
 
   // Handle Share via SMS - Open preview modal
-  const handleShareSMS = () => {
+  const handleShareSMS = async () => {
     if (!selectedProgram || !localResult || !vehiclePrice) {
       if (Platform.OS === 'web') {
         alert(lang === 'fr' ? 'Aucune soumission à partager' : 'No submission to share');
@@ -978,9 +978,220 @@ export default function HomeScreen() {
       return;
     }
 
-    const message = generateSubmissionText();
-    setSmsPreviewText(message);
-    setShowSmsPreview(true);
+    try {
+      // Show loading state
+      setSmsPreviewText(lang === 'fr' ? 'Génération de la soumission...' : 'Generating submission...');
+      setShowSmsPreview(true);
+
+      // 1. Generate the print HTML (reuse existing template)
+      const vehicle = `${selectedProgram.brand} ${selectedProgram.model} ${selectedProgram.trim || ''} ${selectedProgram.year}`.trim();
+      const vin = selectedInventory?.vin || (manualVin && manualVin.length === 17 ? manualVin : '');
+      const price = parseFloat(vehiclePrice) || 0;
+      const fmt = (v: number) => v.toLocaleString('fr-CA', { maximumFractionDigits: 0 });
+      const fmt2 = (v: number) => v.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      // Build window sticker URL
+      const brand = selectedProgram.brand?.toLowerCase() || '';
+      const stickerBaseUrls: Record<string, string> = {
+        chrysler: 'https://www.chrysler.com/hostd/windowsticker/getWindowStickerPdf.do?vin=',
+        jeep: 'https://www.jeep.com/hostd/windowsticker/getWindowStickerPdf.do?vin=',
+        dodge: 'https://www.dodge.com/hostd/windowsticker/getWindowStickerPdf.do?vin=',
+        ram: 'https://www.ramtrucks.com/hostd/windowsticker/getWindowStickerPdf.do?vin=',
+        fiat: 'https://www.fiatusa.com/hostd/windowsticker/getWindowStickerPdf.do?vin=',
+      };
+      const stickerUrl = vin ? (stickerBaseUrls[brand] || stickerBaseUrls['ram']) + vin : '';
+
+      // 2. Fetch window sticker image from our API
+      let stickerImageUrl = '';
+      if (vin) {
+        try {
+          const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+          const stickerResp = await axios.get(`${API_URL}/api/window-sticker/${vin}`);
+          if (stickerResp.data?.images?.length > 0) {
+            stickerImageUrl = stickerResp.data.images[0];
+          }
+        } catch (e) {
+          console.log('Window sticker not available');
+        }
+      }
+
+      // 3. Build full HTML for screenshot capture
+      const consumerCash = selectedProgram.consumer_cash || 0;
+      const bonusCash2 = parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0;
+      const dossier = parseFloat(fraisDossier) || 0;
+      const pneus = parseFloat(taxePneus) || 0;
+      const rdprm = parseFloat(fraisRDPRM) || 0;
+      const valeurEchange = parseFloat(prixEchange) || 0;
+      const comptant = parseFloat(comptantTxInclus) || 0;
+      const hasOption2 = selectedProgram.option2_rates !== null && localResult.option2Monthly !== null;
+      const payLabel = paymentFrequency === 'biweekly' ? (lang === 'fr' ? 'Aux 2 sem.' : 'Bi-weekly') : paymentFrequency === 'weekly' ? (lang === 'fr' ? 'Hebdo' : 'Weekly') : (lang === 'fr' ? 'Mensuel' : 'Monthly');
+
+      const o1Pay = paymentFrequency === 'biweekly' ? localResult.option1Biweekly : paymentFrequency === 'weekly' ? localResult.option1Weekly : localResult.option1Monthly;
+      const o2Pay = paymentFrequency === 'biweekly' ? (localResult.option2Biweekly || 0) : paymentFrequency === 'weekly' ? (localResult.option2Weekly || 0) : (localResult.option2Monthly || 0);
+
+      const screenshotHtml = `
+        <div id="capture" style="width:640px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;color:#333;">
+          <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px;text-align:center;">
+            <div style="color:#fff;font-size:24px;font-weight:700;">CalcAuto <span style="color:#4ECDC4;">AiPro</span></div>
+            <div style="color:rgba(255,255,255,0.7);font-size:12px;margin-top:4px;">${lang === 'fr' ? 'Soumission de financement' : 'Financing Submission'}</div>
+          </div>
+          <div style="padding:16px;">
+            <div style="background:#f8f9fa;border-radius:10px;padding:14px;border-left:4px solid #4ECDC4;margin-bottom:14px;">
+              <div style="font-size:12px;color:#666;text-transform:uppercase;letter-spacing:1px;">${selectedProgram.brand}</div>
+              <div style="font-size:20px;font-weight:700;color:#1a1a2e;margin:4px 0;">${selectedProgram.model} ${selectedProgram.trim || ''} ${selectedProgram.year}</div>
+              <div style="font-size:18px;color:#4ECDC4;font-weight:700;">${fmt(price)} $</div>
+              ${vin ? `<div style="font-size:10px;color:#888;font-family:monospace;margin-top:4px;">VIN: ${vin}</div>` : ''}
+            </div>
+            
+            <div style="display:flex;gap:8px;margin-bottom:14px;">
+              <div style="flex:1;border:2px solid ${localResult.bestOption === '1' ? '#4CAF50' : '#ddd'};border-radius:10px;padding:12px;">
+                <div style="font-size:14px;font-weight:700;color:#c0392b;margin-bottom:6px;">Option 1 ${localResult.bestOption === '1' ? '<span style="background:#4CAF50;color:#fff;font-size:10px;padding:2px 6px;border-radius:8px;">✓</span>' : ''}</div>
+                <div style="font-size:11px;color:#666;margin-bottom:4px;">${lang === 'fr' ? 'Rabais:' : 'Rebate:'} ${consumerCash > 0 ? '-' + fmt(consumerCash) + ' $' : '$0'}</div>
+                <div style="font-size:11px;color:#666;margin-bottom:4px;">${lang === 'fr' ? 'Taux:' : 'Rate:'} <span style="color:#c0392b;">${localResult.option1Rate}%</span></div>
+                <div style="background:#f8f9fa;border-radius:6px;padding:8px;text-align:center;border-top:3px solid #c0392b;margin-top:6px;">
+                  <div style="font-size:10px;color:#666;">${payLabel}</div>
+                  <div style="font-size:22px;font-weight:700;color:#c0392b;">${fmt2(o1Pay)} $</div>
+                  <div style="font-size:10px;color:#666;">Total (${selectedTerm}m): ${fmt(localResult.option1Total)} $</div>
+                </div>
+              </div>
+              ${hasOption2 ? `
+              <div style="flex:1;border:2px solid ${localResult.bestOption === '2' ? '#4CAF50' : '#ddd'};border-radius:10px;padding:12px;">
+                <div style="font-size:14px;font-weight:700;color:#1565C0;margin-bottom:6px;">Option 2 ${localResult.bestOption === '2' ? '<span style="background:#4CAF50;color:#fff;font-size:10px;padding:2px 6px;border-radius:8px;">✓</span>' : ''}</div>
+                <div style="font-size:11px;color:#666;margin-bottom:4px;">${lang === 'fr' ? 'Rabais:' : 'Rebate:'} $0</div>
+                <div style="font-size:11px;color:#666;margin-bottom:4px;">${lang === 'fr' ? 'Taux:' : 'Rate:'} <span style="color:#1565C0;">${localResult.option2Rate}%</span></div>
+                <div style="background:#f8f9fa;border-radius:6px;padding:8px;text-align:center;border-top:3px solid #1565C0;margin-top:6px;">
+                  <div style="font-size:10px;color:#666;">${payLabel}</div>
+                  <div style="font-size:22px;font-weight:700;color:#1565C0;">${fmt2(o2Pay)} $</div>
+                  <div style="font-size:10px;color:#666;">Total (${selectedTerm}m): ${fmt(localResult.option2Total || 0)} $</div>
+                </div>
+              </div>` : ''}
+            </div>
+            
+            ${showLease && leaseResult && (leaseResult.standard || leaseResult.alternative) ? `
+            <div style="border-top:2px solid #FFD700;padding-top:12px;margin-bottom:14px;">
+              <div style="font-size:13px;font-weight:700;color:#F57F17;margin-bottom:10px;">LOCATION SCI - ${leaseTerm} mois / ${(leaseKmPerYear/1000).toFixed(0)}k km</div>
+              <div style="font-size:11px;color:#666;margin-bottom:8px;">Résiduel: ${leaseResult.residualPct}% = ${fmt(Math.round(leaseResult.residualValue))} $</div>
+              <div style="display:flex;gap:8px;">
+                ${leaseResult.standard ? `
+                <div style="flex:1;border:2px solid ${leaseResult.bestLease === 'standard' ? '#FFD700' : '#ddd'};border-radius:10px;padding:10px;">
+                  <div style="font-size:12px;font-weight:700;color:#E65100;">Std + Lease Cash ${leaseResult.bestLease === 'standard' ? '<span style="background:#FFD700;color:#000;font-size:9px;padding:1px 5px;border-radius:6px;">✓</span>' : ''}</div>
+                  <div style="font-size:10px;color:#666;">Taux: ${leaseResult.standard.rate}% | Cash: -${fmt(leaseResult.standard.leaseCash)} $</div>
+                  <div style="background:#fff8e1;border-radius:6px;padding:8px;text-align:center;margin-top:6px;">
+                    <div style="font-size:10px;color:#666;">Avant taxes: ${fmt2(leaseResult.standard.monthlyBeforeTax)} $</div>
+                    <div style="font-size:10px;color:#666;">TPS: ${fmt2(leaseResult.standard.tpsOnPayment)} $ | TVQ: ${fmt2(leaseResult.standard.tvqOnPayment)} $</div>
+                    <div style="font-size:20px;font-weight:700;color:#E65100;">${fmt2(leaseResult.standard.monthly)} $</div>
+                    <div style="font-size:10px;color:#c00;">Coût emprunt: ${fmt2(leaseResult.standard.coutEmprunt)} $</div>
+                  </div>
+                </div>` : ''}
+                ${leaseResult.alternative ? `
+                <div style="flex:1;border:2px solid ${leaseResult.bestLease === 'alternative' ? '#FFD700' : '#ddd'};border-radius:10px;padding:10px;">
+                  <div style="font-size:12px;font-weight:700;color:#0277BD;">Taux Alternatif ${leaseResult.bestLease === 'alternative' ? '<span style="background:#FFD700;color:#000;font-size:9px;padding:1px 5px;border-radius:6px;">✓</span>' : ''}</div>
+                  <div style="font-size:10px;color:#666;">Taux: ${leaseResult.alternative.rate}% | Cash: $0</div>
+                  <div style="background:#e3f2fd;border-radius:6px;padding:8px;text-align:center;margin-top:6px;">
+                    <div style="font-size:10px;color:#666;">Avant taxes: ${fmt2(leaseResult.alternative.monthlyBeforeTax)} $</div>
+                    <div style="font-size:10px;color:#666;">TPS: ${fmt2(leaseResult.alternative.tpsOnPayment)} $ | TVQ: ${fmt2(leaseResult.alternative.tvqOnPayment)} $</div>
+                    <div style="font-size:20px;font-weight:700;color:#0277BD;">${fmt2(leaseResult.alternative.monthly)} $</div>
+                    <div style="font-size:10px;color:#c00;">Coût emprunt: ${fmt2(leaseResult.alternative.coutEmprunt)} $</div>
+                  </div>
+                </div>` : ''}
+              </div>
+            </div>` : ''}
+
+            ${stickerImageUrl ? `
+            <div style="margin-top:10px;text-align:center;">
+              <div style="font-size:11px;font-weight:700;color:#666;margin-bottom:6px;">WINDOW STICKER</div>
+              <img src="${stickerImageUrl}" style="max-width:100%;border-radius:8px;border:1px solid #ddd;" crossorigin="anonymous" />
+            </div>` : ''}
+
+            ${stickerUrl ? `
+            <div style="text-align:center;margin-top:8px;">
+              <a href="${stickerUrl}" style="font-size:11px;color:#4ECDC4;">Window Sticker PDF</a>
+            </div>` : ''}
+
+            <div style="text-align:center;margin-top:14px;padding-top:10px;border-top:1px solid #eee;">
+              <div style="font-size:10px;color:#999;">Généré le ${new Date().toLocaleDateString('fr-CA')} - CalcAuto AiPro</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // 4. Render HTML in hidden div, capture with html2canvas
+      const container = document.createElement('div');
+      container.style.position = 'fixed';
+      container.style.left = '-9999px';
+      container.style.top = '0';
+      container.innerHTML = screenshotHtml;
+      document.body.appendChild(container);
+
+      // Wait for images to load
+      const images = container.querySelectorAll('img');
+      if (images.length > 0) {
+        await Promise.all(Array.from(images).map(img => 
+          new Promise<void>((resolve) => {
+            if (img.complete) resolve();
+            else { img.onload = () => resolve(); img.onerror = () => resolve(); }
+          })
+        ));
+      }
+
+      const captureDiv = container.querySelector('#capture') as HTMLElement;
+      const canvas = await html2canvas(captureDiv, { 
+        scale: 2, 
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+      });
+      document.body.removeChild(container);
+
+      // Convert canvas to blob
+      const blob: Blob = await new Promise((resolve) => canvas.toBlob((b: any) => resolve(b), 'image/png'));
+      const file = new File([blob], `soumission_${vehicle.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
+      
+      const filesToShare: File[] = [file];
+      
+      // Build text message with sticker link
+      let shareText = `${vehicle} - ${fmt(price)} $\n`;
+      shareText += `${payLabel}: Option 1 = ${fmt2(o1Pay)} $ (${selectedTerm}m)`;
+      if (hasOption2) shareText += ` | Option 2 = ${fmt2(o2Pay)} $`;
+      if (showLease && leaseResult) {
+        const bestLease = leaseResult.bestLease === 'standard' ? leaseResult.standard : leaseResult.alternative;
+        if (bestLease) shareText += `\nLocation ${leaseTerm}m: ${fmt2(bestLease.monthly)} $/mois`;
+      }
+      if (stickerUrl) shareText += `\n\nWindow Sticker: ${stickerUrl}`;
+      shareText += `\n\n- CalcAuto AiPro`;
+
+      // 5. Share via native share sheet
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: filesToShare })) {
+        await navigator.share({
+          text: shareText,
+          files: filesToShare,
+        });
+      } else {
+        // Fallback: download image + copy text
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.name;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        try {
+          await navigator.clipboard.writeText(shareText);
+          alert(lang === 'fr' ? 'Image téléchargée et texte copié!' : 'Image downloaded and text copied!');
+        } catch {
+          alert(lang === 'fr' ? 'Image téléchargée!' : 'Image downloaded!');
+        }
+      }
+      
+      setShowSmsPreview(false);
+    } catch (error: any) {
+      console.error('Share error:', error);
+      setShowSmsPreview(false);
+      // Fallback to text-only SMS
+      const message = generateSubmissionText();
+      setSmsPreviewText(message);
+      setShowSmsPreview(true);
+    }
   };
 
   // Send the SMS message after preview
