@@ -671,57 +671,77 @@ export default function HomeScreen() {
     const totalAccessoires = accessories.reduce((sum: number, acc: {description: string; price: string}) => sum + (parseFloat(acc.price) || 0), 0);
 
     const calcLease = (rate: number, cash: number) => {
-      const taux = 0.14975;
+      const tps = 0.05;
+      const tvq = 0.09975;
+      const tauxTaxe = tps + tvq; // 14.975%
       const sellingPrice = price + totalAccessoires;
       
-      // === CALCUL LOCATION QUÉBEC ===
-      // 1. Coût capitalisé brut = prix vente + frais + solde reporté (si dette) - lease cash
-      const capCostBrut = sellingPrice + fraisTax - cash;
+      // === CALCUL LOCATION SCI QUÉBEC ===
+      // 1. Coût capitalisé = prix vente + frais - lease cash (PAS DE TAXES sur le cap)
+      const capCost = sellingPrice + fraisTax - cash;
       
-      // 2. Si solde reporté négatif (dette d'ancienne location), l'ajouter avec taxes
-      let soldeAvecTaxes = 0;
+      // 2. Solde reporté (dette ancienne location, avec taxes si négatif)
+      let soldeNet = 0;
       if (soldeReporte < 0) {
-        soldeAvecTaxes = Math.abs(soldeReporte) * (1 + taux);
+        soldeNet = Math.abs(soldeReporte) * (1 + tauxTaxe); // dette avec taxes
       } else if (soldeReporte > 0) {
-        soldeAvecTaxes = -soldeReporte; // crédit
+        soldeNet = -soldeReporte; // crédit
       }
       
-      // 3. Taxes sur le coût capitalisé (avant échange)
-      const taxesSurCap = capCostBrut * taux;
+      // 3. Net cap cost = cap + solde + montant_dû - échange - comptant
+      const netCapCost = capCost + soldeNet + tradeOwed - tradeVal - comptant - bonusCash;
       
-      // 4. Crédit de taxe sur l'échange
-      // En location QC: le crédit de taxe = trade_value * taux_taxe
-      // MAIS ce crédit ne peut PAS dépasser les taxes totales de la location
-      // Le surplus est perdu
-      const creditTaxeEchange = tradeVal * taux;
-      const taxesEffectives = Math.max(0, taxesSurCap - Math.min(creditTaxeEchange, taxesSurCap));
-      const creditPerdu = Math.max(0, creditTaxeEchange - taxesSurCap);
+      // 4. Résiduel sur PDSF
+      // residualValue already calculated above
       
-      // 5. Coût capitalisé net
-      // = cap brut + taxes effectives + solde reporté + montant dû - échange - comptant - bonus cash
-      const netCapCost = capCostBrut + taxesEffectives + soldeAvecTaxes + tradeOwed - tradeVal - comptant - bonusCash;
-      
-      // 6. Paiement mensuel
+      // 5. Paiement avant taxes
       const depreciation = (netCapCost - residualValue) / leaseTerm;
       const moneyFactor = rate / 2400;
       const financeCharge = (netCapCost + residualValue) * moneyFactor;
-      const monthly = depreciation + financeCharge;
+      const monthlyBeforeTax = depreciation + financeCharge;
+      
+      // 6. Taxes SUR le paiement (pas capitalisées!)
+      const tpsOnPayment = monthlyBeforeTax * tps;
+      const tvqOnPayment = monthlyBeforeTax * tvq;
+      const taxesMensuelles = tpsOnPayment + tvqOnPayment;
+      
+      // 7. Crédit taxe échange: réparti sur les paiements
+      // crédit = (valeur échange / terme) × taux_taxe, limité aux taxes du paiement
+      let creditTaxeParMois = 0;
+      let creditPerdu = 0;
+      if (tradeVal > 0) {
+        const tradeDepreciation = tradeVal / leaseTerm;
+        const creditPotentiel = tradeDepreciation * tauxTaxe;
+        creditTaxeParMois = Math.min(creditPotentiel, taxesMensuelles);
+        creditPerdu = Math.max(0, creditPotentiel - taxesMensuelles);
+      }
+      
+      // 8. Paiement mensuel total
+      const monthlyAfterTax = monthlyBeforeTax + taxesMensuelles - creditTaxeParMois;
+      
+      const weeklyBeforeTax = monthlyBeforeTax * 12 / 52;
+      const biweeklyBeforeTax = monthlyBeforeTax * 12 / 26;
+      
+      const weeklyAfterTax = monthlyAfterTax * 12 / 52;
+      const biweeklyAfterTax = monthlyAfterTax * 12 / 26;
       
       return {
-        monthly: Math.max(0, monthly),
-        biweekly: Math.max(0, monthly * 12 / 26),
-        weekly: Math.max(0, monthly * 12 / 52),
-        total: Math.max(0, monthly * leaseTerm),
+        monthly: Math.max(0, monthlyAfterTax),
+        biweekly: Math.max(0, biweeklyAfterTax),
+        weekly: Math.max(0, weeklyAfterTax),
+        monthlyBeforeTax: Math.max(0, monthlyBeforeTax),
+        weeklyBeforeTax: Math.max(0, weeklyBeforeTax),
+        biweeklyBeforeTax: Math.max(0, biweeklyBeforeTax),
+        total: Math.max(0, monthlyAfterTax * leaseTerm),
         rate,
         netCapCost: Math.max(0, netCapCost),
         residualValue,
         leaseCash: cash,
-        capCostBrut,
-        taxesSurCap: Math.round(taxesSurCap * 100) / 100,
-        taxesEffectives: Math.round(taxesEffectives * 100) / 100,
-        creditTaxeEchange: Math.round(creditTaxeEchange * 100) / 100,
+        capCost,
+        tpsOnPayment: Math.round(tpsOnPayment * 100) / 100,
+        tvqOnPayment: Math.round(tvqOnPayment * 100) / 100,
+        creditTaxeParMois: Math.round(creditTaxeParMois * 100) / 100,
         creditPerdu: Math.round(creditPerdu * 100) / 100,
-        soldeAvecTaxes: Math.round(soldeAvecTaxes * 100) / 100,
         pdsf,
       };
     };
