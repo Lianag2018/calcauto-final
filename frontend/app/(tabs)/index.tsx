@@ -3104,8 +3104,8 @@ export default function HomeScreen() {
                         <TouchableOpacity 
                           style={styles.bestLeaseBox}
                           onPress={() => {
-                            // Auto-select the best term
                             setLeaseTerm(bestLeaseOption.term);
+                            setLeaseKmPerYear(bestLeaseOption.kmPerYear);
                           }}
                           data-testid="best-lease-option"
                         >
@@ -3120,6 +3120,10 @@ export default function HomeScreen() {
                             <View style={styles.bestLeaseRow}>
                               <Text style={styles.bestLeaseLabel}>{lang === 'fr' ? 'Terme:' : 'Term:'}</Text>
                               <Text style={styles.bestLeaseValue}>{bestLeaseOption.term} {lang === 'fr' ? 'mois' : 'mo'}</Text>
+                            </View>
+                            <View style={styles.bestLeaseRow}>
+                              <Text style={styles.bestLeaseLabel}>{lang === 'fr' ? 'Kilométrage:' : 'Mileage:'}</Text>
+                              <Text style={styles.bestLeaseValue}>{(bestLeaseOption.kmPerYear / 1000).toFixed(0)}k km / {lang === 'fr' ? 'an' : 'yr'}</Text>
                             </View>
                             <View style={styles.bestLeaseRow}>
                               <Text style={styles.bestLeaseLabel}>Option:</Text>
@@ -3151,7 +3155,7 @@ export default function HomeScreen() {
                             </View>
                           </View>
                           <Text style={styles.bestLeaseTap}>
-                            {lang === 'fr' ? 'Toucher pour sélectionner ce terme' : 'Tap to select this term'}
+                            {lang === 'fr' ? 'Toucher pour sélectionner ce terme et km' : 'Tap to select this term and km'}
                           </Text>
                         </TouchableOpacity>
                       )}
