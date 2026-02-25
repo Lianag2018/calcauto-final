@@ -11,7 +11,7 @@ import requests
 import os
 import time
 
-BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://residual-value-tool.preview.emergentagent.com')
+BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://calcauto-lease-calc.preview.emergentagent.com')
 
 def unique_stock():
     """Generate unique stock number"""
