@@ -196,15 +196,22 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
 - **Avantages** : plus de skip_codes pour structurer, plus de regex fragile pour les options, couleur correcte automatiquement
 - **Coût** : ~0.006$/scan (Vision gratuit + GPT-4o texte 0.003$)
 
+### Phase 24: Fix URLs Hardcodées — Environnement (DONE - Feb 2026)
+- **Bug critique**: URLs `calcauto-final-backend.onrender.com` hardcodées dans `inventory.tsx`, `admin.tsx`, `clients.tsx`, `index_legacy.tsx`
+- **Cause**: Condition `window.location.hostname.includes('vercel.app')` retournait l'URL Render au lieu d'utiliser `EXPO_PUBLIC_BACKEND_URL`
+- **Fix**: Simplifié `getApiUrl()` dans les 4 fichiers pour utiliser uniquement `process.env.EXPO_PUBLIC_BACKEND_URL`
+- **Frontend serve**: Expo tunnel → Static export (`npx expo export --platform web`) + Python HTTP server sur port 3000
+- **Résultat**: Toutes les pages (Calcul, CRM, Inventaire, Admin) fonctionnent avec le backend
+
 ## Backlog
-- (P0) Corriger l'ordre des options du parseur (options fallback ajoutées au début au lieu de la fin)
-- (P1) Corriger visibilité bouton "Export Excel" dans le modal de révision
-- (P1) Implémenter l'import Excel complet (frontend UI)
-- (P1) Restreindre parsing en-tête facture (VIN uniquement)
-- (P2) Refactoring index.tsx (fichier monolithique)
-- (P2) Interface historique scans
-- (P3) Refactoring server.py en structure routes/
+- (P1) Continuer refactoring index.tsx → extraire `usePrograms.ts`
+- (P1) Validation utilisateur du parser Vision+GPT-4o
+- (P1) Validation utilisateur du workflow Excel
+- (P2) Refactoring server.py en structure routes/
+- (P2) Refactoring inventory.tsx en composants
+- (P2) Nettoyage code mort parser.py (CATEGORY_GROUPS, deduplicate_options)
 - (P3) Dashboard admin métriques parsing
+- (P3) Supprimer index_legacy.tsx et son onglet navigation
 
 ### Phase 14: Parser V6.5 - Déduplication (DONE - Feb 2026)
 - **Bug fix critique**: Résolu le problème de duplication d'options similaires
