@@ -3101,7 +3101,58 @@ export default function HomeScreen() {
                         </View>
                       )}
 
-                      {/* Share Actions for Lease Section */}
+                      {/* ANALYSE COMPLÈTE - Grille de tous les paiements */}
+                      {leaseAnalysisGrid.length > 0 && (
+                        <View style={styles.analysisSection}>
+                          <Text style={styles.analysisSectionTitle}>
+                            {lang === 'fr' ? 'ANALYSE COMPLÈTE - Paiements mensuels' : 'FULL ANALYSIS - Monthly payments'}
+                          </Text>
+                          {[12000, 18000, 24000].map(km => {
+                            const kmRows = leaseAnalysisGrid.filter(r => r.kmPerYear === km);
+                            if (kmRows.length === 0) return null;
+                            const terms = [...new Set(kmRows.map(r => r.term))].sort((a,b) => a-b);
+                            return (
+                              <View key={km} style={styles.analysisKmBlock}>
+                                <Text style={styles.analysisKmTitle}>{(km/1000).toFixed(0)}k km / {lang === 'fr' ? 'an' : 'yr'}</Text>
+                                <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+                                  <View>
+                                    <View style={styles.analysisHeaderRow}>
+                                      <Text style={[styles.analysisCell, styles.analysisCellHeader, { width: 52 }]}>{lang === 'fr' ? 'Terme' : 'Term'}</Text>
+                                      <Text style={[styles.analysisCell, styles.analysisCellHeader, { width: 45 }]}>Rés%</Text>
+                                      <Text style={[styles.analysisCell, styles.analysisCellHeader, { width: 82, color: '#E65100' }]}>Std</Text>
+                                      <Text style={[styles.analysisCell, styles.analysisCellHeader, { width: 82, color: '#0277BD' }]}>Alt</Text>
+                                    </View>
+                                    {terms.map(t => {
+                                      const stdRow = kmRows.find(r => r.term === t && r.option === 'std');
+                                      const altRow = kmRows.find(r => r.term === t && r.option === 'alt');
+                                      const isBestStd = bestLeaseOption && bestLeaseOption.term === t && bestLeaseOption.kmPerYear === km && bestLeaseOption.option === 'standard';
+                                      const isBestAlt = bestLeaseOption && bestLeaseOption.term === t && bestLeaseOption.kmPerYear === km && bestLeaseOption.option === 'alternative';
+                                      return (
+                                        <TouchableOpacity 
+                                          key={t} 
+                                          style={[styles.analysisDataRow, (isBestStd || isBestAlt) && styles.analysisBestRow]}
+                                          onPress={() => { setLeaseTerm(t); setLeaseKmPerYear(km); }}
+                                        >
+                                          <Text style={[styles.analysisCell, { width: 52, fontWeight: '600' }]}>{t}m</Text>
+                                          <Text style={[styles.analysisCell, { width: 45, color: '#888' }]}>{stdRow?.residualPct || altRow?.residualPct}%</Text>
+                                          <Text style={[styles.analysisCell, { width: 82, color: isBestStd ? '#FFD700' : '#E65100', fontWeight: isBestStd ? '800' : '500' }]}>
+                                            {stdRow ? `${stdRow.monthly.toFixed(0)}$` : '-'}
+                                          </Text>
+                                          <Text style={[styles.analysisCell, { width: 82, color: isBestAlt ? '#FFD700' : '#0277BD', fontWeight: isBestAlt ? '800' : '500' }]}>
+                                            {altRow ? `${altRow.monthly.toFixed(0)}$` : '-'}
+                                          </Text>
+                                        </TouchableOpacity>
+                                      );
+                                    })}
+                                  </View>
+                                </ScrollView>
+                              </View>
+                            );
+                          })}
+                        </View>
+                      )}
+
+                      {/* MEILLEUR CHOIX */}
                       {bestLeaseOption && (
                         <TouchableOpacity 
                           style={styles.bestLeaseBox}
