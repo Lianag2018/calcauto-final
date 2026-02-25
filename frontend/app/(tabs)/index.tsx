@@ -1561,8 +1561,8 @@ export default function HomeScreen() {
             <div style="font-size:12px; color:#666;">${lang === 'fr' ? 'Généré le' : 'Generated on'} ${new Date().toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA')}</div>
             <div class="disclaimer">
               ${lang === 'fr' 
-                ? 'Ce calcul est une estimation et ne constitue pas une offre de financement officielle. Les taux et conditions peuvent varier selon votre dossier de crédit.'
-                : 'This calculation is an estimate and does not constitute an official financing offer. Rates and conditions may vary based on your credit file.'}
+                ? 'AVIS IMPORTANT: Les montants de paiements présentés dans cette soumission sont fournis à titre indicatif seulement et ne constituent en aucun cas une offre de financement ou de location officielle. Les versements réels peuvent différer en fonction de l\'évaluation de crédit, des programmes en vigueur au moment de la transaction, des ajustements de résiduel et des frais applicables. Le concessionnaire et ses représentants ne peuvent être tenus responsables de toute erreur de calcul ou d\'écart entre la présente estimation et les conditions finales du contrat. Toute transaction est sujette à l\'approbation du crédit par l\'institution financière.'
+                : 'IMPORTANT NOTICE: Payment amounts shown in this submission are provided for informational purposes only and do not constitute an official financing or lease offer. Actual payments may differ based on credit evaluation, programs in effect at the time of transaction, residual adjustments and applicable fees. The dealer and its representatives cannot be held responsible for any calculation errors or discrepancies between this estimate and the final contract terms. All transactions are subject to credit approval by the financial institution.'}
             </div>
           </div>
         </div>
