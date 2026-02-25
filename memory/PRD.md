@@ -8,11 +8,12 @@ Application mobile "CalcAuto AiPro" pour les concessionnaires automobiles Stella
 - **Financing Calculator**: Calculs de paiements avec programmes Stellantis
 - **Lease Calculator (SCI)**: Calcul précis de location avec résiduels, taux et cash incentives
 - **Inventory Management**: CRUD véhicules avec scan, export Excel, partage (email/SMS/print)
-- **SCI Cascading Dropdowns**: Menus déroulants en cascade (Marque→Modèle→Trim→Carrosserie) basés sur le guide résiduel SCI
+- **SCI Cascading Dropdowns**: Menus déroulants en cascade (Marque->Modèle->Trim->Carrosserie) basés sur le guide résiduel SCI
 - **Monthly PDF Upload System**: Upload mensuel de 2 documents (Programmes + Guide Résiduel) avec parsing automatique et email de vérification
+- **Dual-Page PDF Extraction**: Support de deux plages de pages (Retail + SCI Lease) depuis un même PDF de programmes
 
 ## Architecture
-- **Frontend**: React Native (Expo) → Static web build (dist/)
+- **Frontend**: React Native (Expo) -> Static web build (dist/)
 - **Backend**: FastAPI (Python) on port 8001
 - **Database**: MongoDB (for users, inventory, clients)
 - **Data Files**: JSON files in backend/data/ for SCI residuals, lease rates, programs
@@ -29,8 +30,20 @@ Application mobile "CalcAuto AiPro" pour les concessionnaires automobiles Stella
 - [x] Client management
 - [x] Monthly upload system for Residual Guide PDF (auto-parse + Excel email)
 - [x] Document type choice page (Programmes vs Guide Résiduel)
+- [x] **Dual-page PDF extraction** - Retail pages + SCI Lease pages from same PDF
+- [x] SCI Lease rates auto-saved to sci_lease_rates_{month}{year}.json
 
 ## Latest Changes (Feb 2026)
+### Session 3 (Current):
+- Added `lease_start_page` and `lease_end_page` optional params to POST /api/extract-pdf
+- Backend extracts SCI Lease rates using GPT-4o from specified lease pages
+- SCI Lease rates saved to `sci_lease_rates_{month}{year}.json` with proper format
+- Frontend shows dual page inputs: Retail (teal) + SCI Lease (orange) in select-pages step
+- Frontend shows sci_lease_count in success message
+- Fixed duplicate raise statement in extract-pdf error handling
+- Fixed file naming to use English month abbreviations (feb vs fév)
+- ExtractedDataResponse model updated with sci_lease_count field
+
 ### Session 2:
 - Added `body_style` field to InventoryVehicle and InventoryCreate models
 - Created `/api/sci/vehicle-hierarchy` endpoint for cascading dropdown data
@@ -41,7 +54,7 @@ Application mobile "CalcAuto AiPro" pour les concessionnaires automobiles Stella
 - Added POST /api/upload-residual-guide endpoint (PDF parsing + Excel generation + email)
 - Modified import.tsx wizard with "Type de document" choice step
 - Added residual-upload, residual-processing, residual-success steps
-- Added residual-by-km table below lease term selector (shows body style, % adjustments for 12k/18k/24k, clickable rows to change km)
+- Added residual-by-km table below lease term selector
 
 ## Build Process
 ```bash
@@ -58,20 +71,23 @@ sudo supervisorctl restart expo
 - GET /api/sci/residuals
 - GET /api/sci/lease-rates
 - GET /api/sci/vehicle-hierarchy
-- POST /api/upload-residual-guide (NEW)
+- POST /api/upload-residual-guide
+- POST /api/extract-pdf (Dual-page: retail + SCI lease)
+- POST /api/verify-password
 - GET /api/programs
 - POST /api/inventory/send-email
+- POST /api/pdf-info
 
 ## Prioritized Backlog
 ### P1 (High)
+- Update lease calculator to use body_style for residual lookup
+- Update invoice parser (GPT-4o) to extract body style from invoices
 - User validation of parser fixes with various invoices
-- User validation of Excel workflow
-- Refactoring of index.tsx (5000+ lines → components + hooks)
-- Enhance Programs PDF upload to support SCI Lease page selection
 
 ### P2 (Medium)
-- Refactoring of server.py (monolithic → APIRouter)
-- Improve residual matching in lease calculator to use body_style
+- Refactoring of server.py (monolithic -> APIRouter)
+- Refactoring of index.tsx (5000+ lines -> components + hooks)
+- Refactoring of inventory.tsx
 
 ### P3 (Low)
 - Code deduplication across tabs
@@ -81,4 +97,3 @@ sudo supervisorctl restart expo
 - Email: danielgiroux007@gmail.com
 - Password: Liana2018$
 - Admin password (import): Liana2018
-- Cloud icon modal password: Admin
