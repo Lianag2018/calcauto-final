@@ -793,15 +793,12 @@ export default function HomeScreen() {
     const availableTerms = [24, 27, 36, 39, 42, 48, 51, 54, 60];
     const availableKms = [12000, 18000, 24000];
     let bestOption: any = null;
-    
-    console.log('[BEST] Starting best lease calc. kmAdj exists:', !!kmAdj, 'rateEntry:', rateEntry?.model);
 
     for (const km of availableKms) {
       for (const t of availableTerms) {
         const resPct = residualVehicle.residual_percentages?.[String(t)] || 0;
         if (resPct === 0) continue;
 
-        // km adjustment for this term and km
         let kmAdj2 = 0;
         if (km !== 24000 && kmAdj) {
           kmAdj2 = kmAdj[String(km)]?.[String(t)] || 0;
@@ -829,28 +826,21 @@ export default function HomeScreen() {
           return { monthly, monthlyBeforeTax: bt, rate, term: termLen, residualPct: adjResPct, residualValue: resVal, coutEmprunt: fc * termLen, leaseCash: cash, kmPerYear: km };
         };
 
-        // Alternative (usually cheaper)
         if (altRate !== null) {
           const r = calcForTerm(altRate, 0, t);
           if (!bestOption || r.monthly < bestOption.monthly) {
             bestOption = { ...r, option: 'alternative', optionLabel: 'Taux Alternatif' };
-            console.log(`[BEST] New best: ${km}km/${t}m Alt ${altRate}% → ${r.monthly.toFixed(2)} (res ${adjResPct}%)`);
           }
         }
-        // Standard
         if (stdRate !== null) {
           const r = calcForTerm(stdRate, leaseCash, t);
           if (!bestOption || r.monthly < bestOption.monthly) {
             bestOption = { ...r, option: 'standard', optionLabel: 'Std + Lease Cash' };
-            console.log(`[BEST] New best: ${km}km/${t}m Std ${stdRate}% → ${r.monthly.toFixed(2)} (res ${adjResPct}%)`);
           }
         }
       }
     }
 
-    if (bestOption) {
-      console.log(`[BEST] WINNER: ${bestOption.kmPerYear}km/${bestOption.term}m ${bestOption.option} ${bestOption.rate}% = ${bestOption.monthly.toFixed(2)}$/m (res ${bestOption.residualPct}%)`);
-    }
     setBestLeaseOption(bestOption);
   }, [showLease, selectedProgram, vehiclePrice, leaseTerm, leaseKmPerYear, leaseResiduals, leaseRates, 
       customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, leasePdsf, leaseSoldeReporte, leaseRabaisConcess]);
