@@ -64,6 +64,7 @@ interface CalculatorInputs {
   prixEchange: string;
   montantDuEchange: string;
   accessories: Array<{ description: string; price: string }>;
+  rabaisConcess: string;
 }
 
 /**
