@@ -30,31 +30,12 @@ Application mobile "CalcAuto AiPro" pour les concessionnaires automobiles Stella
 - [x] Client management
 - [x] Monthly upload system for Residual Guide PDF (auto-parse + Excel email)
 - [x] Document type choice page (Programmes vs Guide Résiduel)
-- [x] **Dual-page PDF extraction** - Retail pages + SCI Lease pages from same PDF
+- [x] Dual-page PDF extraction - Retail pages + SCI Lease pages from same PDF
 - [x] SCI Lease rates auto-saved to sci_lease_rates_{month}{year}.json
-
-## Latest Changes (Feb 2026)
-### Session 3 (Current):
-- Added `lease_start_page` and `lease_end_page` optional params to POST /api/extract-pdf
-- Backend extracts SCI Lease rates using GPT-4o from specified lease pages
-- SCI Lease rates saved to `sci_lease_rates_{month}{year}.json` with proper format
-- Frontend shows dual page inputs: Retail (teal) + SCI Lease (orange) in select-pages step
-- Frontend shows sci_lease_count in success message
-- Fixed duplicate raise statement in extract-pdf error handling
-- Fixed file naming to use English month abbreviations (feb vs fév)
-- ExtractedDataResponse model updated with sci_lease_count field
-
-### Session 2:
-- Added `body_style` field to InventoryVehicle and InventoryCreate models
-- Created `/api/sci/vehicle-hierarchy` endpoint for cascading dropdown data
-- Parsed full SCI Residual Guide PDF (274 vehicles: Chrysler, Dodge, Fiat, Jeep, Ram)
-- Replaced free-text brand/model/trim inputs with Modal-based picker dropdowns
-- Auto-select body_style when only one option exists for a trim
-- Display body_style in vehicle cards ("Trim - Body Style" format)
-- Added POST /api/upload-residual-guide endpoint (PDF parsing + Excel generation + email)
-- Modified import.tsx wizard with "Type de document" choice step
-- Added residual-upload, residual-processing, residual-success steps
-- Added residual-by-km table below lease term selector
+- [x] "Meilleur Choix" (Best Choice) - searches ALL km × ALL terms for absolute cheapest lease
+- [x] Body style used in residual lookup (priority match with body_style > fallback)
+- [x] GPT-4o invoice parser extracts body_style automatically
+- [x] Vercel deployment fix (output: static → single for SPA mode)
 
 ## Build Process
 ```bash
@@ -79,14 +60,9 @@ sudo supervisorctl restart expo
 - POST /api/pdf-info
 
 ## Prioritized Backlog
-### P1 (High)
-- Update lease calculator to use body_style for residual lookup
-- Update invoice parser (GPT-4o) to extract body style from invoices
-- User validation of parser fixes with various invoices
-
 ### P2 (Medium)
-- Refactoring of server.py (monolithic -> APIRouter)
-- Refactoring of index.tsx (5000+ lines -> components + hooks)
+- Refactoring of server.py (7300+ lines → APIRouter modules)
+- Refactoring of index.tsx (5700+ lines → components + hooks)
 - Refactoring of inventory.tsx
 
 ### P3 (Low)
@@ -96,4 +72,4 @@ sudo supervisorctl restart expo
 ## Test Credentials
 - Email: danielgiroux007@gmail.com
 - Password: Liana2018$
-- Admin password (import): Liana2018
+- Admin password (import): Liana2018$
