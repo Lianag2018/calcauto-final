@@ -111,8 +111,8 @@ export function useCalculator(inputs: CalculatorInputs) {
     // Accessoires
     const totalAccessoires = accessories.reduce((sum, acc) => sum + (parseFloat(acc.price) || 0), 0);
 
-    // Option 1: Prix + Accessoires - Consumer Cash - valeur echange + frais + dette echange + taxes - comptant - bonus cash
-    const montantAvantTaxesO1 = price + totalAccessoires - consumerCash - valeurEchange + fraisTaxables;
+    // Option 1: Prix + Accessoires - Consumer Cash - Rabais concess. - valeur echange + frais + dette echange + taxes - comptant - bonus cash
+    const montantAvantTaxesO1 = price + totalAccessoires - consumerCash - rabais - valeurEchange + fraisTaxables;
     const taxesO1 = montantAvantTaxesO1 * TAUX_TAXE;
     const principalOption1Brut = montantAvantTaxesO1 + taxesO1 + detteSurEchange;
     const principalOption1 = principalOption1Brut - comptant - bonusCash;
@@ -122,7 +122,7 @@ export function useCalculator(inputs: CalculatorInputs) {
     const weekly1 = monthly1 * 12 / 52;
     const total1 = monthly1 * selectedTerm;
 
-    // Option 2: Prix complet - valeur echange + frais + dette echange + taxes - comptant (pas de Consumer Cash ni Bonus)
+    // Option 2: Prix complet - Rabais concess. - valeur echange + frais + dette echange + taxes - comptant (pas de Consumer Cash ni Bonus)
     let monthly2: number | null = null;
     let biweekly2: number | null = null;
     let weekly2: number | null = null;
@@ -131,7 +131,7 @@ export function useCalculator(inputs: CalculatorInputs) {
     let bestOption: string | null = null;
     let savings = 0;
 
-    const montantAvantTaxesO2 = price + totalAccessoires - valeurEchange + fraisTaxables;
+    const montantAvantTaxesO2 = price + totalAccessoires - rabais - valeurEchange + fraisTaxables;
     const taxesO2 = montantAvantTaxesO2 * TAUX_TAXE;
     const principalOption2Brut = montantAvantTaxesO2 + taxesO2 + detteSurEchange;
     const principalOption2 = principalOption2Brut - comptant;
