@@ -19,6 +19,9 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 const getApiUrl = (): string => {
   if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
