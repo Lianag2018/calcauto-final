@@ -217,8 +217,10 @@ export default function ImportScreen() {
       formData.append('password', password);
       formData.append('program_month', String(selectedMonth));
       formData.append('program_year', String(selectedYear));
-      formData.append('start_page', pageStart || '1');
-      formData.append('end_page', pageEnd || '9999');
+      formData.append('start_page', pageStart || '20');
+      formData.append('end_page', pageEnd || '21');
+      formData.append('lease_start_page', leasePageStart || '');
+      formData.append('lease_end_page', leasePageEnd || '');
       
       const response = await axios.post(`${API_URL}/api/extract-pdf`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
