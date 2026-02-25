@@ -593,19 +593,35 @@ export default function HomeScreen() {
     const price = parseFloat(vehiclePrice);
     if (isNaN(price) || price <= 0) return;
 
-    // Find matching residual vehicle
+    // Find matching residual vehicle (with body_style precision when available)
     const brandLower = selectedProgram.brand.toLowerCase();
     const modelLower = selectedProgram.model.toLowerCase();
     const trimLower = (selectedProgram.trim || '').toLowerCase();
+    const bodyStyleLower = (selectedInventory?.body_style || '').toLowerCase();
 
-    const residualVehicle = leaseResiduals.vehicles?.find((v: any) => {
+    // Priority 1: match with body_style if available (most precise)
+    let residualVehicle = bodyStyleLower ? leaseResiduals.vehicles?.find((v: any) => {
       const vBrand = v.brand.toLowerCase();
       const vModel = v.model_name.toLowerCase();
       const vTrim = (v.trim || '').toLowerCase();
+      const vBody = (v.body_style || '').toLowerCase();
       return vBrand === brandLower && 
         (vModel.includes(modelLower) || modelLower.includes(vModel)) &&
-        (vTrim.includes(trimLower) || trimLower.includes(vTrim) || !trimLower);
-    });
+        (vTrim.includes(trimLower) || trimLower.includes(vTrim) || !trimLower) &&
+        vBody === bodyStyleLower;
+    }) : null;
+
+    // Priority 2: fallback without body_style
+    if (!residualVehicle) {
+      residualVehicle = leaseResiduals.vehicles?.find((v: any) => {
+        const vBrand = v.brand.toLowerCase();
+        const vModel = v.model_name.toLowerCase();
+        const vTrim = (v.trim || '').toLowerCase();
+        return vBrand === brandLower && 
+          (vModel.includes(modelLower) || modelLower.includes(vModel)) &&
+          (vTrim.includes(trimLower) || trimLower.includes(vTrim) || !trimLower);
+      });
+    }
 
     if (!residualVehicle) {
       setLeaseResult(null);
@@ -2795,13 +2811,25 @@ export default function HomeScreen() {
                     const brandL = selectedProgram.brand.toLowerCase();
                     const modelL = selectedProgram.model.toLowerCase();
                     const trimL = (selectedProgram.trim || '').toLowerCase();
-                    const rv = leaseResiduals.vehicles?.find((v: any) => {
+                    const bodyL = (selectedInventory?.body_style || '').toLowerCase();
+                    // Priority: match with body_style, fallback without
+                    let rv = bodyL ? leaseResiduals.vehicles?.find((v: any) => {
                       const vB = v.brand.toLowerCase();
                       const vM = v.model_name.toLowerCase();
                       const vT = (v.trim || '').toLowerCase();
+                      const vBS = (v.body_style || '').toLowerCase();
                       return vB === brandL && (vM.includes(modelL) || modelL.includes(vM)) &&
-                        (vT.includes(trimL) || trimL.includes(vT) || !trimL);
-                    });
+                        (vT.includes(trimL) || trimL.includes(vT) || !trimL) && vBS === bodyL;
+                    }) : null;
+                    if (!rv) {
+                      rv = leaseResiduals.vehicles?.find((v: any) => {
+                        const vB = v.brand.toLowerCase();
+                        const vM = v.model_name.toLowerCase();
+                        const vT = (v.trim || '').toLowerCase();
+                        return vB === brandL && (vM.includes(modelL) || modelL.includes(vM)) &&
+                          (vT.includes(trimL) || trimL.includes(vT) || !trimL);
+                      });
+                    }
                     if (!rv) return null;
                     const basePct = rv.residual_percentages?.[String(leaseTerm)] || 0;
                     if (basePct === 0) return null;
