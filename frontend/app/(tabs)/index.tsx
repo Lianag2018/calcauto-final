@@ -654,8 +654,9 @@ export default function HomeScreen() {
     }
 
     const adjustedResidualPct = residualPct + kmAdjustment;
-    const msrp = parseFloat(vehiclePrice); // Use selling price as MSRP proxy
-    const residualValue = msrp * (adjustedResidualPct / 100);
+    // PDSF (MSRP) pour calcul résiduel - utiliser le champ PDSF si rempli, sinon vehiclePrice
+    const pdsf = parseFloat(leasePdsf) || parseFloat(vehiclePrice);
+    const residualValue = pdsf * (adjustedResidualPct / 100);
 
     // Calculate for both options
     const bonusCash = parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0;
@@ -666,27 +667,62 @@ export default function HomeScreen() {
     const fraisTax = dossier + pneus + rdprm;
     const tradeVal = parseFloat(prixEchange) || 0;
     const tradeOwed = parseFloat(montantDuEchange) || 0;
+    const soldeReporte = parseFloat(leaseSoldeReporte) || 0; // négatif = dette
     const totalAccessoires = accessories.reduce((sum: number, acc: {description: string; price: string}) => sum + (parseFloat(acc.price) || 0), 0);
 
     const calcLease = (rate: number, cash: number) => {
       const taux = 0.14975;
       const sellingPrice = price + totalAccessoires;
-      const capCost = sellingPrice + fraisTax - cash - tradeVal;
-      const taxesOnCap = capCost * taux;
-      const netCapCost = capCost + taxesOnCap + tradeOwed - comptant - bonusCash;
+      
+      // === CALCUL LOCATION QUÉBEC ===
+      // 1. Coût capitalisé brut = prix vente + frais + solde reporté (si dette) - lease cash
+      const capCostBrut = sellingPrice + fraisTax - cash;
+      
+      // 2. Si solde reporté négatif (dette d'ancienne location), l'ajouter avec taxes
+      let soldeAvecTaxes = 0;
+      if (soldeReporte < 0) {
+        soldeAvecTaxes = Math.abs(soldeReporte) * (1 + taux);
+      } else if (soldeReporte > 0) {
+        soldeAvecTaxes = -soldeReporte; // crédit
+      }
+      
+      // 3. Taxes sur le coût capitalisé (avant échange)
+      const taxesSurCap = capCostBrut * taux;
+      
+      // 4. Crédit de taxe sur l'échange
+      // En location QC: le crédit de taxe = trade_value * taux_taxe
+      // MAIS ce crédit ne peut PAS dépasser les taxes totales de la location
+      // Le surplus est perdu
+      const creditTaxeEchange = tradeVal * taux;
+      const taxesEffectives = Math.max(0, taxesSurCap - Math.min(creditTaxeEchange, taxesSurCap));
+      const creditPerdu = Math.max(0, creditTaxeEchange - taxesSurCap);
+      
+      // 5. Coût capitalisé net
+      // = cap brut + taxes effectives + solde reporté + montant dû - échange - comptant - bonus cash
+      const netCapCost = capCostBrut + taxesEffectives + soldeAvecTaxes + tradeOwed - tradeVal - comptant - bonusCash;
+      
+      // 6. Paiement mensuel
       const depreciation = (netCapCost - residualValue) / leaseTerm;
       const moneyFactor = rate / 2400;
       const financeCharge = (netCapCost + residualValue) * moneyFactor;
       const monthly = depreciation + financeCharge;
+      
       return {
         monthly: Math.max(0, monthly),
         biweekly: Math.max(0, monthly * 12 / 26),
         weekly: Math.max(0, monthly * 12 / 52),
         total: Math.max(0, monthly * leaseTerm),
         rate,
-        netCapCost,
+        netCapCost: Math.max(0, netCapCost),
         residualValue,
         leaseCash: cash,
+        capCostBrut,
+        taxesSurCap: Math.round(taxesSurCap * 100) / 100,
+        taxesEffectives: Math.round(taxesEffectives * 100) / 100,
+        creditTaxeEchange: Math.round(creditTaxeEchange * 100) / 100,
+        creditPerdu: Math.round(creditPerdu * 100) / 100,
+        soldeAvecTaxes: Math.round(soldeAvecTaxes * 100) / 100,
+        pdsf,
       };
     };
 
