@@ -2240,8 +2240,10 @@ EXTRAIS ABSOLUMENT TOUS LES VÉHICULES. JSON valide uniquement."""
                             }
                             
                             # Save to JSON file
-                            month_abbrev = month_names_local[program_month][:3].lower()
-                            sci_filename = f"sci_lease_rates_{month_abbrev}{program_year}.json"
+                            # Use English month abbreviations for file naming consistency
+                            en_month_abbrev = ["", "jan", "feb", "mar", "apr", "may", "jun",
+                                              "jul", "aug", "sep", "oct", "nov", "dec"]
+                            sci_filename = f"sci_lease_rates_{en_month_abbrev[program_month]}{program_year}.json"
                             sci_path = ROOT_DIR / "data" / sci_filename
                             
                             with open(sci_path, 'w', encoding='utf-8') as f:
