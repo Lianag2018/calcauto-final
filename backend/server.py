@@ -3626,6 +3626,7 @@ async def create_inventory_vehicle(vehicle: InventoryCreate, authorization: Opti
         brand=vehicle.brand,
         model=vehicle.model,
         trim=vehicle.trim,
+        body_style=vehicle.body_style,
         year=vehicle.year,
         type=vehicle.type,
         pdco=vehicle.pdco,
