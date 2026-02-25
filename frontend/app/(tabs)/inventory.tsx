@@ -107,7 +107,6 @@ export default function InventoryScreen() {
 
   // SCI vehicle hierarchy for cascading dropdowns
   const [sciHierarchy, setSciHierarchy] = useState<any>(null);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
