@@ -94,6 +94,9 @@ export default function ImportScreen() {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editProgram, setEditProgram] = useState<ProgramEntry | null>(null);
 
+  // Residual guide state
+  const [residualResult, setResidualResult] = useState<any>(null);
+
   const showAlert = (title: string, message: string) => {
     if (Platform.OS === 'web') {
       alert(`${title}: ${message}`);
