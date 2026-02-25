@@ -195,6 +195,7 @@ export default function InventoryScreen() {
   };
 
   const resetForm = () => {
+    setOpenDropdown: undefined, // removed
     setFormData({
       stock_no: '',
       vin: '',
@@ -212,7 +213,6 @@ export default function InventoryScreen() {
       km: '0',
       color: '',
     });
-    setOpenDropdown(null);
   };
 
   const handleStatusChange = async (stockNo: string, newStatus: string) => {
