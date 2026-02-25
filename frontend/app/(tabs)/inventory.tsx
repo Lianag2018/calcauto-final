@@ -347,6 +347,7 @@ export default function InventoryScreen() {
           brand: vehicle.brand || 'Ram',
           model: vehicle.model || '',
           trim: vehicle.trim || '',
+          body_style: vehicle.body_style || '',
           year: vehicle.year || new Date().getFullYear(),
           type: vehicle.type || 'neuf',
           ep_cost: vehicle.ep_cost || 0,
