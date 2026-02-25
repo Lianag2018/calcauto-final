@@ -111,19 +111,19 @@ class TestSCILeaseAPIs:
         
     def test_post_calculate_lease_ram_1500(self):
         """Test POST /api/sci/calculate-lease for Ram 1500"""
+        # API requires msrp, selling_price, annual_rate, residual_pct
         payload = {
-            "brand": "Ram",
-            "model": "1500",
-            "trim": "Sport",
-            "year": 2026,
+            "msrp": 71580,
             "selling_price": 71580,
             "term": 48,
+            "annual_rate": 3.99,  # Alternative rate at 48 months
+            "residual_pct": 53,   # Ram 1500 Sport 48-month residual
             "km_per_year": 24000,
             "lease_cash": 8250,
-            "rate": 3.99,
+            "bonus_cash": 0,
+            "cash_down": 0,
             "trade_value": 0,
             "trade_owed": 0,
-            "down_payment": 0,
             "frais_dossier": 259.95,
             "taxe_pneus": 15,
             "frais_rdprm": 100
@@ -139,38 +139,36 @@ class TestSCILeaseAPIs:
         assert "biweekly_payment" in data
         assert "weekly_payment" in data
         assert "residual_value" in data
-        assert "residual_percentage" in data
+        assert "residual_pct" in data
         
-        # Verify residual percentage for 48 months (Sport should be ~53%)
-        assert data["residual_percentage"] > 50
-        assert data["residual_percentage"] < 60
+        # Verify residual percentage for 48 months (should be 53%)
+        assert data["residual_pct"] == 53
         
         # Verify monthly payment is reasonable (should be around $800-1200)
         assert data["monthly_payment"] > 500
         assert data["monthly_payment"] < 2000
         
-        print(f"SUCCESS: Lease calculation - Monthly: ${data['monthly_payment']:.2f}, Residual: {data['residual_percentage']}%")
+        print(f"SUCCESS: Lease calculation - Monthly: ${data['monthly_payment']:.2f}, Residual: {data['residual_pct']}%")
         
     def test_calculate_lease_km_adjustment(self):
         """Test km adjustment affects residual correctly"""
         base_payload = {
-            "brand": "Ram",
-            "model": "1500",
-            "trim": "Sport",
-            "year": 2026,
+            "msrp": 71580,
             "selling_price": 71580,
             "term": 48,
+            "annual_rate": 3.99,
+            "residual_pct": 53,  # Base residual
             "lease_cash": 8250,
-            "rate": 3.99,
+            "bonus_cash": 0,
+            "cash_down": 0,
             "trade_value": 0,
             "trade_owed": 0,
-            "down_payment": 0,
             "frais_dossier": 0,
             "taxe_pneus": 0,
             "frais_rdprm": 0
         }
         
-        # Test with 24k km (standard)
+        # Test with 24k km (standard - no adjustment)
         payload_24k = {**base_payload, "km_per_year": 24000}
         response_24k = requests.post(f"{BASE_URL}/api/sci/calculate-lease", json=payload_24k)
         
@@ -185,28 +183,29 @@ class TestSCILeaseAPIs:
         data_12k = response_12k.json()
         
         # 12k km should have higher residual (better for lessee)
-        assert data_12k["residual_percentage"] > data_24k["residual_percentage"]
+        assert data_12k["residual_pct"] > data_24k["residual_pct"]
         
         # The difference should be about 4% for 48 month term
-        diff = data_12k["residual_percentage"] - data_24k["residual_percentage"]
+        diff = data_12k["residual_pct"] - data_24k["residual_pct"]
         assert diff >= 3 and diff <= 5, f"Expected ~4% diff, got {diff}%"
         
-        print(f"SUCCESS: km adjustment verified - 24k: {data_24k['residual_percentage']}%, 12k: {data_12k['residual_percentage']}%")
+        print(f"SUCCESS: km adjustment verified - 24k: {data_24k['residual_pct']}%, 12k: {data_12k['residual_pct']}%")
         
     def test_calculate_lease_different_terms(self):
         """Test lease calculation across different terms"""
+        # Residuals by term from Ram 1500 Sport data
+        residuals_by_term = {24: 66, 36: 59, 48: 53, 60: 49}
+        
         base_payload = {
-            "brand": "Ram",
-            "model": "1500",
-            "trim": "Sport",
-            "year": 2026,
+            "msrp": 71580,
             "selling_price": 71580,
             "km_per_year": 24000,
+            "annual_rate": 3.99,
             "lease_cash": 8250,
-            "rate": 3.99,
+            "bonus_cash": 0,
+            "cash_down": 0,
             "trade_value": 0,
             "trade_owed": 0,
-            "down_payment": 0,
             "frais_dossier": 0,
             "taxe_pneus": 0,
             "frais_rdprm": 0
@@ -214,22 +213,20 @@ class TestSCILeaseAPIs:
         
         results = {}
         for term in [24, 36, 48, 60]:
-            payload = {**base_payload, "term": term}
+            payload = {**base_payload, "term": term, "residual_pct": residuals_by_term[term]}
             response = requests.post(f"{BASE_URL}/api/sci/calculate-lease", json=payload)
             assert response.status_code == 200, f"Failed for term {term}"
             data = response.json()
             results[term] = data
             
-        # Shorter terms should have higher residual
-        assert results[24]["residual_percentage"] > results[36]["residual_percentage"]
-        assert results[36]["residual_percentage"] > results[48]["residual_percentage"]
-        assert results[48]["residual_percentage"] > results[60]["residual_percentage"]
+        # Shorter terms should have higher residual (as we provided)
+        assert results[24]["residual_pct"] > results[36]["residual_pct"]
+        assert results[36]["residual_pct"] > results[48]["residual_pct"]
+        assert results[48]["residual_pct"] > results[60]["residual_pct"]
         
-        # Longer terms should have lower monthly payments
-        # (due to spreading depreciation over more months)
         print(f"SUCCESS: Multi-term calculation")
         for term, data in results.items():
-            print(f"  {term} months: ${data['monthly_payment']:.2f}/mo, {data['residual_percentage']}% residual")
+            print(f"  {term} months: ${data['monthly_payment']:.2f}/mo, {data['residual_pct']}% residual")
 
 
 class TestAuthenticationAndLogin:
