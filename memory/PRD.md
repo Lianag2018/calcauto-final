@@ -255,6 +255,10 @@ GOOGLE_VISION_API_KEY=AIzaSyDZES9Mi9zQFpLEnp5PBntgFxrcF_MJa6U
 - Email: danielgiroux007@gmail.com
 - Password: Liana2018$
 
+## Note Environnement (Emergent Preview)
+Le frontend utilise un export web statique servi par Python HTTP server (port 3000).
+Après chaque modification frontend, exécuter: `bash /app/frontend/rebuild_web.sh`
+
 ## Note Production (Render)
 Pour Playwright sur Render, ajouter au build:
 ```
