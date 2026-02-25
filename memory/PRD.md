@@ -34,7 +34,7 @@ Application mobile "CalcAuto AiPro" pour les concessionnaires automobiles Stella
 - [x] SCI Lease rates auto-saved to sci_lease_rates_{month}{year}.json
 - [x] "Meilleur Choix" (Best Choice) - searches ALL km × ALL terms for absolute cheapest lease
 - [x] Body style used in residual lookup (priority match with body_style > fallback)
-- [x] GPT-4o invoice parser extracts body_style automatically
+- [x] "Rabais concessionnaire" partagé entre financement ET location (un seul champ en haut)
 - [x] Vercel deployment fix (output: static → single for SPA mode)
 
 ## Build Process
