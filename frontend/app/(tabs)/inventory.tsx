@@ -1380,23 +1380,6 @@ export default function InventoryScreen() {
                       placeholderTextColor="#666"
                     />
                   </View>
-                  <View style={styles.formGroup}>
-                    <Text style={styles.formLabel}>Type</Text>
-                    <View style={styles.typeSelector}>
-                      <TouchableOpacity
-                        style={[styles.typeBtn, reviewData.type === 'neuf' && styles.typeBtnActive]}
-                        onPress={() => updateReviewField('type', 'neuf')}
-                      >
-                        <Text style={[styles.typeBtnText, reviewData.type === 'neuf' && styles.typeBtnTextActive]}>Neuf</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.typeBtn, reviewData.type === 'occasion' && styles.typeBtnActive]}
-                        onPress={() => updateReviewField('type', 'occasion')}
-                      >
-                        <Text style={[styles.typeBtnText, reviewData.type === 'occasion' && styles.typeBtnTextActive]}>Occasion</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
                 </View>
 
                 {reviewData.options && reviewData.options.length > 0 && (
