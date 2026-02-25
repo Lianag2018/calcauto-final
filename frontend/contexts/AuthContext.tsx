@@ -3,18 +3,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Platform } from 'react-native';
 
-// Force the production backend URL for Vercel deployments
-// This is evaluated at runtime to handle Vercel's build caching
 const getApiUrl = (): string => {
-  // Check if we're running on Vercel (production)
-  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
-    return 'https://calcauto-final-backend.onrender.com';
-  }
-  // Check environment variable (for local dev)
   if (process.env.EXPO_PUBLIC_BACKEND_URL) {
     return process.env.EXPO_PUBLIC_BACKEND_URL;
   }
-  // Default for local development
   return 'http://localhost:8001';
 };
 

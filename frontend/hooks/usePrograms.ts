@@ -68,9 +68,6 @@ interface UseProgramsReturn {
 
 // Get API URL based on environment
 const getApiUrl = (): string => {
-  if (typeof window !== 'undefined' && window.location?.hostname?.includes('vercel.app')) {
-    return 'https://calcauto-final-backend.onrender.com';
-  }
   if (process.env.EXPO_PUBLIC_BACKEND_URL) {
     return process.env.EXPO_PUBLIC_BACKEND_URL;
   }
