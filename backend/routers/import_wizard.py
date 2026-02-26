@@ -324,6 +324,15 @@ VÉHICULE [Consumer Cash $X,XXX] [6 taux Option1] [6 taux Option2] [Bonus Cash]
 - Si tu vois "P" avant un montant = c'est quand même le montant
 - 6 taux = 36M, 48M, 60M, 72M, 84M, 96M
 
+=== OPTION 2 - RÈGLE CRITIQUE ===
+ATTENTION: BEAUCOUP de véhicules n'ont PAS d'Option 2 (Alternative Consumer Cash Finance Rates).
+- Les colonnes Option 2 dans le PDF sont SOUVENT VIDES (pas de chiffres, pas de tirets)
+- Si les colonnes Option 2 d'un véhicule sont VIDES ou contiennent UNIQUEMENT des tirets "- - - - - -", alors option2_rates = null
+- NE PAS inventer ou copier des taux Option 2 d'un autre véhicule
+- NE PAS supposer qu'un véhicule a Option 2 juste parce qu'un autre véhicule du même modèle l'a
+- Chaque ligne/véhicule doit être traitée INDIVIDUELLEMENT pour Option 2
+- En cas de DOUTE sur l'existence d'Option 2, mettre null
+
 === BONUS CASH - TRÈS IMPORTANT ===
 Le Bonus Cash est dans la DERNIÈRE COLONNE (colonne verte "Bonus Cash").
 - CHAQUE véhicule a son PROPRE montant de Bonus Cash (peut être 0, $1000, $3000, etc.)
@@ -378,7 +387,8 @@ Extrais les véhicules des DEUX sections!
 }}
 
 EXTRAIS ABSOLUMENT TOUS LES VÉHICULES DES SECTIONS 2026 ET 2025. 
-VÉRIFIE LE BONUS CASH POUR CHAQUE VÉHICULE INDIVIDUELLEMENT!"""
+VÉRIFIE LE BONUS CASH POUR CHAQUE VÉHICULE INDIVIDUELLEMENT!
+VÉRIFIE OPTION 2 POUR CHAQUE VÉHICULE: si les colonnes sont vides → null!"""
 
             response = client.chat.completions.create(
                 model="gpt-4o",
