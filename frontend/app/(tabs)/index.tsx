@@ -1927,7 +1927,7 @@ export default function HomeScreen() {
               {inventoryList.length > 0 ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.inventoryScroll}>
                   {inventoryList
-                    .filter(v => v.brand?.toLowerCase() === selectedProgram.brand?.toLowerCase() && String(v.year) === String(selectedProgram.year))
+                    .filter(v => v.brand?.toLowerCase() === selectedProgram.brand?.toLowerCase() && String(v.year) === String(selectedProgram.year) && v.model?.toLowerCase() === selectedProgram.model?.toLowerCase())
                     .map((vehicle) => (
                       <TouchableOpacity
                         key={vehicle.id}
