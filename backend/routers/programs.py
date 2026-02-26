@@ -68,6 +68,29 @@ async def get_periods():
     return [ProgramPeriod(month=p["_id"]["month"], year=p["_id"]["year"], count=p["count"]) for p in periods]
 
 # Programs CRUD
+@router.put("/programs/reorder")
+async def reorder_programs(data: Dict[str, Any]):
+    """Réordonne les programmes - data = {password, orders: [{id, sort_order}]}"""
+    password = data.get("password", "")
+    if password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Mot de passe incorrect")
+
+    orders = data.get("orders", [])
+    updated = 0
+    for item in orders:
+        prog_id = item.get("id")
+        new_sort_order = item.get("sort_order")
+        if prog_id is not None and new_sort_order is not None:
+            result = await db.programs.update_one(
+                {"id": prog_id},
+                {"$set": {"sort_order": new_sort_order}}
+            )
+            if result.modified_count > 0:
+                updated += 1
+
+    return {"message": f"Réordonné {updated} programmes", "updated": updated}
+
+
 @router.post("/programs", response_model=VehicleProgram)
 async def create_program(program: VehicleProgramCreate):
     program_dict = program.dict()
