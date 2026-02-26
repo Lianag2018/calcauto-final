@@ -41,6 +41,9 @@ class VehicleProgram(BaseModel):
     # Bonus Cash: Rabais APRES taxes (combinable avec Option 1 ou 2)
     bonus_cash: float = 0
     
+    # Ordre d'affichage (logique par trim, pas alphabetique)
+    sort_order: int = 0
+    
     # Metadonnees du programme
     program_month: int = Field(default_factory=lambda: datetime.utcnow().month)
     program_year: int = Field(default_factory=lambda: datetime.utcnow().year)
