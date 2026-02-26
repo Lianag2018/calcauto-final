@@ -273,7 +273,7 @@ def decode_vin(vin: str) -> dict:
 import json as _json
 _FCA_CODES_2026 = {}
 try:
-    with open(os.path.join(os.path.dirname(__file__), 'data', 'fca_product_codes_2026.json'), 'r') as f:
+    with open(os.path.join(str(ROOT_DIR), 'data', 'fca_product_codes_2026.json'), 'r') as f:
         _codes_raw = _json.load(f)
         for code, info in _codes_raw.items():
             _FCA_CODES_2026[code] = {
@@ -290,7 +290,7 @@ except Exception as e:
 # ============ Code -> Programme Financing Mapping ============
 _CODE_PROGRAM_MAPPING = {}
 try:
-    mapping_file = os.path.join(os.path.dirname(__file__), 'data', 'code_program_mapping.json')
+    mapping_file = os.path.join(str(ROOT_DIR), 'data', 'code_program_mapping.json')
     with open(mapping_file, 'r') as f:
         _CODE_PROGRAM_MAPPING = _json.load(f)
     print(f"[FCA] Loaded {len(_CODE_PROGRAM_MAPPING)} code->program mappings")

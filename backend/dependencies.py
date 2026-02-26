@@ -2,7 +2,7 @@ import hashlib
 import secrets
 from typing import Optional
 from fastapi import Header, HTTPException
-from database import db
+from database import db, ADMIN_EMAIL
 
 
 def hash_password(password: str) -> str:
