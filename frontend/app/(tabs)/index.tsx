@@ -38,6 +38,9 @@ import enTranslations from '../../locales/en.json';
 // Logique de calcul extraite
 import { useCalculator, getRateForTerm, formatCurrency, formatCurrencyDecimal } from '../../hooks/useCalculator';
 import type { FinancingRates, VehicleProgram, PaymentComparison, CalculationResult, LocalResult, ProgramPeriod, PaymentFrequency } from '../../types/calculator';
+// Extracted components and styles
+import { LoadingBorderAnimation } from '../../components/LoadingBorderAnimation';
+import { styles, loadingStyles } from './styles/homeStyles';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
