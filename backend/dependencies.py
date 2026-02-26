@@ -69,3 +69,12 @@ def get_rate_for_term(rates, term: int) -> float:
         96: rates.rate_96
     }
     return rate_map.get(term, 4.99)
+
+
+async def require_admin(authorization: Optional[str] = Header(None)):
+    """Verifie que l'utilisateur est admin"""
+    user = await get_current_user(authorization)
+    is_admin = user.get("is_admin", False) or user.get("email") == ADMIN_EMAIL
+    if not is_admin:
+        raise HTTPException(status_code=403, detail="Acces reserve aux administrateurs")
+    return user
