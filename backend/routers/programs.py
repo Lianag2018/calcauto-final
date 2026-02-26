@@ -194,6 +194,14 @@ async def import_programs(request: ImportRequest):
         prog_data["program_year"] = request.program_year
         prog_data["bonus_cash"] = prog_data.get("bonus_cash", 0)
         
+        # Compute sort_order from trim_orders collection
+        sort_order = await compute_sort_order(
+            prog_data.get("brand", ""),
+            prog_data.get("model", ""),
+            prog_data.get("trim")
+        )
+        prog_data["sort_order"] = sort_order
+        
         prog = VehicleProgram(**prog_data)
         await db.programs.insert_one(prog.dict())
         inserted += 1
