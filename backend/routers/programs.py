@@ -97,10 +97,16 @@ async def update_program(program_id: str, update: VehicleProgramUpdate):
     update_data["updated_at"] = datetime.utcnow()
     
     # Handle explicitly setting option2_rates to null
-    if "option2_rates" in update.dict(exclude_unset=True) and update.option2_rates is None:
-        await db.programs.update_one({"id": program_id}, {"$set": update_data, "$unset": {"option2_rates": ""}})
-    else:
-        await db.programs.update_one({"id": program_id}, {"$set": update_data})
+    unset_fields = {}
+    if "option2_rates" in update_data and update_data["option2_rates"] is None:
+        del update_data["option2_rates"]
+        unset_fields["option2_rates"] = ""
+    
+    update_ops = {"$set": update_data}
+    if unset_fields:
+        update_ops["$unset"] = unset_fields
+    
+    await db.programs.update_one({"id": program_id}, update_ops)
     updated = await db.programs.find_one({"id": program_id})
     return VehicleProgram(**updated)
 
