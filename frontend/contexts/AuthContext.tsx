@@ -2,16 +2,10 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Platform } from 'react-native';
+import { API_URL } from '../utils/api';
 
 const getApiUrl = (): string => {
-  // On web, use the current origin (works with Vercel rewrites and any deployment)
-  if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location) {
-    return window.location.origin;
-  }
-  if (process.env.EXPO_PUBLIC_BACKEND_URL) {
-    return process.env.EXPO_PUBLIC_BACKEND_URL;
-  }
-  return 'http://localhost:8001';
+  return API_URL;
 };
 
 const API_URL = getApiUrl();
