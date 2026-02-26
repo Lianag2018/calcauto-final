@@ -109,7 +109,7 @@ function VehicleOrderManager({ getToken }: { getToken: () => Promise<string> }) 
 
       const token = await getToken();
       await axios.put(`${API_URL}/api/programs/reorder`, {
-        password: 'Liana2018$',
+        password: 'Liana2018',
         orders: ordersToSave,
       }, {
         headers: { Authorization: `Bearer ${token}` }
