@@ -1,76 +1,67 @@
-# CalcAuto AiPro - PRD
+# CalcAuto AiPro - Product Requirements Document
 
-## Original Problem Statement
-Application mobile "CalcAuto AiPro" pour les concessionnaires automobiles Stellantis (FCA). Fonctionnalités principales: scan de factures, calculatrice de financement, gestion d'inventaire, calcul de location (Location SCI).
-
-## Core Requirements
-- **Invoice Scanner**: OCR (Google Vision) + GPT-4o pour extraire les données de factures FCA
-- **Financing Calculator**: Calculs de paiements avec programmes Stellantis
-- **Lease Calculator (SCI)**: Calcul précis de location avec résiduels, taux et cash incentives
-- **Inventory Management**: CRUD véhicules avec scan, export Excel, partage (email/SMS/print)
-- **SCI Cascading Dropdowns**: Menus déroulants en cascade (Marque->Modèle->Trim->Carrosserie) basés sur le guide résiduel SCI
-- **Monthly PDF Upload System**: Upload mensuel de 2 documents (Programmes + Guide Résiduel) avec parsing automatique et email de vérification
-- **Dual-Page PDF Extraction**: Support de deux plages de pages (Retail + SCI Lease) depuis un même PDF de programmes
+## Problem Statement
+Application full-stack de financement vehiculaire avec calculateur de location/financement,
+OCR pour factures, gestion d'inventaire et CRM.
 
 ## Architecture
-- **Frontend**: React Native (Expo) -> Static web build (dist/)
-- **Backend**: FastAPI (Python) on port 8001
-- **Database**: MongoDB (for users, inventory, clients)
-- **Data Files**: JSON files in backend/data/ for SCI residuals, lease rates, programs
-
-## What's Been Implemented
-- [x] Authentication (login/register)
-- [x] Invoice scanner (Google Vision + GPT-4o)
-- [x] Financing calculator with Stellantis programs
-- [x] Lease calculator (SCI) - accurate to the cent
-- [x] Inventory CRUD with body_style field
-- [x] SCI cascading dropdowns (274 vehicles from PDF guide)
-- [x] Email, SMS, Print sharing with lease data
-- [x] Excel export/import workflow
-- [x] Client management
-- [x] Monthly upload system for Residual Guide PDF (auto-parse + Excel email)
-- [x] Document type choice page (Programmes vs Guide Résiduel)
-- [x] Dual-page PDF extraction - Retail pages + SCI Lease pages from same PDF
-- [x] SCI Lease rates auto-saved to sci_lease_rates_{month}{year}.json
-- [x] "Meilleur Choix" (Best Choice) - searches ALL km × ALL terms for absolute cheapest lease
-- [x] Body style used in residual lookup (priority match with body_style > fallback)
-- [x] "Rabais concessionnaire" partagé entre financement ET location (un seul champ en haut)
-- [x] "Ouvrir le calcul" depuis l'historique CRM (sauvegarde/restauration complète de l'état calculateur)
-- [x] Vercel deployment fix (output: static → single for SPA mode)
-
-## Build Process
-```bash
-cd /app/frontend
-rm -rf dist .expo/web node_modules/.cache
-npx expo export --platform web --clear
-sudo supervisorctl restart expo
+```
+/app
+├── backend/
+│   ├── server.py              # Point d'entree minimal (71 lignes)
+│   ├── database.py            # Connexion MongoDB, config, logger
+│   ├── models.py              # Tous les modeles Pydantic
+│   ├── dependencies.py        # Auth helpers, utilitaires
+│   ├── routers/
+│   │   ├── auth.py            # Authentification (register, login, logout)
+│   │   ├── programs.py        # Programmes CRUD, calcul, periodes
+│   │   ├── submissions.py     # CRM (soumissions, rappels, meilleures offres)
+│   │   ├── contacts.py        # Gestion des contacts
+│   │   ├── inventory.py       # Inventaire vehicules, stats, codes produits
+│   │   ├── invoice.py         # Scanner de factures OCR (VIN, codes FCA)
+│   │   ├── email.py           # Envoi d'emails, window sticker
+│   │   ├── import_wizard.py   # Import PDF taux/residuels
+│   │   ├── sci.py             # Location SCI (residuels, taux)
+│   │   └── admin.py           # Administration
+│   ├── services/
+│   │   ├── window_sticker.py  # Fetch/convert window stickers
+│   │   └── email_service.py   # Service d'envoi d'email SMTP
+│   └── data/                  # Fichiers JSON (taux, residuels, codes)
+├── frontend/
+│   ├── app/(tabs)/
+│   │   ├── index.tsx          # Calculateur principal (3665 lignes)
+│   │   ├── styles/
+│   │   │   └── homeStyles.ts  # Styles extraits (2067 lignes)
+│   │   ├── clients.tsx        # Historique soumissions
+│   │   └── inventory.tsx      # Gestion inventaire
+│   ├── components/
+│   │   ├── LoadingBorderAnimation.tsx  # Animation chargement extraite
+│   │   └── ...
+│   └── hooks/
+│       └── useCalculator.ts   # Hook calcul financement
 ```
 
-## Key API Endpoints
-- POST /api/auth/login, /api/auth/register
-- POST /api/inventory/scan-invoice
-- GET/POST/PUT/DELETE /api/inventory
-- GET /api/sci/residuals
-- GET /api/sci/lease-rates
-- GET /api/sci/vehicle-hierarchy
-- POST /api/upload-residual-guide
-- POST /api/extract-pdf (Dual-page: retail + SCI lease)
-- POST /api/verify-password
-- GET /api/programs
-- POST /api/inventory/send-email
-- POST /api/pdf-info
+## Completed Features
+- Calculateur location SCI + financement
+- "Meilleur Choix" automatique (location)
+- Grille d'analyse comparative
+- Partage SMS avec captures d'ecran
+- Sauvegarde/restauration de calculs depuis l'historique
+- Scanner de factures (OCR: Google Cloud Vision + GPT-4o)
+- Gestion inventaire avec Window Sticker
+- Import de programmes depuis PDF
+- CRM avec rappels
+- Integration body_style pour residuels
 
-## Prioritized Backlog
-### P2 (Medium)
-- Refactoring of server.py (7300+ lines → APIRouter modules)
-- Refactoring of index.tsx (5700+ lines → components + hooks)
-- Refactoring of inventory.tsx
+## Completed - Refactoring (Feb 26, 2026)
+- Backend: server.py 7315 → 71 lignes (15 modules)
+- Frontend: index.tsx 5853 → 3665 lignes (styles + composant extraits)
+- Tests: 21/21 endpoints backend OK, 0 regression
 
-### P3 (Low)
-- Code deduplication across tabs
-- Performance optimization
+## P2 Backlog
+- Refactoring frontend/app/(tabs)/inventory.tsx
+- Amelioration continue du parseur OCR
 
-## Test Credentials
-- Email: danielgiroux007@gmail.com
-- Password: Liana2018$
-- Admin password (import): Liana2018$
+## Credentials
+- Login: danielgiroux007@gmail.com / Liana2018$
+- Admin password: Liana2018$
