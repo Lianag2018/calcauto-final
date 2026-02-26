@@ -1775,6 +1775,17 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   historyReminderText: { color: '#FFD93D', fontSize: 11 },
+  openCalcBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#4ECDC4',
+    borderRadius: 8,
+    paddingVertical: 8,
+    marginTop: 10,
+  },
+  openCalcBtnText: { color: '#1a1a2e', fontSize: 13, fontWeight: '700' },
   
   // Modal Common
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' },
