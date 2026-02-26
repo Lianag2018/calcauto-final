@@ -15,52 +15,23 @@ import io
 router = APIRouter()
 
 
-async def compute_sort_order(brand: str, model: str, trim: Optional[str]) -> int:
-    """Compute sort_order for a program based on stored trim_orders in MongoDB."""
-    # Try exact match first, then partial match
-    trim_order_doc = await db.trim_orders.find_one({"brand": brand, "model": model})
+async def compute_sort_order(brand: str, model: str, trim: Optional[str], year: int = 2026) -> int:
+    """Compute sort_order for a program based on stored trim_orders in MongoDB.
+    Uses exact (brand, model, trim) match against trim_orders collection."""
+    # Find the trim_orders document for this brand/model/year
+    trim_order_doc = await db.trim_orders.find_one({"brand": brand, "model": model, "year": year})
     if not trim_order_doc:
-        # Try partial model match
-        async for doc in db.trim_orders.find({"brand": brand}):
-            if doc["model"] in model or model in doc["model"]:
-                trim_order_doc = doc
-                break
+        # Fallback: try without year filter
+        trim_order_doc = await db.trim_orders.find_one({"brand": brand, "model": model})
 
-    trim_idx = 999
     if trim_order_doc:
         trims_list = trim_order_doc.get("trims", [])
         trim_val = trim if trim else "__none__"
         if trim_val in trims_list:
-            trim_idx = trims_list.index(trim_val)
-        elif trim:
-            for i, entry in enumerate(trims_list):
-                if entry != "__none__" and (entry.lower() in trim.lower() or trim.lower() in entry.lower()):
-                    trim_idx = i
-                    break
+            return trims_list.index(trim_val)
 
-    brand_order = {"Chrysler": 0, "Jeep": 1, "Dodge": 2, "Ram": 3, "Fiat": 4}
-    model_orders = {
-        "Chrysler": ["Grand Caravan", "Pacifica"],
-        "Jeep": ["Compass", "Cherokee", "Wrangler", "Gladiator",
-                  "Grand Cherokee", "Grand Cherokee L", "Grand Cherokee/L",
-                  "Grand Cherokee/Grand Cherokee L",
-                  "Wagoneer/L", "Wagoneer / Wagoneer L", "Wagoneer S",
-                  "Grand Wagoneer/L", "Grand Wagoneer / Grand Wagoneer L",
-                  "Grand Wagoneer", "Wagoneer", "Recon"],
-        "Dodge": ["Charger", "Charger Daytona", "Durango", "Hornet"],
-        "Ram": ["ProMaster", "ProMaster EV", "1500", "2500", "2500 Power Wagon Crew Cab",
-                 "2500/3500", "3500", "Chassis Cab"],
-        "Fiat": ["500e"],
-    }
-
-    b_order = brand_order.get(brand, 9)
-    m_order = 99
-    for i, m in enumerate(model_orders.get(brand, [])):
-        if m == model or m in model or model in m:
-            m_order = i
-            break
-
-    return b_order * 10000 + m_order * 100 + trim_idx
+    # Not found in trim_orders - return high value
+    return 999
 
 @router.post("/pdf-info")
 async def get_pdf_info(file: UploadFile = File(...)):
