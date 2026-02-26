@@ -35,6 +35,7 @@ Application mobile "CalcAuto AiPro" pour les concessionnaires automobiles Stella
 - [x] "Meilleur Choix" (Best Choice) - searches ALL km × ALL terms for absolute cheapest lease
 - [x] Body style used in residual lookup (priority match with body_style > fallback)
 - [x] "Rabais concessionnaire" partagé entre financement ET location (un seul champ en haut)
+- [x] "Ouvrir le calcul" depuis l'historique CRM (sauvegarde/restauration complète de l'état calculateur)
 - [x] Vercel deployment fix (output: static → single for SPA mode)
 
 ## Build Process
