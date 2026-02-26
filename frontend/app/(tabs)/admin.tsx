@@ -205,18 +205,31 @@ function VehicleOrderManager({ getToken }: { getToken: () => Promise<string> }) 
 
       <Text style={os.countLabel}>{filtered.length} programmes - Glissez pour réordonner</Text>
 
-      {/* Save Button */}
+      {/* Save Button + Password */}
       {hasChanges && (
-        <TouchableOpacity style={os.saveBtn} onPress={handleSave} disabled={saving}>
-          {saving ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <>
-              <Ionicons name="save" size={18} color="#fff" />
-              <Text style={os.saveBtnText}>Sauvegarder l'ordre</Text>
-            </>
+        <View style={os.saveSection}>
+          {showPasswordInput && (
+            <TextInput
+              style={os.passwordInput}
+              placeholder="Mot de passe admin"
+              placeholderTextColor="#666"
+              secureTextEntry
+              value={adminPassword}
+              onChangeText={setAdminPassword}
+              onSubmitEditing={handleSave}
+            />
           )}
-        </TouchableOpacity>
+          <TouchableOpacity style={os.saveBtn} onPress={handleSave} disabled={saving}>
+            {saving ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Ionicons name="save" size={18} color="#fff" />
+                <Text style={os.saveBtnText}>{showPasswordInput ? 'Confirmer' : 'Sauvegarder l\'ordre'}</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
       )}
 
       {/* Draggable List */}
