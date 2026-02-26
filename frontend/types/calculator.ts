@@ -21,6 +21,7 @@ export interface VehicleProgram {
   bonus_cash: number;
   program_month: number;
   program_year: number;
+  sort_order: number;
 }
 
 export interface PaymentComparison {
