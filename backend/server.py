@@ -623,6 +623,8 @@ class Submission(BaseModel):
     program_year: int = 0
     # Full calculator state for reload
     calculator_state: Optional[dict] = None
+
+class SubmissionCreate(BaseModel):
     client_name: str
     client_phone: str
     client_email: str
