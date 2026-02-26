@@ -54,6 +54,7 @@ interface Submission {
   notes: string;
   program_month: number;
   program_year: number;
+  calculator_state: any | null;
 }
 
 interface Client {
