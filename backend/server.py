@@ -638,6 +638,7 @@ class SubmissionCreate(BaseModel):
     rate: float = 0
     program_month: int = 0
     program_year: int = 0
+    calculator_state: Optional[dict] = None
 
 class ReminderUpdate(BaseModel):
     reminder_date: datetime
