@@ -24,13 +24,7 @@ import { Language, saveLanguage, loadLanguage } from '../../utils/i18n';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { useAuth } from '../../contexts/AuthContext';
 
-const getApiUrl = (): string => {
-  if (process.env.EXPO_PUBLIC_BACKEND_URL) {
-    return process.env.EXPO_PUBLIC_BACKEND_URL;
-  }
-  return 'http://localhost:8001';
-};
-const API_URL = getApiUrl();
+import { API_URL } from '../../utils/api';
 
 interface Submission {
   id: string;

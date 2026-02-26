@@ -23,13 +23,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
-const getApiUrl = (): string => {
-  if (process.env.EXPO_PUBLIC_BACKEND_URL) {
-    return process.env.EXPO_PUBLIC_BACKEND_URL;
-  }
-  return 'http://localhost:8001';
-};
-const API_URL = getApiUrl();
+import { API_URL } from '../../utils/api';
 
 interface InventoryVehicle {
   id: string;
