@@ -706,11 +706,9 @@ export default function HomeScreen() {
     if (selectedBrand) {
       filtered = filtered.filter(p => p.brand === selectedBrand);
     }
-    // Sort alphabetically by model + trim
+    // Sort by sort_order (logical trim hierarchy from manufacturer)
     filtered.sort((a, b) => {
-      const nameA = `${a.model} ${a.trim || ''}`.trim().toLowerCase();
-      const nameB = `${b.model} ${b.trim || ''}`.trim().toLowerCase();
-      return nameA.localeCompare(nameB);
+      return (a.sort_order || 0) - (b.sort_order || 0);
     });
     setFilteredPrograms(filtered);
   }, [programs, selectedYear, selectedBrand]);
