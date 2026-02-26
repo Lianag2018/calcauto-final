@@ -1044,7 +1044,7 @@ export default function HomeScreen() {
 
       const captureDiv = container.querySelector('#capture') as HTMLElement;
       const canvas = await html2canvas(captureDiv, { 
-        scale: 2, 
+        scale: 3, 
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
