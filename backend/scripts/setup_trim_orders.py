@@ -130,6 +130,7 @@ def build_trim_orders():
 
         # JEEP GLADIATOR - from code guide: Sport, Mojave, Rubicon
         ("Jeep", "Gladiator"): [
+            None,
             "Sport S, Willys, Sahara, Willys '41", "Sport S, Willys, Sahara, Willys '41 (JTJL98)",
             "(excl. Sport S, Willys, Sahara, Willys '41)", "excluding Sport S, Willys, Sahara, Willys '41 (JTJL98)",
             "Mojave", "Rubicon"
