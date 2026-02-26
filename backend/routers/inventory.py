@@ -10,6 +10,7 @@ from models import (
 )
 from dependencies import get_current_user, require_admin
 from services.window_sticker import fetch_window_sticker, save_window_sticker_to_db
+from routers.invoice import get_full_vehicle_info, _CODE_PROGRAM_MAPPING
 
 router = APIRouter()
 
