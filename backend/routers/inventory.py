@@ -8,7 +8,8 @@ from models import (
     InventoryVehicle, InventoryCreate, InventoryUpdate,
     VehicleOption, ProductCode
 )
-from dependencies import get_current_user
+from dependencies import get_current_user, require_admin
+from services.window_sticker import fetch_window_sticker, save_window_sticker_to_db
 
 router = APIRouter()
 

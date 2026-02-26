@@ -4,17 +4,10 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 from pathlib import Path
 from database import db, ADMIN_EMAIL, ROOT_DIR, logger
-from dependencies import get_current_user
+from dependencies import get_current_user, require_admin
 
 router = APIRouter()
 
-
-async def require_admin(authorization):
-    """Verify user is admin"""
-    user = await get_current_user(authorization)
-    if not user.get("is_admin") and user.get("email") != ADMIN_EMAIL:
-        raise HTTPException(status_code=403, detail="Admin access required")
-    return user
 
 # ============ Other Admin Endpoints ============
 
