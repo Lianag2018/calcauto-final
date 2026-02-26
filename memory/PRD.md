@@ -19,18 +19,26 @@ OCR pour factures, gestion d'inventaire et CRM.
 │   │   ├── invoice.py, import_wizard.py, sci.py, admin.py
 │   ├── services/              # window_sticker.py, email_service.py
 │   ├── scripts/
-│   │   └── setup_trim_orders.py  # Mapping exact PDF → sort_order
+│   │   └── setup_trim_orders.py  # Mapping exact PDF -> sort_order
 │   └── data/                  # JSON (taux, residuels, codes)
 ├── frontend/
 │   ├── app/(tabs)/index.tsx   # Calculateur (tri sort_order, SMS screenshot)
 │   ├── types/calculator.ts    # VehicleProgram avec sort_order
 │   └── utils/api.ts           # Resolution dynamique URL backend
+└── ARCHITECTURE.md            # Documentation complete architecture & deploiement
 ```
 
 ## MongoDB Collections
 - `programs`: Programmes de financement (avec sort_order = position PDF)
 - `trim_orders`: Hierarchie des trims par marque/modele/annee
-- `code_guides`: Metadata des guides de commande PDF (65 entries)
+- `users`: Comptes utilisateurs
+- `tokens`: Tokens d'authentification
+- `submissions`: Soumissions clients (CRM)
+- `contacts`: Contacts importes
+- `inventory`: Vehicules en stock
+- `vehicle_options`: Options/equipements vehicules
+- `window_stickers`: Window Stickers caches
+- `parsing_metrics`: Metriques de scan OCR
 
 ## Completed Features
 - Calculateur location SCI + financement
