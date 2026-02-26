@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Animated, Easing, Dimensions } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, Text, Animated, Easing, Dimensions, ActivityIndicator } from 'react-native';
 import { loadingStyles } from '../app/(tabs)/styles/homeStyles';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
