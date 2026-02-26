@@ -3448,7 +3448,8 @@ async def create_submission(submission: SubmissionCreate, authorization: Optiona
         program_month=submission.program_month,
         program_year=submission.program_year,
         reminder_date=reminder_date,
-        owner_id=user["id"]
+        owner_id=user["id"],
+        calculator_state=submission.calculator_state
     )
     
     await db.submissions.insert_one(new_submission.dict())
