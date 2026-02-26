@@ -699,9 +699,9 @@ export default function HomeScreen() {
       const sellingPrice = price + totalAccessoires - rabaisConcess;
       
       // === CALCUL LOCATION SCI QUÉBEC ===
-      // 1. Coût capitalisé = prix vente - lease cash
-      //    NOTE: Frais dossier, taxe pneus, RDPRM sont payés à la livraison (PAS capitalisés)
-      const capCost = sellingPrice - cash;
+      // 1. Coût capitalisé = prix vente + frais de dossier - lease cash
+      const fraisDossierOnly = parseFloat(fraisDossier) || 0;
+      const capCost = sellingPrice + fraisDossierOnly - cash;
       
       // 2. Solde reporté = montant à AJOUTER au prix de vente (balance à reporter)
       //    Positif = ajouter au cap cost (solde à financer)
