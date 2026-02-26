@@ -1105,6 +1105,19 @@ export default function ClientsScreen() {
     </ScrollView>
   );
 
+  const openSubmissionInCalculator = async (sub: Submission) => {
+    if (sub.calculator_state) {
+      await AsyncStorage.setItem('calcauto_restore_state', JSON.stringify(sub.calculator_state));
+      router.push('/(tabs)');
+    } else {
+      if (Platform.OS === 'web') {
+        alert(lang === 'fr' ? 'Cette soumission a été créée avant la mise à jour. Les données complètes ne sont pas disponibles.' : 'This submission was created before the update. Full data is not available.');
+      } else {
+        Alert.alert(lang === 'fr' ? 'Non disponible' : 'Not available', lang === 'fr' ? 'Cette soumission a été créée avant la mise à jour.' : 'This submission was created before the update.');
+      }
+    }
+  };
+
   const renderHistoryTab = () => (
     <ScrollView 
       style={styles.tabContent}
