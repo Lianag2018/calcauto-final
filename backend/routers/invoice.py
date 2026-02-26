@@ -13,7 +13,7 @@ import hashlib
 import time
 import tempfile
 from database import db, OPENAI_API_KEY, ROOT_DIR, logger
-from models import InventoryVehicle
+from models import InventoryVehicle, InvoiceScanRequest, ExcelExportRequest
 from dependencies import get_current_user
 from services.window_sticker import fetch_window_sticker, save_window_sticker_to_db
 
