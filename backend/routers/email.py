@@ -9,15 +9,14 @@ from dependencies import get_current_user, get_optional_user, get_rate_for_term
 from services.email_service import send_email
 from services.window_sticker import (
     fetch_window_sticker, save_window_sticker_to_db,
-    convert_pdf_to_images, WINDOW_STICKER_URLS
+    convert_pdf_to_images, WINDOW_STICKER_URLS,
+    generate_lease_email_html, generate_window_sticker_html
 )
 
 router = APIRouter()
 
-def generate_lease_email_html(lease_data, freq, freq_label, fmt, fmt2):
-    """Génère le HTML pour la section Location SCI dans l'email."""
-    if not lease_data:
-        return ""
+
+# ============ WINDOW STICKER ENDPOINT ============
     
     term = lease_data.get('term', 0)
     km_per_year = lease_data.get('km_per_year', 24000)
