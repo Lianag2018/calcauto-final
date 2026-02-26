@@ -899,11 +899,56 @@ export default function HomeScreen() {
               <div style="font-size:18px;color:#4ECDC4;font-weight:700;">${fmt(price)} $</div>
               ${vin ? `<div style="font-size:10px;color:#888;font-family:monospace;margin-top:4px;">VIN: ${vin}</div>` : ''}
             </div>
-            
+
+            <!-- RATES TABLE -->
+            <div style="margin-bottom:14px;">
+              <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Tableau des taux</div>
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead>
+                  <tr style="background:#1a1a2e;color:#fff;">
+                    <th style="padding:6px 8px;text-align:left;">Terme</th>
+                    <th style="padding:6px 8px;text-align:center;">Option 1</th>
+                    ${hasOption2 ? '<th style="padding:6px 8px;text-align:center;">Option 2</th>' : ''}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${[36, 48, 60, 72, 84, 96].map(t => {
+                    const opt1 = selectedProgram.option1_rates?.[String(t)];
+                    const opt2 = selectedProgram.option2_rates?.[String(t)];
+                    const isSelected = t === selectedTerm;
+                    return `<tr style="background:${isSelected ? '#e8f5e9' : (t % 2 === 0 ? '#f8f9fa' : '#fff')};${isSelected ? 'font-weight:700;' : ''}">
+                      <td style="padding:5px 8px;">${t} mois</td>
+                      <td style="padding:5px 8px;text-align:center;color:#c0392b;">${opt1 != null ? String(opt1).replace('.', ',') + '%' : '-'}</td>
+                      ${hasOption2 ? `<td style="padding:5px 8px;text-align:center;color:#1565C0;">${opt2 != null ? String(opt2).replace('.', ',') + '%' : '-'}</td>` : ''}
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- DETAILS -->
+            <div style="margin-bottom:14px;">
+              <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Détails</div>
+              <table style="width:100%;font-size:12px;border-collapse:collapse;">
+                <tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Prix</td><td style="padding:4px 0;text-align:right;font-weight:600;">${fmt(price)} $</td></tr>
+                ${consumerCash > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Rabais</td><td style="padding:4px 0;text-align:right;color:#1a5f4a;font-weight:600;">-${fmt(consumerCash)} $</td></tr>` : ''}
+                ${bonusCash2 > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Bonus Cash</td><td style="padding:4px 0;text-align:right;color:#1a5f4a;font-weight:600;">-${fmt(bonusCash2)} $</td></tr>` : ''}
+                ${dossier > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Frais dossier</td><td style="padding:4px 0;text-align:right;">${fmt(dossier)} $</td></tr>` : ''}
+                ${pneus > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Taxe pneus</td><td style="padding:4px 0;text-align:right;">${fmt(pneus)} $</td></tr>` : ''}
+                ${rdprm > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Frais RDPRM</td><td style="padding:4px 0;text-align:right;">${fmt(rdprm)} $</td></tr>` : ''}
+                ${valeurEchange > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Échange</td><td style="padding:4px 0;text-align:right;">-${fmt(valeurEchange)} $</td></tr>` : ''}
+                <tr><td style="padding:4px 0;color:#666;">Terme</td><td style="padding:4px 0;text-align:right;font-weight:700;">${selectedTerm} mois</td></tr>
+                <tr><td style="padding:4px 0;color:#666;">Fréquence</td><td style="padding:4px 0;text-align:right;font-weight:700;">${payLabel}</td></tr>
+              </table>
+            </div>
+
+            <!-- OPTIONS COMPARISON -->
+            <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Comparaison</div>
             <div style="display:flex;gap:8px;margin-bottom:14px;">
               <div style="flex:1;border:2px solid ${localResult.bestOption === '1' ? '#4CAF50' : '#ddd'};border-radius:10px;padding:12px;">
                 <div style="font-size:14px;font-weight:700;color:#c0392b;margin-bottom:6px;">Option 1 ${localResult.bestOption === '1' ? '<span style="background:#4CAF50;color:#fff;font-size:10px;padding:2px 6px;border-radius:8px;">✓</span>' : ''}</div>
                 <div style="font-size:11px;color:#666;margin-bottom:4px;">${lang === 'fr' ? 'Rabais:' : 'Rebate:'} ${consumerCash > 0 ? '-' + fmt(consumerCash) + ' $' : '$0'}</div>
+                <div style="font-size:11px;color:#666;margin-bottom:4px;">${lang === 'fr' ? 'Capital:' : 'Principal:'} ${fmt(localResult.principalOption1)} $</div>
                 <div style="font-size:11px;color:#666;margin-bottom:4px;">${lang === 'fr' ? 'Taux:' : 'Rate:'} <span style="color:#c0392b;">${localResult.option1Rate}%</span></div>
                 <div style="background:#f8f9fa;border-radius:6px;padding:8px;text-align:center;border-top:3px solid #c0392b;margin-top:6px;">
                   <div style="font-size:10px;color:#666;">${payLabel}</div>
@@ -915,6 +960,7 @@ export default function HomeScreen() {
               <div style="flex:1;border:2px solid ${localResult.bestOption === '2' ? '#4CAF50' : '#ddd'};border-radius:10px;padding:12px;">
                 <div style="font-size:14px;font-weight:700;color:#1565C0;margin-bottom:6px;">Option 2 ${localResult.bestOption === '2' ? '<span style="background:#4CAF50;color:#fff;font-size:10px;padding:2px 6px;border-radius:8px;">✓</span>' : ''}</div>
                 <div style="font-size:11px;color:#666;margin-bottom:4px;">${lang === 'fr' ? 'Rabais:' : 'Rebate:'} $0</div>
+                <div style="font-size:11px;color:#666;margin-bottom:4px;">${lang === 'fr' ? 'Capital:' : 'Principal:'} ${fmt(localResult.principalOption2)} $</div>
                 <div style="font-size:11px;color:#666;margin-bottom:4px;">${lang === 'fr' ? 'Taux:' : 'Rate:'} <span style="color:#1565C0;">${localResult.option2Rate}%</span></div>
                 <div style="background:#f8f9fa;border-radius:6px;padding:8px;text-align:center;border-top:3px solid #1565C0;margin-top:6px;">
                   <div style="font-size:10px;color:#666;">${payLabel}</div>
