@@ -40,8 +40,6 @@ import type { FinancingRates, VehicleProgram, PaymentComparison, CalculationResu
 import { LoadingBorderAnimation } from '../../components/LoadingBorderAnimation';
 import { styles, loadingStyles } from './styles/homeStyles';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
 // Get API URL from environment
 const getApiUrl = (): string => {
   if (process.env.EXPO_PUBLIC_BACKEND_URL) {
