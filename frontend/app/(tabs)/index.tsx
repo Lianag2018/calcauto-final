@@ -259,11 +259,9 @@ export default function HomeScreen() {
         headers: { 'Cache-Control': 'no-cache' }
       });
       setPrograms(response.data);
-      // Sort programs alphabetically by model + trim
+      // Sort programs by sort_order (logical trim hierarchy from manufacturer)
       const sorted = [...response.data].sort((a: any, b: any) => {
-        const nameA = `${a.model} ${a.trim || ''}`.trim().toLowerCase();
-        const nameB = `${b.model} ${b.trim || ''}`.trim().toLowerCase();
-        return nameA.localeCompare(nameB);
+        return (a.sort_order || 0) - (b.sort_order || 0);
       });
       setFilteredPrograms(sorted);
       
