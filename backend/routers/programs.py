@@ -96,7 +96,7 @@ async def get_programs(month: Optional[int] = None, year: Optional[int] = None):
         else:
             query = {}
     
-    programs = await db.programs.find(query).sort([("sort_order", 1), ("model", 1), ("trim", 1)]).to_list(1000)
+    programs = await db.programs.find(query).sort([("sort_order", 1), ("year", -1), ("model", 1), ("trim", 1)]).to_list(1000)
     return [VehicleProgram(**p) for p in programs]
 
 @router.get("/programs/{program_id}", response_model=VehicleProgram)
