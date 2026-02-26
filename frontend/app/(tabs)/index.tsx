@@ -1063,7 +1063,11 @@ export default function HomeScreen() {
       if (hasOption2) shareText += ` | Option 2 = ${fmt2(o2Pay)} $`;
       if (showLease && leaseResult) {
         const bestLease = leaseResult.bestLease === 'standard' ? leaseResult.standard : leaseResult.alternative;
-        if (bestLease) shareText += `\nLocation ${leaseTerm}m: ${fmt2(bestLease.monthly)} $/mois`;
+        if (bestLease) {
+          const leasePayment = paymentFrequency === 'weekly' ? bestLease.weekly : paymentFrequency === 'biweekly' ? bestLease.biweekly : bestLease.monthly;
+          const freqSuffix = paymentFrequency === 'weekly' ? '/sem' : paymentFrequency === 'biweekly' ? '/2sem' : '/mois';
+          shareText += `\nLocation ${leaseTerm}m: ${fmt2(leasePayment)} $${freqSuffix}`;
+        }
       }
       if (stickerUrl) shareText += `\n\nWindow Sticker: ${stickerUrl}`;
       shareText += `\n\n---\nAVIS: Montants à titre indicatif seulement. Sujet à l'approbation du crédit. Le concessionnaire ne peut être tenu responsable d'erreurs de calcul.`;
