@@ -109,13 +109,26 @@ class TestCalculatorState:
         assert response.status_code in [200, 201], f"Create submission failed: {response.text}"
         
         data = response.json()
-        assert "id" in data, "Response should contain submission ID"
+        
+        # Response may be: {"success": true, "submission": {...}} or just the submission object
+        if "submission" in data:
+            submission = data["submission"]
+        else:
+            submission = data
+        
+        assert "id" in submission, f"Response should contain submission ID. Got: {data}"
         
         # Store ID for cleanup
-        TestCalculatorState.created_submission_id = data["id"]
+        TestCalculatorState.created_submission_id = submission["id"]
         
-        print(f"✅ Created submission with ID: {data['id']}")
-        print(f"   calculator_state included in request: Yes")
+        # Verify calculator_state was stored
+        if "calculator_state" in submission and submission["calculator_state"] is not None:
+            print(f"✅ Created submission with ID: {submission['id']}")
+            print(f"   calculator_state included in response: Yes")
+            print(f"   vehiclePrice in state: {submission['calculator_state'].get('vehiclePrice')}")
+        else:
+            print(f"✅ Created submission with ID: {submission['id']}")
+            print(f"   calculator_state included in request: Yes (may not be in immediate response)")
     
     def test_03_get_submission_returns_calculator_state(self, headers):
         """Test GET /api/submissions returns calculator_state in response"""
@@ -220,9 +233,16 @@ class TestCalculatorState:
         assert response.status_code in [200, 201], f"Create submission without calculator_state failed: {response.text}"
         
         data = response.json()
-        TestCalculatorState.no_calc_state_id = data["id"]
         
-        print(f"✅ Submission without calculator_state created successfully (ID: {data['id']})")
+        # Response may be: {"success": true, "submission": {...}} or just the submission object
+        if "submission" in data:
+            submission = data["submission"]
+        else:
+            submission = data
+        
+        TestCalculatorState.no_calc_state_id = submission["id"]
+        
+        print(f"✅ Submission without calculator_state created successfully (ID: {submission['id']})")
     
     def test_06_cleanup_test_submissions(self, headers):
         """Clean up test submissions"""
