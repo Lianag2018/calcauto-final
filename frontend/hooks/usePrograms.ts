@@ -66,15 +66,7 @@ interface UseProgramsReturn {
   refresh: () => Promise<void>;
 }
 
-// Get API URL based on environment
-const getApiUrl = (): string => {
-  if (process.env.EXPO_PUBLIC_BACKEND_URL) {
-    return process.env.EXPO_PUBLIC_BACKEND_URL;
-  }
-  return 'http://localhost:8001';
-};
-
-const API_URL = getApiUrl();
+import { API_URL } from '../utils/api';
 
 export function usePrograms(): UseProgramsReturn {
   const { getToken } = useAuth();
