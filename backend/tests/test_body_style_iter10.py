@@ -7,7 +7,7 @@ import requests
 import os
 import json
 
-BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://calcauto-lease-calc.preview.emergentagent.com')
+BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://auto-finance-hub-6.preview.emergentagent.com')
 
 
 class TestResidualEndpoint:

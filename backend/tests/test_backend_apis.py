@@ -20,7 +20,7 @@ import requests
 import base64
 
 # Get BASE_URL from environment
-BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://calcauto-lease-calc.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://auto-finance-hub-6.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 TEST_EMAIL = "danielgiroux007@gmail.com"
