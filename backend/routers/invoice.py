@@ -927,11 +927,6 @@ def parse_fca_invoice_structured(text: str) -> dict:
 # Importée comme: from validation import validate_invoice_data as validate_invoice_full
 
 
-class InvoiceScanRequest(BaseModel):
-    image_base64: str
-    is_pdf: bool = False
-
-
 @router.post("/inventory/scan-invoice")
 async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str] = Header(None)):
     """
