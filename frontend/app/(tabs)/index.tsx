@@ -12,7 +12,6 @@ import {
   Modal,
   Alert,
   Animated,
-  Dimensions,
   Share,
   Linking,
 } from 'react-native';
