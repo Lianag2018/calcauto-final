@@ -16,6 +16,40 @@ from services.window_sticker import (
 router = APIRouter()
 
 
+def generate_rates_table_rows(rates: Dict[str, Any], selected_term: int, has_option2: bool) -> str:
+    """Generate dynamic rates table rows from actual option1_rates and option2_rates."""
+    terms = [36, 48, 60, 72, 84, 96]
+    option1_rates = rates.get("option1_rates") or {}
+    option2_rates = rates.get("option2_rates") or {}
+
+    rows = []
+    for t in terms:
+        selected_class = "selected" if t == selected_term else ""
+        term_key = str(t)
+
+        # Get Option 1 rate
+        opt1_val = option1_rates.get(term_key)
+        if opt1_val is not None:
+            opt1_display = f"{opt1_val}".replace(".", ",") + "%"
+        else:
+            opt1_display = "-"
+
+        row = f'<tr class="{selected_class}"><td style="text-align: left;">{t} mois</td><td class="rate-opt1">{opt1_display}</td>'
+
+        if has_option2:
+            opt2_val = option2_rates.get(term_key)
+            if opt2_val is not None:
+                opt2_display = f"{opt2_val}".replace(".", ",") + "%"
+            else:
+                opt2_display = "-"
+            row += f'<td class="rate-opt2">{opt2_display}</td>'
+
+        row += "</tr>"
+        rows.append(row)
+
+    return "\n".join(rows)
+
+
 # ============ WINDOW STICKER ENDPOINT ============
 
 @router.get("/window-sticker/{vin}")
