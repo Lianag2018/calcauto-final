@@ -25,7 +25,7 @@ def generate_rates_table_rows(rates: Dict[str, Any], selected_term: int, has_opt
     rows = []
     for t in terms:
         selected_class = "selected" if t == selected_term else ""
-        term_key = str(t)
+        term_key = f"rate_{t}"
 
         # Get Option 1 rate
         opt1_val = option1_rates.get(term_key)
