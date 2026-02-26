@@ -259,7 +259,13 @@ export default function HomeScreen() {
         headers: { 'Cache-Control': 'no-cache' }
       });
       setPrograms(response.data);
-      setFilteredPrograms(response.data);
+      // Sort programs alphabetically by model + trim
+      const sorted = [...response.data].sort((a: any, b: any) => {
+        const nameA = `${a.model} ${a.trim || ''}`.trim().toLowerCase();
+        const nameB = `${b.model} ${b.trim || ''}`.trim().toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+      setFilteredPrograms(sorted);
       
       // Get current period from first program or params
       if (response.data.length > 0) {
