@@ -6,7 +6,7 @@ Detailed investigation of contact data isolation issue
 import requests
 import json
 
-BACKEND_URL = "https://trim-sorter.preview.emergentagent.com/api"
+BACKEND_URL = "https://auto-deploy-guide.preview.emergentagent.com/api"
 
 def investigate_contacts():
     # Login first
