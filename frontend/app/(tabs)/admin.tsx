@@ -56,6 +56,8 @@ function VehicleOrderManager({ getToken }: { getToken: () => Promise<string> }) 
   const [selectedBrand, setSelectedBrand] = useState('Tous');
   const [hasChanges, setHasChanges] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [showPasswordInput, setShowPasswordInput] = useState(false);
   const dragOverIndex = useRef<number | null>(null);
 
   const brands = ['Tous', 'Chrysler', 'Jeep', 'Dodge', 'Ram', 'Fiat'];
