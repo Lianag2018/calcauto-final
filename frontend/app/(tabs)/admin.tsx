@@ -310,6 +310,11 @@ const os = StyleSheet.create({
   filterBtnText: { color: '#ccc', fontSize: 13, fontWeight: '600' },
   filterBtnTextActive: { color: '#1a1a2e' },
   countLabel: { color: '#888', fontSize: 12, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4 },
+  saveSection: { paddingHorizontal: 16, paddingVertical: 8, gap: 8 },
+  passwordInput: {
+    backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#4ECDC4', borderRadius: 8,
+    paddingHorizontal: 14, paddingVertical: 10, color: '#fff', fontSize: 14,
+  },
   saveBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#4ECDC4', marginHorizontal: 16, marginVertical: 8, paddingVertical: 10,
