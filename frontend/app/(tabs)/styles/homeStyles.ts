@@ -2,7 +2,111 @@ import { StyleSheet, Dimensions } from 'react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const styles = StyleSheet.create({
+export const loadingStyles = StyleSheet.create({
+  container: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#1a1a2e',
+    zIndex: 1000,
+  },
+  borderContainer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  topBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: '#4ECDC4',
+    shadowColor: '#4ECDC4',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  rightBorder: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: 3,
+    backgroundColor: '#4ECDC4',
+    shadowColor: '#4ECDC4',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  bottomBorder: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: '#4ECDC4',
+    shadowColor: '#4ECDC4',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  leftBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    width: 3,
+    backgroundColor: '#4ECDC4',
+    shadowColor: '#4ECDC4',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  lightDot: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#4ECDC4',
+    shadowColor: '#4ECDC4',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  logoText: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  logoSubText: {
+    fontSize: 24,
+    fontWeight: '300',
+    color: '#4ECDC4',
+    marginTop: -5,
+  },
+  spinner: {
+    marginBottom: 16,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#888',
+  },
+});
+
+export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#1a1a2e',
