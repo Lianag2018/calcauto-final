@@ -1130,24 +1130,34 @@ export default function ClientsScreen() {
         </View>
       ) : (
         submissions.map((sub, index) => (
-          <TouchableOpacity key={index} style={styles.historyCard} onPress={() => openFollowUpModal(sub)}>
-            <View style={styles.historyHeader}>
-              <Text style={styles.historyClient}>{sub.client_name}</Text>
-              <Text style={styles.historyDate}>{formatDate(sub.submission_date)}</Text>
-            </View>
-            <Text style={styles.historyVehicle}>
-              {sub.vehicle_brand} {sub.vehicle_model} {sub.vehicle_year}
-            </Text>
-            <Text style={styles.historyPayment}>
-              {formatCurrency(sub.payment_monthly)}/{crm.months} • {sub.term} {crm.months}
-            </Text>
-            {sub.reminder_date && !sub.reminder_done && (
-              <View style={styles.historyReminderBadge}>
-                <Ionicons name="notifications" size={12} color="#FFD93D" />
-                <Text style={styles.historyReminderText}>{formatDate(sub.reminder_date)}</Text>
+          <View key={index} style={styles.historyCard}>
+            <TouchableOpacity onPress={() => openFollowUpModal(sub)}>
+              <View style={styles.historyHeader}>
+                <Text style={styles.historyClient}>{sub.client_name}</Text>
+                <Text style={styles.historyDate}>{formatDate(sub.submission_date)}</Text>
               </View>
-            )}
-          </TouchableOpacity>
+              <Text style={styles.historyVehicle}>
+                {sub.vehicle_brand} {sub.vehicle_model} {sub.vehicle_year}
+              </Text>
+              <Text style={styles.historyPayment}>
+                {formatCurrency(sub.payment_monthly)}/{crm.months} • {sub.term} {crm.months}
+              </Text>
+              {sub.reminder_date && !sub.reminder_done && (
+                <View style={styles.historyReminderBadge}>
+                  <Ionicons name="notifications" size={12} color="#FFD93D" />
+                  <Text style={styles.historyReminderText}>{formatDate(sub.reminder_date)}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.openCalcBtn}
+              onPress={() => openSubmissionInCalculator(sub)}
+              data-testid={`open-submission-${index}`}
+            >
+              <Ionicons name="calculator-outline" size={16} color="#1a1a2e" />
+              <Text style={styles.openCalcBtnText}>{lang === 'fr' ? 'Ouvrir le calcul' : 'Open calculation'}</Text>
+            </TouchableOpacity>
+          </View>
         ))
       )}
       <View style={{ height: 100 }} />
