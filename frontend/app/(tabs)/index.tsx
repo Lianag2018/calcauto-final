@@ -1917,12 +1917,12 @@ export default function HomeScreen() {
           {selectedProgram && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>
-                {lang === 'fr' ? '📦 Inventaire disponible' : '📦 Available Inventory'} ({inventoryList.length})
+                {lang === 'fr' ? '📦 Inventaire disponible' : '📦 Available Inventory'} ({inventoryList.filter(v => v.brand?.toLowerCase() === selectedProgram.brand?.toLowerCase() && String(v.year) === String(selectedProgram.year) && v.model?.toLowerCase() === selectedProgram.model?.toLowerCase()).length})
               </Text>
               <Text style={styles.inventorySubtitle}>
                 {lang === 'fr' 
-                  ? `Véhicules ${selectedProgram.brand} ${selectedProgram.year} en stock`
-                  : `${selectedProgram.brand} ${selectedProgram.year} vehicles in stock`}
+                  ? `${selectedProgram.brand} ${selectedProgram.model} ${selectedProgram.year} en stock`
+                  : `${selectedProgram.brand} ${selectedProgram.model} ${selectedProgram.year} in stock`}
               </Text>
               {inventoryList.length > 0 ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.inventoryScroll}>
