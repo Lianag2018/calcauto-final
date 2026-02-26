@@ -298,16 +298,11 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
                                 <tr>
                                     <th style="text-align: left;">Terme</th>
                                     <th>Option 1</th>
-                                    <th>Option 2</th>
+                                    {f'<th>Option 2</th>' if has_option2 else ''}
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr class="{'selected' if term == 36 else ''}"><td style="text-align: left;">36 mois</td><td class="rate-opt1">4,99%</td><td class="rate-opt2">0%</td></tr>
-                                <tr class="{'selected' if term == 48 else ''}"><td style="text-align: left;">48 mois</td><td class="rate-opt1">4,99%</td><td class="rate-opt2">0%</td></tr>
-                                <tr class="{'selected' if term == 60 else ''}"><td style="text-align: left;">60 mois</td><td class="rate-opt1">4,99%</td><td class="rate-opt2">0%</td></tr>
-                                <tr class="{'selected' if term == 72 else ''}"><td style="text-align: left;">72 mois</td><td class="rate-opt1">4,99%</td><td class="rate-opt2">1,49%</td></tr>
-                                <tr class="{'selected' if term == 84 else ''}"><td style="text-align: left;">84 mois</td><td class="rate-opt1">4,99%</td><td class="rate-opt2">1,99%</td></tr>
-                                <tr class="{'selected' if term == 96 else ''}"><td style="text-align: left;">96 mois</td><td class="rate-opt1">4,99%</td><td class="rate-opt2">3,49%</td></tr>
+                                {generate_rates_table_rows(rates, term, has_option2)}
                             </tbody>
                         </table>
                     </div>
