@@ -621,8 +621,8 @@ class Submission(BaseModel):
     # For comparison
     program_month: int = 0
     program_year: int = 0
-
-class SubmissionCreate(BaseModel):
+    # Full calculator state for reload
+    calculator_state: Optional[dict] = None
     client_name: str
     client_phone: str
     client_email: str
