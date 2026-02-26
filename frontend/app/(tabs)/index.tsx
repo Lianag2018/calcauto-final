@@ -913,8 +913,8 @@ export default function HomeScreen() {
                 </thead>
                 <tbody>
                   ${[36, 48, 60, 72, 84, 96].map(t => {
-                    const opt1 = selectedProgram.option1_rates?.[String(t)];
-                    const opt2 = selectedProgram.option2_rates?.[String(t)];
+                    const opt1 = selectedProgram.option1_rates?.['rate_' + String(t)];
+                    const opt2 = selectedProgram.option2_rates?.['rate_' + String(t)];
                     const isSelected = t === selectedTerm;
                     return `<tr style="background:${isSelected ? '#e8f5e9' : (t % 2 === 0 ? '#f8f9fa' : '#fff')};${isSelected ? 'font-weight:700;' : ''}">
                       <td style="padding:5px 8px;">${t} mois</td>
