@@ -980,9 +980,9 @@ export default function HomeScreen() {
                   <div style="font-size:12px;font-weight:700;color:#E65100;">Std + Lease Cash ${leaseResult.bestLease === 'standard' ? '<span style="background:#FFD700;color:#000;font-size:9px;padding:1px 5px;border-radius:6px;">✓</span>' : ''}</div>
                   <div style="font-size:10px;color:#666;">Taux: ${leaseResult.standard.rate}% | Cash: -${fmt(leaseResult.standard.leaseCash)} $</div>
                   <div style="background:#fff8e1;border-radius:6px;padding:8px;text-align:center;margin-top:6px;">
-                    <div style="font-size:10px;color:#666;">Avant taxes: ${fmt2(leaseResult.standard.monthlyBeforeTax)} $</div>
-                    <div style="font-size:10px;color:#666;">TPS: ${fmt2(leaseResult.standard.tpsOnPayment)} $ | TVQ: ${fmt2(leaseResult.standard.tvqOnPayment)} $</div>
-                    <div style="font-size:20px;font-weight:700;color:#E65100;">${fmt2(leaseResult.standard.monthly)} $</div>
+                    <div style="font-size:10px;color:#666;">Avant taxes: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.standard.weeklyBeforeTax : paymentFrequency === 'biweekly' ? leaseResult.standard.biweeklyBeforeTax : leaseResult.standard.monthlyBeforeTax)} $</div>
+                    <div style="font-size:10px;color:#666;">TPS: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.standard.tpsOnPayment * 12/52 : paymentFrequency === 'biweekly' ? leaseResult.standard.tpsOnPayment * 12/26 : leaseResult.standard.tpsOnPayment)} $ | TVQ: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.standard.tvqOnPayment * 12/52 : paymentFrequency === 'biweekly' ? leaseResult.standard.tvqOnPayment * 12/26 : leaseResult.standard.tvqOnPayment)} $</div>
+                    <div style="font-size:20px;font-weight:700;color:#E65100;">${fmt2(paymentFrequency === 'weekly' ? leaseResult.standard.weekly : paymentFrequency === 'biweekly' ? leaseResult.standard.biweekly : leaseResult.standard.monthly)} $</div>
                     <div style="font-size:10px;color:#c00;">Coût emprunt: ${fmt2(leaseResult.standard.coutEmprunt)} $</div>
                   </div>
                 </div>` : ''}
