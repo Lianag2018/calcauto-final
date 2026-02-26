@@ -354,3 +354,41 @@ class SendReportEmailRequest(BaseModel):
     program_month: int
     program_year: int
     brands_summary: Dict[str, int]
+
+
+
+# ============ Invoice Scanner Models ============
+
+class InvoiceScanRequest(BaseModel):
+    image_base64: str
+    is_pdf: bool = False
+
+
+class ExcelExportRequest(BaseModel):
+    """Donnees pour export Excel"""
+    vin: Optional[str] = None
+    model_code: Optional[str] = None
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    trim: Optional[str] = None
+    year: Optional[str] = None
+    stock_no: Optional[str] = None
+    ep_cost: Optional[float] = 0
+    pdco: Optional[float] = 0
+    pref: Optional[float] = 0
+    holdback: Optional[float] = 0
+    subtotal: Optional[float] = 0
+    total: Optional[float] = 0
+    options: Optional[List[Dict[str, Any]]] = []
+
+
+class AdminUserResponse(BaseModel):
+    id: str
+    name: str
+    email: str
+    created_at: datetime
+    last_login: Optional[datetime] = None
+    is_blocked: bool = False
+    is_admin: bool = False
+    contacts_count: int = 0
+    submissions_count: int = 0
