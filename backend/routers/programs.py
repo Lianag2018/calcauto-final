@@ -93,10 +93,14 @@ async def update_program(program_id: str, update: VehicleProgramUpdate):
     if not program:
         raise HTTPException(status_code=404, detail="Program not found")
     
-    update_data = {k: v for k, v in update.dict().items() if v is not None}
+    update_data = {k: v for k, v in update.dict(exclude_unset=True).items()}
     update_data["updated_at"] = datetime.utcnow()
     
-    await db.programs.update_one({"id": program_id}, {"$set": update_data})
+    # Handle explicitly setting option2_rates to null
+    if "option2_rates" in update.dict(exclude_unset=True) and update.option2_rates is None:
+        await db.programs.update_one({"id": program_id}, {"$set": update_data, "$unset": {"option2_rates": ""}})
+    else:
+        await db.programs.update_one({"id": program_id}, {"$set": update_data})
     updated = await db.programs.find_one({"id": program_id})
     return VehicleProgram(**updated)
 
