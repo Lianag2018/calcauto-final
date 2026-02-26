@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+import { API_URL } from '../utils/api';
 
 interface FinancingTerm {
   term_months: number;

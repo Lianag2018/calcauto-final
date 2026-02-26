@@ -18,7 +18,7 @@ import { useRouter } from 'expo-router';
 import axios from 'axios';
 import * as DocumentPicker from 'expo-document-picker';
 
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+import { API_URL } from '../utils/api';
 
 interface RatesData {
   rate_36: number;
