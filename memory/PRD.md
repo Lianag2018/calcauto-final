@@ -53,6 +53,11 @@ OCR pour factures, gestion d'inventaire et CRM.
 - SMS screenshot: meme structure que email (taux + details + comparaison)
 - Frontend envoie rates_table avec option1_rates et option2_rates reels
 
+## Completed - Architecture Documentation (Feb 27, 2026)
+- Document complet /app/ARCHITECTURE.md cree
+- Couvre: backend, frontend, MongoDB, deploiement (GitHub, Render, Vercel)
+- Variables d'environnement, flux de donnees, maintenance, depannage
+
 ## P1 Backlog
 - Verifier donnees "Option 2" sur tous les modeles
 
