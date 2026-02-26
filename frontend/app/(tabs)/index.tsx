@@ -835,7 +835,6 @@ export default function HomeScreen() {
       let stickerImageUrl = '';
       if (vin) {
         try {
-          const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
           const stickerResp = await axios.get(`${API_URL}/api/window-sticker/${vin}`);
           if (stickerResp.data?.images?.length > 0) {
             stickerImageUrl = stickerResp.data.images[0];
