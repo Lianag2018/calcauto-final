@@ -102,6 +102,10 @@ function VehicleOrderManager({ getToken }: { getToken: () => Promise<string> }) 
   };
 
   const handleSave = async () => {
+    if (!adminPassword) {
+      setShowPasswordInput(true);
+      return;
+    }
     setSaving(true);
     try {
       const ordersToSave = filtered.map((p, idx) => ({
@@ -111,13 +115,14 @@ function VehicleOrderManager({ getToken }: { getToken: () => Promise<string> }) 
 
       const token = await getToken();
       await axios.put(`${API_URL}/api/programs/reorder`, {
-        password: 'Liana2018',
+        password: adminPassword,
         orders: ordersToSave,
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       setHasChanges(false);
+      setShowPasswordInput(false);
       if (Platform.OS === 'web') {
         alert('Ordre sauvegardé avec succès !');
       } else {
