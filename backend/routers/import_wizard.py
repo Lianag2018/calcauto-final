@@ -13,6 +13,7 @@ from models import (
     SaveProgramsRequest, FinancingRates, VehicleProgram
 )
 from dependencies import get_current_user
+from services.email_service import send_email
 
 try:
     import openpyxl
