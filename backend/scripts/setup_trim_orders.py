@@ -1,13 +1,9 @@
 """
-Script to extract trim orders from Stellantis/FCA code guide PDFs 
-and store them in MongoDB. Also cleans duplicate programs and 
-sets sort_order on each program.
+Align sort_order EXACTLY with the FCA QBC Incentive PDF landscape.
+Each program gets a sort_order matching its line position in the PDF.
 """
-import os
-import sys
-import re
-import fitz  # PyMuPDF
 import pymongo
+import os
 from datetime import datetime
 
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
@@ -16,396 +12,276 @@ DB_NAME = os.environ.get("DB_NAME", "test_database")
 client = pymongo.MongoClient(MONGO_URL)
 db = client[DB_NAME]
 
+# ============================================================
+# EXACT order from PDF page 20 - 2026 MODELS
+# ============================================================
+PDF_ORDER_2026 = [
+    # CHRYSLER
+    ("Chrysler", "Grand Caravan", "SXT"),
+    ("Chrysler", "Pacifica", "PHEV"),
+    ("Chrysler", "Pacifica", "excluding PHEV"),
+    # JEEP - Compass
+    ("Jeep", "Compass", "Sport"),
+    ("Jeep", "Compass", "North"),
+    ("Jeep", "Compass", "North w/ Altitude Package (ADZ)"),
+    ("Jeep", "Compass", "Trailhawk"),
+    ("Jeep", "Compass", "Limited"),
+    # JEEP - Cherokee
+    ("Jeep", "Cherokee", "Base (KMJL74)"),
+    ("Jeep", "Cherokee", "excluding Base (KMJL74)"),
+    # JEEP - Wrangler (IMPORTANT: 2-Door non-Rubicon, 2-Door Rubicon, 4-Door, 4-Door MOAB)
+    ("Jeep", "Wrangler", "2-Door (JL) (JLJL72) (non Rubicon models)"),
+    ("Jeep", "Wrangler", "2-Door Rubicon (JL) (JLJS72)"),
+    ("Jeep", "Wrangler", "4-Door (excluding 392 and 4xe Models)"),
+    ("Jeep", "Wrangler", "4-Door MOAB 392 (JLJX74)"),
+    # JEEP - Gladiator
+    ("Jeep", "Gladiator", "Sport S, Willys, Sahara, Willys '41 (JTJL98)"),
+    ("Jeep", "Gladiator", "excluding Sport S, Willys, Sahara, Willys '41 (JTJL98)"),
+    # JEEP - Grand Cherokee/L
+    ("Jeep", "Grand Cherokee/Grand Cherokee L", "Laredo/Laredo X (CPOS 22L/22P)"),
+    ("Jeep", "Grand Cherokee/Grand Cherokee L", "Altitude (CPOS 2B5)"),
+    ("Jeep", "Grand Cherokee/Grand Cherokee L", "Limited/Limited Reserve/Summit (CPOS 2C6/2C1/2C3)"),
+    # JEEP - Grand Wagoneer
+    ("Jeep", "Grand Wagoneer / Grand Wagoneer L", None),
+    # DODGE
+    ("Dodge", "Durango", "SXT, GT, GT Plus"),
+    ("Dodge", "Durango", "GT Hemi V8 Plus, GT Hemi V8 Premium"),
+    ("Dodge", "Durango", "SRT Hellcat"),
+    ("Dodge", "Charger", "2-Door & 4-Door (ICE)"),
+    # RAM
+    ("Ram", "ProMaster", None),
+    ("Ram", "1500", "Tradesman, Express, Warlock"),
+    ("Ram", "1500", "Big Horn"),
+    ("Ram", "1500", "Sport, Rebel"),
+    ("Ram", "1500", "Laramie (DT6P98)"),
+    ("Ram", "1500", "Laramie, Limited, Longhorn, Tungsten, RHO (excluding Laramie (DT6P98))"),
+    ("Ram", "2500", "Power Wagon Crew Cab (DJ7X91 2UP)"),
+    ("Ram", "2500/3500", "Gas Models (excl 2500 Power Wagon Crew Cab (DJ7X91 2UP), Chassis Cab Models)"),
+    ("Ram", "2500/3500", "Diesel Models (excl Chassis Cab Models)"),
+    ("Ram", "Chassis Cab", None),
+]
 
-def extract_trims_from_pdf(pdf_path):
-    """Extract trim names in order from a Stellantis code guide PDF."""
-    doc = fitz.open(pdf_path)
-    text = doc[0].get_text()
-    lines = [l.strip() for l in text.split('\n') if l.strip()]
-    doc.close()
-
-    # Find the brand/model from the header
-    brand = None
-    model = None
-    for line in lines:
-        if 'GUIDE DE COMMANDE' in line or 'ORDER GUIDE' in line:
-            break
-        # Detect brand from page header
-        upper = line.upper()
-        if upper in ('JEEP', 'RAM', 'DODGE', 'CHRYSLER', 'FIAT'):
-            brand = upper.title()
-        # The model name typically appears just before "GUIDE DE COMMANDE"
-        if any(c.isalpha() for c in line) and line == line.upper() and len(line) > 3:
-            model = line
-
-    # Extract trim entries from table of contents
-    trims = []
-    found_model_header = False
-    for i, line in enumerate(lines):
-        if 'GUIDE DE COMMANDE' in line or 'ORDER GUIDE' in line:
-            found_model_header = True
-            continue
-        if found_model_header and ('MODELE' in line or 'MODEL' in line):
-            found_model_header = True
-            continue
-        if found_model_header:
-            if 'CONTENU' in line or 'EQUIPEMENT' in line or 'ETAPE' in line or 'CONTENT' in line or 'STEP' in line:
-                break
-            if 'CODE' in line and 'PAGES' in line:
-                continue
-            # Skip page numbers and short codes
-            if line.isdigit() or (len(line) <= 8 and not ' ' in line):
-                continue
-            if any(c.isalpha() for c in line) and len(line) > 3:
-                trims.append(line)
-
-    return brand, trims
-
-
-def parse_trim_name(raw_trim):
-    """Normalize a raw trim name from the code guide to match program trims."""
-    t = raw_trim.upper()
-    # Remove common suffixes
-    for suffix in ['4X4', '4X2', 'AWD', 'FWD', 'RWD', '4WD', 'BEV', 'PHEV']:
-        t = t.replace(suffix, '')
-    # Remove WB/box info
-    t = re.sub(r'\(\d+.*?\)', '', t)
-    # Remove model prefix (e.g., "COMPASS ", "WRANGLER ", "DURANGO ")
-    for prefix in ['COMPASS', 'CHEROKEE', 'WRANGLER', 'GLADIATOR', 'GRAND CHEROKEE',
-                    'GRAND WAGONEER', 'WAGONEER', 'DURANGO', 'CHARGER', 'HORNET',
-                    'PACIFICA', 'GRAND CARAVAN', '500E', 'PROMASTER',
-                    '1500', '2500', '3500', '4500', '5500']:
-        if t.strip().startswith(prefix):
-            t = t.strip()[len(prefix):]
-    return t.strip()
-
-
-def build_trim_orders():
-    """Build comprehensive trim order map from official code guides and industry knowledge."""
-
-    # This is the definitive trim hierarchy extracted from the PDFs
-    # Order = from base model to most premium
-    trim_orders = {
-        # CHRYSLER
-        ("Chrysler", "Grand Caravan"): [
-            "SXT", "Canada Value Package"
-        ],
-        ("Chrysler", "Pacifica"): [
-            "Select", "Limited", "Pinnacle",
-            "Select Hybride", "Pinnacle Hybride",
-            "PHEV", "excluding PHEV", "Hybrid",
-            "Select Models (excl. Hybrid)", "Select Models (excludes Hybrid)",
-            "(excl. Select & Hybrid)", "excludes Select & Hybrid Models",
-            "(excluding PHEV)"
-        ],
-
-        # JEEP COMPASS - from code guide: Sport, North, Trailhawk, Limited
-        ("Jeep", "Compass"): [
-            "Sport",
-            "North",
-            "North w/ Altitude Package (ADZ)",
-            "Altitude", "Altitude, Trailhawk, Trailhawk Elite",
-            "Trailhawk",
-            "Limited"
-        ],
-
-        # JEEP CHEROKEE - from code guide: Base, Laredo, Limited, Overland
-        ("Jeep", "Cherokee"): [
-            "Base (KMJL74)", "Base",
-            "(excluding Base)", "excluding Base (KMJL74)",
-            "Laredo", "Limited", "Overland"
-        ],
-
-        # JEEP WRANGLER - from code guide: Sport, Sahara, Rubicon, 392
-        ("Jeep", "Wrangler"): [
-            "2-Door (JL) non Rubicon", "2-Door (JL) (JLJL72) (non Rubicon models)",
-            "4-Door (excl. 392 et 4xe)", "4-Door (excluding 392 and 4xe Models)",
-            "4-Door (JL) 4xe (JLXL74)",
-            "4-Door (JL) 4xe (excl. JLXL74)", "4-Door (JL) 4xe (excludes JLXL74)",
-            "4-Door (JL) (excl. Rubicon 2.0L & 4xe)", "4-Door (JL) (excluding Rubicon w/ 2.0L(JLJS74 22R) and 4xe)",
-            "2-Door Rubicon (JL)", "2-Door Rubicon (JL) (JLJS72)",
-            "4-Door Rubicon w/ 2.0L", "4-Door Rubicon w/ 2.0L (JLJS74 22R)",
-            "4-Door MOAB 392", "4-Door MOAB 392 (JLJX74)"
-        ],
-
-        # JEEP GLADIATOR - from code guide: Sport, Mojave, Rubicon
-        ("Jeep", "Gladiator"): [
-            None,
-            "Sport S, Willys, Sahara, Willys '41", "Sport S, Willys, Sahara, Willys '41 (JTJL98)",
-            "(excl. Sport S, Willys, Sahara, Willys '41)", "excluding Sport S, Willys, Sahara, Willys '41 (JTJL98)",
-            "Mojave", "Rubicon"
-        ],
-
-        # JEEP GRAND CHEROKEE - from code guide: Laredo, Altitude, Limited, Summit
-        ("Jeep", "Grand Cherokee/L"): [
-            "Laredo/Laredo X", "Laredo/Laredo X (CPOS 22L/22P)",
-            "Altitude", "Altitude (CPOS 2B5)",
-            "Limited/Limited Reserve/Summit", "Limited/Limited Reserve/Summit (CPOS 2C6/2C1/2C3)"
-        ],
-        ("Jeep", "Grand Cherokee/Grand Cherokee L"): [
-            "Laredo/Laredo X", "Laredo/Laredo X (CPOS 22L/22P)",
-            "Altitude", "Altitude (CPOS 2B5)",
-            "Limited/Limited Reserve/Summit", "Limited/Limited Reserve/Summit (CPOS 2C6/2C1/2C3)"
-        ],
-        ("Jeep", "Grand Cherokee"): [
-            "4xe (WL)",
-            "Laredo", "Laredo (WLJH74 2*A)", "Laredo (WLJH74 2*A) (WL)",
-            "Altitude", "Altitude (WLJH74 2*B)", "Altitude (WLJH74 2*B) (WL)",
-            "(WL) (excl. Laredo, Altitude, Summit, 4xe)", "(WL) (excludes Laredo (WLJH74 2*A & 2*B), Summit (WLJT74 23S), and 4xe)",
-            "excludes Laredo (WLJH74 2*A & 2*B), Summit (WLJT74 23S), and 4xe",
-            "Summit", "Summit (WLJT74 23S)", "Summit (WLJT74 23S) (WL)"
-        ],
-        ("Jeep", "Grand Cherokee L"): [
-            "Laredo", "Laredo (WLJH75 2*A)", "Laredo (WLJH75 2*A) (WL)",
-            "Altitude", "Altitude (WLJH75 2*B)", "Altitude (WLJH75 2*B) (WL)",
-            "Overland", "Overland (WLJS75)", "Overland (WLJS75) (WL)",
-            "(WL) (excl. Laredo, Altitude, Overland)", "(WL) (excludes Laredo (WLJH75 2*A & 2*B) and Overland (WLJS75))",
-            "excludes Laredo (WLJH75 2*A & 2*B) and Overland (WLJS75)"
-        ],
-
-        # JEEP WAGONEER
-        ("Jeep", "Wagoneer/L"): [None],
-        ("Jeep", "Wagoneer / Wagoneer L"): [None],
-        ("Jeep", "Grand Wagoneer/L"): [None],
-        ("Jeep", "Grand Wagoneer / Grand Wagoneer L"): [None, "/ Grand Wagoneer L"],
-        ("Jeep", "Grand Wagoneer"): [None, "/ Grand Wagoneer L"],
-        ("Jeep", "Wagoneer"): [None, "/ Wagoneer L"],
-        ("Jeep", "Wagoneer S"): ["Limited & Premium (BEV)"],
-
-        # DODGE DURANGO - from code guide: Enforcer, (base), GT Hemi V8, SRT Hellcat
-        ("Dodge", "Durango"): [
-            "SXT", "SXT, GT, GT Plus",
-            "GT", "GT, GT Plus",
-            "GT Plus",
-            "GT Hemi V8 Plus, GT Hemi V8 Premium",
-            "R/T", "R/T, R/T Plus, R/T 20th Anniversary", "R/T, R/T Plus, R/T 20th Anniversary, R/T Plus 20th Anniversary",
-            "SRT Hellcat"
-        ],
-
-        # DODGE CHARGER
-        ("Dodge", "Charger"): [
-            "2-Door & 4-Door (ICE)",
-            "R/T", "R/T Plus", "Scat Pack"
-        ],
-        ("Dodge", "Charger Daytona"): [
-            "R/T (BEV)", "Daytona R/T (BEV)",
-            "R/T Plus (BEV)", "Daytona R/T Plus (BEV)",
-            "Scat Pack (BEV)", "Daytona Scat Pack (BEV)"
-        ],
-
-        # DODGE HORNET - from code guide: GT, R/T
-        ("Dodge", "Hornet"): [
-            "GT (Gas)", "GT Plus (Gas)",
-            "RT (PHEV)", "RT Plus (PHEV)"
-        ],
-
-        # RAM 1500 - from code guide: Tradesman, Big Horn, Sport, Rebel, Laramie, Limited/Longhorn
-        ("Ram", "1500"): [
-            "Tradesman", "Tradesman, Express, Warlock", "Tradesman, Warlock, Express (DT)",
-            "Express", "Warlock",
-            "Big Horn", "Big Horn (DT) with Off-Roader Value Package (4KF)",
-            "Big Horn (DT) (excludes Big Horn with Off-Roader Value Package (4KF))",
-            "Big Horn (DT) (excl. Off-Roader)",
-            "Sport", "Sport, Rebel", "Sport, Rebel (DT)",
-            "Rebel",
-            "Laramie", "Laramie (DT6P98)",
-            "Laramie, Limited, Longhorn, Tungsten, RHO (excl. DT6P98)",
-            "Laramie, Limited, Longhorn, Tungsten, RHO (excluding Laramie (DT6P98))",
-            "Laramie, Limited, Longhorn, Tungsten, RHO (DT)",
-            "Limited", "Longhorn", "Tungsten", "RHO"
-        ],
-
-        # RAM 2500/3500
-        ("Ram", "2500 Power Wagon Crew Cab"): [
-            "(DJ7X91 2UP)"
-        ],
-        ("Ram", "2500"): [
-            "Tradesman", "Big Horn", "Rebel", "Power Wagon",
-            "Laramie", "Limited"
-        ],
-        ("Ram", "2500/3500"): [
-            "Gas Models", "Gas Models (excl 2500 Power Wagon Crew Cab (DJ7X91 2UP), Chassis Cab Models)",
-            "Gas Models (Excludes Chassis Cab models, Diesel Engine models)",
-            "Diesel Models", "Diesel Models (excl Chassis Cab Models)",
-            "6.7L High Output Diesel Models (ETM) (excludes Chassis Cab models)",
-            "6.7L High Output Diesel (ETM)"
-        ],
-
-        # RAM utility
-        ("Ram", "ProMaster"): [None],
-        ("Ram", "ProMaster EV"): [None],
-        ("Ram", "Chassis Cab"): [None],
-
-        # FIAT
-        ("Fiat", "500e"): ["BEV"],
-    }
-
-    return trim_orders
+# ============================================================
+# EXACT order from PDF page 21 - 2025 MODELS
+# ============================================================
+PDF_ORDER_2025 = [
+    # CHRYSLER
+    ("Chrysler", "Grand Caravan", "SXT"),
+    ("Chrysler", "Pacifica", "Hybrid"),
+    ("Chrysler", "Pacifica", "Select Models (excludes Hybrid)"),
+    ("Chrysler", "Pacifica", "excludes Select & Hybrid Models"),
+    # JEEP - Compass
+    ("Jeep", "Compass", "Sport"),
+    ("Jeep", "Compass", "North"),
+    ("Jeep", "Compass", "Altitude, Trailhawk, Trailhawk Elite"),
+    ("Jeep", "Compass", "Limited"),
+    # JEEP - Wrangler (PDF order: 4xe first, then 2-door, then Rubicon variants)
+    ("Jeep", "Wrangler", "4-Door (JL) 4xe (JLXL74)"),
+    ("Jeep", "Wrangler", "4-Door (JL) 4xe (excludes JLXL74)"),
+    ("Jeep", "Wrangler", "2-Door (JL) (JLJL72) (non Rubicon models)"),
+    ("Jeep", "Wrangler", "2-Door Rubicon (JL) (JLJS72)"),
+    ("Jeep", "Wrangler", "4-Door Rubicon w/ 2.0L (JLJS74 22R)"),
+    ("Jeep", "Wrangler", "4-Door (JL) (excluding Rubicon w/ 2.0L(JLJS74 22R) and 4xe)"),
+    # JEEP - Gladiator
+    ("Jeep", "Gladiator", None),
+    # JEEP - Grand Cherokee
+    ("Jeep", "Grand Cherokee", "4xe (WL)"),
+    ("Jeep", "Grand Cherokee", "Laredo (WLJH74 2*A) (WL)"),
+    ("Jeep", "Grand Cherokee", "Altitude (WLJH74 2*B) (WL)"),
+    ("Jeep", "Grand Cherokee", "Summit (WLJT74 23S) (WL)"),
+    ("Jeep", "Grand Cherokee", "excludes Laredo (WLJH74 2*A & 2*B), Summit (WLJT74 23S), and 4xe"),
+    # JEEP - Grand Cherokee L
+    ("Jeep", "Grand Cherokee L", "Laredo (WLJH75 2*A) (WL)"),
+    ("Jeep", "Grand Cherokee L", "Altitude (WLJH75 2*B) (WL)"),
+    ("Jeep", "Grand Cherokee L", "Overland (WLJS75) (WL)"),
+    ("Jeep", "Grand Cherokee L", "excludes Laredo (WLJH75 2*A & 2*B) and Overland (WLJS75)"),
+    # JEEP - Wagoneer
+    ("Jeep", "Wagoneer / Wagoneer L", None),
+    ("Jeep", "Grand Wagoneer / Grand Wagoneer L", None),
+    ("Jeep", "Wagoneer S", "Limited & Premium (BEV)"),
+    # DODGE
+    ("Dodge", "Durango", "GT, GT Plus"),
+    ("Dodge", "Durango", "R/T, R/T Plus, R/T 20th Anniversary, R/T Plus 20th Anniversary"),
+    ("Dodge", "Durango", "SRT Hellcat"),
+    ("Dodge", "Charger", "Daytona R/T (BEV)"),
+    ("Dodge", "Charger", "Daytona R/T Plus (BEV)"),
+    ("Dodge", "Charger", "Daytona Scat Pack (BEV)"),
+    ("Dodge", "Hornet", "RT (PHEV)"),
+    ("Dodge", "Hornet", "RT Plus (PHEV)"),
+    ("Dodge", "Hornet", "GT (Gas)"),
+    ("Dodge", "Hornet", "GT Plus (Gas)"),
+    # RAM
+    ("Ram", "ProMaster", None),
+    ("Ram", "1500", "Tradesman, Warlock, Express (DT)"),
+    ("Ram", "1500", "Big Horn (DT) with Off-Roader Value Package (4KF)"),
+    ("Ram", "1500", "Big Horn (DT) (excludes Big Horn with Off-Roader Value Package (4KF))"),
+    ("Ram", "1500", "Sport, Rebel (DT)"),
+    ("Ram", "1500", "Laramie, Limited, Longhorn, Tungsten, RHO (DT)"),
+    ("Ram", "2500/3500", "Gas Models (Excludes Chassis Cab models, Diesel Engine models)"),
+    ("Ram", "2500/3500", "6.7L High Output Diesel Models (ETM) (excludes Chassis Cab models)"),
+    ("Ram", "Chassis Cab", None),
+    # FIAT
+    ("Fiat", "500e", "BEV"),
+]
 
 
-def get_sort_order(brand, model, trim, trim_orders):
-    """Get the sort_order for a program based on the trim hierarchy."""
-    key = (brand, model)
-    if key in trim_orders:
-        order_list = trim_orders[key]
-        # Try exact match first
-        if trim in order_list:
-            return order_list.index(trim)
-        # Try partial match (trim contains or is contained by an entry)
-        if trim:
-            for i, entry in enumerate(order_list):
-                if entry and trim and (entry.lower() in trim.lower() or trim.lower() in entry.lower()):
-                    return i
-        # If trim is None and None is in the list
-        if trim is None and None in order_list:
-            return order_list.index(None)
-    # Fallback: try to find partial model match
-    for (b, m), order_list in trim_orders.items():
-        if b == brand and (m in model or model in m):
-            if trim in order_list:
-                return order_list.index(trim)
-            if trim:
-                for i, entry in enumerate(order_list):
-                    if entry and (entry.lower() in trim.lower() or trim.lower() in entry.lower()):
-                        return i
-            if trim is None and None in order_list:
-                return order_list.index(None)
-    return 999  # Unknown trim goes to end
+def normalize(s):
+    """Normalize a string for comparison."""
+    if s is None:
+        return None
+    return s.lower().strip()
 
 
-def get_model_sort_order(brand, model):
-    """Get a sort order for the model within a brand."""
-    model_orders = {
-        "Chrysler": ["Grand Caravan", "Pacifica"],
-        "Jeep": ["Compass", "Cherokee", "Wrangler", "Gladiator",
-                  "Grand Cherokee", "Grand Cherokee L", "Grand Cherokee/L",
-                  "Grand Cherokee/Grand Cherokee L",
-                  "Wagoneer/L", "Wagoneer / Wagoneer L", "Wagoneer S",
-                  "Grand Wagoneer/L", "Grand Wagoneer / Grand Wagoneer L",
-                  "Grand Wagoneer", "Wagoneer", "Recon"],
-        "Dodge": ["Charger", "Charger Daytona", "Durango", "Hornet"],
-        "Ram": ["ProMaster", "ProMaster EV", "1500", "2500", "2500 Power Wagon Crew Cab",
-                 "2500/3500", "3500", "Chassis Cab"],
-        "Fiat": ["500e"],
-    }
-    brand_models = model_orders.get(brand, [])
-    # Exact match
-    if model in brand_models:
-        return brand_models.index(model)
-    # Partial match
-    for i, bm in enumerate(brand_models):
-        if bm in model or model in bm:
-            return i
-    return 999
+def match_program(prog, pdf_entry):
+    """Check if a MongoDB program matches a PDF entry."""
+    p_brand = normalize(prog.get("brand", ""))
+    p_model = normalize(prog.get("model", ""))
+    p_trim = normalize(prog.get("trim"))
 
+    e_brand = normalize(pdf_entry[0])
+    e_model = normalize(pdf_entry[1])
+    e_trim = normalize(pdf_entry[2])
 
-def get_brand_sort_order(brand):
-    """Get a sort order for the brand."""
-    brand_order = ["Chrysler", "Jeep", "Dodge", "Ram", "Fiat"]
-    if brand in brand_order:
-        return brand_order.index(brand)
-    return 999
-
-
-def clean_duplicates():
-    """Remove duplicate programs, keeping only one per unique combination."""
-    pipeline = [
-        {"$group": {
-            "_id": {"brand": "$brand", "model": "$model", "trim": "$trim", "year": "$year",
-                    "program_month": "$program_month", "program_year": "$program_year"},
-            "count": {"$sum": 1},
-            "ids": {"$push": "$_id"},
-            "prog_ids": {"$push": "$id"}
-        }},
-        {"$match": {"count": {"$gt": 1}}}
-    ]
-    dupes = list(db.programs.aggregate(pipeline))
-    removed = 0
-    for d in dupes:
-        # Keep the first, remove the rest
-        ids_to_remove = d["ids"][1:]
-        for oid in ids_to_remove:
-            db.programs.delete_one({"_id": oid})
-            removed += 1
-    print(f"Removed {removed} duplicate programs")
-    return removed
+    if p_brand != e_brand:
+        return False
+    if p_model != e_model:
+        return False
+    if p_trim == e_trim:
+        return True
+    # Partial match for trims
+    if p_trim is None and e_trim is None:
+        return True
+    if p_trim and e_trim:
+        if p_trim in e_trim or e_trim in p_trim:
+            return True
+    return False
 
 
 def update_sort_orders():
-    """Update sort_order field for all programs."""
-    trim_orders = build_trim_orders()
-
-    # Store trim orders in MongoDB
-    db.trim_orders.drop()
-    for (brand, model), trims in trim_orders.items():
-        db.trim_orders.insert_one({
-            "brand": brand,
-            "model": model,
-            "trims": [t if t else "__none__" for t in trims],
-            "updated_at": datetime.utcnow()
-        })
-    print(f"Stored {db.trim_orders.count_documents({})} trim order entries in MongoDB")
-
-    # Update sort_order for each program
+    """Update sort_order for all programs based on PDF line position."""
     programs = list(db.programs.find({}))
     updated = 0
+    unmatched = []
+
     for prog in programs:
+        year = prog.get("year")
         brand = prog.get("brand", "")
         model = prog.get("model", "")
         trim = prog.get("trim")
 
-        brand_order = get_brand_sort_order(brand)
-        model_order = get_model_sort_order(brand, model)
-        trim_order = get_sort_order(brand, model, trim, trim_orders)
+        pdf_order = PDF_ORDER_2026 if year == 2026 else PDF_ORDER_2025
+        matched = False
 
-        # Composite sort_order: brand * 10000 + model * 100 + trim
-        sort_order = brand_order * 10000 + model_order * 100 + trim_order
+        for idx, entry in enumerate(pdf_order):
+            if match_program(prog, entry):
+                sort_order = idx
+                db.programs.update_one(
+                    {"_id": prog["_id"]},
+                    {"$set": {"sort_order": sort_order}}
+                )
+                updated += 1
+                matched = True
+                break
 
-        db.programs.update_one(
-            {"_id": prog["_id"]},
-            {"$set": {"sort_order": sort_order}}
-        )
-        updated += 1
+        if not matched:
+            unmatched.append(f"{year} {brand} {model} - {trim}")
+            # Give unmatched programs a high sort_order
+            db.programs.update_one(
+                {"_id": prog["_id"]},
+                {"$set": {"sort_order": 999}}
+            )
 
     print(f"Updated sort_order for {updated} programs")
+    if unmatched:
+        print(f"\nUnmatched programs ({len(unmatched)}):")
+        for u in unmatched:
+            print(f"  - {u}")
 
 
-def verify_sort_order():
-    """Print the programs sorted by the new sort_order for verification."""
-    programs = list(db.programs.find(
-        {},
-        {"_id": 0, "brand": 1, "model": 1, "trim": 1, "year": 1, "sort_order": 1}
-    ).sort("sort_order", 1))
+def update_trim_orders_collection():
+    """Update the trim_orders collection to match the PDF exactly."""
+    db.trim_orders.drop()
 
-    current_brand = None
-    current_model = None
-    for p in programs:
-        brand = p.get("brand")
-        model = p.get("model")
-        if brand != current_brand:
-            print(f"\n{'='*60}")
-            print(f"  {brand}")
-            print(f"{'='*60}")
-            current_brand = brand
-        if model != current_model:
-            print(f"\n  {model}:")
-            current_model = model
-        print(f"    [{p.get('sort_order', '?'):>5}] {p.get('year')} - {p.get('trim', 'N/A')}")
+    # 2026 model order
+    models_2026 = []
+    seen = set()
+    for brand, model, trim in PDF_ORDER_2026:
+        key = (brand, model)
+        if key not in seen:
+            seen.add(key)
+            models_2026.append({"brand": brand, "model": model, "trims": []})
+        for entry in models_2026:
+            if entry["brand"] == brand and entry["model"] == model:
+                entry["trims"].append(trim if trim else "__none__")
+                break
+
+    for entry in models_2026:
+        db.trim_orders.insert_one({
+            "brand": entry["brand"],
+            "model": entry["model"],
+            "year": 2026,
+            "trims": entry["trims"],
+            "source": "February 2026 QBC Retail Incentive Programs PDF",
+            "updated_at": datetime.utcnow()
+        })
+
+    # 2025 model order
+    models_2025 = []
+    seen = set()
+    for brand, model, trim in PDF_ORDER_2025:
+        key = (brand, model)
+        if key not in seen:
+            seen.add(key)
+            models_2025.append({"brand": brand, "model": model, "trims": []})
+        for entry in models_2025:
+            if entry["brand"] == brand and entry["model"] == model:
+                entry["trims"].append(trim if trim else "__none__")
+                break
+
+    for entry in models_2025:
+        db.trim_orders.insert_one({
+            "brand": entry["brand"],
+            "model": entry["model"],
+            "year": 2025,
+            "trims": entry["trims"],
+            "source": "February 2026 QBC Retail Incentive Programs PDF",
+            "updated_at": datetime.utcnow()
+        })
+
+    total = db.trim_orders.count_documents({})
+    print(f"Updated trim_orders collection: {total} entries")
+
+
+def verify():
+    """Print programs in sort_order to verify alignment with PDF."""
+    for year in [2026, 2025]:
+        print(f"\n{'='*60}")
+        print(f"  {year} MODELS (should match PDF page {20 if year == 2026 else 21})")
+        print(f"{'='*60}")
+
+        programs = list(db.programs.find(
+            {"program_month": 2, "program_year": 2026, "year": year},
+            {"_id": 0, "brand": 1, "model": 1, "trim": 1, "year": 1, "sort_order": 1,
+             "consumer_cash": 1}
+        ).sort("sort_order", 1))
+
+        for p in programs:
+            trim_str = p.get("trim") or "(all)"
+            cash = p.get("consumer_cash", 0)
+            cash_str = f"${cash:,.0f}" if cash > 0 else ""
+            print(f"  [{p.get('sort_order', '?'):>3}] {p.get('brand')} {p.get('model')} {trim_str} {cash_str}")
 
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("  CalcAuto - Setup Trim Orders")
+    print("  Aligning sort_order with FCA QBC Incentive PDF")
     print("=" * 60)
 
-    print("\n1. Cleaning duplicate programs...")
-    clean_duplicates()
+    print("\n1. Updating trim_orders collection...")
+    update_trim_orders_collection()
 
-    print("\n2. Building and storing trim orders...")
+    print("\n2. Updating program sort_orders...")
     update_sort_orders()
 
-    print("\n3. Verifying sort order...")
-    verify_sort_order()
-
-    total = db.programs.count_documents({})
-    print(f"\n\nDone! Total programs: {total}")
+    print("\n3. Verifying alignment...")
+    verify()
