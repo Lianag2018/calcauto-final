@@ -1948,23 +1948,6 @@ async def scan_and_save_invoice(request: InvoiceScanRequest, authorization: Opti
 
 # ============ EXCEL EXPORT/IMPORT ============
 
-class ExcelExportRequest(BaseModel):
-    """Données pour export Excel"""
-    vin: Optional[str] = None
-    model_code: Optional[str] = None
-    brand: Optional[str] = None
-    model: Optional[str] = None
-    trim: Optional[str] = None
-    year: Optional[str] = None
-    stock_no: Optional[str] = None
-    ep_cost: Optional[float] = 0
-    pdco: Optional[float] = 0
-    pref: Optional[float] = 0
-    holdback: Optional[float] = 0
-    subtotal: Optional[float] = 0
-    total: Optional[float] = 0
-    options: Optional[List[Dict[str, Any]]] = []
-
 
 @router.post("/invoice/export-excel")
 async def export_invoice_to_excel(
