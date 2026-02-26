@@ -888,15 +888,15 @@ export default function HomeScreen() {
 
       const screenshotHtml = `
         <div id="capture" style="width:800px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;color:#333;">
-          <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px;text-align:center;">
-            <div style="color:#fff;font-size:24px;font-weight:700;">CalcAuto <span style="color:#4ECDC4;">AiPro</span></div>
-            <div style="color:rgba(255,255,255,0.7);font-size:12px;margin-top:4px;">${lang === 'fr' ? 'Soumission de financement' : 'Financing Submission'}</div>
+          <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);padding:24px;text-align:center;">
+            <div style="color:#fff;font-size:28px;font-weight:700;">CalcAuto <span style="color:#4ECDC4;">AiPro</span></div>
+            <div style="color:rgba(255,255,255,0.7);font-size:14px;margin-top:4px;">${lang === 'fr' ? 'Soumission de financement' : 'Financing Submission'}</div>
           </div>
-          <div style="padding:16px;">
-            <div style="background:#f8f9fa;border-radius:10px;padding:14px;border-left:4px solid #4ECDC4;margin-bottom:14px;">
-              <div style="font-size:12px;color:#666;text-transform:uppercase;letter-spacing:1px;">${selectedProgram.brand}</div>
-              <div style="font-size:20px;font-weight:700;color:#1a1a2e;margin:4px 0;">${selectedProgram.model} ${selectedProgram.trim || ''} ${selectedProgram.year}</div>
-              <div style="font-size:18px;color:#4ECDC4;font-weight:700;">${fmt(price)} $</div>
+          <div style="padding:20px;">
+            <div style="background:#f8f9fa;border-radius:10px;padding:16px;border-left:4px solid #4ECDC4;margin-bottom:16px;">
+              <div style="font-size:14px;color:#666;text-transform:uppercase;letter-spacing:1px;">${selectedProgram.brand}</div>
+              <div style="font-size:24px;font-weight:700;color:#1a1a2e;margin:6px 0;">${selectedProgram.model} ${selectedProgram.trim || ''} ${selectedProgram.year}</div>
+              <div style="font-size:22px;color:#4ECDC4;font-weight:700;">${fmt(price)} $</div>
               ${vin ? `<div style="font-size:10px;color:#888;font-family:monospace;margin-top:4px;">VIN: ${vin}</div>` : ''}
             </div>
 
