@@ -584,6 +584,49 @@ export default function HomeScreen() {
     loadLeaseData();
   }, []);
 
+  // Check for submission state to restore (from CRM "Ouvrir" button)
+  useEffect(() => {
+    const checkForRestore = async () => {
+      try {
+        const stateJson = await AsyncStorage.getItem('calcauto_restore_state');
+        if (!stateJson) return;
+        await AsyncStorage.removeItem('calcauto_restore_state');
+        const s = JSON.parse(stateJson);
+        
+        // Restore all calculator fields
+        if (s.selectedProgram) setSelectedProgram(s.selectedProgram);
+        if (s.vehiclePrice !== undefined) setVehiclePrice(s.vehiclePrice);
+        if (s.selectedTerm) setSelectedTerm(s.selectedTerm);
+        if (s.selectedOption) setSelectedOption(s.selectedOption);
+        if (s.paymentFrequency) setPaymentFrequency(s.paymentFrequency);
+        if (s.customBonusCash !== undefined) setCustomBonusCash(s.customBonusCash);
+        if (s.comptantTxInclus !== undefined) setComptantTxInclus(s.comptantTxInclus);
+        if (s.fraisDossier !== undefined) setFraisDossier(s.fraisDossier);
+        if (s.taxePneus !== undefined) setTaxePneus(s.taxePneus);
+        if (s.fraisRDPRM !== undefined) setFraisRDPRM(s.fraisRDPRM);
+        if (s.prixEchange !== undefined) setPrixEchange(s.prixEchange);
+        if (s.montantDuEchange !== undefined) setMontantDuEchange(s.montantDuEchange);
+        if (s.accessories) setAccessories(s.accessories);
+        if (s.leaseRabaisConcess !== undefined) setLeaseRabaisConcess(s.leaseRabaisConcess);
+        if (s.leasePdsf !== undefined) setLeasePdsf(s.leasePdsf);
+        if (s.leaseSoldeReporte !== undefined) setLeaseSoldeReporte(s.leaseSoldeReporte);
+        if (s.leaseTerm) setLeaseTerm(s.leaseTerm);
+        if (s.leaseKmPerYear) setLeaseKmPerYear(s.leaseKmPerYear);
+        if (s.showLease !== undefined) setShowLease(s.showLease);
+        if (s.manualVin !== undefined) setManualVin(s.manualVin);
+        if (s.selectedYear) setSelectedYear(s.selectedYear);
+        if (s.selectedBrand) setSelectedBrand(s.selectedBrand);
+        if (s.selectedModel) setSelectedModel(s.selectedModel);
+        if (s.selectedInventory) setSelectedInventory(s.selectedInventory);
+        
+        console.log('Calculator state restored from submission');
+      } catch (e) {
+        console.log('Error restoring calculator state:', e);
+      }
+    };
+    checkForRestore();
+  }, []);
+
   // Calculate lease when parameters change
   useEffect(() => {
     if (!showLease || !selectedProgram || !vehiclePrice || !leaseResiduals || !leaseRates) {
