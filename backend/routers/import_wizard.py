@@ -242,35 +242,6 @@ CalcAuto AiPro
 
 # ============ PDF Import with AI ============
 
-class PDFExtractRequest(BaseModel):
-    password: str
-    program_month: int
-    program_year: int
-
-class ProgramPreview(BaseModel):
-    """Preview of extracted program for validation"""
-    brand: str
-    model: str
-    trim: Optional[str] = None
-    year: int
-    consumer_cash: float = 0
-    bonus_cash: float = 0
-    option1_rates: Dict[str, float]
-    option2_rates: Optional[Dict[str, float]] = None
-    
-class ExtractedDataResponse(BaseModel):
-    success: bool
-    message: str
-    programs: List[Dict[str, Any]] = []
-    raw_text: str = ""
-    sci_lease_count: int = 0
-
-class SaveProgramsRequest(BaseModel):
-    password: str
-    programs: List[Dict[str, Any]]
-    program_month: int
-    program_year: int
-
 @router.post("/verify-password")
 async def verify_password(password: str = Form(...)):
     """Vérifie le mot de passe admin"""
