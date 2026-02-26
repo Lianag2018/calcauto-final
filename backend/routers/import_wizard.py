@@ -459,10 +459,23 @@ VÉRIFIE OPTION 2 POUR CHAQUE VÉHICULE: si les colonnes sont vides → null!"""
                         for key in ['rate_36', 'rate_48', 'rate_60', 'rate_72', 'rate_84', 'rate_96']:
                             if key not in p['option1_rates']:
                                 p['option1_rates'][key] = 4.99
+                    
+                    # Validate Option 2 rates - remove if suspicious
                     if p.get('option2_rates') and isinstance(p['option2_rates'], dict):
-                        for key in ['rate_36', 'rate_48', 'rate_60', 'rate_72', 'rate_84', 'rate_96']:
-                            if key not in p['option2_rates']:
-                                p['option2_rates'][key] = 0
+                        opt2 = p['option2_rates']
+                        # Check if all Option 2 rates are 0 or missing -> likely should be null
+                        rate_values = [opt2.get(f'rate_{t}', 0) for t in [36, 48, 60, 72, 84, 96]]
+                        all_zero_or_missing = all(v == 0 or v is None for v in rate_values)
+                        
+                        if all_zero_or_missing:
+                            # All rates are 0 = no real Option 2
+                            p['option2_rates'] = None
+                            logger.info(f"[Import] Removed empty option2_rates for {p.get('brand')} {p.get('model')} {p.get('trim','')}")
+                        else:
+                            for key in ['rate_36', 'rate_48', 'rate_60', 'rate_72', 'rate_84', 'rate_96']:
+                                if key not in opt2:
+                                    opt2[key] = 0
+                    
                     valid_programs.append(p)
             
             # Generate Excel and send by email
