@@ -708,6 +708,12 @@ export default function HomeScreen() {
     if (selectedBrand) {
       filtered = filtered.filter(p => p.brand === selectedBrand);
     }
+    // Sort alphabetically by model + trim
+    filtered.sort((a, b) => {
+      const nameA = `${a.model} ${a.trim || ''}`.trim().toLowerCase();
+      const nameB = `${b.model} ${b.trim || ''}`.trim().toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
     setFilteredPrograms(filtered);
   }, [programs, selectedYear, selectedBrand]);
 
