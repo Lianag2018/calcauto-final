@@ -3453,7 +3453,10 @@ export default function HomeScreen() {
                             valeur_echange: parseFloat(prixEchange) || 0,
                             montant_du: parseFloat(montantDuEchange) || 0,
                           },
-                          rates_table: {},
+                          rates_table: {
+                            option1_rates: selectedProgram.option1_rates,
+                            option2_rates: selectedProgram.option2_rates,
+                          },
                           // Lease SCI data
                           lease_data: showLease && leaseResult && (leaseResult.standard || leaseResult.alternative) ? {
                             term: leaseTerm,
