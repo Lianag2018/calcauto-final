@@ -528,11 +528,22 @@ export default function HomeScreen() {
       // 4. Résiduel sur PDSF
       // residualValue already calculated above
       
-      // 5. Paiement avant taxes
-      const depreciation = (netCapCost - residualValue) / leaseTerm;
-      const moneyFactor = rate / 2400;
-      const financeCharge = (netCapCost + residualValue) * moneyFactor;
-      const monthlyBeforeTax = depreciation + financeCharge;
+      // 5. Paiement avant taxes — Formule SCI (annuité avec paiement en avance)
+      const monthlyRate = rate / 100 / 12;
+      let monthlyBeforeTax: number;
+      let financeCharge: number;
+      
+      if (monthlyRate === 0) {
+        monthlyBeforeTax = (netCapCost - residualValue) / leaseTerm;
+        financeCharge = 0;
+      } else {
+        const factor = Math.pow(1 + monthlyRate, leaseTerm);
+        // PMT en arrière (fin de période)
+        const pmtArrears = (netCapCost * monthlyRate * factor - residualValue * monthlyRate) / (factor - 1);
+        // PMT en avance (début de période) = formule SCI exacte
+        monthlyBeforeTax = pmtArrears / (1 + monthlyRate);
+        financeCharge = monthlyBeforeTax - (netCapCost - residualValue) / leaseTerm;
+      }
       
       // 6. Taxes SUR le paiement (pas capitalisées!)
       const tpsOnPayment = monthlyBeforeTax * tps;
