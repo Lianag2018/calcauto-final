@@ -15,7 +15,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://auto-finance-hub-6.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://trim-sorter.preview.emergentagent.com').rstrip('/')
 ADMIN_PASSWORD = "Liana2018"
 WRONG_PASSWORD = "wrongpassword123"
 

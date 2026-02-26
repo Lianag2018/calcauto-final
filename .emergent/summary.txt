@@ -3,153 +3,160 @@ The user's core objective is to perfect the CalcAuto AiPro application, a full-s
 
 Initial requirements included a hybrid OCR workflow, a highly accurate lease calculator, and a self-service system for uploading financing and residual value PDFs.
 
-During development, the user's focus shifted heavily toward refining the lease calculator's features and user experience. Key requests included:
-*   A Meilleur Choix (Best Choice) feature to automatically find the cheapest lease payment across all terms and mileages.
+During development, the user's focus shifted heavily toward refining the lease calculator's features and user experience. Key requests have included:
+*   A Meilleur Choix (Best Choice) feature.
 *   An analysis grid comparing all lease options.
-*   Enhanced SMS sharing with quote screenshots.
-*   A feature to save a complete calculation and re-open it later from the submission history for further editing.
-*   Numerous UI adjustments and critical bug fixes related to calculation logic and user-reported discrepancies.
-*   A request to address significant technical debt by refactoring large, monolithic files.
+*   The ability to save and re-open calculations from the submission history.
+*   Numerous UI adjustments and critical bug fixes related to calculation logic, data integrity, and deployment issues.
+*   A major request to address significant technical debt by refactoring large, monolithic files.
 
 **PRODUCT REQUIREMENTS:**
-*   **(P2) Refactor :** This monolithic frontend file is extremely large and complex. It needs to be broken down into smaller components and custom hooks.
-*   **(P2) Refactor :** Decompose the main backend file into a structured format using FastAPI's .
-*   **(P2) Refactor :** Break this large file into smaller, more manageable components.
+*   **(P2) Refactor :** This monolithic frontend file is extremely large and complex. It needs to be broken down into smaller components and custom hooks. (Partially Completed - Further refactoring needed).
+*   **(P2) Refactor :** Decompose the main backend file into a structured format using FastAPI's . (Completed).
+*   **(P2) Refactor :** Break this large file into smaller, more manageable components. (Not Started).
+*   **(P0) Implement Logical Trim Sorting:** Vehicle lists must be sorted logically by trim level (e.g., Sport, North, Limited) as defined by the manufacturer/user, not alphabetically.
 
 **User's preferred language**: French. The next agent MUST respond in French.
 
 **what currently exists?**
-A full-stack application (React/FastAPI/JSON-as-DB) with an advanced vehicle lease and finance calculator. The application can scan invoices (OCR), manage vehicle inventory, and parse rate documents.
+A full-stack application (React/FastAPI/JSON-as-DB) with an advanced vehicle lease and finance calculator. The agent has just completed a massive refactoring of the backend, breaking a single 7000+ line  file into a modular structure with routers, services, and models. The frontend  has also been partially refactored by extracting styles and a component.
 
-The most recent feature allows users to save a complete calculator session (all input fields) when creating a submission, and later re-open that exact calculation from the client history to continue working on the deal. All major user-reported bugs regarding calculation accuracy and UI have been resolved and validated by the testing agent. The codebase, however, suffers from significant technical debt in two key monolithic files.
+Several critical bugs were fixed in the last session:
+1.  **Deployment Stability:** A persistent login failure on the user's Vercel deployment was resolved by creating a shared utility () that dynamically determines the backend URL, preventing issues with stale, hardcoded URLs.
+2.  **Calculation Accuracy:** The core lease calculation formula was updated from an approximation (Money Factor) to the precise annuity with payment in advance formula used by the dealer's system (SCI), eliminating a significant payment discrepancy.
+3.  **Data Integrity:** A bug causing incorrect Option 2 financing rates to appear for certain models (Jeep Compass Sport) was fixed by correcting the data in the user's production database and improving the PDF import parser (GPT-4o prompt and validation logic) to prevent recurrence.
+
+The application is now more stable and accurate, but the user has a new requirement for vehicle list sorting.
 
 **Last working item**:
-*   **Last item agent was working:** The user requested a refactor of the monolithic files. The agent's last action was to analyze  and  to prepare a safe and structured refactoring plan.
+*   **Last item agent was working:** The user specified that the vehicle list sorting should be logical (by trim level, e.g., Sport -> North -> Limited -> Trailhawk) and not alphabetical. The agent had just implemented an alphabetical sort, which does not meet the user's requirement.
 *   **Status:** IN PROGRESS
-*   **Agent Testing Done:** N/A
-*   **Which testing method agent to use?** both. After the refactoring is complete, a full regression test using the testing agent is mandatory for both frontend and backend to ensure no functionality was broken.
+*   **Agent Testing Done:** N
+*   **Which testing method agent to use?** Frontend testing agent. After implementing the logical sort, the agent must verify that the vehicle list in the calculator dropdown is ordered correctly according to the user's defined logic.
 *   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-*   There are no pending bugs. All user-reported issues have been resolved. The main in-progress item is the refactoring task detailed below.
+*   **Issue 1: Implement Logical Trim Sorting (P0)**
+    *   **Description:** The current alphabetical sorting of vehicle trims is incorrect. The user requires a specific, non-alphabetic order that reflects the trim hierarchy (e.g., from base model to premium).
+    *   **Attempted fixes:** The agent implemented sorting by  +  alphabetically, both on the backend query and the frontend. This was rejected by the user.
+    *   **Next debug checklist:**
+        1.  **Clarify the Order:** Ask the user to provide the exact desired order for a few key models (like Jeep Compass) to establish the pattern.
+        2.  **Implementation Strategy:** The best approach is likely creating a predefined order map or array for trims (e.g., ).
+        3.  **Backend Fix:** Modify the  endpoint in . The MongoDB aggregation pipeline can be used with a  stage that uses a custom order based on the map.
+        4.  **Frontend Fix (Robustness):** Modify the  function in  to use the same custom order map. This makes the sorting robust even if the backend fails to sort correctly.
+    *   **Why fix this issue and what will be achieved with the fix?** The current sorting is confusing for users and does not match industry standards. A logical sort will improve usability and align the app with user expectations.
+    *   **Status:** IN PROGRESS
+    *   **Is recurring issue?** N
+    *   **Should Test frontend/backend/both after fix?** Both (Primarily frontend to verify UI, but backend change is the root fix).
+    *   **Blocked on other issue:** None.
 
 **In progress Task List**:
-*   **Task 1: Refactor Monolithic Files (P2)**
-    *   **Description:** The user has approved moving forward with refactoring the two largest files in the codebase to address technical debt, improve maintainability, and reduce the risk of future bugs.
-    *   **Where to resume:** The analysis phase is complete. The next step is to present a concrete refactoring plan to the user for approval before starting the implementation.
-        *   ** Plan:** Break the 4500+ line file into smaller, single-responsibility components (e.g., , , , ) and custom hooks to manage logic and state (e.g., , ).
-        *   ** Plan:** Decompose the single file into a structured package using FastAPI's . Create separate router files for each domain (e.g., , , ) and move the corresponding endpoints into them.
-    *   **What will be achieved with this?** Dramatically improved code readability, maintainability, and developer velocity. It will make future feature additions or bug fixes much safer and faster.
-    *   **Status:** IN PROGRESS
-    *   **Should Test frontend/backend/both after fix?** Both
-    *   **Blocked on something:** User approval of the proposed refactoring plan.
+*   There are no other in-progress tasks. The sorting issue is the primary focus.
 
 **Upcoming and Future Tasks**
+*   **Upcoming Tasks:**
+    *   **(P1) Verify Option 2 Data Across All Models:** The agent fixed the Option 2 issue for the Jeep Compass and provided a list of all programs to the user for verification. The next agent should follow up to see if any other models have incorrect data that needs to be cleaned up.
 *   **Future Tasks:**
-    *   **(P2) Refactor :** After the main refactoring of  and  is complete, this file should also be broken down into smaller components.
+    *   **(P2) Complete Refactor of :** While some work was done, the file is still over 3,600 lines. The original plan to extract logic into custom hooks (e.g., , ) should be completed to improve maintainability.
+    *   **(P2) Refactor :** This large file is also a candidate for refactoring into smaller components.
 
 **Completed work in this session**
-- **Feature: Re-open Submission from History (P0):** Implemented the ability to save the full calculator state and reload it from the submission history. This involved modifying the backend  model, saving the state from the frontend on submit, and adding an Ouvrir le calcul button to the history view that uses  to reload the state.
-- **Bug Fix: Meilleur Choix Logic (P0):** Corrected the Best Choice feature to properly scan all mileage options instead of being limited to a hardcoded value.
-- **Bug Fix: Vercel Deployment Failure (P0):** Resolved a critical frontend build error by changing the  output mode from  to , aligning it with the SPA architecture.
-- **Enhancement:  Integration (P1):**
-    - Updated the lease calculator to use the vehicle's  for more precise residual value lookups.
-    - Enhanced the backend invoice parser (GPT-4o prompt) to automatically extract .
-- **UI Refactor: Rabais Concessionnaire Field:** Relocated the Dealer Discount field to the main pricing section, making it a single source of truth that applies to both lease and finance calculations.
-- **Investigation: Calculation Discrepancy:** Confirmed with the user that the admin fee (frais de dossier) is correctly capitalized in both lease and finance calculations, resolving a perceived error.
-- **Troubleshooting: Login Issue:** Diagnosed a user-reported login problem, confirming the backend and frontend were working correctly and that the issue was transient on the client-side.
+- **Backend Refactoring:** Transformed the monolithic  into a modular FastAPI application with separate files for routers, services, models, and dependencies.
+- **Frontend Partial Refactoring:** Reduced the size of  by over 2,000 lines by extracting styles into  and the loading animation into .
+- **Bug Fix: Vercel Deployment & API URL:** Created a shared utility  to dynamically resolve the backend URL, fixing critical login failures on the user's Vercel deployment.
+- **Bug Fix: Lease Calculation Accuracy:** Replaced the approximate Money Factor lease formula with the precise annuity with payment in advance formula to match the dealer's system (SCI).
+- **Bug Fix & Prevention: Data Integrity (Option 2):**
+    - Corrected incorrect Option 2 rates for the Jeep Compass in the user's production database.
+    - Improved the backend  endpoint to allow setting fields to .
+    - Enhanced the PDF import parser's GPT-4o prompt and added validation logic to prevent this error in future imports.
+- **Bug Fix: Vehicle List Sorting (Initial Fix):** Implemented alphabetical sorting on the backend and frontend, which has now been superseded by the logical sort requirement.
 
 **Earlier issues found/mentioned but not fixed**
-*   **Issue 1: Large Monolithic Files (, )**
-    *   **Debug checklist**: This is the current . The plan is to split  using  and break  into smaller components and custom hooks.
-    *   **Why to solve this issue and what will be achieved with this?**: Drastically improve code maintainability, readability, and prevent future bugs. This is a major source of technical debt.
-    *   **Should Test frontend/backend/both after fix?**: Both
-    *   **Is recurring issue?**: Y
+*   None. All major issues identified during the session were addressed.
 
 **Known issue recurrence from previous fork**
-*   **Issue recurrence in previous fork**: OCR/Parser Accuracy.
-*   **Recurrence count**: High
-*   **Status**: NOT STARTED. This remains a background concern. The task to improve the invoice parser to automatically extract  was a step towards mitigating this, but the fundamental potential for OCR errors remains.
+*   **Issue recurrence in previous fork:** OCR/Parser Accuracy.
+*   **Recurrence count:** High.
+*   **Status:** ADDRESSED. The agent made significant improvements to the PDF import logic by refining the GPT-4o prompt and adding server-side validation to prevent the specific data corruption issue that occurred. This directly mitigates the recurrence risk.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-*   **Monolithic File Refactoring:** The current focus is on breaking down large, unmanageable files (, ) into smaller, single-responsibility modules and components.
-*   **State Persistence and Restoration:** Using  to persist a complex state object from one route () and rehydrate the state in another () to enable the re-open calculation feature.
-*   **Client-Side Computation:** The frontend continues to handle a large volume of real-time calculations for the lease analysis grid and Best Choice feature.
-*   **FastAPI Model Evolution:** Updating Pydantic models in FastAPI (, ) to include new fields like  and ensuring endpoints handle the new data structure.
+*   **Monolithic Refactoring:** The core work was breaking down  into a modern FastAPI structure (routers, services, models) and  by extracting UI concerns.
+*   **Dynamic API Endpoint Resolution:** Creation of  to solve deployment-specific API URL issues. It uses  for web environments and an environment variable for native mobile builds.
+*   **Financial Formula Correction:** Replacing an approximate financial formula (Money Factor) with a precise one (PMT function for an annuity due) to match an external system's calculations.
+*   **Data Integrity & Robust Parsing:** Improving a GPT-4o prompt and adding server-side validation to fix and prevent data corruption during PDF imports.
+*   **Custom Sorting:** The need to implement a non-alphabetic, business-logic-driven sort order for data presentation.
 
 **key DB schema**
-*   No traditional database is used. Data is stored in JSON files.
-*   The logical schema for submissions in  has been updated:
-    *   : Now includes an optional  to store the full state of the calculator at the time of submission.
+*   ** collection:**
+    *   : string
+    *   : string
+    *   : number
+    *   : Optional[Dict] (a key field in recent bug fixes)
+    *   : number
 
 **All files of reference**
-*   : **(CRITICAL FILE)** Contains most of the UI and business logic. Was heavily modified for bug fixes and the new state-saving feature. It is the primary target for refactoring.
-*   : **(CRITICAL FILE)** The main FastAPI application. Was modified to update the  model and the invoice parsing prompt. It is the second primary target for refactoring.
-*   : Modified to add the Open Calculation feature to the submission history view.
-*   : The custom hook for the financing calculator. Modified to incorporate the shared dealer discount.
-*   : Modified to fix the Vercel deployment build error.
+*   : Main calculator UI. The sorting logic needs to be updated here.
+*   : Contains the  endpoint, where the backend sorting logic must be updated.
+*   : Critical shared utility for handling API calls. Do not modify unless necessary.
+*   : The main refactored backend entry point.
+*   : Central file for Pydantic models.
+*   : Contains the updated PDF parsing logic.
 
 **Areas that need refactoring**:
-*   ** (CRITICAL):** At over 4500 lines, this file is unmaintainable. It must be broken into smaller components and custom hooks. This is part of the current task.
-*   ** (CRITICAL):** This monolithic file should be broken into route-specific modules using FastAPI's . This is part of the current task.
-*   ** (HIGH):** This is another large component that should be refactored after the two critical files are addressed.
+*   ** (HIGH):** The file is still over 3,600 lines. The business logic for lease calculation, finance calculation, and the analysis grid should be extracted into custom hooks to improve readability and maintainability.
+*   ** (MEDIUM):** This large component should be broken down into smaller, more focused components.
 
 **key api endpoints**
-*   : Modified to accept the new  field in the request body.
-*   : The response now includes the  for each submission object.
-*   : The internal GPT-4o prompt was updated to extract .
+*   : **(NEEDS FIX)** The sorting logic for this endpoint must be changed from alphabetical to the user's desired logical order.
+*   : Was modified to correctly handle  values for .
+*   : Heavily tested and confirmed working across environments.
 
 **Critical Info for New Agent**
-1.  **Parlez Français:** All user communication MUST be in French.
-2.  **Top Priority (P2):** The immediate task is to propose and then execute the refactoring of  and . The user has approved this work and is waiting for a concrete plan.
-3.  **Stability:** The application is currently stable. All user-reported bugs have been fixed and validated. The refactoring is a technical improvement, not a bug fix, so ensuring no regressions are introduced is paramount.
-4.  **Testing is Mandatory:** After refactoring, use the  for a full regression test on both the frontend and backend.
+1.  **Parlez Français:** All communication with the user MUST be in French.
+2.  **Top Priority (P0): Logical Sorting:** The immediate task is to fix the vehicle list sorting. The current alphabetical order is wrong. You need to implement a custom, logical sort order based on trim levels (e.g., Sport -> North -> Limited). This is a user-facing blocker.
+3.  **Deployment Environment Awareness:** The user deploys to Vercel (frontend) and Render.com (backend). The API URL resolution logic in  is critical to this setup and should not be broken.
+4.  **Build on the New Structure:** The backend has been fully refactored. Adhere to the new modular structure (routers, services, models) for any new backend code.
+5.  **Calculation Accuracy:** The lease calculation formula was a major source of user frustration and has now been fixed to match the dealer's system (SCI). Be cautious not to re-introduce errors in this logic.
 
 **documents and test reports created in this job**
 *   
-*   
-*   
-*   
 
 **Last 10 User Messages and any pending HUMAN messages**
-*   **user:** Asks the agent to analyze the monolithic files to prepare for refactoring. (IN PROGRESS)
-*   **user:** Agrees to proceed with the re-open submission feature. (Completed)
-*   **user:** Requests the ability to re-open a saved submission from the history to continue working on it. (Completed)
-*   **user:** Confirms the login issue is resolved on their end. (Resolved)
-*   **user:** Reports being unable to log into the application. (Resolved)
-*   **user:** Clarifies how prices are entered into the SCI calculator, confirming the agent's logic for capitalizing fees is correct. (Resolved)
-*   **user:** Expresses confusion about a calculation discrepancy, suspecting the admin fee is handled incorrectly. (Resolved)
-*   **user:** Asks to move the Rabais concessionnaire field to the top section to be shared by both calculators. (Completed)
+*   **user:** Asks for a logical sort order for trims (e.g., from cheapest to most expensive), not alphabetical. **(PENDING)**
+*   **user:** Points out that after the agent's changes, the Jeep Compass Sport is now incorrectly placed at the end of the vehicle list. (Related to the sorting issue).
+*   **user:** Reports the Compass Sport 2026 is missing from the list (this was before the sorting fix was attempted). (Resolved).
+*   **user:** Asks the agent to restore the Compass Sport program, which they believed was deleted. (Resolved).
+*   **user:** Asks the agent to ensure the data import bug won't happen again for future PDF uploads. (Addressed by improving the parser).
+*   **user:** Reports a bug where the Jeep Compass 2026 Sport incorrectly shows Option 2 rates. (Resolved).
+*   **user:** Reports a new issue: a discrepancy between the app's lease calculation and the dealer's system (SCI). (Resolved).
+*   **user:** Asks the agent to ensure the deployment pipeline to Vercel/Render is ready. (Confirmed).
+*   **user:** Reports a login issue on their Vercel-deployed app. (Resolved).
+*   **user:** Provides a screenshot showing a network error during login. (Resolved).
 
 **Project Health Check:**
-*   **Broken:** None.
+*   **Broken:** The vehicle list sorting functionality does not meet user requirements.
 *   **Mocked:** None.
 
 **3rd Party Integrations**
 *   **html2canvas:** Used for generating quote screenshots for sharing.
 *   **Google Cloud Vision:** Used for OCR on scanned invoices.
-*   **OpenAI GPT-4o:** Used for structuring text extracted from invoices.
+*   **OpenAI GPT-4o:** Used for structuring text extracted from invoices (parser prompt was recently improved).
 *   **openpyxl:** Python library for Excel file handling.
 *   **PyMuPDF (fitz):** Python library for PDF parsing.
 
 **Testing status**
-*   **Testing agent used after significant changes:** YES. The agent was used successfully multiple times to validate bug fixes and new features (Meilleur Choix, Rabais move, Re-open submission).
+*   **Testing agent used after significant changes:** YES. Used after the major backend refactoring and passed 21/21 API tests.
 *   **Troubleshoot agent used after agent stuck in loop:** NO
-*   **Test files created:** Multiple test reports in . No persistent ============================= test session starts ==============================
-platform linux -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0
-rootdir: /app/frontend
-plugins: anyio-4.12.1
-collected 0 items
-
-============================ no tests ran in 0.01s ============================= files were created.
-*   **Known regressions:** None in this session.
+*   **Test files created:** 
+*   **Known regressions:** The alphabetical sorting fix is now considered a regression by the user, as it doesn't match their desired logical order.
 
 **Credentials to test flow:**
 *   **User Login:**  / 
 *   **Admin Password (for import wizard):** 
 
 **What agent forgot to execute**
-*   The agent successfully addressed all user requests in this session, including completing tasks that were pending from the previous fork ( integration). The other major pending item, refactoring, is now the current task. Nothing was missed.</analysis>
+*   The agent did not fully complete the original frontend refactoring plan. While styles were extracted from , the complex business logic was not moved into custom hooks as intended.
+*   The agent implemented alphabetical sorting without first confirming the desired sorting logic with the user, leading to rework.</analysis>
