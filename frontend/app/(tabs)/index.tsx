@@ -828,8 +828,7 @@ export default function HomeScreen() {
         const calcForTerm = (rate: number, cash: number, termLen: number) => {
           const rabaisC = parseFloat(leaseRabaisConcess) || 0;
           const sp = price + totalAccessoires - rabaisC;
-          const dossierOnly = parseFloat(fraisDossier) || 0;
-          const cc = sp + dossierOnly - cash;
+          const cc = sp - cash;
           let sn = 0;
           if (soldeReporte < 0) sn = Math.abs(soldeReporte) * 1.14975;
           else if (soldeReporte > 0) sn = soldeReporte;
