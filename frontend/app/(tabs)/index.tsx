@@ -887,7 +887,7 @@ export default function HomeScreen() {
       const o2Pay = paymentFrequency === 'biweekly' ? (localResult.option2Biweekly || 0) : paymentFrequency === 'weekly' ? (localResult.option2Weekly || 0) : (localResult.option2Monthly || 0);
 
       const screenshotHtml = `
-        <div id="capture" style="width:640px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;color:#333;">
+        <div id="capture" style="width:800px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;color:#333;">
           <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px;text-align:center;">
             <div style="color:#fff;font-size:24px;font-weight:700;">CalcAuto <span style="color:#4ECDC4;">AiPro</span></div>
             <div style="color:rgba(255,255,255,0.7);font-size:12px;margin-top:4px;">${lang === 'fr' ? 'Soumission de financement' : 'Financing Submission'}</div>
