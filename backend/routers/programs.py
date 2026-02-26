@@ -714,7 +714,8 @@ async def recalculate_sort_orders(password: str = ""):
         sort_order = await compute_sort_order(
             prog.get("brand", ""),
             prog.get("model", ""),
-            prog.get("trim")
+            prog.get("trim"),
+            prog.get("year", 2026)
         )
         await db.programs.update_one(
             {"_id": prog["_id"]},
