@@ -991,9 +991,9 @@ export default function HomeScreen() {
                   <div style="font-size:12px;font-weight:700;color:#0277BD;">Taux Alternatif ${leaseResult.bestLease === 'alternative' ? '<span style="background:#FFD700;color:#000;font-size:9px;padding:1px 5px;border-radius:6px;">✓</span>' : ''}</div>
                   <div style="font-size:10px;color:#666;">Taux: ${leaseResult.alternative.rate}% | Cash: $0</div>
                   <div style="background:#e3f2fd;border-radius:6px;padding:8px;text-align:center;margin-top:6px;">
-                    <div style="font-size:10px;color:#666;">Avant taxes: ${fmt2(leaseResult.alternative.monthlyBeforeTax)} $</div>
-                    <div style="font-size:10px;color:#666;">TPS: ${fmt2(leaseResult.alternative.tpsOnPayment)} $ | TVQ: ${fmt2(leaseResult.alternative.tvqOnPayment)} $</div>
-                    <div style="font-size:20px;font-weight:700;color:#0277BD;">${fmt2(leaseResult.alternative.monthly)} $</div>
+                    <div style="font-size:10px;color:#666;">Avant taxes: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.alternative.weeklyBeforeTax : paymentFrequency === 'biweekly' ? leaseResult.alternative.biweeklyBeforeTax : leaseResult.alternative.monthlyBeforeTax)} $</div>
+                    <div style="font-size:10px;color:#666;">TPS: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.alternative.tpsOnPayment * 12/52 : paymentFrequency === 'biweekly' ? leaseResult.alternative.tpsOnPayment * 12/26 : leaseResult.alternative.tpsOnPayment)} $ | TVQ: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.alternative.tvqOnPayment * 12/52 : paymentFrequency === 'biweekly' ? leaseResult.alternative.tvqOnPayment * 12/26 : leaseResult.alternative.tvqOnPayment)} $</div>
+                    <div style="font-size:20px;font-weight:700;color:#0277BD;">${fmt2(paymentFrequency === 'weekly' ? leaseResult.alternative.weekly : paymentFrequency === 'biweekly' ? leaseResult.alternative.biweekly : leaseResult.alternative.monthly)} $</div>
                     <div style="font-size:10px;color:#c00;">Coût emprunt: ${fmt2(leaseResult.alternative.coutEmprunt)} $</div>
                   </div>
                 </div>` : ''}
