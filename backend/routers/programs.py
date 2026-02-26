@@ -169,7 +169,8 @@ async def import_programs(request: ImportRequest):
         sort_order = await compute_sort_order(
             prog_data.get("brand", ""),
             prog_data.get("model", ""),
-            prog_data.get("trim")
+            prog_data.get("trim"),
+            prog_data.get("year", 2026)
         )
         prog_data["sort_order"] = sort_order
         
