@@ -2892,8 +2892,8 @@ export default function HomeScreen() {
                     <Ionicons name="information-circle" size={14} color="#4ECDC4" />
                     <Text style={styles.leaseInfoText}>
                       {lang === 'fr' 
-                        ? `Capitalisé: ${formatCurrency(parseFloat(fraisDossier) || 0)} dossier | Pneus (${formatCurrency(parseFloat(taxePneus) || 0)}) + RDPRM (${formatCurrency(parseFloat(fraisRDPRM) || 0)}) payés à la livraison`
-                        : `Capitalized: ${formatCurrency(parseFloat(fraisDossier) || 0)} admin | Tires (${formatCurrency(parseFloat(taxePneus) || 0)}) + RDPRM (${formatCurrency(parseFloat(fraisRDPRM) || 0)}) paid at delivery`}
+                        ? `Dossier (${formatCurrency(parseFloat(fraisDossier) || 0)}) + Pneus (${formatCurrency(parseFloat(taxePneus) || 0)}) + RDPRM (${formatCurrency(parseFloat(fraisRDPRM) || 0)}) payés à la livraison`
+                        : `Admin (${formatCurrency(parseFloat(fraisDossier) || 0)}) + Tires (${formatCurrency(parseFloat(taxePneus) || 0)}) + RDPRM (${formatCurrency(parseFloat(fraisRDPRM) || 0)}) paid at delivery`}
                     </Text>
                   </View>
 
