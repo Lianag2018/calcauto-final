@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   TextInput,
@@ -14,7 +13,6 @@ import {
   Alert,
   Animated,
   Dimensions,
-  Easing,
   Share,
   Linking,
 } from 'react-native';
