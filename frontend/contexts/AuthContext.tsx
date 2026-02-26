@@ -4,12 +4,6 @@ import axios from 'axios';
 import { Platform } from 'react-native';
 import { API_URL } from '../utils/api';
 
-const getApiUrl = (): string => {
-  return API_URL;
-};
-
-const API_URL = getApiUrl();
-
 interface User {
   id: string;
   email: string;
