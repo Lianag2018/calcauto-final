@@ -664,3 +664,6 @@ async def test_email():
         send_email(SMTP_EMAIL, "🧪 Test CalcAuto AiPro - Email OK", html_body)
         return {"success": True, "message": f"Email de test envoyé à {SMTP_EMAIL}"}
     except Exception as e:
+
+        logger.error(f"Erreur test email: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
