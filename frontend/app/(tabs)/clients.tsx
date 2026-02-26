@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import * as DocumentPicker from 'expo-document-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Language, saveLanguage, loadLanguage } from '../../utils/i18n';
 import { LanguageSelector } from '../../components/LanguageSelector';
