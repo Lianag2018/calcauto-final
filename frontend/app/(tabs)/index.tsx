@@ -654,10 +654,19 @@ export default function HomeScreen() {
           if (soldeReporte < 0) sn = Math.abs(soldeReporte) * 1.14975;
           else if (soldeReporte > 0) sn = soldeReporte;
           const ncc = cc + sn + tradeOwed - tradeVal - comptant - bonusCash;
-          const dep = (ncc - resVal) / termLen;
-          const mf = rate / 2400;
-          const fc = (ncc + resVal) * mf;
-          const bt = dep + fc;
+          // Formule SCI (annuité avec paiement en avance)
+          const mr = rate / 100 / 12;
+          let bt: number;
+          let fc: number;
+          if (mr === 0) {
+            bt = (ncc - resVal) / termLen;
+            fc = 0;
+          } else {
+            const fac = Math.pow(1 + mr, termLen);
+            const pmtArr = (ncc * mr * fac - resVal * mr) / (fac - 1);
+            bt = pmtArr / (1 + mr);
+            fc = bt - (ncc - resVal) / termLen;
+          }
           const monthly = bt + bt * 0.05 + bt * 0.09975;
           return { monthly, monthlyBeforeTax: bt, rate, term: termLen, residualPct: adjResPct, residualValue: resVal, coutEmprunt: fc * termLen, leaseCash: cash, kmPerYear: km };
         };
