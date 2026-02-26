@@ -719,3 +719,35 @@ async def seed_data():
     
     return {"message": f"Seeded {len(programs_data)} programs for {prog_month}/{prog_year}"}
 
+
+
+# ============ Trim Order Management ============
+
+@router.get("/trim-orders")
+async def get_trim_orders():
+    """Récupère les ordres de tri des versions (trims) stockés en MongoDB."""
+    orders = await db.trim_orders.find({}, {"_id": 0}).to_list(200)
+    return orders
+
+
+@router.post("/trim-orders/recalculate")
+async def recalculate_sort_orders(password: str = ""):
+    """Recalcule le sort_order de tous les programmes à partir des trim_orders stockés."""
+    if password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Mot de passe incorrect")
+
+    programs = await db.programs.find({}).to_list(2000)
+    updated = 0
+    for prog in programs:
+        sort_order = await compute_sort_order(
+            prog.get("brand", ""),
+            prog.get("model", ""),
+            prog.get("trim")
+        )
+        await db.programs.update_one(
+            {"_id": prog["_id"]},
+            {"$set": {"sort_order": sort_order}}
+        )
+        updated += 1
+
+    return {"message": f"Recalculé sort_order pour {updated} programmes"}
