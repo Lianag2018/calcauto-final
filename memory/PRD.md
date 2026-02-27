@@ -56,6 +56,12 @@ OCR pour factures, gestion d'inventaire et CRM.
 - Import wizard GPT prompt updated to explicitly ignore Delivery Credit column
 - Green "+1 000 $" badges removed from all vehicle cards
 
+## Completed - Excel Export/Import System (Feb 27, 2026)
+- GET /api/programs/export-excel - Downloads all programs as formatted Excel
+- POST /api/programs/import-excel - Imports corrected Excel (admin password required)
+- New "Excel" tab in Admin panel with export/import UI
+- Delivery Credit values removed from bonus_cash, import wizard updated to ignore them
+
 ## P1 Backlog
 - Vérifier données "Option 2" sur tous les modèles
 
