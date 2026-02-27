@@ -50,6 +50,12 @@ OCR pour factures, gestion d'inventaire et CRM.
 - Amélioration: Grille d'analyse adapte titre et valeurs à la fréquence
 - Documentation architecture complète (/app/ARCHITECTURE.md)
 
+## Completed - Delivery Credit Fix (Feb 27, 2026)
+- Removed all Delivery Credit values (261Q02, 'E' Only) incorrectly stored as bonus_cash
+- 40 programs corrected: bonus_cash set to 0 for all vehicles
+- Import wizard GPT prompt updated to explicitly ignore Delivery Credit column
+- Green "+1 000 $" badges removed from all vehicle cards
+
 ## P1 Backlog
 - Vérifier données "Option 2" sur tous les modèles
 
