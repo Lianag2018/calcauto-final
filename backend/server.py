@@ -6,7 +6,7 @@ All business logic resides in the routers/ and services/ directories.
 """
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
-from database import client, logger
+from database import client, db, logger
 
 # Import all routers
 from routers.auth import router as auth_router
