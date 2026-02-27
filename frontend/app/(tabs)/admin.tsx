@@ -561,8 +561,10 @@ export default function AdminScreen() {
             }
           />
         </>
-      ) : (
+      ) : activeTab === 'order' ? (
         <VehicleOrderManager getToken={getToken} />
+      ) : (
+        <ExcelManager getToken={getToken} />
       )}
     </SafeAreaView>
   );
