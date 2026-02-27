@@ -512,7 +512,14 @@ export default function AdminScreen() {
           onPress={() => setActiveTab('order')}
         >
           <Ionicons name="swap-vertical" size={16} color={activeTab === 'order' ? '#1a1a2e' : '#888'} />
-          <Text style={[styles.tabText, activeTab === 'order' && styles.tabTextActive]}>Ordre vehicules</Text>
+          <Text style={[styles.tabText, activeTab === 'order' && styles.tabTextActive]}>Ordre</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'excel' && styles.tabActive]}
+          onPress={() => setActiveTab('excel')}
+        >
+          <Ionicons name="document-text" size={16} color={activeTab === 'excel' ? '#1a1a2e' : '#888'} />
+          <Text style={[styles.tabText, activeTab === 'excel' && styles.tabTextActive]}>Excel</Text>
         </TouchableOpacity>
       </View>
 
