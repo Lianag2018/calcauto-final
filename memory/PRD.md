@@ -1,76 +1,60 @@
 # CalcAuto AiPro - Product Requirements Document
 
 ## Problem Statement
-Application full-stack de financement vehiculaire avec calculateur de location/financement,
+Application full-stack de financement véhiculaire avec calculateur de location/financement,
 OCR pour factures, gestion d'inventaire et CRM.
 
 ## Architecture
 ```
 /app
 ├── backend/
-│   ├── server.py              # Point d'entree minimal
-│   ├── database.py            # Connexion MongoDB, config, logger
-│   ├── models.py              # Modeles Pydantic (incl. sort_order)
-│   ├── dependencies.py        # Auth helpers, utilitaires
-│   ├── routers/
-│   │   ├── programs.py        # Programmes CRUD, calcul, tri logique PDF
-│   │   ├── email.py           # Email soumission (taux dynamiques)
-│   │   ├── auth.py, submissions.py, contacts.py, inventory.py
-│   │   ├── invoice.py, import_wizard.py, sci.py, admin.py
+│   ├── server.py              # Point d'entrée FastAPI
+│   ├── database.py            # Connexion MongoDB, config
+│   ├── models.py              # Modèles Pydantic (incl. sort_order)
+│   ├── dependencies.py        # Auth, utilitaires calcul
+│   ├── routers/               # API endpoints
+│   │   ├── programs.py, email.py, auth.py, submissions.py
+│   │   ├── contacts.py, inventory.py, invoice.py
+│   │   ├── import_wizard.py, sci.py, admin.py
 │   ├── services/              # window_sticker.py, email_service.py
-│   ├── scripts/
-│   │   └── setup_trim_orders.py  # Mapping exact PDF -> sort_order
-│   └── data/                  # JSON (taux, residuels, codes)
+│   ├── scripts/               # setup_trim_orders.py
+│   └── data/                  # JSON (taux, résiduels, codes)
 ├── frontend/
-│   ├── app/(tabs)/index.tsx   # Calculateur (tri sort_order, SMS screenshot)
-│   ├── types/calculator.ts    # VehicleProgram avec sort_order
-│   └── utils/api.ts           # Resolution dynamique URL backend
-└── ARCHITECTURE.md            # Documentation complete architecture & deploiement
+│   ├── app/(tabs)/            # index.tsx, inventory.tsx, clients.tsx, admin.tsx
+│   ├── components/            # Calculator components, EmailModal, etc.
+│   ├── contexts/              # AuthContext.tsx
+│   ├── hooks/                 # useCalculator, useFinancingCalculation, etc.
+│   ├── utils/                 # api.ts, i18n.ts
+│   └── vercel.json            # Vercel deployment with rewrites to Render
+├── ARCHITECTURE.md            # Documentation complète architecture & déploiement
+└── memory/PRD.md
 ```
-
-## MongoDB Collections
-- `programs`: Programmes de financement (avec sort_order = position PDF)
-- `trim_orders`: Hierarchie des trims par marque/modele/annee
-- `users`: Comptes utilisateurs
-- `tokens`: Tokens d'authentification
-- `submissions`: Soumissions clients (CRM)
-- `contacts`: Contacts importes
-- `inventory`: Vehicules en stock
-- `vehicle_options`: Options/equipements vehicules
-- `window_stickers`: Window Stickers caches
-- `parsing_metrics`: Metriques de scan OCR
 
 ## Completed Features
 - Calculateur location SCI + financement
 - "Meilleur Choix" automatique, Grille d'analyse comparative
-- Partage SMS/texto avec screenshot (tableau taux + details + options)
-- Soumission email avec taux dynamiques (Option 1 seule ou 1+2)
+- Partage SMS/texto avec screenshot
+- Soumission email avec taux dynamiques
 - Scanner factures (OCR: Google Cloud Vision + GPT-4o)
 - Import programmes depuis PDF, CRM avec rappels
 - Gestion inventaire avec Window Sticker
-- Inventaire filtre par modele (pas juste marque)
+- Inventaire filtré par modèle
+- Tri logique PDF (sort_order aligné avec PDF FCA)
+- Admin drag & drop pour réordonnement véhicules
+- Email/SMS cohérence (taux dynamiques, Option 2 conditionnelle)
 
-## Completed - Tri Logique PDF (Feb 26, 2026)
-- sort_order = position exacte dans le PDF FCA QBC Incentive Landscape
-- 2026: page 20 (34 programmes, sort_order 0-33)
-- 2025: page 21 (47 programmes, sort_order 0-46)
-
-## Completed - Email/SMS Coherence (Feb 26, 2026)
-- Tableau des taux dynamique (avant: hardcode avec mauvaises valeurs)
-- Si Option 2 = null: colonne Option 2 masquee partout
-- SMS screenshot: meme structure que email (taux + details + comparaison)
-- Frontend envoie rates_table avec option1_rates et option2_rates reels
-
-## Completed - Architecture Documentation (Feb 27, 2026)
-- Document complet /app/ARCHITECTURE.md cree
-- Couvre: backend, frontend, MongoDB, deploiement (GitHub, Render, Vercel)
-- Variables d'environnement, flux de donnees, maintenance, depannage
+## Completed - Feb 27, 2026
+- Bug fix: Calcul hebdomadaire en impression (Avant taxes/TPS/TVQ maintenant en montants hebdo)
+- Bug fix: Bouton "Retour au calculateur" ajouté en mode impression
+- Amélioration: Section "Meilleur choix location" adapte label et montants à la fréquence
+- Amélioration: Grille d'analyse adapte titre et valeurs à la fréquence
+- Documentation architecture complète (/app/ARCHITECTURE.md)
 
 ## P1 Backlog
-- Verifier donnees "Option 2" sur tous les modeles
+- Vérifier données "Option 2" sur tous les modèles
 
 ## P2 Backlog
-- Refactoring complet frontend index.tsx (hooks)
+- Refactoring complet frontend index.tsx (hooks + composants)
 - Refactoring inventory.tsx
 
 ## Credentials
