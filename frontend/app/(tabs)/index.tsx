@@ -1285,6 +1285,20 @@ export default function HomeScreen() {
             .container { box-shadow: none; }
             .no-print { display: none !important; }
           }
+          .back-btn {
+            display: block;
+            margin: 10px auto 15px;
+            padding: 12px 30px;
+            background: #1a1a2e;
+            color: #4ECDC4;
+            border: 2px solid #4ECDC4;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+          }
+          .back-btn:hover { background: #4ECDC4; color: #1a1a2e; }
         </style>
       </head>
       <body>
