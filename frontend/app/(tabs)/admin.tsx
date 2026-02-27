@@ -48,6 +48,161 @@ interface ProgramItem {
   consumer_cash: number;
 }
 
+// ============ Excel Manager Component ============
+function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
+  const [importing, setImporting] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [result, setResult] = useState<string | null>(null);
+  const [resultType, setResultType] = useState<'success' | 'error'>('success');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleExport = async () => {
+    try {
+      const url = `${API_URL}/api/programs/export-excel`;
+      if (Platform.OS === 'web') {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'programmes_calcauto.xlsx';
+        link.click();
+        setResult('Telechargement lance!');
+        setResultType('success');
+      }
+    } catch (e: any) {
+      setResult('Erreur: ' + (e.message || 'inconnu'));
+      setResultType('error');
+    }
+  };
+
+  const handleImport = async () => {
+    if (!adminPassword) {
+      setResult('Entrez le mot de passe admin');
+      setResultType('error');
+      return;
+    }
+    if (Platform.OS === 'web' && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const onFileSelected = async (event: any) => {
+    const file = event.target?.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    setResult(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('password', adminPassword);
+
+      const response = await axios.post(`${API_URL}/api/programs/import-excel`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      const data = response.data;
+      setResult(`${data.message}${data.errors?.length ? '\nErreurs: ' + data.errors.join(', ') : ''}`);
+      setResultType('success');
+    } catch (e: any) {
+      setResult('Erreur: ' + (e.response?.data?.detail || e.message || 'inconnu'));
+      setResultType('error');
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  return (
+    <ScrollView style={{ flex: 1, padding: 16 }}>
+      <View style={{ backgroundColor: '#2d2d44', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+          <Ionicons name="download-outline" size={24} color="#4ECDC4" />
+          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>Exporter les programmes</Text>
+        </View>
+        <Text style={{ color: '#aaa', fontSize: 13, marginBottom: 16 }}>
+          Telechargez un fichier Excel avec tous les programmes actuels. Corrigez les valeurs (Consumer Cash, taux, etc.) puis reimportez.
+        </Text>
+        <TouchableOpacity
+          style={{ backgroundColor: '#4ECDC4', borderRadius: 8, paddingVertical: 14, alignItems: 'center' }}
+          onPress={handleExport}
+        >
+          <Text style={{ color: '#1a1a2e', fontWeight: '700', fontSize: 16 }}>Telecharger Excel</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={{ backgroundColor: '#2d2d44', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+          <Ionicons name="cloud-upload-outline" size={24} color="#FFD700" />
+          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>Importer Excel corrige</Text>
+        </View>
+        <Text style={{ color: '#aaa', fontSize: 13, marginBottom: 16 }}>
+          Uploadez le fichier Excel corrige. Les programmes seront mis a jour avec les nouvelles valeurs. Ce fichier devient la source de verite.
+        </Text>
+
+        <TextInput
+          style={{
+            backgroundColor: '#1a1a2e', color: '#fff', borderRadius: 8,
+            paddingHorizontal: 16, paddingVertical: 12, marginBottom: 12,
+            borderWidth: 1, borderColor: '#444', fontSize: 14,
+          }}
+          placeholder="Mot de passe admin"
+          placeholderTextColor="#666"
+          secureTextEntry
+          value={adminPassword}
+          onChangeText={setAdminPassword}
+        />
+
+        {Platform.OS === 'web' && (
+          <input
+            ref={(el) => { fileInputRef.current = el; }}
+            type="file"
+            accept=".xlsx,.xls"
+            style={{ display: 'none' }}
+            onChange={onFileSelected}
+          />
+        )}
+
+        <TouchableOpacity
+          style={{
+            backgroundColor: importing ? '#555' : '#FFD700', borderRadius: 8,
+            paddingVertical: 14, alignItems: 'center', opacity: importing ? 0.7 : 1,
+          }}
+          onPress={handleImport}
+          disabled={importing}
+        >
+          {importing ? (
+            <ActivityIndicator size="small" color="#1a1a2e" />
+          ) : (
+            <Text style={{ color: '#1a1a2e', fontWeight: '700', fontSize: 16 }}>Importer le fichier corrige</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {result && (
+        <View style={{
+          backgroundColor: resultType === 'success' ? 'rgba(78,205,196,0.15)' : 'rgba(255,107,107,0.15)',
+          borderRadius: 8, padding: 16, marginBottom: 16,
+          borderWidth: 1, borderColor: resultType === 'success' ? '#4ECDC4' : '#FF6B6B',
+        }}>
+          <Text style={{ color: resultType === 'success' ? '#4ECDC4' : '#FF6B6B', fontSize: 14 }}>{result}</Text>
+        </View>
+      )}
+
+      <View style={{ backgroundColor: '#2d2d44', borderRadius: 12, padding: 20, marginBottom: 40 }}>
+        <Text style={{ color: '#FFD700', fontSize: 14, fontWeight: '700', marginBottom: 8 }}>Instructions</Text>
+        <Text style={{ color: '#aaa', fontSize: 12, lineHeight: 20 }}>
+          1. Telechargez l'Excel actuel{'\n'}
+          2. Ouvrez dans Excel/Google Sheets{'\n'}
+          3. Corrigez: Consumer Cash, taux Option 1/2{'\n'}
+          4. NE PAS modifier la colonne ID{'\n'}
+          5. Bonus Cash = 0 (ignorer Delivery Credit){'\n'}
+          6. Opt2 vide = pas d'Option 2{'\n'}
+          7. Sauvegardez et reimportez ici
+        </Text>
+      </View>
+    </ScrollView>
+  );
+}
+
 // ============ Vehicle Order Manager Component ============
 function VehicleOrderManager({ getToken }: { getToken: () => Promise<string> }) {
   const [programs, setPrograms] = useState<ProgramItem[]>([]);
