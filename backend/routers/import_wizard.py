@@ -333,30 +333,25 @@ ATTENTION: BEAUCOUP de véhicules n'ont PAS d'Option 2 (Alternative Consumer Cas
 - Chaque ligne/véhicule doit être traitée INDIVIDUELLEMENT pour Option 2
 - En cas de DOUTE sur l'existence d'Option 2, mettre null
 
-=== BONUS CASH - TRÈS IMPORTANT ===
-Le Bonus Cash est dans la DERNIÈRE COLONNE (colonne verte "Bonus Cash").
-- CHAQUE véhicule a son PROPRE montant de Bonus Cash (peut être 0, $1000, $3000, etc.)
-- Le Bonus Cash n'est PAS le même pour tous les véhicules!
-- Si la colonne Bonus Cash est vide ou montre "-", alors bonus_cash = 0
-- Les montants typiques sont: $0, $1,000, $3,000
+=== BONUS CASH / DELIVERY CREDIT - RÈGLE CRITIQUE ===
+ATTENTION: La dernière colonne du PDF est "Delivery Credit" (code 261Q02).
+Cette colonne est marquée TYPE OF SALE: 'E' Only.
+*** NE JAMAIS IMPORTER LES VALEURS DE DELIVERY CREDIT ***
+Le Delivery Credit ($1,000, $3,000, $5,000 etc.) est UNIQUEMENT pour les ventes en ligne ('E').
+Il ne s'applique PAS aux ventes en concession.
+bonus_cash doit TOUJOURS être 0 pour TOUS les véhicules.
+Ignore complètement cette colonne lors de l'extraction.
 
-=== EXEMPLES AVEC BONUS CASH ===
+=== EXEMPLES ===
 
-2026 MODELS (généralement PAS de Bonus Cash):
+2026 MODELS:
 "Grand Caravan SXT    4.99%... " → bonus_cash: 0
 "Ram 1500 Big Horn    $6,000  4.99%..." → bonus_cash: 0
 
-2025 MODELS (souvent avec Bonus Cash de $1,000 à $3,000):
-"Compass North  $7,500  4.99%...   $1,000" → bonus_cash: 1000
-"Ram 1500 Sport  $10,000  4.99%...  $3,000" → bonus_cash: 3000
-"Ram 2500/3500 Gas Models  $9,500  4.99%...  -" → bonus_cash: 0 (pas de bonus!)
-"Ram Chassis Cab  $5,000  4.99%...  -" → bonus_cash: 0
-
-=== RÈGLE IMPORTANTE POUR RAM 2025 ===
-- Ram 1500 2025: bonus_cash = $3,000
-- Ram 2500/3500 2025: bonus_cash = 0 (PAS de bonus!)
-- Ram ProMaster 2025: bonus_cash = 0
-- Ram Chassis Cab 2025: bonus_cash = 0
+2025 MODELS (IGNORER le Delivery Credit à droite!):
+"Compass North  $7,500  4.99%...   $1,000" → bonus_cash: 0 (le $1,000 est Delivery Credit = IGNORER)
+"Ram 1500 Sport  $10,000  4.99%...  $3,000" → bonus_cash: 0 (le $3,000 est Delivery Credit = IGNORER)
+"Ram 2500/3500 Gas Models  $9,500  4.99%...  -" → bonus_cash: 0
 
 === MARQUES À EXTRAIRE ===
 - CHRYSLER: Grand Caravan, Pacifica
