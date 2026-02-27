@@ -3137,16 +3137,16 @@ export default function HomeScreen() {
                               <Text style={[styles.bestLeaseLabel, { fontSize: 13 }]}>{lang === 'fr' ? 'Avant taxes:' : 'Before tax:'}</Text>
                               <Text style={[styles.bestLeaseValue, { fontSize: 13 }]}>{formatCurrencyDecimal(
                                 paymentFrequency === 'monthly' ? bestLeaseOption.monthlyBeforeTax :
-                                paymentFrequency === 'biweekly' ? bestLeaseOption.biweeklyBeforeTax :
-                                bestLeaseOption.weeklyBeforeTax
+                                paymentFrequency === 'biweekly' ? bestLeaseOption.monthlyBeforeTax * 12 / 26 :
+                                bestLeaseOption.monthlyBeforeTax * 12 / 52
                               )} / {paymentFrequency === 'monthly' ? (lang === 'fr' ? 'mois' : 'mo') : paymentFrequency === 'biweekly' ? (lang === 'fr' ? '2 sem.' : 'bi-wk') : (lang === 'fr' ? 'sem.' : 'wk')}</Text>
                             </View>
                             <View style={styles.bestLeaseRow}>
                               <Text style={[styles.bestLeaseLabel, { fontSize: 16, fontWeight: '700' }]}>{paymentFrequency === 'monthly' ? (lang === 'fr' ? 'MENSUEL:' : 'MONTHLY:') : paymentFrequency === 'biweekly' ? (lang === 'fr' ? 'AUX 2 SEM.:' : 'BI-WEEKLY:') : (lang === 'fr' ? 'HEBDO:' : 'WEEKLY:')}</Text>
                               <Text style={[styles.bestLeaseValue, { fontSize: 16, fontWeight: '700', color: '#4ECDC4' }]}>{formatCurrencyDecimal(
                                 paymentFrequency === 'monthly' ? bestLeaseOption.monthly :
-                                paymentFrequency === 'biweekly' ? bestLeaseOption.biweekly :
-                                bestLeaseOption.weekly
+                                paymentFrequency === 'biweekly' ? bestLeaseOption.monthly * 12 / 26 :
+                                bestLeaseOption.monthly * 12 / 52
                               )} / {paymentFrequency === 'monthly' ? (lang === 'fr' ? 'mois' : 'mo') : paymentFrequency === 'biweekly' ? (lang === 'fr' ? '2 sem.' : 'bi-wk') : (lang === 'fr' ? 'sem.' : 'wk')}</Text>
                             </View>
                           </View>
