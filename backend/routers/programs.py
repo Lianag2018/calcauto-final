@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 import uuid
@@ -11,6 +12,13 @@ from models import (
 from dependencies import calculate_monthly_payment, get_rate_for_term
 import pypdf
 import io
+
+try:
+    import openpyxl
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    EXCEL_AVAILABLE = True
+except ImportError:
+    EXCEL_AVAILABLE = False
 
 router = APIRouter()
 
