@@ -1478,6 +1478,7 @@ export default function HomeScreen() {
           </div>
           
           <div class="footer">
+            <button class="back-btn no-print" onclick="window.close(); if(!window.closed) history.back();">${lang === 'fr' ? 'Retour au calculateur' : 'Back to calculator'}</button>
             <div style="font-size:12px; color:#666;">${lang === 'fr' ? 'Généré le' : 'Generated on'} ${new Date().toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA')}</div>
             <div class="disclaimer">
               ${lang === 'fr' 
