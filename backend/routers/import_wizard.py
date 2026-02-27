@@ -382,7 +382,7 @@ Extrais les véhicules des DEUX sections!
 }}
 
 EXTRAIS ABSOLUMENT TOUS LES VÉHICULES DES SECTIONS 2026 ET 2025. 
-VÉRIFIE LE BONUS CASH POUR CHAQUE VÉHICULE INDIVIDUELLEMENT!
+BONUS_CASH = 0 POUR TOUS LES VÉHICULES (la colonne Delivery Credit 'E' Only est à IGNORER).
 VÉRIFIE OPTION 2 POUR CHAQUE VÉHICULE: si les colonnes sont vides → null!"""
 
             response = client.chat.completions.create(
