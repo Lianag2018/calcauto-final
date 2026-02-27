@@ -196,7 +196,7 @@ async def export_programs_excel(month: Optional[int] = None, year: Optional[int]
 
 
 @router.post("/programs/import-excel")
-async def import_programs_excel(file: UploadFile = File(...), password: str = ""):
+async def import_programs_excel(file: UploadFile = File(...), password: str = Form("")):
     """Importe un Excel corrige pour mettre a jour les programmes existants"""
     if not EXCEL_AVAILABLE:
         raise HTTPException(status_code=500, detail="openpyxl non disponible")
