@@ -3040,7 +3040,7 @@ export default function HomeScreen() {
                       {leaseAnalysisGrid.length > 0 && (
                         <View style={styles.analysisSection}>
                           <Text style={styles.analysisSectionTitle}>
-                            {lang === 'fr' ? 'ANALYSE COMPLÈTE - Paiements mensuels' : 'FULL ANALYSIS - Monthly payments'}
+                            {lang === 'fr' ? `ANALYSE COMPLÈTE - Paiements ${paymentFrequency === 'weekly' ? 'hebdo' : paymentFrequency === 'biweekly' ? 'aux 2 sem.' : 'mensuels'}` : `FULL ANALYSIS - ${paymentFrequency === 'weekly' ? 'Weekly' : paymentFrequency === 'biweekly' ? 'Bi-weekly' : 'Monthly'} payments`}
                           </Text>
                           {[12000, 18000, 24000].map(km => {
                             const kmRows = leaseAnalysisGrid.filter(r => r.kmPerYear === km);
@@ -3071,10 +3071,10 @@ export default function HomeScreen() {
                                           <Text style={[styles.analysisCell, { width: 52, fontWeight: '600' }]}>{t}m</Text>
                                           <Text style={[styles.analysisCell, { width: 45, color: '#888' }]}>{stdRow?.residualPct || altRow?.residualPct}%</Text>
                                           <Text style={[styles.analysisCell, { width: 82, color: isBestStd ? '#FFD700' : '#E65100', fontWeight: isBestStd ? '800' : '500' }]}>
-                                            {stdRow ? `${stdRow.monthly.toFixed(0)}$` : '-'}
+                                            {stdRow ? `${(paymentFrequency === 'weekly' ? stdRow.monthly * 12/52 : paymentFrequency === 'biweekly' ? stdRow.monthly * 12/26 : stdRow.monthly).toFixed(0)}$` : '-'}
                                           </Text>
                                           <Text style={[styles.analysisCell, { width: 82, color: isBestAlt ? '#FFD700' : '#0277BD', fontWeight: isBestAlt ? '800' : '500' }]}>
-                                            {altRow ? `${altRow.monthly.toFixed(0)}$` : '-'}
+                                            {altRow ? `${(paymentFrequency === 'weekly' ? altRow.monthly * 12/52 : paymentFrequency === 'biweekly' ? altRow.monthly * 12/26 : altRow.monthly).toFixed(0)}$` : '-'}
                                           </Text>
                                         </TouchableOpacity>
                                       );
