@@ -356,7 +356,7 @@ export default function AdminScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'users' | 'order'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'order' | 'excel'>('users');
 
   const fetchData = useCallback(async () => {
     try {
