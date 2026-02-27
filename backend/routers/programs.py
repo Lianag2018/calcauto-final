@@ -75,6 +75,206 @@ async def get_periods():
     periods = await db.programs.aggregate(pipeline).to_list(100)
     return [ProgramPeriod(month=p["_id"]["month"], year=p["_id"]["year"], count=p["count"]) for p in periods]
 
+
+# ============ EXPORT / IMPORT EXCEL ============
+
+@router.get("/programs/export-excel")
+async def export_programs_excel(month: Optional[int] = None, year: Optional[int] = None):
+    """Exporte tous les programmes en Excel pour correction manuelle"""
+    if not EXCEL_AVAILABLE:
+        raise HTTPException(status_code=500, detail="openpyxl non disponible")
+
+    if month and year:
+        query = {"program_month": month, "program_year": year}
+    else:
+        latest = await db.programs.find_one(sort=[("program_year", -1), ("program_month", -1)])
+        if latest:
+            query = {"program_month": latest.get("program_month"), "program_year": latest.get("program_year")}
+        else:
+            query = {}
+
+    programs = await db.programs.find(query).sort([("year", -1), ("sort_order", 1), ("brand", 1), ("model", 1)]).to_list(1000)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Programmes"
+
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    header_fill = PatternFill(start_color="1a1a2e", end_color="1a1a2e", fill_type="solid")
+    center = Alignment(horizontal="center", vertical="center")
+    thin_border = Border(
+        left=Side(style='thin'), right=Side(style='thin'),
+        top=Side(style='thin'), bottom=Side(style='thin')
+    )
+
+    headers = [
+        "ID", "Marque", "Modele", "Trim", "Annee",
+        "Consumer Cash ($)", "Bonus Cash ($)",
+        "Opt1 36M", "Opt1 48M", "Opt1 60M", "Opt1 72M", "Opt1 84M", "Opt1 96M",
+        "Opt2 36M", "Opt2 48M", "Opt2 60M", "Opt2 72M", "Opt2 84M", "Opt2 96M",
+        "Sort Order"
+    ]
+    for col_idx, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_idx, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center
+        cell.border = thin_border
+
+    ws.column_dimensions['A'].width = 10
+    ws.column_dimensions['B'].width = 12
+    ws.column_dimensions['C'].width = 22
+    ws.column_dimensions['D'].width = 55
+    ws.column_dimensions['E'].width = 8
+    ws.column_dimensions['F'].width = 16
+    ws.column_dimensions['G'].width = 14
+
+    year_2026_fill = PatternFill(start_color="E3F2FD", end_color="E3F2FD", fill_type="solid")
+    year_2025_fill = PatternFill(start_color="FFF3E0", end_color="FFF3E0", fill_type="solid")
+
+    for row_idx, prog in enumerate(programs, 2):
+        o1 = prog.get("option1_rates") or {}
+        o2 = prog.get("option2_rates")
+        row_fill = year_2026_fill if prog.get("year") == 2026 else year_2025_fill
+
+        row_data = [
+            prog.get("id", ""),
+            prog.get("brand", ""),
+            prog.get("model", ""),
+            prog.get("trim", ""),
+            prog.get("year", 2026),
+            prog.get("consumer_cash", 0) or 0,
+            prog.get("bonus_cash", 0) or 0,
+            o1.get("rate_36"), o1.get("rate_48"), o1.get("rate_60"),
+            o1.get("rate_72"), o1.get("rate_84"), o1.get("rate_96"),
+            o2.get("rate_36") if o2 else None, o2.get("rate_48") if o2 else None,
+            o2.get("rate_60") if o2 else None, o2.get("rate_72") if o2 else None,
+            o2.get("rate_84") if o2 else None, o2.get("rate_96") if o2 else None,
+            prog.get("sort_order", 999)
+        ]
+
+        for col_idx, val in enumerate(row_data, 1):
+            cell = ws.cell(row=row_idx, column=col_idx, value=val)
+            cell.border = thin_border
+            cell.fill = row_fill
+            if col_idx >= 6:
+                cell.alignment = center
+            if 8 <= col_idx <= 13:
+                cell.fill = PatternFill(start_color="FFF0F0", end_color="FFF0F0", fill_type="solid")
+            elif 14 <= col_idx <= 19:
+                cell.fill = PatternFill(start_color="F0F4FF", end_color="F0F4FF", fill_type="solid")
+
+    ws2 = wb.create_sheet("Instructions")
+    instructions = [
+        "INSTRUCTIONS - CORRECTION DES PROGRAMMES",
+        "",
+        "1. Modifiez les valeurs dans l'onglet 'Programmes'",
+        "2. Consumer Cash = rabais avant taxes Option 1",
+        "3. Bonus Cash = rabais apres taxes (0 dans la plupart des cas)",
+        "4. Les colonnes Opt1 = taux de financement Option 1 (ex: 4.99)",
+        "5. Les colonnes Opt2 = taux de financement Option 2 (vide = pas d'option 2)",
+        "6. NE PAS modifier la colonne ID",
+        "7. NE PAS inclure les Delivery Credits ('E' Only)",
+        "8. Sauvegardez et reimportez le fichier dans l'application",
+        "",
+        "IMPORTANT: Ce fichier corrige devient la SOURCE DE VERITE",
+    ]
+    for i, text in enumerate(instructions, 1):
+        cell = ws2.cell(row=i, column=1, value=text)
+        if i == 1:
+            cell.font = Font(bold=True, size=14)
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=programmes_calcauto.xlsx"}
+    )
+
+
+@router.post("/programs/import-excel")
+async def import_programs_excel(file: UploadFile = File(...), password: str = ""):
+    """Importe un Excel corrige pour mettre a jour les programmes existants"""
+    if not EXCEL_AVAILABLE:
+        raise HTTPException(status_code=500, detail="openpyxl non disponible")
+
+    if password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Mot de passe admin incorrect")
+
+    content = await file.read()
+    wb = openpyxl.load_workbook(io.BytesIO(content))
+    ws = wb.active
+
+    updated = 0
+    errors = []
+    rows_processed = 0
+
+    for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=False), 2):
+        values = [cell.value for cell in row]
+        if not values or not values[0]:
+            continue
+
+        rows_processed += 1
+        prog_id = str(values[0]).strip()
+
+        try:
+            consumer_cash = float(values[5]) if values[5] is not None else 0
+            bonus_cash = float(values[6]) if values[6] is not None else 0
+
+            o1_rates = {}
+            rate_terms = ["rate_36", "rate_48", "rate_60", "rate_72", "rate_84", "rate_96"]
+            has_o1 = False
+            for i, term in enumerate(rate_terms):
+                val = values[7 + i]
+                if val is not None:
+                    o1_rates[term] = float(val)
+                    has_o1 = True
+
+            o2_rates = None
+            has_o2 = False
+            o2_temp = {}
+            for i, term in enumerate(rate_terms):
+                val = values[13 + i]
+                if val is not None:
+                    o2_temp[term] = float(val)
+                    has_o2 = True
+            if has_o2:
+                o2_rates = o2_temp
+
+            update_fields = {
+                "consumer_cash": consumer_cash,
+                "bonus_cash": bonus_cash,
+                "updated_at": datetime.utcnow()
+            }
+            if has_o1:
+                update_fields["option1_rates"] = o1_rates
+            if has_o2:
+                update_fields["option2_rates"] = o2_rates
+
+            update_ops = {"$set": update_fields}
+            if not has_o2:
+                update_ops["$unset"] = {"option2_rates": ""}
+
+            result = await db.programs.update_one({"id": prog_id}, update_ops)
+            if result.modified_count > 0:
+                updated += 1
+
+        except Exception as e:
+            errors.append(f"Ligne {row_idx}: {str(e)}")
+
+    return {
+        "success": True,
+        "message": f"Import termine: {updated} programmes mis a jour sur {rows_processed} lignes traitees",
+        "updated": updated,
+        "rows_processed": rows_processed,
+        "errors": errors[:10]
+    }
+
+
+
 # Programs CRUD
 @router.put("/programs/reorder")
 async def reorder_programs(data: Dict[str, Any]):
