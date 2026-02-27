@@ -69,3 +69,56 @@ app.add_middleware(
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+
+@app.on_event("startup")
+async def run_data_migration():
+    """Migration automatique: corrige les donnees 2025 erronees au demarrage"""
+    try:
+        migration_key = "migration_fix_2025_v3"
+        existing = await db.migrations.find_one({"key": migration_key})
+        if existing:
+            logger.info(f"[MIGRATION] {migration_key} deja executee, skip")
+            return
+
+        logger.info(f"[MIGRATION] Execution de {migration_key}...")
+
+        # 1. Mettre TOUS les bonus_cash a 0 pour 2025 (Delivery Credits erroneement importes)
+        r1 = await db.programs.update_many(
+            {"year": 2025, "bonus_cash": {"$gt": 0}},
+            {"$set": {"bonus_cash": 0}}
+        )
+        logger.info(f"[MIGRATION] bonus_cash mis a 0 pour {r1.modified_count} programmes 2025")
+
+        # 2. Fiat 500e BEV 2025: seul vehicule avec vrai Bonus Cash ($5,000 AFTER TAX)
+        r2 = await db.programs.update_many(
+            {"year": 2025, "brand": "Fiat", "model": "500e"},
+            {"$set": {"bonus_cash": 5000}}
+        )
+        logger.info(f"[MIGRATION] Fiat 500e bonus_cash=5000 pour {r2.modified_count} programmes")
+
+        # 3. Corriger l'inversion Compass North <-> Compass Altitude/Trailhawk
+        # PDF dit: North = $7,500, Altitude/Trailhawk/TH Elite = $5,500
+        r3a = await db.programs.update_many(
+            {"year": 2025, "model": "Compass", "trim": {"$regex": "North"}},
+            {"$set": {"consumer_cash": 7500}}
+        )
+        r3b = await db.programs.update_many(
+            {"year": 2025, "model": "Compass", "trim": {"$regex": "Altitude|Trailhawk"}},
+            {"$set": {"consumer_cash": 5500}}
+        )
+        logger.info(f"[MIGRATION] Compass North={r3a.modified_count}, Altitude/TH={r3b.modified_count}")
+
+        # 4. Mettre TOUS les bonus_cash a 0 pour 2026 aussi (meme probleme)
+        r4 = await db.programs.update_many(
+            {"year": 2026, "bonus_cash": {"$gt": 0}},
+            {"$set": {"bonus_cash": 0}}
+        )
+        logger.info(f"[MIGRATION] bonus_cash mis a 0 pour {r4.modified_count} programmes 2026")
+
+        # Marquer la migration comme executee
+        await db.migrations.insert_one({"key": migration_key, "executed_at": __import__('datetime').datetime.utcnow()})
+        logger.info(f"[MIGRATION] {migration_key} terminee avec succes!")
+
+    except Exception as e:
+        logger.error(f"[MIGRATION] Erreur: {e}")
