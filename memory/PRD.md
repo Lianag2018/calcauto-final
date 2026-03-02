@@ -1,94 +1,53 @@
-# CalcAuto AiPro - Product Requirements Document
+# CalcAuto AiPro - PRD
 
 ## Problem Statement
-Application full-stack de financement véhiculaire avec calculateur de location/financement,
-OCR pour factures, gestion d'inventaire et CRM.
+Application de gestion de financement et location automobile pour concessionnaires FCA Canada. Permet de calculer les paiements de financement et de location, gérer les programmes de rabais, importer/exporter des données via Excel et PDF.
+
+## Core Requirements
+- **Calcul de financement**: Option 1 (rabais + taux standard) vs Option 2 (taux réduit)
+- **Calcul de location SCI**: Paiements mensuels, bi-hebdo, hebdo avec résiduels
+- **Import PDF automatique**: Extraction IA (GPT-4o) des programmes depuis PDF Stellantis
+- **Workflow Excel**: Export → correction manuelle → réimport comme source de vérité
+- **Système de comparaison avant/après**: Snapshot MongoDB avant import, diff détaillé, historique
+- **Force logout**: Invalidation des tokens après import pour forcer refresh des données
+- **Gestion admin**: Utilisateurs, programmes, inventaire, tri drag-and-drop
 
 ## Architecture
-```
-/app
-├── backend/
-│   ├── server.py              # Point d'entrée FastAPI
-│   ├── database.py            # Connexion MongoDB, config
-│   ├── models.py              # Modèles Pydantic (incl. sort_order)
-│   ├── dependencies.py        # Auth, utilitaires calcul
-│   ├── routers/               # API endpoints
-│   │   ├── programs.py, email.py, auth.py, submissions.py
-│   │   ├── contacts.py, inventory.py, invoice.py
-│   │   ├── import_wizard.py, sci.py, admin.py
-│   ├── services/              # window_sticker.py, email_service.py
-│   ├── scripts/               # setup_trim_orders.py
-│   └── data/                  # JSON (taux, résiduels, codes)
-├── frontend/
-│   ├── app/(tabs)/            # index.tsx, inventory.tsx, clients.tsx, admin.tsx
-│   ├── components/            # Calculator components, EmailModal, etc.
-│   ├── contexts/              # AuthContext.tsx
-│   ├── hooks/                 # useCalculator, useFinancingCalculation, etc.
-│   ├── utils/                 # api.ts, i18n.ts
-│   └── vercel.json            # Vercel deployment with rewrites to Render
-├── ARCHITECTURE.md            # Documentation complète architecture & déploiement
-└── memory/PRD.md
-```
+- **Frontend**: React Native (Expo) web
+- **Backend**: FastAPI + MongoDB (motor)
+- **3rd Party**: OpenAI GPT-4o, Google Cloud Vision, openpyxl
 
 ## Completed Features
-- Calculateur location SCI + financement
-- "Meilleur Choix" automatique, Grille d'analyse comparative
-- Partage SMS/texto avec screenshot
-- Soumission email avec taux dynamiques
-- Scanner factures (OCR: Google Cloud Vision + GPT-4o)
-- Import programmes depuis PDF, CRM avec rappels
-- Gestion inventaire avec Window Sticker
-- Inventaire filtré par modèle
-- Tri logique PDF (sort_order aligné avec PDF FCA)
-- Admin drag & drop pour réordonnement véhicules
-- Email/SMS cohérence (taux dynamiques, Option 2 conditionnelle)
+- [x] Calcul financement Option 1/2
+- [x] Calcul location SCI avec résiduels
+- [x] Import PDF via IA (GPT-4o)
+- [x] Export/Import Excel programmes (avec freeze panes)
+- [x] Export/Import Excel SCI Lease
+- [x] Système de comparaison avant/après (MongoDB) - 2 mars 2026
+- [x] Clé composite (brand+model+trim+year) pour matching fiable
+- [x] Force logout après import
+- [x] Migration données (corrections rebates, doublons)
+- [x] Champ Alternative Consumer Cash
+- [x] Historique des comparaisons d'imports
+- [x] Gestion admin (utilisateurs, programmes, inventaire)
+- [x] Documentation architecture (ARCHITECTURE.md)
 
-## Completed - Feb 27, 2026
-- Bug fix: Calcul hebdomadaire en impression (Avant taxes/TPS/TVQ maintenant en montants hebdo)
-- Bug fix: Bouton "Retour au calculateur" ajouté en mode impression
-- Amélioration: Section "Meilleur choix location" adapte label et montants à la fréquence
-- Amélioration: Grille d'analyse adapte titre et valeurs à la fréquence
-- Documentation architecture complète (/app/ARCHITECTURE.md)
+## Key Endpoints
+- `POST /api/programs/import-excel` - Import avec comparaison avant/après
+- `GET /api/programs/export-excel` - Export Excel programmes
+- `GET /api/programs/comparisons` - Historique des comparaisons
+- `GET /api/programs/comparison/{id}` - Détail d'une comparaison
+- `POST /api/sci/import-excel` - Import SCI avec comparaison
+- `GET /api/sci/export-excel` - Export Excel SCI
+- `GET /api/sci/comparisons` - Historique comparaisons SCI
 
-## Completed - Delivery Credit Fix (Feb 27, 2026)
-- Removed all Delivery Credit values (261Q02, 'E' Only) incorrectly stored as bonus_cash
-- 40 programs corrected: bonus_cash set to 0 for all vehicles
-- Import wizard GPT prompt updated to explicitly ignore Delivery Credit column
-- Green "+1 000 $" badges removed from all vehicle cards
+## DB Collections
+- `programs` - Programmes de financement (clé composite: brand+model+trim+year)
+- `program_corrections` - Corrections mémorisées pour futurs imports PDF
+- `import_comparisons` - Historique des comparaisons avant/après
+- `sci_lease_rates` - Taux de location SCI (fichier JSON)
 
-## Completed - Excel Export/Import System (Feb 27, 2026)
-- GET /api/programs/export-excel - Downloads all programs as formatted Excel
-- POST /api/programs/import-excel - Imports corrected Excel (admin password required)
-- New "Excel" tab in Admin panel with export/import UI
-- Delivery Credit values removed from bonus_cash, import wizard updated to ignore them
-
-## Completed - Excel Correction Memory System (Feb 27, 2026)
-- Import Excel now saves corrections to `program_corrections` collection
-- Future PDF imports automatically apply memorized corrections (by brand/model/trim/year)
-- Startup migration script fixes production DB on deploy
-- Email with Excel sent to user for manual correction
-
-## Completed - Excel Final Truth Workflow (Mar 2, 2026)
-- Added 'excel-correction' step to import page after PDF extraction
-- User can download Excel, correct, re-upload as final truth
-- 76 January duplicates removed (81 unique programs remain)
-- New column "Rabais Alt. Cash ($)" = alternative_consumer_cash for Option 2
-- All corrections memorized in program_corrections collection
-- Future PDF imports auto-apply memorized corrections
-
-## Completed - Force Logout + SCI Lease Excel (Mar 2, 2026)
-- All admin imports (PDF, Excel programs, Excel SCI) now force-logout all users (delete tokens)
-- SCI Lease export/import Excel: GET/POST /api/sci/export-excel, /api/sci/import-excel
-- Admin > Excel tab: 3 sections (Programs export, Programs import, SCI Lease export/import)
-- Import page: SCI Lease section added to Excel correction step
-
-## P1 Backlog
-- Vérifier données "Option 2" sur tous les modèles
-
-## P2 Backlog
-- Refactoring complet frontend index.tsx (hooks + composants)
-- Refactoring inventory.tsx
-
-## Credentials
-- Login: danielgiroux007@gmail.com / Liana2018$
-- Admin: Liana2018$
+## Backlog
+- (P1) Améliorer le système de mémoire des corrections pour futurs imports PDF
+- (P2) Refactorer `index.tsx` (3000+ lignes) en composants
+- (P2) Refactorer `inventory.tsx` en composants
