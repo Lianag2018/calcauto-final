@@ -76,6 +76,12 @@ OCR pour factures, gestion d'inventaire et CRM.
 - All corrections memorized in program_corrections collection
 - Future PDF imports auto-apply memorized corrections
 
+## Completed - Force Logout + SCI Lease Excel (Mar 2, 2026)
+- All admin imports (PDF, Excel programs, Excel SCI) now force-logout all users (delete tokens)
+- SCI Lease export/import Excel: GET/POST /api/sci/export-excel, /api/sci/import-excel
+- Admin > Excel tab: 3 sections (Programs export, Programs import, SCI Lease export/import)
+- Import page: SCI Lease section added to Excel correction step
+
 ## P1 Backlog
 - Vérifier données "Option 2" sur tous les modèles
 

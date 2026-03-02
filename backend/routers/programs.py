@@ -317,9 +317,13 @@ async def import_programs_excel(file: UploadFile = File(...), password: str = Fo
         except Exception as e:
             errors.append(f"Ligne {row_idx}: {str(e)}")
 
+    # Force logout all users after data change
+    await db.tokens.delete_many({})
+    logger.info(f"[EXCEL IMPORT] {updated} programmes mis a jour, tokens invalides pour forcer reconnexion")
+
     return {
         "success": True,
-        "message": f"Import termine: {updated} programmes mis a jour, {corrections_saved} corrections memorisees",
+        "message": f"Import termine: {updated} programmes mis a jour, {corrections_saved} corrections memorisees. Tous les utilisateurs deconnectes.",
         "updated": updated,
         "corrections_saved": corrections_saved,
         "rows_processed": rows_processed,

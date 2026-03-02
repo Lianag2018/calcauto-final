@@ -187,16 +187,90 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
         </View>
       )}
 
+      {/* ============ LEASE SCI ============ */}
+      <View style={{ backgroundColor: '#2d2d44', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+          <Ionicons name="car-sport-outline" size={24} color="#FF6B6B" />
+          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>Taux Location SCI</Text>
+        </View>
+        <Text style={{ color: '#aaa', fontSize: 13, marginBottom: 16 }}>
+          Exportez les taux de location SCI (standard + alternatif), corrigez, puis reimportez.
+        </Text>
+        <TouchableOpacity
+          style={{ backgroundColor: '#FF6B6B', borderRadius: 8, paddingVertical: 14, alignItems: 'center', marginBottom: 10 }}
+          onPress={() => {
+            if (Platform.OS === 'web') {
+              const link = document.createElement('a');
+              link.href = `${API_URL}/api/sci/export-excel`;
+              link.download = 'sci_lease_rates.xlsx';
+              link.click();
+            }
+          }}
+        >
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Telecharger Excel Lease SCI</Text>
+        </TouchableOpacity>
+
+        {Platform.OS === 'web' && (
+          <input
+            ref={(el: any) => { (window as any).__sciFileRef = el; }}
+            type="file"
+            accept=".xlsx,.xls"
+            style={{ display: 'none' }}
+            onChange={async (event: any) => {
+              const file = event?.target?.files?.[0];
+              if (!file || !adminPassword) return;
+              setImporting(true);
+              setResult(null);
+              try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('password', adminPassword);
+                const response = await axios.post(`${API_URL}/api/sci/import-excel`, formData, {
+                  headers: { 'Content-Type': 'multipart/form-data' },
+                });
+                setResult(`SCI: ${response.data.message}`);
+                setResultType('success');
+              } catch (e: any) {
+                setResult('Erreur SCI: ' + (e.response?.data?.detail || e.message));
+                setResultType('error');
+              } finally {
+                setImporting(false);
+                if ((window as any).__sciFileRef) (window as any).__sciFileRef.value = '';
+              }
+            }}
+          />
+        )}
+
+        <TouchableOpacity
+          style={{
+            backgroundColor: importing ? '#555' : '#FFD700', borderRadius: 8,
+            paddingVertical: 14, alignItems: 'center', opacity: importing ? 0.7 : 1,
+          }}
+          onPress={() => {
+            if (!adminPassword) { setResult('Entrez le mot de passe admin'); setResultType('error'); return; }
+            if (Platform.OS === 'web' && (window as any).__sciFileRef) (window as any).__sciFileRef.click();
+          }}
+          disabled={importing}
+        >
+          {importing ? (
+            <ActivityIndicator size="small" color="#1a1a2e" />
+          ) : (
+            <Text style={{ color: '#1a1a2e', fontWeight: '700', fontSize: 16 }}>Importer Excel Lease corrige</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+
       <View style={{ backgroundColor: '#2d2d44', borderRadius: 12, padding: 20, marginBottom: 40 }}>
         <Text style={{ color: '#FFD700', fontSize: 14, fontWeight: '700', marginBottom: 8 }}>Instructions</Text>
         <Text style={{ color: '#aaa', fontSize: 12, lineHeight: 20 }}>
           1. Telechargez l'Excel actuel{'\n'}
           2. Ouvrez dans Excel/Google Sheets{'\n'}
           3. Corrigez: Consumer Cash, taux Option 1/2{'\n'}
-          4. NE PAS modifier la colonne ID{'\n'}
+          4. NE PAS modifier la colonne ID (programmes){'\n'}
           5. Bonus Cash = 0 (ignorer Delivery Credit){'\n'}
-          6. Opt2 vide = pas d'Option 2{'\n'}
-          7. Sauvegardez et reimportez ici
+          6. Opt2 / Alt vide = pas d'option{'\n'}
+          7. Sauvegardez et reimportez ici{'\n'}
+          8. Apres import, tous les utilisateurs seront deconnectes
         </Text>
       </View>
     </ScrollView>

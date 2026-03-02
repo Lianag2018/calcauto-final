@@ -1144,6 +1144,74 @@ export default function ImportScreen() {
         </Text>
       </View>
 
+      {/* ============ LEASE SCI SECTION ============ */}
+      <View style={{ backgroundColor: '#2d2d44', borderRadius: 12, padding: 20, width: '100%', marginBottom: 20 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+          <Ionicons name="car-sport" size={24} color="#FF6B6B" />
+          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>
+            Taux Location SCI
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={{ backgroundColor: '#FF6B6B', borderRadius: 8, paddingVertical: 14, alignItems: 'center', marginBottom: 10 }}
+          onPress={() => {
+            if (Platform.OS === 'web') {
+              window.open(`${API_URL}/api/sci/export-excel`, '_blank');
+            }
+          }}
+        >
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Telecharger Excel Lease SCI</Text>
+        </TouchableOpacity>
+
+        {Platform.OS === 'web' && (
+          <input
+            ref={(el: any) => { (window as any).__sciImportRef = el; }}
+            type="file"
+            accept=".xlsx,.xls"
+            style={{ display: 'none' }}
+            onChange={async (event: any) => {
+              const file = event?.target?.files?.[0];
+              if (!file) return;
+              setExcelImporting(true);
+              setExcelResult(null);
+              try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('password', password);
+                const response = await axios.post(`${API_URL}/api/sci/import-excel`, formData, {
+                  headers: { 'Content-Type': 'multipart/form-data' },
+                  timeout: 60000,
+                });
+                setExcelResult(`SCI: ${response.data.message}`);
+              } catch (e: any) {
+                setExcelResult('Erreur SCI: ' + (e.response?.data?.detail || e.message));
+              } finally {
+                setExcelImporting(false);
+                if ((window as any).__sciImportRef) (window as any).__sciImportRef.value = '';
+              }
+            }}
+          />
+        )}
+
+        <TouchableOpacity
+          style={{
+            backgroundColor: excelImporting ? '#555' : '#FFD700', borderRadius: 8,
+            paddingVertical: 14, alignItems: 'center', opacity: excelImporting ? 0.7 : 1,
+          }}
+          onPress={() => {
+            if (Platform.OS === 'web' && (window as any).__sciImportRef) (window as any).__sciImportRef.click();
+          }}
+          disabled={excelImporting}
+        >
+          {excelImporting ? (
+            <ActivityIndicator size="small" color="#1a1a2e" />
+          ) : (
+            <Text style={{ color: '#1a1a2e', fontWeight: '700', fontSize: 15 }}>Importer Excel Lease corrige</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+
       <TouchableOpacity
         style={[styles.primaryButton, { backgroundColor: '#2d2d44' }]}
         onPress={() => router.replace('/')}

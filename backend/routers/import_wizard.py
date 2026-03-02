@@ -1129,9 +1129,13 @@ async def save_programs(request: SaveProgramsRequest):
     except Exception as e:
         logger.warning(f"Failed to send import report email: {str(e)}")
     
+    # Force logout all users after data change
+    await db.tokens.delete_many({})
+    logger.info(f"[PDF IMPORT] Tokens invalides pour forcer reconnexion")
+
     return {
         "success": True,
-        "message": f"Sauvegardé {inserted} programmes pour {request.program_month}/{request.program_year}" + (f" ({skipped} ignorés)" if skipped > 0 else "") + " - Rapport envoyé par email"
+        "message": f"Sauvegardé {inserted} programmes pour {request.program_month}/{request.program_year}" + (f" ({skipped} ignorés)" if skipped > 0 else "") + " - Tous les utilisateurs deconnectes"
     }
 
 async def send_import_report_email(programs_count: int, program_month: int, program_year: int, brands_summary: dict, skipped_count: int = 0):
