@@ -33,7 +33,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import frTranslations from '../../locales/fr.json';
 import enTranslations from '../../locales/en.json';
 // Logique de calcul extraite
+import { 
 import { useCalculator, getRateForTerm, formatCurrency, formatCurrencyDecimal } from '../../hooks/useCalculator';
+  computeLeasePayment, computeLeaseForGrid, 
+  findResidualVehicle, findRateEntry, getKmAdjustment,
+  LeaseInputs 
+} from '../../utils/leaseCalculator';
 import type { FinancingRates, VehicleProgram, PaymentComparison, CalculationResult, LocalResult, ProgramPeriod, PaymentFrequency } from '../../types/calculator';
 // Extracted components and styles
 import { LoadingBorderAnimation } from '../../components/LoadingBorderAnimation';
@@ -407,201 +412,62 @@ export default function HomeScreen() {
     const price = parseFloat(vehiclePrice);
     if (isNaN(price) || price <= 0) return;
 
-    // Find matching residual vehicle (with body_style precision when available)
-    const brandLower = selectedProgram.brand.toLowerCase();
-    const modelLower = selectedProgram.model.toLowerCase();
-    const trimLower = (selectedProgram.trim || '').toLowerCase();
-    const bodyStyleLower = (selectedInventory?.body_style || '').toLowerCase();
-
-    // Priority 1: match with body_style if available (most precise)
-    let residualVehicle = bodyStyleLower ? leaseResiduals.vehicles?.find((v: any) => {
-      const vBrand = v.brand.toLowerCase();
-      const vModel = v.model_name.toLowerCase();
-      const vTrim = (v.trim || '').toLowerCase();
-      const vBody = (v.body_style || '').toLowerCase();
-      return vBrand === brandLower && 
-        (vModel.includes(modelLower) || modelLower.includes(vModel)) &&
-        (vTrim.includes(trimLower) || trimLower.includes(vTrim) || !trimLower) &&
-        vBody === bodyStyleLower;
-    }) : null;
-
-    // Priority 2: fallback without body_style
-    if (!residualVehicle) {
-      residualVehicle = leaseResiduals.vehicles?.find((v: any) => {
-        const vBrand = v.brand.toLowerCase();
-        const vModel = v.model_name.toLowerCase();
-        const vTrim = (v.trim || '').toLowerCase();
-        return vBrand === brandLower && 
-          (vModel.includes(modelLower) || modelLower.includes(vModel)) &&
-          (vTrim.includes(trimLower) || trimLower.includes(vTrim) || !trimLower);
-      });
-    }
-
-    if (!residualVehicle) {
-      setLeaseResult(null);
-      return;
-    }
+    // Find matching residual vehicle
+    const residualVehicle = findResidualVehicle(
+      leaseResiduals.vehicles || [],
+      selectedProgram.brand,
+      selectedProgram.model,
+      selectedProgram.trim || '',
+      selectedInventory?.body_style
+    );
+    if (!residualVehicle) { setLeaseResult(null); return; }
 
     const residualPct = residualVehicle.residual_percentages?.[String(leaseTerm)] || 0;
-    if (residualPct === 0) {
-      setLeaseResult(null);
-      return;
-    }
+    if (residualPct === 0) { setLeaseResult(null); return; }
 
-    // Find matching lease rate vehicle
+    // Find matching rate entry
     const year = selectedProgram.year;
     const vehicleList = year === 2025 ? leaseRates.vehicles_2025 : leaseRates.vehicles_2026;
-    
-    // Find best matching rate entry - prioritize trim match
-    let rateEntry = vehicleList?.find((v: any) => {
-      const vModel = v.model.toLowerCase();
-      const vBrand = v.brand.toLowerCase();
-      if (vBrand !== brandLower) return false;
-      // Must match model AND trim
-      const hasModel = vModel.includes(modelLower) || modelLower.includes(vModel);
-      if (!hasModel) return false;
-      if (!trimLower) return true;
-      return vModel.includes(trimLower) || trimLower.split(',').some((t: string) => vModel.includes(t.trim()));
-    });
-    // Fallback: match just model if no trim match
-    if (!rateEntry) {
-      rateEntry = vehicleList?.find((v: any) => {
-        const vModel = v.model.toLowerCase();
-        const vBrand = v.brand.toLowerCase();
-        if (vBrand !== brandLower) return false;
-        return vModel.includes(modelLower) || modelLower.includes(vModel);
-      });
-    }
+    const rateEntry = findRateEntry(vehicleList || [], selectedProgram.brand, selectedProgram.model, selectedProgram.trim || '');
 
-    // Get rates for standard and alternative
     const termKey = String(leaseTerm);
     const standardRate = rateEntry?.standard_rates?.[termKey] ?? null;
     const alternativeRate = rateEntry?.alternative_rates?.[termKey] ?? null;
-    const leaseCash = rateEntry?.lease_cash || 0;
+    const leaseCashVal = rateEntry?.lease_cash || 0;
 
-    // km adjustment
+    // km adjustment + residual
     const kmAdj = leaseResiduals.km_adjustments?.adjustments;
-    let kmAdjustment = 0;
-    if (leaseKmPerYear !== 24000 && kmAdj) {
-      const kmKey = String(leaseKmPerYear);
-      kmAdjustment = kmAdj[kmKey]?.[termKey] || 0;
-    }
-
+    const kmAdjustment = getKmAdjustment(kmAdj, leaseKmPerYear, leaseTerm);
     const adjustedResidualPct = residualPct + kmAdjustment;
-    // PDSF (MSRP) pour calcul résiduel - utiliser le champ PDSF si rempli, sinon vehiclePrice
     const pdsf = parseFloat(leasePdsf) || parseFloat(vehiclePrice);
-    const residualValue = pdsf * (adjustedResidualPct / 100);
 
-    // Calculate for both options
+    // Shared inputs for both options
     const bonusCash = parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0;
     const comptant = parseFloat(comptantTxInclus) || 0;
-    const dossier = parseFloat(fraisDossier) || 0;
-    const pneus = parseFloat(taxePneus) || 0;
-    const rdprm = parseFloat(fraisRDPRM) || 0;
-    const fraisTax = dossier + pneus + rdprm;
     const tradeVal = parseFloat(prixEchange) || 0;
     const tradeOwed = parseFloat(montantDuEchange) || 0;
-    const soldeReporte = parseFloat(leaseSoldeReporte) || 0; // négatif = dette
+    const soldeReporte = parseFloat(leaseSoldeReporte) || 0;
     const totalAccessoires = accessories.reduce((sum: number, acc: {description: string; price: string}) => sum + (parseFloat(acc.price) || 0), 0);
 
-    const calcLease = (rate: number, cash: number) => {
-      const tps = 0.05;
-      const tvq = 0.09975;
-      const tauxTaxe = tps + tvq; // 14.975%
-      const rabaisConcess = parseFloat(leaseRabaisConcess) || 0;
-      const sellingPrice = price + totalAccessoires - rabaisConcess;
-      
-      // === CALCUL LOCATION SCI QUÉBEC ===
-      // 1. Coût capitalisé = prix vente + frais de dossier - lease cash
-      const fraisDossierOnly = parseFloat(fraisDossier) || 0;
-      const capCost = sellingPrice + fraisDossierOnly - cash;
-      
-      // 2. Solde reporté = montant à AJOUTER au prix de vente (balance à reporter)
-      //    Positif = ajouter au cap cost (solde à financer)
-      //    Négatif = dette, ajouter avec taxes
-      let soldeNet = 0;
-      if (soldeReporte < 0) {
-        soldeNet = Math.abs(soldeReporte) * (1 + tauxTaxe); // dette avec taxes
-      } else if (soldeReporte > 0) {
-        soldeNet = soldeReporte; // solde à reporter = augmente le cap cost
-      }
-      
-      // 3. Net cap cost = cap + solde + montant_dû - échange - comptant
-      const netCapCost = capCost + soldeNet + tradeOwed - tradeVal - comptant - bonusCash;
-      
-      // 4. Résiduel sur PDSF
-      // residualValue already calculated above
-      
-      // 5. Paiement avant taxes — Formule SCI (annuité avec paiement en avance)
-      const monthlyRate = rate / 100 / 12;
-      let monthlyBeforeTax: number;
-      let financeCharge: number;
-      
-      if (monthlyRate === 0) {
-        monthlyBeforeTax = (netCapCost - residualValue) / leaseTerm;
-        financeCharge = 0;
-      } else {
-        const factor = Math.pow(1 + monthlyRate, leaseTerm);
-        // PMT en arrière (fin de période)
-        const pmtArrears = (netCapCost * monthlyRate * factor - residualValue * monthlyRate) / (factor - 1);
-        // PMT en avance (début de période) = formule SCI exacte
-        monthlyBeforeTax = pmtArrears / (1 + monthlyRate);
-        financeCharge = monthlyBeforeTax - (netCapCost - residualValue) / leaseTerm;
-      }
-      
-      // 6. Taxes SUR le paiement (pas capitalisées!)
-      const tpsOnPayment = monthlyBeforeTax * tps;
-      const tvqOnPayment = monthlyBeforeTax * tvq;
-      const taxesMensuelles = tpsOnPayment + tvqOnPayment;
-      
-      // 7. Crédit taxe échange: réparti sur les paiements
-      // crédit = (valeur échange / terme) × taux_taxe, limité aux taxes du paiement
-      let creditTaxeParMois = 0;
-      let creditPerdu = 0;
-      if (tradeVal > 0) {
-        const tradeDepreciation = tradeVal / leaseTerm;
-        const creditPotentiel = tradeDepreciation * tauxTaxe;
-        creditTaxeParMois = Math.min(creditPotentiel, taxesMensuelles);
-        creditPerdu = Math.max(0, creditPotentiel - taxesMensuelles);
-      }
-      
-      // 8. Paiement mensuel total
-      const monthlyAfterTax = monthlyBeforeTax + taxesMensuelles - creditTaxeParMois;
-      
-      const weeklyBeforeTax = monthlyBeforeTax * 12 / 52;
-      const biweeklyBeforeTax = monthlyBeforeTax * 12 / 26;
-      
-      const weeklyAfterTax = monthlyAfterTax * 12 / 52;
-      const biweeklyAfterTax = monthlyAfterTax * 12 / 26;
-      
-      return {
-        monthly: Math.max(0, monthlyAfterTax),
-        biweekly: Math.max(0, biweeklyAfterTax),
-        weekly: Math.max(0, weeklyAfterTax),
-        monthlyBeforeTax: Math.max(0, monthlyBeforeTax),
-        weeklyBeforeTax: Math.max(0, weeklyBeforeTax),
-        biweeklyBeforeTax: Math.max(0, biweeklyBeforeTax),
-        total: Math.max(0, monthlyAfterTax * leaseTerm),
-        rate,
-        netCapCost: Math.max(0, netCapCost),
-        residualValue,
-        leaseCash: cash,
-        capCost,
-        tpsOnPayment: Math.round(tpsOnPayment * 100) / 100,
-        tvqOnPayment: Math.round(tvqOnPayment * 100) / 100,
-        creditTaxeParMois: Math.round(creditTaxeParMois * 100) / 100,
-        creditPerdu: Math.round(creditPerdu * 100) / 100,
-        pdsf,
-        rabaisConcess,
-        coutEmprunt: Math.round(financeCharge * leaseTerm * 100) / 100,
-        fraisDossierOnly,
-      };
+    const baseInputs: Omit<LeaseInputs, 'rate' | 'leaseCash'> = {
+      price,
+      pdsf,
+      term: leaseTerm,
+      residualPct: adjustedResidualPct,
+      fraisDossier: parseFloat(fraisDossier) || 0,
+      totalAccessoires,
+      rabaisConcess: parseFloat(leaseRabaisConcess) || 0,
+      soldeReporte,
+      tradeValue: tradeVal,
+      tradeOwed,
+      comptant,
+      bonusCash,
     };
 
     const results: any = {
       vehicleName: `${residualVehicle.brand} ${residualVehicle.model_name} ${residualVehicle.trim}`,
       residualPct: adjustedResidualPct,
-      residualValue,
+      residualValue: pdsf * (adjustedResidualPct / 100),
       kmAdjustment,
       term: leaseTerm,
       kmPerYear: leaseKmPerYear,
@@ -609,12 +475,11 @@ export default function HomeScreen() {
 
     // Standard option (with lease cash)
     if (standardRate !== null) {
-      results.standard = calcLease(standardRate, leaseCash);
+      results.standard = computeLeasePayment({ ...baseInputs, rate: standardRate, leaseCash: leaseCashVal });
     }
-
-    // Alternative option (lower rate, no lease cash typically)
+    // Alternative option (lower rate, no lease cash)
     if (alternativeRate !== null) {
-      results.alternative = calcLease(alternativeRate, 0);
+      results.alternative = computeLeasePayment({ ...baseInputs, rate: alternativeRate, leaseCash: 0 });
     }
 
     // Determine best lease option
@@ -639,54 +504,38 @@ export default function HomeScreen() {
         const resPct = residualVehicle.residual_percentages?.[String(t)] || 0;
         if (resPct === 0) continue;
 
-        let kmAdj2 = 0;
-        if (km !== 24000 && kmAdj) {
-          kmAdj2 = kmAdj[String(km)]?.[String(t)] || 0;
-        }
+        const kmAdj2 = getKmAdjustment(kmAdj, km, t);
         const adjResPct = resPct + kmAdj2;
-        const resVal = pdsf * (adjResPct / 100);
 
         const stdRate = rateEntry?.standard_rates?.[String(t)] ?? null;
         const altRate = rateEntry?.alternative_rates?.[String(t)] ?? null;
 
-        const calcForTerm = (rate: number, cash: number, termLen: number) => {
-          const rabaisC = parseFloat(leaseRabaisConcess) || 0;
-          const sp = price + totalAccessoires - rabaisC;
-          const dossierOnly = parseFloat(fraisDossier) || 0;
-          const cc = sp + dossierOnly - cash;
-          let sn = 0;
-          if (soldeReporte < 0) sn = Math.abs(soldeReporte) * 1.14975;
-          else if (soldeReporte > 0) sn = soldeReporte;
-          const ncc = cc + sn + tradeOwed - tradeVal - comptant - bonusCash;
-          // Formule SCI (annuité avec paiement en avance)
-          const mr = rate / 100 / 12;
-          let bt: number;
-          let fc: number;
-          if (mr === 0) {
-            bt = (ncc - resVal) / termLen;
-            fc = 0;
-          } else {
-            const fac = Math.pow(1 + mr, termLen);
-            const pmtArr = (ncc * mr * fac - resVal * mr) / (fac - 1);
-            bt = pmtArr / (1 + mr);
-            fc = bt - (ncc - resVal) / termLen;
-          }
-          const monthly = bt + bt * 0.05 + bt * 0.09975;
-          return { monthly, monthlyBeforeTax: bt, rate, term: termLen, residualPct: adjResPct, residualValue: resVal, coutEmprunt: fc * termLen, leaseCash: cash, kmPerYear: km };
+        const gridInputs: Omit<LeaseInputs, 'rate' | 'leaseCash' | 'term' | 'residualPct'> = {
+          price, pdsf,
+          fraisDossier: parseFloat(fraisDossier) || 0,
+          totalAccessoires,
+          rabaisConcess: parseFloat(leaseRabaisConcess) || 0,
+          soldeReporte,
+          tradeValue: tradeVal,
+          tradeOwed,
+          comptant,
+          bonusCash,
         };
 
         if (altRate !== null) {
-          const r = calcForTerm(altRate, 0, t);
-          grid.push({ ...r, option: 'alt', optionLabel: 'Alt' });
+          const r = computeLeaseForGrid({ ...gridInputs, rate: altRate, leaseCash: 0, term: t, residualPct: adjResPct });
+          const entry = { ...r, kmPerYear: km, option: 'alt', optionLabel: 'Alt' };
+          grid.push(entry);
           if (!bestOption || r.monthly < bestOption.monthly) {
-            bestOption = { ...r, option: 'alternative', optionLabel: 'Taux Alternatif' };
+            bestOption = { ...entry, option: 'alternative', optionLabel: 'Taux Alternatif' };
           }
         }
         if (stdRate !== null) {
-          const r = calcForTerm(stdRate, leaseCash, t);
-          grid.push({ ...r, option: 'std', optionLabel: 'Std' });
+          const r = computeLeaseForGrid({ ...gridInputs, rate: stdRate, leaseCash: leaseCashVal, term: t, residualPct: adjResPct });
+          const entry = { ...r, kmPerYear: km, option: 'std', optionLabel: 'Std' };
+          grid.push(entry);
           if (!bestOption || r.monthly < bestOption.monthly) {
-            bestOption = { ...r, option: 'standard', optionLabel: 'Std + Lease Cash' };
+            bestOption = { ...entry, option: 'standard', optionLabel: 'Std + Lease Cash' };
           }
         }
       }

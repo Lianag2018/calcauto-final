@@ -77,14 +77,18 @@ async def get_sci_vehicle_hierarchy():
 @router.post("/sci/calculate-lease")
 async def calculate_lease(payload: dict):
     """
-    Calcule le paiement de location SCI.
+    Calcul de location SCI Quebec — Formule exacte (annuite en avance).
     
-    Formule location:
-    - depreciation = (selling_price - residual_value) / term_months
-    - finance_charge = (selling_price + residual_value) * (annual_rate / 2400)
-    - monthly_payment = depreciation + finance_charge
-    - Taxes QC (14.975%) appliquées sur le paiement mensuel
+    Methode:
+    1. Cap cost = prix + frais dossier - lease cash
+    2. Net cap cost = cap + solde + du_echange - val_echange - comptant - bonus
+    3. PMT arriere = (ncc * mr * factor - residuel * mr) / (factor - 1)
+    4. PMT avance = PMT arriere / (1 + mr)
+    5. Taxes QC SUR le paiement (5% TPS + 9.975% TVQ)
+    6. Credit taxe echange reparti sur les paiements
     """
+    import math
+    
     try:
         msrp = float(payload.get("msrp", 0))
         selling_price = float(payload.get("selling_price", 0))
@@ -98,13 +102,19 @@ async def calculate_lease(payload: dict):
         trade_value = float(payload.get("trade_value", 0))
         trade_owed = float(payload.get("trade_owed", 0))
         frais_dossier = float(payload.get("frais_dossier", 259.95))
-        taxe_pneus = float(payload.get("taxe_pneus", 15))
-        frais_rdprm = float(payload.get("frais_rdprm", 100))
+        solde_reporte = float(payload.get("solde_reporte", 0))
+        rabais_concess = float(payload.get("rabais_concess", 0))
+        accessoires = float(payload.get("accessoires", 0))
         
         if msrp <= 0 or selling_price <= 0 or term <= 0:
             raise HTTPException(status_code=400, detail="Invalid input values")
         
-        # Load km adjustments
+        # Constantes fiscales QC
+        TPS = 0.05
+        TVQ = 0.09975
+        TAUX_TAXE = TPS + TVQ
+        
+        # Ajustement km
         residuals_path = ROOT_DIR / "data" / "sci_residuals_feb2026.json"
         km_adj = 0
         if residuals_path.exists():
@@ -116,43 +126,56 @@ async def calculate_lease(payload: dict):
             if km_key in adjustments and term_key in adjustments[km_key]:
                 km_adj = adjustments[km_key][term_key]
         
-        # Adjusted residual
+        # 1. Residuel ajuste
         adjusted_residual_pct = residual_pct + km_adj
         residual_value = msrp * (adjusted_residual_pct / 100)
         
-        # Net cap cost: selling_price - lease_cash - trade_net + fees
-        trade_net = trade_value - trade_owed
-        frais_taxables = frais_dossier + taxe_pneus + frais_rdprm
+        # 2. Cout capitalise
+        sp = selling_price + accessoires - rabais_concess
+        cap_cost = sp + frais_dossier - lease_cash
         
-        # Cap cost = selling price + fees - lease cash - trade value
-        cap_cost = selling_price + frais_taxables - lease_cash - trade_value
+        # 3. Solde reporte
+        solde_net = 0
+        if solde_reporte < 0:
+            solde_net = abs(solde_reporte) * (1 + TAUX_TAXE)
+        elif solde_reporte > 0:
+            solde_net = solde_reporte
         
-        # Taxes on the capitalized cost (before tax items)
-        taux_taxe = 0.14975
-        taxes_on_cap = (selling_price + frais_taxables - lease_cash - trade_value) * taux_taxe
+        # 4. Net cap cost
+        net_cap_cost = cap_cost + solde_net + trade_owed - trade_value - cash_down - bonus_cash
         
-        # Net cap cost after cash down and bonus cash
-        net_cap_cost = cap_cost + taxes_on_cap + trade_owed - cash_down - bonus_cash
+        # 5. PMT en avance (formule SCI exacte)
+        monthly_rate = annual_rate / 100 / 12
         
-        # Lease payment calculation
-        # Depreciation = (Net Cap Cost - Residual Value) / term
-        depreciation = (net_cap_cost - residual_value) / term
+        if monthly_rate == 0:
+            monthly_before_tax = (net_cap_cost - residual_value) / term
+            finance_charge = 0
+        else:
+            factor = math.pow(1 + monthly_rate, term)
+            pmt_arrears = (net_cap_cost * monthly_rate * factor - residual_value * monthly_rate) / (factor - 1)
+            monthly_before_tax = pmt_arrears / (1 + monthly_rate)
+            finance_charge = monthly_before_tax - (net_cap_cost - residual_value) / term
         
-        # Finance charge = (Net Cap Cost + Residual Value) * money factor
-        # Money factor = annual_rate / 2400
-        money_factor = annual_rate / 2400
-        finance_charge = (net_cap_cost + residual_value) * money_factor
+        # 6. Taxes SUR le paiement
+        tps_on_payment = monthly_before_tax * TPS
+        tvq_on_payment = monthly_before_tax * TVQ
+        taxes_mensuelles = tps_on_payment + tvq_on_payment
         
-        # Monthly payment (taxes already included in cap cost for QC)
-        monthly_before_tax = depreciation + finance_charge
+        # 7. Credit taxe echange
+        credit_taxe = 0
+        credit_perdu = 0
+        if trade_value > 0:
+            depreciation_trade = trade_value / term
+            credit_potentiel = depreciation_trade * TAUX_TAXE
+            credit_taxe = min(credit_potentiel, taxes_mensuelles)
+            credit_perdu = max(0, credit_potentiel - taxes_mensuelles)
         
-        # In Quebec, taxes are on the monthly payment for leases
-        # But since we already taxed the cap cost, we use the simpler model
-        monthly_payment = monthly_before_tax
-        
+        # 8. Paiement final
+        monthly_payment = max(0, monthly_before_tax + taxes_mensuelles - credit_taxe)
         biweekly_payment = monthly_payment * 12 / 26
         weekly_payment = monthly_payment * 12 / 52
-        total_cost = monthly_payment * term + residual_value
+        total_cost = monthly_payment * term
+        cout_emprunt = finance_charge * term
         
         return {
             "success": True,
@@ -160,21 +183,28 @@ async def calculate_lease(payload: dict):
             "selling_price": selling_price,
             "lease_cash": lease_cash,
             "bonus_cash": bonus_cash,
-            "residual_pct": adjusted_residual_pct,
+            "residual_pct": round(adjusted_residual_pct, 2),
             "residual_value": round(residual_value, 2),
             "km_adjustment": km_adj,
             "annual_rate": annual_rate,
             "term": term,
+            "cap_cost": round(cap_cost, 2),
             "net_cap_cost": round(net_cap_cost, 2),
-            "depreciation": round(depreciation, 2),
-            "finance_charge": round(finance_charge, 2),
+            "monthly_before_tax": round(monthly_before_tax, 2),
+            "tps_on_payment": round(tps_on_payment, 2),
+            "tvq_on_payment": round(tvq_on_payment, 2),
+            "credit_taxe_echange": round(credit_taxe, 2),
+            "credit_perdu": round(credit_perdu, 2),
             "monthly_payment": round(monthly_payment, 2),
             "biweekly_payment": round(biweekly_payment, 2),
             "weekly_payment": round(weekly_payment, 2),
             "total_lease_cost": round(total_cost, 2),
+            "cout_emprunt": round(cout_emprunt, 2),
             "cash_down": cash_down,
             "trade_value": trade_value,
             "trade_owed": trade_owed,
+            "frais_dossier": frais_dossier,
+            "solde_reporte": solde_reporte,
         }
     except HTTPException:
         raise
