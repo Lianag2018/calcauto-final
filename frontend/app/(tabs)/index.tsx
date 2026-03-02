@@ -3355,7 +3355,7 @@ export default function HomeScreen() {
           onRequestClose={() => setShowEmailModal(false)}
         >
           <View style={styles.modalOverlay}>
-            <View style={styles.emailModalContent}>
+            <View style={[styles.emailModalContent, { maxHeight: '90%' }]}>
               <View style={styles.emailModalHeader}>
                 <View style={styles.emailModalIconContainer}>
                   <Ionicons name="mail" size={32} color="#4ECDC4" />
@@ -3371,6 +3371,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
               
+              <ScrollView style={{ flexShrink: 1 }} showsVerticalScrollIndicator={true}>
               <View style={styles.emailModalBody}>
                 <Text style={styles.emailModalLabel}>
                   {t.email.clientName}
@@ -3440,6 +3441,7 @@ export default function HomeScreen() {
                   </View>
                 )}
               </View>
+              </ScrollView>
               
               <View style={styles.emailModalButtons}>
                 <TouchableOpacity
