@@ -1086,6 +1086,8 @@ async def save_programs(request: SaveProgramsRequest):
             cv = correction["corrected_values"]
             if cv.get("consumer_cash") is not None:
                 prog_data["consumer_cash"] = cv["consumer_cash"]
+            if cv.get("alternative_consumer_cash") is not None:
+                prog_data["alternative_consumer_cash"] = cv["alternative_consumer_cash"]
             if cv.get("bonus_cash") is not None:
                 prog_data["bonus_cash"] = cv["bonus_cash"]
             if cv.get("option1_rates"):

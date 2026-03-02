@@ -120,5 +120,13 @@ async def run_data_migration():
         await db.migrations.insert_one({"key": migration_key, "executed_at": __import__('datetime').datetime.utcnow()})
         logger.info(f"[MIGRATION] {migration_key} terminee avec succes!")
 
+        # Migration: Supprimer les doublons de janvier (garder uniquement le dernier mois)
+        migration_key2 = "migration_remove_january_dupes_v1"
+        existing2 = await db.migrations.find_one({"key": migration_key2})
+        if not existing2:
+            r5 = await db.programs.delete_many({"program_month": 1, "program_year": 2026})
+            logger.info(f"[MIGRATION] Supprime {r5.deleted_count} doublons de janvier 2026")
+            await db.migrations.insert_one({"key": migration_key2, "executed_at": __import__('datetime').datetime.utcnow()})
+
     except Exception as e:
         logger.error(f"[MIGRATION] Erreur: {e}")

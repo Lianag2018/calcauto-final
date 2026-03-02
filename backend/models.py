@@ -35,7 +35,8 @@ class VehicleProgram(BaseModel):
     consumer_cash: float = 0
     option1_rates: FinancingRates
     
-    # Option 2: Alternative Consumer Cash (generalement $0) + taux reduits
+    # Option 2: Alternative Consumer Cash (rabais AVANT taxes Option 2) + taux reduits
+    alternative_consumer_cash: float = 0
     option2_rates: Optional[FinancingRates] = None
     
     # Bonus Cash: Rabais APRES taxes (combinable avec Option 1 ou 2)
@@ -56,6 +57,7 @@ class VehicleProgramCreate(BaseModel):
     trim: Optional[str] = None
     year: int
     consumer_cash: float = 0
+    alternative_consumer_cash: float = 0
     option1_rates: FinancingRates
     option2_rates: Optional[FinancingRates] = None
     bonus_cash: float = 0

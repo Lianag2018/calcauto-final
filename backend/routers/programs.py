@@ -111,6 +111,7 @@ async def export_programs_excel(month: Optional[int] = None, year: Optional[int]
         "ID", "Marque", "Modele", "Trim", "Annee",
         "Consumer Cash ($)", "Bonus Cash ($)",
         "Opt1 36M", "Opt1 48M", "Opt1 60M", "Opt1 72M", "Opt1 84M", "Opt1 96M",
+        "Rabais Alt. Cash ($)",
         "Opt2 36M", "Opt2 48M", "Opt2 60M", "Opt2 72M", "Opt2 84M", "Opt2 96M",
         "Sort Order"
     ]
@@ -147,6 +148,7 @@ async def export_programs_excel(month: Optional[int] = None, year: Optional[int]
             prog.get("bonus_cash", 0) or 0,
             o1.get("rate_36"), o1.get("rate_48"), o1.get("rate_60"),
             o1.get("rate_72"), o1.get("rate_84"), o1.get("rate_96"),
+            prog.get("alternative_consumer_cash", 0) or 0,
             o2.get("rate_36") if o2 else None, o2.get("rate_48") if o2 else None,
             o2.get("rate_60") if o2 else None, o2.get("rate_72") if o2 else None,
             o2.get("rate_84") if o2 else None, o2.get("rate_96") if o2 else None,
@@ -161,7 +163,9 @@ async def export_programs_excel(month: Optional[int] = None, year: Optional[int]
                 cell.alignment = center
             if 8 <= col_idx <= 13:
                 cell.fill = PatternFill(start_color="FFF0F0", end_color="FFF0F0", fill_type="solid")
-            elif 14 <= col_idx <= 19:
+            elif col_idx == 14:
+                cell.fill = PatternFill(start_color="E8F5E9", end_color="E8F5E9", fill_type="solid")
+            elif 15 <= col_idx <= 20:
                 cell.fill = PatternFill(start_color="F0F4FF", end_color="F0F4FF", fill_type="solid")
 
     ws2 = wb.create_sheet("Instructions")
@@ -239,11 +243,14 @@ async def import_programs_excel(file: UploadFile = File(...), password: str = Fo
                     o1_rates[term] = float(val)
                     has_o1 = True
 
+            # Column 14 (index 13) = Alternative Consumer Cash (Option 2)
+            alternative_consumer_cash = float(values[13]) if values[13] is not None else 0
+
             o2_rates = None
             has_o2 = False
             o2_temp = {}
             for i, term in enumerate(rate_terms):
-                val = values[13 + i]
+                val = values[14 + i]  # Shifted by 1 due to new column
                 if val is not None:
                     o2_temp[term] = float(val)
                     has_o2 = True
@@ -256,6 +263,7 @@ async def import_programs_excel(file: UploadFile = File(...), password: str = Fo
             update_fields = {
                 "consumer_cash": consumer_cash,
                 "bonus_cash": bonus_cash,
+                "alternative_consumer_cash": alternative_consumer_cash,
                 "updated_at": datetime.utcnow()
             }
             if has_o1:
@@ -276,6 +284,8 @@ async def import_programs_excel(file: UploadFile = File(...), password: str = Fo
                 if old_prog:
                     if (old_prog.get("consumer_cash") or 0) != consumer_cash:
                         changes["consumer_cash"] = {"old": old_prog.get("consumer_cash", 0), "new": consumer_cash}
+                    if (old_prog.get("alternative_consumer_cash") or 0) != alternative_consumer_cash:
+                        changes["alternative_consumer_cash"] = {"old": old_prog.get("alternative_consumer_cash", 0), "new": alternative_consumer_cash}
                     if (old_prog.get("bonus_cash") or 0) != bonus_cash:
                         changes["bonus_cash"] = {"old": old_prog.get("bonus_cash", 0), "new": bonus_cash}
                     old_o1 = old_prog.get("option1_rates") or {}
@@ -292,6 +302,7 @@ async def import_programs_excel(file: UploadFile = File(...), password: str = Fo
                             "brand": brand, "model": model, "trim": trim, "year": year,
                             "corrected_values": {
                                 "consumer_cash": consumer_cash,
+                                "alternative_consumer_cash": alternative_consumer_cash,
                                 "bonus_cash": bonus_cash,
                                 "option1_rates": o1_rates if has_o1 else None,
                                 "option2_rates": o2_rates,
