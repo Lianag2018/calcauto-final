@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 import uuid
+import re
 from database import db, ADMIN_PASSWORD, logger
 from models import (
     VehicleProgram, VehicleProgramCreate, VehicleProgramUpdate,
@@ -21,6 +22,110 @@ except ImportError:
     EXCEL_AVAILABLE = False
 
 router = APIRouter()
+
+
+def normalize_str(s: str) -> str:
+    """Normalise une chaine pour matching flexible.
+    Retire les codes produit (CPOS, WLJH74, JLXL74, etc.) mais garde les descripteurs (excluding, PHEV, Gas, etc.)."""
+    if not s:
+        return ""
+    s = s.strip().lower()
+    # Retirer les codes CPOS
+    s = re.sub(r'\(cpos[^)]*\)', '', s, flags=re.IGNORECASE)
+    # Retirer les codes produit: parentheses contenant LETTRES+CHIFFRES (ex: WLJH74, DJ7X91, KMJL74, DT6P98)
+    s = re.sub(r'\([A-Z]{2,}[0-9]+[^)]*\)', '', s, flags=re.IGNORECASE)
+    # Retirer (ETM) specifiquement
+    s = re.sub(r'\(etm\)', '', s, flags=re.IGNORECASE)
+    s = re.sub(r'\s+', ' ', s).strip()
+    s = s.rstrip(' ,')
+    return s
+
+
+def normalize_model(model: str) -> str:
+    """Normalise le nom du modele pour matching flexible.
+    Ex: 'Grand Cherokee/Grand Cherokee L' -> 'grand cherokee/l'"""
+    if not model:
+        return ""
+    m = model.strip().lower()
+    m = m.replace("grand cherokee/grand cherokee l", "grand cherokee/l")
+    m = m.replace("grand wagoneer / grand wagoneer l", "grand wagoneer/l")
+    m = m.replace("grand wagoneer/grand wagoneer l", "grand wagoneer/l")
+    m = m.replace("wagoneer / wagoneer l", "wagoneer/l")
+    m = m.replace("wagoneer/wagoneer l", "wagoneer/l")
+    m = m.replace("2500 / 3500", "2500/3500")
+    m = re.sub(r'\s+', ' ', m).strip()
+    return m
+
+
+def find_best_match(brand: str, model: str, trim: str, year: int, all_before: dict) -> tuple:
+    """Trouve le meilleur match dans all_before avec strategies multiples.
+    Retourne (prog, match_query) ou (None, None)."""
+    # Strategie 1: Match exact
+    key = f"{brand}|{model}|{trim}|{year}"
+    if key in all_before:
+        return all_before[key], {"brand": brand, "model": model, "trim": trim, "year": year}
+
+    # Strategie 2: Match avec trim None vs ""
+    for trim_variant in [None, ""]:
+        if trim_variant != trim:
+            key2 = f"{brand}|{model}|{trim_variant}|{year}"
+            if key2 in all_before:
+                return all_before[key2], {"brand": brand, "model": model, "trim": trim_variant, "year": year}
+
+    # Strategie 3: Match normalise (modele + trim)
+    norm_model = normalize_model(model)
+    norm_trim = normalize_str(trim)
+
+    for db_key, prog in all_before.items():
+        parts = db_key.split("|")
+        if len(parts) != 4:
+            continue
+        db_brand, db_model, db_trim, db_year = parts
+        if db_brand.lower() != brand.lower() or str(db_year) != str(year):
+            continue
+
+        db_norm_model = normalize_model(db_model)
+        db_norm_trim = normalize_str(db_trim or "")
+
+        if db_norm_model == norm_model and db_norm_trim == norm_trim:
+            return prog, {"brand": db_brand, "model": db_model, "trim": db_trim if db_trim != "None" else None, "year": int(db_year)}
+
+    # Strategie 4: Match par modele normalise + trim partiel
+    for db_key, prog in all_before.items():
+        parts = db_key.split("|")
+        if len(parts) != 4:
+            continue
+        db_brand, db_model, db_trim, db_year = parts
+        if db_brand.lower() != brand.lower() or str(db_year) != str(year):
+            continue
+
+        db_norm_model = normalize_model(db_model)
+        db_norm_trim = normalize_str(db_trim or "")
+
+        # Verifier si le modele normalise match et les trims sont similaires
+        if db_norm_model == norm_model:
+            # Trim partiel: le trim DB est contenu dans le trim Excel (ou inversement)
+            if norm_trim and db_norm_trim and (db_norm_trim in norm_trim or norm_trim in db_norm_trim):
+                return prog, {"brand": db_brand, "model": db_model, "trim": db_trim if db_trim != "None" else None, "year": int(db_year)}
+
+    # Strategie 5: Match par modele partiel (un contient l'autre)
+    for db_key, prog in all_before.items():
+        parts = db_key.split("|")
+        if len(parts) != 4:
+            continue
+        db_brand, db_model, db_trim, db_year = parts
+        if db_brand.lower() != brand.lower() or str(db_year) != str(year):
+            continue
+
+        db_norm_model = normalize_model(db_model)
+        db_norm_trim = normalize_str(db_trim or "")
+
+        # Si les deux trims sont vides/None
+        if not norm_trim and not db_norm_trim:
+            if db_norm_model in norm_model or norm_model in db_norm_model:
+                return prog, {"brand": db_brand, "model": db_model, "trim": db_trim if db_trim != "None" else None, "year": int(db_year)}
+
+    return None, None
 
 
 async def compute_sort_order(brand: str, model: str, trim: Optional[str], year: int = 2026) -> int:
@@ -267,13 +372,11 @@ async def import_programs_excel(file: UploadFile = File(...), password: str = Fo
             if has_o2:
                 o2_rates = o2_temp
 
-            # Match par cle composite (brand+model+trim+year)
-            composite_key = f"{brand}|{model}|{trim}|{year}"
-            match_query = {"brand": brand, "model": model, "trim": trim, "year": year}
+            # Match par cle composite (brand+model+trim+year) avec matching flexible
+            old_prog, match_query = find_best_match(brand, model, trim, year, all_before)
 
-            old_prog = all_before.get(composite_key)
             if not old_prog:
-                # Fallback par ID
+                # Dernier fallback par ID
                 old_prog = await db.programs.find_one({"id": prog_id}, {"_id": 0})
                 if old_prog:
                     match_query = {"id": prog_id}
