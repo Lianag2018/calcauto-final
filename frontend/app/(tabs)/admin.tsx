@@ -49,11 +49,57 @@ interface ProgramItem {
 }
 
 // ============ Excel Manager Component ============
+interface ComparisonChange {
+  avant: any;
+  apres: any;
+}
+interface ComparisonDetail {
+  vehicule: string;
+  changes: Record<string, ComparisonChange>;
+}
+
+function ComparisonReport({ comparison }: { comparison: ComparisonDetail[] }) {
+  if (!comparison || comparison.length === 0) return null;
+
+  const formatValue = (val: any) => {
+    if (val === null || val === undefined) return '—';
+    if (typeof val === 'object') {
+      return Object.entries(val).map(([k, v]) => `${k}: ${v}`).join(', ');
+    }
+    return String(val);
+  };
+
+  return (
+    <View style={{ marginTop: 12 }}>
+      <Text style={{ color: '#FFD700', fontWeight: '700', fontSize: 15, marginBottom: 8 }}>
+        Rapport de comparaison ({comparison.length} modifications)
+      </Text>
+      {comparison.map((item, idx) => (
+        <View key={idx} style={{ backgroundColor: '#1a1a2e', borderRadius: 8, padding: 12, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: '#FFD700' }}>
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13, marginBottom: 6 }} data-testid={`comparison-vehicle-${idx}`}>
+            {item.vehicule}
+          </Text>
+          {Object.entries(item.changes).map(([field, change]) => (
+            <View key={field} style={{ flexDirection: 'row', marginBottom: 3, flexWrap: 'wrap' }}>
+              <Text style={{ color: '#aaa', fontSize: 12, width: 160 }}>{field}:</Text>
+              <Text style={{ color: '#FF6B6B', fontSize: 12 }}>{formatValue(change.avant)}</Text>
+              <Text style={{ color: '#666', fontSize: 12, marginHorizontal: 6 }}>→</Text>
+              <Text style={{ color: '#4ECDC4', fontSize: 12 }}>{formatValue(change.apres)}</Text>
+            </View>
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
 function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
   const [importing, setImporting] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [result, setResult] = useState<string | null>(null);
   const [resultType, setResultType] = useState<'success' | 'error'>('success');
+  const [comparison, setComparison] = useState<ComparisonDetail[] | null>(null);
+  const [sciComparison, setSciComparison] = useState<ComparisonDetail[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleExport = async () => {
@@ -66,6 +112,7 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
         link.click();
         setResult('Telechargement lance!');
         setResultType('success');
+        setComparison(null);
       }
     } catch (e: any) {
       setResult('Erreur: ' + (e.message || 'inconnu'));
@@ -90,6 +137,7 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
 
     setImporting(true);
     setResult(null);
+    setComparison(null);
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -102,6 +150,9 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
       const data = response.data;
       setResult(`${data.message}${data.errors?.length ? '\nErreurs: ' + data.errors.join(', ') : ''}`);
       setResultType('success');
+      if (data.comparison && data.comparison.length > 0) {
+        setComparison(data.comparison);
+      }
     } catch (e: any) {
       setResult('Erreur: ' + (e.response?.data?.detail || e.message || 'inconnu'));
       setResultType('error');
@@ -187,6 +238,9 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
         </View>
       )}
 
+      {comparison && <ComparisonReport comparison={comparison} />}
+      {sciComparison && <ComparisonReport comparison={sciComparison} />}
+
       {/* ============ LEASE SCI ============ */}
       <View style={{ backgroundColor: '#2d2d44', borderRadius: 12, padding: 20, marginBottom: 16 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
@@ -221,6 +275,7 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
               if (!file || !adminPassword) return;
               setImporting(true);
               setResult(null);
+              setSciComparison(null);
               try {
                 const formData = new FormData();
                 formData.append('file', file);
@@ -230,6 +285,9 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
                 });
                 setResult(`SCI: ${response.data.message}`);
                 setResultType('success');
+                if (response.data.comparison && response.data.comparison.length > 0) {
+                  setSciComparison(response.data.comparison);
+                }
               } catch (e: any) {
                 setResult('Erreur SCI: ' + (e.response?.data?.detail || e.message));
                 setResultType('error');

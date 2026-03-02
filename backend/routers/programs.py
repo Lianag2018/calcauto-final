@@ -204,22 +204,30 @@ async def export_programs_excel(month: Optional[int] = None, year: Optional[int]
 
 @router.post("/programs/import-excel")
 async def import_programs_excel(file: UploadFile = File(...), password: str = Form("")):
-    """Importe un Excel corrige pour mettre a jour les programmes existants.
-    Memorise chaque correction pour mieux associer les prochains PDF."""
+    """Importe un Excel corrige avec systeme de comparaison avant/apres.
+    Utilise cle composite (brand+model+trim+year) pour le matching."""
     if not EXCEL_AVAILABLE:
         raise HTTPException(status_code=500, detail="openpyxl non disponible")
 
     if password != ADMIN_PASSWORD:
         raise HTTPException(status_code=401, detail="Mot de passe admin incorrect")
 
+    # 1. SNAPSHOT AVANT: capturer l'etat actuel de tous les programmes
+    all_before = {}
+    async for prog in db.programs.find({}, {"_id": 0}):
+        key = f"{prog.get('brand','')}|{prog.get('model','')}|{prog.get('trim','')}|{prog.get('year','')}"
+        all_before[key] = prog
+
     content = await file.read()
     wb = openpyxl.load_workbook(io.BytesIO(content))
     ws = wb.active
 
     updated = 0
+    unchanged = 0
     corrections_saved = 0
     errors = []
     rows_processed = 0
+    comparison_details = []
 
     for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=False), 2):
         values = [cell.value for cell in row]
@@ -246,22 +254,47 @@ async def import_programs_excel(file: UploadFile = File(...), password: str = Fo
                     o1_rates[term] = float(val)
                     has_o1 = True
 
-            # Column 14 (index 13) = Alternative Consumer Cash (Option 2)
             alternative_consumer_cash = float(values[13]) if values[13] is not None else 0
 
             o2_rates = None
             has_o2 = False
             o2_temp = {}
             for i, term in enumerate(rate_terms):
-                val = values[14 + i]  # Shifted by 1 due to new column
+                val = values[14 + i]
                 if val is not None:
                     o2_temp[term] = float(val)
                     has_o2 = True
             if has_o2:
                 o2_rates = o2_temp
 
-            # Lire les anciennes valeurs AVANT mise a jour
-            old_prog = await db.programs.find_one({"id": prog_id}, {"_id": 0})
+            # Match par cle composite (brand+model+trim+year)
+            composite_key = f"{brand}|{model}|{trim}|{year}"
+            match_query = {"brand": brand, "model": model, "trim": trim, "year": year}
+
+            old_prog = all_before.get(composite_key)
+            if not old_prog:
+                # Fallback par ID
+                old_prog = await db.programs.find_one({"id": prog_id}, {"_id": 0})
+                if old_prog:
+                    match_query = {"id": prog_id}
+                else:
+                    errors.append(f"Ligne {row_idx}: Programme non trouve ({brand} {model} {trim} {year})")
+                    continue
+
+            # Calculer les differences AVANT d'appliquer
+            changes = {}
+            if (old_prog.get("consumer_cash") or 0) != consumer_cash:
+                changes["consumer_cash"] = {"avant": old_prog.get("consumer_cash", 0) or 0, "apres": consumer_cash}
+            if (old_prog.get("alternative_consumer_cash") or 0) != alternative_consumer_cash:
+                changes["alternative_consumer_cash"] = {"avant": old_prog.get("alternative_consumer_cash", 0) or 0, "apres": alternative_consumer_cash}
+            if (old_prog.get("bonus_cash") or 0) != bonus_cash:
+                changes["bonus_cash"] = {"avant": old_prog.get("bonus_cash", 0) or 0, "apres": bonus_cash}
+            old_o1 = old_prog.get("option1_rates") or {}
+            if has_o1 and old_o1 != o1_rates:
+                changes["option1_rates"] = {"avant": old_o1, "apres": o1_rates}
+            old_o2 = old_prog.get("option2_rates")
+            if old_o2 != o2_rates:
+                changes["option2_rates"] = {"avant": old_o2, "apres": o2_rates}
 
             update_fields = {
                 "consumer_cash": consumer_cash,
@@ -278,60 +311,91 @@ async def import_programs_excel(file: UploadFile = File(...), password: str = Fo
             if not has_o2:
                 update_ops["$unset"] = {"option2_rates": ""}
 
-            result = await db.programs.update_one({"id": prog_id}, update_ops)
-            if result.modified_count > 0:
+            result = await db.programs.update_one(match_query, update_ops)
+
+            if changes:
                 updated += 1
+                comparison_details.append({
+                    "vehicule": f"{brand} {model} {trim} {year}",
+                    "changes": changes
+                })
 
-                # Memoriser les corrections pour les futurs imports PDF
-                changes = {}
-                if old_prog:
-                    if (old_prog.get("consumer_cash") or 0) != consumer_cash:
-                        changes["consumer_cash"] = {"old": old_prog.get("consumer_cash", 0), "new": consumer_cash}
-                    if (old_prog.get("alternative_consumer_cash") or 0) != alternative_consumer_cash:
-                        changes["alternative_consumer_cash"] = {"old": old_prog.get("alternative_consumer_cash", 0), "new": alternative_consumer_cash}
-                    if (old_prog.get("bonus_cash") or 0) != bonus_cash:
-                        changes["bonus_cash"] = {"old": old_prog.get("bonus_cash", 0), "new": bonus_cash}
-                    old_o1 = old_prog.get("option1_rates") or {}
-                    if has_o1 and old_o1 != o1_rates:
-                        changes["option1_rates"] = {"old": old_o1, "new": o1_rates}
-                    old_o2 = old_prog.get("option2_rates")
-                    if old_o2 != o2_rates:
-                        changes["option2_rates"] = {"old": old_o2, "new": o2_rates}
-
-                if changes:
-                    await db.program_corrections.update_one(
-                        {"brand": brand, "model": model, "trim": trim, "year": year},
-                        {"$set": {
-                            "brand": brand, "model": model, "trim": trim, "year": year,
-                            "corrected_values": {
-                                "consumer_cash": consumer_cash,
-                                "alternative_consumer_cash": alternative_consumer_cash,
-                                "bonus_cash": bonus_cash,
-                                "option1_rates": o1_rates if has_o1 else None,
-                                "option2_rates": o2_rates,
-                            },
-                            "changes_history": changes,
-                            "corrected_at": datetime.utcnow()
-                        }},
-                        upsert=True
-                    )
-                    corrections_saved += 1
+                # Memoriser les corrections
+                await db.program_corrections.update_one(
+                    {"brand": brand, "model": model, "trim": trim, "year": year},
+                    {"$set": {
+                        "brand": brand, "model": model, "trim": trim, "year": year,
+                        "corrected_values": {
+                            "consumer_cash": consumer_cash,
+                            "alternative_consumer_cash": alternative_consumer_cash,
+                            "bonus_cash": bonus_cash,
+                            "option1_rates": o1_rates if has_o1 else None,
+                            "option2_rates": o2_rates,
+                        },
+                        "changes_history": changes,
+                        "corrected_at": datetime.utcnow()
+                    }},
+                    upsert=True
+                )
+                corrections_saved += 1
+            else:
+                unchanged += 1
 
         except Exception as e:
             errors.append(f"Ligne {row_idx}: {str(e)}")
 
-    # Force logout all users after data change
+    # 2. Sauvegarder la comparaison dans MongoDB
+    comparison_id = str(uuid.uuid4())
+    comparison_doc = {
+        "id": comparison_id,
+        "type": "programs",
+        "date": datetime.utcnow().isoformat(),
+        "rows_processed": rows_processed,
+        "updated": updated,
+        "unchanged": unchanged,
+        "corrections_saved": corrections_saved,
+        "errors": errors[:20],
+        "details": comparison_details
+    }
+    await db.import_comparisons.insert_one(comparison_doc)
+
+    # Force logout
     await db.tokens.delete_many({})
-    logger.info(f"[EXCEL IMPORT] {updated} programmes mis a jour, tokens invalides pour forcer reconnexion")
+    logger.info(f"[EXCEL IMPORT] {updated} modifies, {unchanged} inchanges, {len(errors)} erreurs")
 
     return {
         "success": True,
-        "message": f"Import termine: {updated} programmes mis a jour, {corrections_saved} corrections memorisees. Tous les utilisateurs deconnectes.",
+        "message": f"Import termine: {updated} modifies, {unchanged} inchanges, {corrections_saved} corrections memorisees.",
+        "comparison_id": comparison_id,
         "updated": updated,
-        "corrections_saved": corrections_saved,
+        "unchanged": unchanged,
         "rows_processed": rows_processed,
-        "errors": errors[:10]
+        "corrections_saved": corrections_saved,
+        "errors": errors[:10],
+        "comparison": comparison_details[:50]
     }
+
+
+@router.get("/programs/comparisons")
+async def get_import_comparisons():
+    """Retourne l'historique des comparaisons d'imports"""
+    comparisons = await db.import_comparisons.find(
+        {"type": "programs"},
+        {"_id": 0}
+    ).sort("date", -1).to_list(20)
+    return comparisons
+
+
+@router.get("/programs/comparison/{comparison_id}")
+async def get_comparison_detail(comparison_id: str):
+    """Retourne le detail d'une comparaison specifique"""
+    comp = await db.import_comparisons.find_one(
+        {"id": comparison_id},
+        {"_id": 0}
+    )
+    if not comp:
+        raise HTTPException(status_code=404, detail="Comparaison non trouvee")
+    return comp
 
 
 

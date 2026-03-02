@@ -292,8 +292,10 @@ async def export_sci_lease_excel():
 
 @router.post("/sci/import-excel")
 async def import_sci_lease_excel(file: UploadFile = File(...), password: str = Form("")):
-    """Importe un Excel corrige pour les taux SCI. Sauvegarde comme source de verite."""
+    """Importe un Excel corrige pour les taux SCI avec comparaison avant/apres."""
     from database import ADMIN_PASSWORD
+    import uuid
+    from datetime import datetime
 
     if password != ADMIN_PASSWORD:
         raise HTTPException(status_code=401, detail="Mot de passe admin incorrect")
@@ -305,11 +307,17 @@ async def import_sci_lease_excel(file: UploadFile = File(...), password: str = F
     with open(rates_path, 'r') as f:
         data = json.load(f)
 
+    # 1. SNAPSHOT AVANT: copie profonde de l'etat actuel
+    import copy
+    data_before = copy.deepcopy(data)
+
     terms = data.get("terms", [24, 27, 36, 39, 42, 48, 51, 54, 60])
     content = await file.read()
     wb = openpyxl.load_workbook(io.BytesIO(content))
 
     updated_total = 0
+    unchanged_total = 0
+    comparison_details = []
 
     for year_key, possible_titles in [("vehicles_2026", ["Lease 2026"]), ("vehicles_2025", ["Lease 2025"])]:
         ws = None
@@ -321,6 +329,8 @@ async def import_sci_lease_excel(file: UploadFile = File(...), password: str = F
             continue
 
         vehicles = data.get(year_key, [])
+        vehicles_before = data_before.get(year_key, [])
+
         for ri, row in enumerate(ws.iter_rows(min_row=2, values_only=True)):
             if ri >= len(vehicles):
                 break
@@ -328,11 +338,12 @@ async def import_sci_lease_excel(file: UploadFile = File(...), password: str = F
                 continue
 
             v = vehicles[ri]
+            old_v = vehicles_before[ri] if ri < len(vehicles_before) else {}
+
             v["brand"] = str(row[0]).strip() if row[0] else v.get("brand", "")
             v["model"] = str(row[1]).strip() if row[1] else v.get("model", "")
             v["lease_cash"] = float(row[2]) if row[2] is not None else 0
 
-            # Standard rates
             std = {}
             has_std = False
             for i, t in enumerate(terms):
@@ -342,11 +353,9 @@ async def import_sci_lease_excel(file: UploadFile = File(...), password: str = F
                     has_std = True
             v["standard_rates"] = std if has_std else None
 
-            # Alternative lease cash
             alt_cash_idx = 3 + len(terms)
             v["alternative_lease_cash"] = float(row[alt_cash_idx]) if row[alt_cash_idx] is not None else 0
 
-            # Alternative rates
             alt = {}
             has_alt = False
             for i, t in enumerate(terms):
@@ -356,20 +365,63 @@ async def import_sci_lease_excel(file: UploadFile = File(...), password: str = F
                     has_alt = True
             v["alternative_rates"] = alt if has_alt else None
 
-            updated_total += 1
+            # Comparer avant/apres pour ce vehicule
+            changes = {}
+            if (old_v.get("lease_cash") or 0) != v["lease_cash"]:
+                changes["lease_cash"] = {"avant": old_v.get("lease_cash", 0) or 0, "apres": v["lease_cash"]}
+            if (old_v.get("alternative_lease_cash") or 0) != v.get("alternative_lease_cash", 0):
+                changes["alternative_lease_cash"] = {"avant": old_v.get("alternative_lease_cash", 0) or 0, "apres": v.get("alternative_lease_cash", 0)}
+            if old_v.get("standard_rates") != v.get("standard_rates"):
+                changes["standard_rates"] = {"avant": old_v.get("standard_rates"), "apres": v.get("standard_rates")}
+            if old_v.get("alternative_rates") != v.get("alternative_rates"):
+                changes["alternative_rates"] = {"avant": old_v.get("alternative_rates"), "apres": v.get("alternative_rates")}
+
+            if changes:
+                updated_total += 1
+                comparison_details.append({
+                    "vehicule": f"{v.get('brand','')} {v.get('model','')}",
+                    "changes": changes
+                })
+            else:
+                unchanged_total += 1
 
         data[year_key] = vehicles
 
     with open(rates_path, 'w') as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-    # Force logout all users
+    # Sauvegarder la comparaison dans MongoDB
+    comparison_id = str(uuid.uuid4())
+    comparison_doc = {
+        "id": comparison_id,
+        "type": "sci_lease",
+        "date": datetime.utcnow().isoformat(),
+        "updated": updated_total,
+        "unchanged": unchanged_total,
+        "details": comparison_details
+    }
+    await db.import_comparisons.insert_one(comparison_doc)
+
+    # Force logout
     r = await db.tokens.delete_many({})
-    logger.info(f"[SCI IMPORT] {updated_total} vehicules mis a jour, {r.deleted_count} tokens invalides")
+    logger.info(f"[SCI IMPORT] {updated_total} modifies, {unchanged_total} inchanges, {r.deleted_count} tokens invalides")
 
     return {
         "success": True,
-        "message": f"Import SCI termine: {updated_total} vehicules mis a jour. Tous les utilisateurs deconnectes.",
+        "message": f"Import SCI termine: {updated_total} modifies, {unchanged_total} inchanges.",
+        "comparison_id": comparison_id,
         "updated": updated_total,
+        "unchanged": unchanged_total,
+        "comparison": comparison_details[:50]
     }
+
+
+@router.get("/sci/comparisons")
+async def get_sci_comparisons():
+    """Retourne l'historique des comparaisons d'imports SCI"""
+    comparisons = await db.import_comparisons.find(
+        {"type": "sci_lease"},
+        {"_id": 0}
+    ).sort("date", -1).to_list(20)
+    return comparisons
 

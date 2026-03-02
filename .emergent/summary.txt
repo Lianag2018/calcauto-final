@@ -1,73 +1,68 @@
 <analysis>**original_problem_statement:**
-The user's core objective is to perfect the CalcAuto AiPro application, a full-stack tool for vehicle financing. Initial requirements focused on OCR and a lease calculator. The scope has since evolved to include significant UI/UX enhancements, critical bug fixes, and major refactoring of the backend and frontend.
-
-The most recent requests have focused on data presentation and user empowerment:
-*   **(P0) Logical Trim Sorting:** A critical requirement to sort vehicle lists not alphabetically, but by a specific logical order defined by the manufacturer's official program documents.
-*   **(P0) Admin Reordering:** A drag-and-drop interface for the user to manually adjust the vehicle sort order.
-*   **(P1) Submission Consistency:** Ensuring that emails, SMS messages, and printed quotes are consistent and accurately reflect the selected vehicle's data (e.g., payment frequency, available financing options).
-*   **(P0) Architecture Documentation & Independence:** The user now wants a complete breakdown of the application's architecture and a guide on how to deploy and manage it independently on their personal GitHub, Vercel, and Render accounts.
+The user's primary goal is to establish a robust and reliable workflow for managing vehicle financing and lease programs. This involves:
+1.  **Correcting Rebate Data:** The application was displaying incorrect rebate information (e.g., Delivery Credits that shouldn't exist, inverted Consumer Cash amounts). The user wants all program data to be accurate.
+2.  **Excel-based Data Management:** The user wants a system to export all financing and lease programs to Excel files, correct them manually, and re-import the corrected file as the single source of truth. This workflow must be reliable across different environments (preview and production).
+3.  **Data Consistency:** After any data-modifying import (programs, lease rates, inventory), all users must be forced to log back in to ensure they are working with the latest, non-cached data.
+4.  **UI/UX Improvements:** The user requested UI improvements for the Excel workflow, such as freezing header rows/columns in the exported files for easier navigation.
 
 **PRODUCT REQUIREMENTS:**
-*   **(P2) Refactor :** This monolithic frontend file is extremely large and complex. It needs to be broken down into smaller components and custom hooks. (Partially Completed - Further refactoring needed).
-*   **(P2) Refactor :** Break this large file into smaller, more manageable components. (Not Started).
-*   **(P0) Implement Logical Trim Sorting:** Vehicle lists must be sorted logically by trim level (e.g., Sport, North, Limited) as defined by the manufacturer/user, not alphabetically. (Completed).
-*   **(P0) Create Admin Drag & Drop Sorting:** Allow the user to reorder vehicles via a UI. (Completed).
-*   **(P0) Provide Architecture & Deployment Documentation:** Create a comprehensive guide for the user. (In Progress).
+*   **(P0) Fix Excel Import:** The import process reports 0 modifications in production because it incorrectly uses a database  for matching, which is not consistent across environments. This needs to be fixed to use a stable composite key (Make, Model, Trim, Year).
+*   **(P0) Force Logout on Import:** Implement a mechanism to invalidate all user sessions after a data import to force a refresh. (Completed, needs verification).
+*   **(P0) Full Excel Workflow for Programs & Lease:** Create a complete export/import cycle for both financing programs and SCI Lease rates, accessible from the UI. (Completed, but import is bugged).
+*   **(P1) Data Correction & Duplication Removal:** Cleanse the database of incorrect rebates and duplicate entries. (Completed, with a migration script).
+*   **(P1) UI for Import Workflow:** The main Import page should guide the user through the full PDF -> Excel -> Correct -> Upload flow. (Completed).
 
 **User's preferred language**: French. The next agent MUST respond in French.
 
 **what currently exists?**
-A full-stack vehicle financing calculator (React/FastAPI) that is stable and feature-rich. In this session, the agent completed several critical user-facing features:
-1.  **Logical Vehicle Sorting:** A complex sorting mechanism was implemented. A  field was added to the database, and a script was created to populate it based on the exact line-by-line order from an official PDF provided by the user. The frontend and backend now use this field, ensuring vehicles are always displayed in the correct, non-alphabetic order.
-2.  **Admin Drag-and-Drop:** An Ordre véhicules tab was added to the admin panel, allowing the user to visually reorder vehicles. This writes the new order back to the database.
-3.  **Submission Fixes:** Major bugs in email/SMS submissions were fixed. Rate tables are now generated dynamically (not hardcoded), and lease payment frequencies (weekly/monthly) are correctly displayed based on user selection. The SMS screenshot was also made larger and more legible.
-4.  **Inventory Filter Fix:** A bug causing the inventory list to show incorrect models (e.g., showing Gladiators when a Compass was selected) has been resolved.
+The application now has a sophisticated data management system. An **Architecture and Deployment Guide** () was created. A major data cleanup was performed, removing incorrect Delivery Credits, fixing inverted rebate values, and deleting duplicate vehicle programs via a **migration script** that runs on backend startup to ensure consistency even in production.
 
-The application is functionally complete for the user's latest requests. The user is now asking for documentation to become self-sufficient.
+A complete **Excel Import/Export workflow** has been implemented for both financing programs and SCI lease rates. The UI on the  and  pages supports this flow. When an import occurs, a **force-logout mechanism** invalidates all active user sessions, compelling them to log back in and fetch fresh data. The exported Excel files have also been improved with **frozen panes** for better usability.
+
+However, the core import functionality is currently broken.
 
 **Last working item**:
-*   **Last item agent was working:** The user requested a comprehensive document explaining the application's architecture (frontend, backend, database) and a step-by-step guide on how it is deployed to their personal GitHub, Vercel (frontend), and Render (backend) accounts. The goal is to make them fully independent of the Emergent platform.
+*   **Last item agent was working:** The user reported that importing a corrected Excel file resulted in 0 modifications, meaning their changes were not being saved. The agent correctly diagnosed that the import logic was matching records by their unique database , which differs between the preview and production environments. The agent began implementing a fix to use a stable composite key (, , , ) instead.
 *   **Status:** IN PROGRESS
-*   **Agent Testing Done:** N/A
-*   **Which testing method agent to use?** N/A (This is a documentation task).
+*   **Agent Testing Done:** N
+*   **Which testing method agent to use?** backend testing agent. The agent should write a test to export programs, modify the file, re-import it, and assert that the database record was updated and the API response confirms the update count. This test should be performed for both the programs and SCI lease imports.
 *   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-*   **Issue 1: Provide Full Architecture Documentation and Deployment Guide (P0)**
-    *   **Description:** The user wants a complete explanation of the project structure and deployment pipeline so they can manage the application independently.
-    *   **Attempted fixes:** The agent has acknowledged the request and begun exploring the codebase to gather the necessary information.
+*   **Issue 1: Excel Import Reports 0 Modifications in Production (P0)**
+    *   **Description:** When the user imports a corrected Excel file, the system fails to find the corresponding programs to update because it's matching by , which is not portable across environments.
+    *   **Attempted fixes:** The agent started modifying  to use a  dictionary containing , , , and  to find the correct document to update.
     *   **Next debug checklist:**
-        1.  Create a new  or a similar documentation file in the root directory.
-        2.  **Document Backend ():** Detail the FastAPI structure: , , , , and . Explain its connection to MongoDB via the  environment variable.
-        3.  **Document Frontend ():** Detail the Expo/React for Web structure:  for screens, , and the critical  for backend communication.
-        4.  **Document Deployment:**
-            *   **GitHub:** Explain that code is stored in their  repositories.
-            *   **Backend (Render):** Explain that Render deploys the  folder, runs , and starts the server with . List the required environment variables (, , , etc.).
-            *   **Frontend (Vercel):** Explain that Vercel deploys the  folder and that the  environment variable must point to the Render backend URL.
-        5.  **Present the document** to the user for review.
-    *   **Why fix this issue and what will be achieved with the fix?** This will fulfill the user's ultimate goal of taking full ownership and control of their application.
+        1.  Verify the implementation of the composite key matching in .
+        2.  **Crucially, apply the exact same fix to  for the SCI Lease import function**, which suffers from the same problem.
+        3.  Test the fix for **both** program and SCI lease imports. The test should involve exporting data, modifying it, and re-importing to confirm the changes are saved and the API reports the correct number of updated documents.
+        4.  Confirm the  memory feature also uses this new composite key logic.
+    *   **Why fix this issue and what will be achieved with the fix?** This fix is critical. It will make the entire Excel-based data correction workflow functional and reliable, which is the user's primary requirement.
     *   **Status:** IN PROGRESS
     *   **Is recurring issue?** N
-    *   **Should Test frontend/backend/both after fix?** N/A
-    *   **Blocked on other issue:** None.
+    *   **Should Test frontend/backend/both after fix?** backend
+    *   **Blocked on other issue:** None
 
 **In progress Task List**:
-*   There are no other in-progress tasks. The documentation is the sole focus.
+*   None.
 
 **Upcoming and Future Tasks**
 *   **Future Tasks:**
-    *   **(P2) Complete Refactor of :** This file is still over 3,000 lines. The business logic for calculations should be extracted into custom hooks (e.g., ) to improve maintainability.
+    *   **(P1) Enhance Correction Memory:** The  collection was created to memorize manual fixes. This system could be enhanced to be more robustly applied during future PDF imports, potentially suggesting corrections automatically.
+    *   **(P2) Refactor :** This file is still over 3,000 lines and needs to be broken into smaller components and custom hooks.
     *   **(P2) Refactor :** This large file should also be broken down into smaller components.
-    *   **(P1) Verify Option 2 Data Across All Models:** Follow up with the user to confirm if any other vehicle models require data cleanup for the Option 2 financing rates.
 
 **Completed work in this session**
-- **Logical Trim Sorting (DONE):** Implemented a robust, PDF-aligned sorting for all vehicle lists using a new  database field.
-- **Admin Drag & Drop UI (DONE):** Created a new admin section () with a drag-and-drop interface for the user to manually re-order vehicles.
-- **Bug Fix: Inventory Filtering (DONE):** Fixed a bug where the calculator's inventory view showed vehicles from the wrong model.
-- **Bug Fix: Submission Inconsistencies (DONE):**
-    - Rewrote email templates to use dynamic data, fixing issues where incorrect financing options were displayed.
-    - Corrected the SMS and screenshot generation to show the proper lease payment frequency (weekly/monthly).
-    - Improved the legibility of the generated SMS screenshot by increasing its size and font.
+- **Full Excel Import/Export Workflow (DONE):** Created backend endpoints and a complete frontend UI for exporting/importing both financing programs and SCI Lease rates.
+- **Data Integrity Migration Script (DONE):** Implemented a script in  that runs on startup to correct rebate data and remove duplicates, ensuring the production database is automatically fixed upon deployment.
+- **Force Logout on Import (DONE):** A system now invalidates all user tokens after a data import, forcing a re-login to load fresh data.
+- **Import Workflow UI (DONE):** The  page now has a 5-step process guiding the user from PDF upload to final Excel correction.
+- **Duplicate Program Deletion (DONE):** Identified and removed dozens of duplicate vehicle programs from the database.
+- **New Data Field (DONE):** Added an Alternative Consumer Cash field () for Option 2 rebates throughout the backend and Excel workflow.
+- **Excel UX Improvement (DONE):** Added freeze panes to the exported Excel files to keep headers and key columns visible during scrolling.
+- **Lease Calculation Fixes (DONE):** Corrected bugs related to weekly payment calculations in the print view and main UI.
+- **Print View Back Button (DONE):** Added a button to exit the print view.
+- **Architecture Documentation (DONE):** Created .
 
 **Earlier issues found/mentioned but not fixed**
 *   None.
@@ -79,84 +74,84 @@ The application is functionally complete for the user's latest requests. The use
 
 
 **Key Technical Concepts**
-*   **Custom Data-Driven Sorting:** Implementing a non-alphabetic sort order based on an external document (PDF), storing it in the DB, and applying it across the stack.
-*   **Drag-and-Drop UI:** Using  to create a stateful, user-driven reordering interface.
-*   **Dynamic Template Generation:** Replacing hardcoded email/SMS content with dynamically generated data to ensure accuracy.
-*   **API Endpoint Ordering:** Resolving a FastAPI routing conflict by reordering endpoint definitions.
-*   **Frontend Build Process:** Diagnosing and fixing an issue where UI changes did not appear by forcing a rebuild of the static frontend assets.
+*   **Data Migration on Startup:** Running a data cleansing and correction script from  to ensure data integrity across environments (preview/production) on every deployment.
+*   **Composite Key for Data Matching:** Using a combination of business-logic fields (, , , ) instead of a non-portable database  to reliably update records.
+*   **JWT Session Invalidation (Force Logout):** Invalidating all user sessions by updating a secret value, forcing a re-login upon receiving a 401 error.
+*   **Excel Manipulation (openpyxl):** Programmatically creating and styling  files, including freezing header rows and columns.
 
 **key DB schema**
 *   ** collection:**
-    *   : string
-    *   : string
+    *   , , , : string/number (now used as composite key)
     *   : number
-    *   : number (NEW, critical for display order)
-    *   : Optional[Dict]
-*   ** collection:** (Stores the canonical trim order per model)
-    *   : string
-    *   : string
     *   : number
-    *   : List[string]
+    *   : number (NEW)
+*   ** collection (NEW):**
+    *   Stores manual overrides from Excel imports to be referenced by future PDF imports.
+*   ** collection:**
+    *   Stores lease rate data.
 
 **All files of reference**
-*   : New admin panel with drag-and-drop.
-*   : Core file for calculator UI, vehicle list sorting, and SMS fixes.
-*   : Contains the main vehicle data endpoint () and the new reordering endpoint ().
-*   : Logic for generating dynamic submission emails.
-*   : Component responsible for generating the quote image for SMS.
-*   : One-off script used to populate the initial  data.
+*   : Contains the program import/export logic. The  function is partially fixed.
+*   : Contains the SCI lease import/export logic. **Needs the same fix as **.
+*   : Runs the one-time data migration logic on startup.
+*   : The main UI for the admin panel, including the new Excel management tab.
+*   : The new 5-step user workflow for importing programs.
 
 **Areas that need refactoring**:
-*   ** (HIGH):** The file remains very large (3000+ lines) and would benefit greatly from being broken down into custom hooks and smaller components.
-*   ** (MEDIUM):** Also a candidate for being split into smaller components.
+*   : Remains extremely large and complex.
+*   : Also a candidate for being split into smaller components.
 
 **key api endpoints**
-*   : Returns the list of all vehicle programs, now correctly sorted by .
-*   : **NEW** endpoint that accepts an ordered list of program IDs to update their  in the database.
-*   : Sends submission emails, now with a dynamically generated rate table.
+*   : **(BUGGED)** Imports corrected program data. Needs fix to use composite key.
+*   : Exports all programs to an Excel file.
+*   : **(BUGGED)** Imports corrected SCI lease data. Needs fix to use composite key.
+*   : Exports all SCI lease rates to an Excel file.
+*   : Invalidates all user tokens.
 
 **Critical Info for New Agent**
-1.  **Parlez Français:** All communication with the user must be in French.
-2.  **Top Priority (P0): Architecture Documentation:** The immediate and only active task is to create the architecture and deployment documentation requested by the user. This is a non-coding task. Do not start any other refactoring or feature work until this is complete and approved.
-3.  **Do Not Change Sorting Logic:** The vehicle sorting is a critical feature that is now working exactly as the user wants. The user can manage the order themselves via the admin panel. Do not modify the underlying sorting code.
-4.  **Admin Credentials:** The password  is used to authorize saving changes in the new admin panel.
+1.  **Parlez Français:** All user communication must be in French.
+2.  **Priority #1: Fix the Excel Import.** The user's entire workflow depends on being able to import corrected Excel files. The fix involves replacing -based matching with a composite key (, , , ).
+3.  **Apply Fix to Both Imports:** The composite key fix must be applied to **both**  and . Forgetting the second one will lead to a user complaint.
+4.  **Data Migration is Done:** The one-time data correction script in  has already run and fixed the major data issues (rebates, duplicates). You can focus solely on the import logic.
 
 **documents and test reports created in this job**
-*    (From a previous test run in this session).
+*   
+*   
+*   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **user:** Asks for the total architecture of the application and how it's deployed to GitHub, Render, and Vercel, so they can be independent of Emergent. **(PENDING)**
-2.  **user:** Requests a drag-and-drop interface in the admin panel to change the order of vehicles. (Completed)
-3.  **user:** Reports that the lease payment frequency in SMS/screenshots doesn't match the selected frequency in the calculator. (Completed)
-4.  **user:** Reports that the SMS image is too small and hard to read. (Completed)
-5.  **user:** Points out that the email/SMS submission shows Option 2 rates for vehicles that don't have them. (Completed)
-6.  **user:** Reports that when filtering for a Jeep Compass, the inventory list also shows Gladiator inventory. (Completed)
-7.  **user:** Asks to align the vehicle sort order *exactly* with the incentive PDF they provided, line by line. (Completed)
-8.  **user:** Asks the agent to proceed (go). (Acknowledged)
-9.  **user:** Provides a new PDF with the official incentive programs to be used as the source of truth for sorting. (Acknowledged)
-10. **user:** Mentions that the previous sorting was based on PDF options 1 and 2 and asks the agent to align with that. (Acknowledged)
+1.  **user:** Reports the Excel import shows 0 modifications even after making changes. **(PENDING - This is the current P0 issue)**
+2.  **user:** Asks for the Excel export to have frozen panes (fixed columns/rows). (Completed)
+3.  **user:** Asks for a force-logout mechanism after imports and an Excel workflow for lease rates. (Completed)
+4.  **user:** Points out that the import page workflow is incomplete; it needs a final step to upload the corrected Excel. (Completed)
+5.  **user:** Identifies duplicate vehicle programs and asks for an Alternative Cash Rebate column. (Completed)
+6.  **user:** Sent an email with the corrected Excel file. (Acknowledged)
+7.  **user:** States that all 2025 rebates are wrong and that Delivery Credits should be ignored. (Completed via migration script)
+8.  **user:** Asks to push the code to GitHub so it reflects on the production URL. (Agent advised user how to do it)
+9.  **user:** Reports that weekly lease calculations are wrong in the print view and there's no back button. (Completed)
+10. **user:** Asks for the complete application structure. (Completed, provided in chat and )
 
 **Project Health Check:**
-*   **Broken:** None
+*   **Broken:** The Excel import functionality ( and ) is non-functional in a multi-environment setup.
 *   **Mocked:** None
 
 **3rd Party Integrations**
+*   **openpyxl:** (New) Used for creating and styling Excel files in the backend.
 *   **html2canvas:** Used for generating quote screenshots for sharing.
 *   **Google Cloud Vision:** Used for OCR on scanned invoices.
 *   **OpenAI GPT-4o:** Used for structuring text extracted from invoices.
-*   **openpyxl:** Python library for Excel file handling.
 *   **PyMuPDF (fitz):** Python library for PDF parsing.
-*   **react-beautiful-dnd:** **NEW** library used for the drag-and-drop admin interface.
+*   **react-beautiful-dnd:** Used for the drag-and-drop admin interface.
 
 **Testing status**
-*   **Testing agent used after significant changes:** YES (earlier in the session for the initial sorting feature).
+*   **Testing agent used after significant changes:** NO (for the latest fixes)
 *   **Troubleshoot agent used after agent stuck in loop:** NO
 *   **Test files created:** None.
-*   **Known regressions:** None.
+*   **Known regressions:** The core Excel import feature is not working as intended.
 
 **Credentials to test flow:**
 *   **User Login:**  / 
 *   **Admin Password (for saving in admin panel):** 
 
 **What agent forgot to execute**
-*   The original plan to completely refactor  by extracting business logic into custom hooks has not been completed and remains a future task.</analysis>
+*   While the agent correctly identified the need to use a composite key to fix the program import (), they did not apply the same crucial fix to the SCI Lease import (). The next agent must address this omission to prevent the same bug from appearing in the lease import workflow.</analysis>
