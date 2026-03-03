@@ -327,62 +327,143 @@ async def import_programs_excel(file: UploadFile = File(...), password: str = Fo
     wb = openpyxl.load_workbook(io.BytesIO(content))
     ws = wb.active
 
+    # Detect program_month from title row (e.g. "PROGRAMMES DE FINANCEMENT RETAIL - MARS 2026")
+    import_month = None
+    import_year = None
+    title_val = str(ws.cell(row=1, column=1).value or '').upper()
+    month_names_map = {"JANVIER": 1, "FÉVRIER": 2, "FEVRIER": 2, "MARS": 3, "AVRIL": 4, "MAI": 5, "JUIN": 6,
+                       "JUILLET": 7, "AOÛT": 8, "AOUT": 8, "SEPTEMBRE": 9, "OCTOBRE": 10, "NOVEMBRE": 11, "DÉCEMBRE": 12, "DECEMBRE": 12}
+    for mname, mnum in month_names_map.items():
+        if mname in title_val:
+            import_month = mnum
+            break
+    import re as re_mod
+    year_match = re_mod.search(r'20\d{2}', title_val)
+    if year_match:
+        import_year = int(year_match.group())
+
     updated = 0
     unchanged = 0
+    created = 0
     corrections_saved = 0
     errors = []
     rows_processed = 0
     comparison_details = []
 
-    for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=False), 2):
+    def parse_cash(val):
+        """Parse '$3,500' or '-' or 3500 → float"""
+        if val is None or str(val).strip() in ('-', '–', ''):
+            return 0
+        s = str(val).replace('$', '').replace(',', '').replace(' ', '').strip()
+        try:
+            return float(s)
+        except ValueError:
+            return 0
+
+    def parse_rate(val):
+        """Parse '4.99%' or '-' or 4.99 → float or None"""
+        if val is None or str(val).strip() in ('-', '–', ''):
+            return None
+        s = str(val).replace('%', '').replace(' ', '').strip()
+        try:
+            return float(s)
+        except ValueError:
+            return None
+
+    # Detect header row: find row with "Marque" in first column
+    data_start_row = 2
+    for row in ws.iter_rows(min_row=1, max_row=10, values_only=False):
+        first_val = str(row[0].value or '').strip().lower()
+        if first_val in ('marque', 'brand'):
+            data_start_row = row[0].row + 1
+            break
+        elif first_val and first_val not in ('', 'none') and 'programme' not in first_val and 'véhicule' not in first_val and 'option' not in first_val:
+            # First row with actual data
+            data_start_row = row[0].row
+            break
+
+    for row_idx, row in enumerate(ws.iter_rows(min_row=data_start_row, values_only=False), data_start_row):
         values = [cell.value for cell in row]
         if not values or not values[0]:
             continue
+        
+        # Skip header-like rows
+        first_val = str(values[0]).strip().lower()
+        if first_val in ('marque', 'brand', 'véhicule', '') or 'programme' in first_val or 'option' in first_val:
+            continue
 
         rows_processed += 1
-        prog_id = str(values[0]).strip()
 
         try:
-            brand = str(values[1]).strip() if values[1] else ""
-            model = str(values[2]).strip() if values[2] else ""
-            trim = str(values[3]).strip() if values[3] else ""
-            year = int(values[4]) if values[4] else 2026
-            consumer_cash = float(values[5]) if values[5] is not None else 0
-            bonus_cash = float(values[6]) if values[6] is not None else 0
+            brand = str(values[0]).strip() if values[0] else ""
+            model = str(values[1]).strip() if values[1] else ""
+            trim = str(values[2]).strip() if len(values) > 2 and values[2] else ""
+            
+            year_val = values[3] if len(values) > 3 else 2026
+            try:
+                year = int(year_val) if year_val else 2026
+            except (ValueError, TypeError):
+                year = 2026
 
+            # Col E (index 4): Consumer Cash (Option 1 rabais)
+            consumer_cash = parse_cash(values[4]) if len(values) > 4 else 0
+            
+            # Col F-K (index 5-10): Option 1 rates
             o1_rates = {}
             rate_terms = ["rate_36", "rate_48", "rate_60", "rate_72", "rate_84", "rate_96"]
             has_o1 = False
             for i, term in enumerate(rate_terms):
-                val = values[7 + i]
-                if val is not None:
-                    o1_rates[term] = float(val)
-                    has_o1 = True
-
-            alternative_consumer_cash = float(values[13]) if values[13] is not None else 0
-
+                col_idx = 5 + i
+                if col_idx < len(values):
+                    rate = parse_rate(values[col_idx])
+                    if rate is not None:
+                        o1_rates[term] = rate
+                        has_o1 = True
+            
+            # Col L (index 11): Alternative Consumer Cash (Option 2 rabais)
+            alternative_consumer_cash = parse_cash(values[11]) if len(values) > 11 else 0
+            
+            # Col M-R (index 12-17): Option 2 rates
             o2_rates = None
             has_o2 = False
             o2_temp = {}
             for i, term in enumerate(rate_terms):
-                val = values[14 + i]
-                if val is not None:
-                    o2_temp[term] = float(val)
-                    has_o2 = True
+                col_idx = 12 + i
+                if col_idx < len(values):
+                    rate = parse_rate(values[col_idx])
+                    if rate is not None:
+                        o2_temp[term] = rate
+                        has_o2 = True
             if has_o2:
                 o2_rates = o2_temp
+            
+            # Col S (index 18): Bonus Cash
+            bonus_cash = parse_cash(values[18]) if len(values) > 18 else 0
 
             # Match par cle composite (brand+model+trim+year) avec matching flexible
             old_prog, match_query = find_best_match(brand, model, trim, year, all_before)
 
             if not old_prog:
-                # Dernier fallback par ID
-                old_prog = await db.programs.find_one({"id": prog_id}, {"_id": 0})
-                if old_prog:
-                    match_query = {"id": prog_id}
-                else:
-                    errors.append(f"Ligne {row_idx}: Programme non trouve ({brand} {model} {trim} {year})")
-                    continue
+                # Programme non trouve = le creer depuis l'Excel (source de verite)
+                new_prog = {
+                    "id": str(uuid.uuid4()),
+                    "brand": brand,
+                    "model": model,
+                    "trim": trim,
+                    "year": year,
+                    "consumer_cash": consumer_cash,
+                    "bonus_cash": bonus_cash,
+                    "alternative_consumer_cash": alternative_consumer_cash,
+                    "option1_rates": o1_rates if has_o1 else {"rate_36": 4.99, "rate_48": 4.99, "rate_60": 4.99, "rate_72": 4.99, "rate_84": 4.99, "rate_96": 4.99},
+                    "option2_rates": o2_rates,
+                    "program_month": import_month,
+                    "program_year": import_year or year,
+                    "created_at": datetime.utcnow().isoformat(),
+                    "source": "excel_import"
+                }
+                await db.programs.insert_one(new_prog)
+                created += 1
+                continue
 
             # Calculer les differences AVANT d'appliquer
             changes = {}
@@ -464,13 +545,14 @@ async def import_programs_excel(file: UploadFile = File(...), password: str = Fo
 
     # Force logout
     await db.tokens.delete_many({})
-    logger.info(f"[EXCEL IMPORT] {updated} modifies, {unchanged} inchanges, {len(errors)} erreurs")
+    logger.info(f"[EXCEL IMPORT] {updated} modifies, {unchanged} inchanges, {created} crees, {len(errors)} erreurs")
 
     return {
         "success": True,
-        "message": f"Import termine: {updated} modifies, {unchanged} inchanges, {corrections_saved} corrections memorisees.",
+        "message": f"Import termine: {updated} modifies, {unchanged} inchanges, {created} crees, {corrections_saved} corrections memorisees.",
         "comparison_id": comparison_id,
         "updated": updated,
+        "created": created,
         "unchanged": unchanged,
         "rows_processed": rows_processed,
         "corrections_saved": corrections_saved,

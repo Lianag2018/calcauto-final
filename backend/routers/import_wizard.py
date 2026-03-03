@@ -237,7 +237,7 @@ def generate_excel_from_programs(programs: List[Dict[str, Any]], program_month: 
     ws.row_dimensions[3].height = 25
     
     # Freeze panes
-    ws.freeze_panes = 'A4'
+    ws.freeze_panes = 'E4'
     
     # Save to bytes
     output = io.BytesIO()
