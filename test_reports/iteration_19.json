@@ -31,7 +31,7 @@
   "test_credentials": {
     "email": "danielgiroux007@gmail.com",
     "password": "Liana2018$",
-    "base_url": "https://vehicle-finance-hub-5.preview.emergentagent.com"
+    "base_url": "https://batch-pdf-upload.preview.emergentagent.com"
   },
   "seed_data_creation": "None - tested with existing data",
   "retest_needed": false,

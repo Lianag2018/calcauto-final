@@ -1,26 +1,26 @@
 # CalcAuto AiPro - PRD
 
 ## Problem Statement
-Application de gestion de financement et location automobile pour concessionnaires FCA/Stellantis Canada (Québec).
+Application de gestion de financement et location automobile pour concessionnaires FCA/Stellantis Canada (Quebec).
 
 ## Completed Features
 - [x] Calcul financement Option 1/2 avec alternative_consumer_cash
-- [x] Calcul location SCI — moteur refactoré (leaseCalculator.ts) + backend /api/sci/calculate-lease
-- [x] Audit Option 1 vs Option 2 — cohérence confirmée
+- [x] Calcul location SCI — moteur refactore (leaseCalculator.ts) + backend /api/sci/calculate-lease
+- [x] Audit Option 1 vs Option 2 — coherence confirmee
 - [x] Import PDF via IA (GPT-4o) avec auto-correction
-- [x] Export/Import Excel avec comparaison avant/après + matching flexible
-- [x] Mémoire des corrections (P1) — matching flexible, compteur d'application, rapport — 3 mars 2026
+- [x] Export/Import Excel avec comparaison avant/apres + matching flexible
+- [x] Memoire des corrections (P1) — matching flexible, compteur d'application, rapport
 - [x] API gestion corrections (GET /api/corrections, DELETE /api/corrections/all)
-- [x] Upload multiple PDFs + file d'attente révision
-- [x] Force logout après import
+- [x] Upload multiple PDFs + file d'attente revision
+- [x] Force logout apres import
+- [x] Fix modal "Envoyer par email" — layout compact avec header en ligne, scroll fluide, boutons toujours visibles (maxHeight: 60% viewport via Dimensions) — 3 mars 2026
 
-## Mémoire des corrections (P1)
-- Corrections sauvegardées lors de l'import Excel (program_corrections collection)
-- Matching flexible lors de l'import PDF (normalisation noms modèles/trims)
-- Compteur `times_applied` et `last_applied_at` pour suivi
-- Rapport de corrections appliquées dans la réponse de sauvegarde
-- Endpoints: GET /api/corrections, DELETE /api/corrections/{brand}/{model}/{year}, DELETE /api/corrections/all
+## Architecture Notes
+- Frontend: Expo/React Native Web, pre-built to /app/frontend/dist, served by Python HTTP server
+- Backend: FastAPI on port 8001
+- IMPORTANT: Changes to frontend require rebuild via `npx expo export --platform web` + restart expo supervisor
 
 ## Backlog
-- (P2) Refactorer index.tsx (3700+ lignes)
+- (P1) Creer UI admin pour gestion des corrections sauvegardees (voir/supprimer via /api/corrections)
+- (P2) Refactorer index.tsx (3600+ lignes)
 - (P2) Refactorer inventory.tsx

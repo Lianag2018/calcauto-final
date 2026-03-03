@@ -14,6 +14,7 @@ import {
   Animated,
   Share,
   Linking,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,8 +34,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import frTranslations from '../../locales/fr.json';
 import enTranslations from '../../locales/en.json';
 // Logique de calcul extraite
-import { 
 import { useCalculator, getRateForTerm, formatCurrency, formatCurrencyDecimal } from '../../hooks/useCalculator';
+import { 
   computeLeasePayment, computeLeaseForGrid, 
   findResidualVehicle, findRateEntry, getKmAdjustment,
   LeaseInputs 
@@ -3200,27 +3201,40 @@ export default function HomeScreen() {
         <Modal
           visible={showEmailModal}
           transparent
-          animationType="slide"
+          animationType="fade"
           onRequestClose={() => setShowEmailModal(false)}
         >
-          <View style={styles.modalOverlay}>
-            <View style={[styles.emailModalContent, { maxHeight: '90%' }]}>
-              <View style={styles.emailModalHeader}>
-                <View style={styles.emailModalIconContainer}>
-                  <Ionicons name="mail" size={32} color="#4ECDC4" />
-                </View>
-                <Text style={styles.emailModalTitle}>
+          <View style={[styles.modalOverlay, { justifyContent: 'center' }]}>
+            <View style={{
+              backgroundColor: '#1a1a2e',
+              borderRadius: 16,
+              width: '90%',
+              maxWidth: 420,
+              maxHeight: Math.round(Dimensions.get('window').height * 0.6),
+              flexDirection: 'column',
+              overflow: 'hidden',
+            }}>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingVertical: 10,
+                paddingHorizontal: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: '#2d2d44',
+              }}>
+                <Ionicons name="mail" size={22} color="#4ECDC4" style={{ marginRight: 10 }} />
+                <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#fff', flex: 1 }}>
                   {t.email.sendByEmail}
                 </Text>
                 <TouchableOpacity
-                  style={styles.emailModalClose}
                   onPress={() => setShowEmailModal(false)}
+                  style={{ padding: 4 }}
                 >
-                  <Ionicons name="close" size={24} color="#888" />
+                  <Ionicons name="close" size={22} color="#888" />
                 </TouchableOpacity>
               </View>
               
-              <ScrollView style={{ flexShrink: 1 }} showsVerticalScrollIndicator={true}>
+              <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={true} bounces={false}>
               <View style={styles.emailModalBody}>
                 <Text style={styles.emailModalLabel}>
                   {t.email.clientName}
@@ -3292,7 +3306,14 @@ export default function HomeScreen() {
               </View>
               </ScrollView>
               
-              <View style={styles.emailModalButtons}>
+              <View style={{
+                flexDirection: 'row',
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                gap: 10,
+                borderTopWidth: 1,
+                borderTopColor: '#2d2d44',
+              }}>
                 <TouchableOpacity
                   style={styles.emailModalCancelButton}
                   onPress={() => {

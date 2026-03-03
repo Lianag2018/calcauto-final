@@ -31,7 +31,7 @@ except ImportError:
     OPENPYXL_AVAILABLE = False
 
 # Get BASE_URL from environment
-BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://vehicle-finance-hub-5.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://batch-pdf-upload.preview.emergentagent.com').rstrip('/')
 
 # Admin password for import operations
 ADMIN_PASSWORD = "Liana2018"
