@@ -169,8 +169,8 @@ RÈGLES FINALES:
 
 
 
-def generate_excel_from_programs(programs: List[Dict[str, Any]], program_month: int, program_year: int) -> bytes:
-    """Génère un fichier Excel selon le format du PDF Stellantis"""
+def generate_excel_from_programs(programs: List[Dict[str, Any]], program_month: int, program_year: int, sci_lease_data: Dict = None) -> bytes:
+    """Génère un fichier Excel avec onglet Programmes + onglet SCI Lease (si données fournies)"""
     if not EXCEL_AVAILABLE:
         raise HTTPException(status_code=500, detail="openpyxl non disponible")
     
@@ -321,6 +321,133 @@ def generate_excel_from_programs(programs: List[Dict[str, Any]], program_month: 
     
     # Freeze panes
     ws.freeze_panes = 'E4'
+    
+    # ============ ONGLET 2: SCI Lease (si données fournies) ============
+    if sci_lease_data:
+        ws2 = wb.create_sheet("SCI Lease")
+        
+        # Styles
+        header_font = Font(bold=True, color="FFFFFF", size=11)
+        title_font = Font(bold=True, size=14, color="1A237E")
+        header_fill = PatternFill(start_color="1A237E", end_color="1A237E", fill_type="solid")
+        cat_fill_std = PatternFill(start_color="E8EAF6", end_color="E8EAF6", fill_type="solid")
+        cat_fill_alt = PatternFill(start_color="FFF3E0", end_color="FFF3E0", fill_type="solid")
+        thin_border_l = Border(
+            left=Side(style='thin'), right=Side(style='thin'),
+            top=Side(style='thin'), bottom=Side(style='thin')
+        )
+        
+        # SCI Lease terms
+        lease_terms = ["24m", "27m", "36m", "39m", "42m", "48m", "51m", "54m", "60m"]
+        
+        # Row 1: Title
+        ws2.merge_cells('A1:U1')
+        title_cell = ws2['A1']
+        title_cell.value = f"TAUX DE LOCATION SCI LEASE - {month_names[program_month].upper()} {program_year}"
+        title_cell.font = title_font
+        title_cell.alignment = Alignment(horizontal="center", vertical="center")
+        ws2.row_dimensions[1].height = 35
+        
+        # Row 2: Category headers
+        # A-B: Vehicle info
+        ws2.merge_cells('A2:B2')
+        ws2['A2'].value = "VÉHICULE"
+        ws2['A2'].font = header_font
+        ws2['A2'].fill = header_fill
+        ws2['B2'].fill = header_fill
+        # C: Lease Cash
+        ws2['C2'].value = "LEASE CASH"
+        ws2['C2'].font = header_font
+        ws2['C2'].fill = header_fill
+        # D-L: Standard Rates
+        ws2.merge_cells('D2:L2')
+        ws2['D2'].value = "STANDARD RATES (Stackable avec Lease Cash)"
+        ws2['D2'].font = header_font
+        ws2['D2'].fill = PatternFill(start_color="3F51B5", end_color="3F51B5", fill_type="solid")
+        for c in range(5, 13):
+            ws2.cell(row=2, column=c).fill = PatternFill(start_color="3F51B5", end_color="3F51B5", fill_type="solid")
+        # M-U: Alternative Rates
+        ws2.merge_cells('M2:U2')
+        ws2['M2'].value = "ALTERNATIVE RATES (Stackable avec Alt Lease Cash)"
+        ws2['M2'].font = header_font
+        ws2['M2'].fill = PatternFill(start_color="E65100", end_color="E65100", fill_type="solid")
+        for c in range(14, 22):
+            ws2.cell(row=2, column=c).fill = PatternFill(start_color="E65100", end_color="E65100", fill_type="solid")
+        ws2.row_dimensions[2].height = 30
+        
+        # Row 3: Column headers
+        col_headers = ["Marque", "Modèle", "Rabais ($)"] + lease_terms + lease_terms
+        for col, header in enumerate(col_headers, 1):
+            cell = ws2.cell(row=3, column=col, value=header)
+            cell.font = Font(bold=True, size=10)
+            cell.border = thin_border_l
+            cell.alignment = Alignment(horizontal="center")
+            if col <= 3:
+                cell.fill = PatternFill(start_color="E0E0E0", end_color="E0E0E0", fill_type="solid")
+            elif col <= 12:
+                cell.fill = cat_fill_std
+            else:
+                cell.fill = cat_fill_alt
+        ws2.row_dimensions[3].height = 25
+        
+        # Data rows
+        row_idx = 4
+        term_keys = ["24", "27", "36", "39", "42", "48", "51", "54", "60"]
+        
+        for year_label, vehicles_key in [("2026", "vehicles_2026"), ("2025", "vehicles_2025")]:
+            vehicles = sci_lease_data.get(vehicles_key, [])
+            if not vehicles:
+                continue
+            
+            # Year separator
+            ws2.merge_cells(f'A{row_idx}:U{row_idx}')
+            year_cell = ws2.cell(row=row_idx, column=1, value=f"MODÈLES {year_label}")
+            year_cell.font = Font(bold=True, size=11, color="FFFFFF")
+            year_cell.fill = PatternFill(start_color="37474F", end_color="37474F", fill_type="solid")
+            year_cell.alignment = Alignment(horizontal="center")
+            row_idx += 1
+            
+            for v in vehicles:
+                brand = v.get("brand", "")
+                model = v.get("model", "")
+                lease_cash = v.get("lease_cash", 0) or 0
+                std_rates = v.get("standard_rates") or {}
+                alt_rates = v.get("alternative_rates") or {}
+                
+                def format_lease_rate(val):
+                    if val is None:
+                        return "-"
+                    return f"{val}%"
+                
+                data = [
+                    brand, model,
+                    f"${lease_cash:,.0f}" if lease_cash else "-",
+                ] + [
+                    format_lease_rate(std_rates.get(t)) for t in term_keys
+                ] + [
+                    format_lease_rate(alt_rates.get(t)) for t in term_keys
+                ]
+                
+                for col, value in enumerate(data, 1):
+                    cell = ws2.cell(row=row_idx, column=col, value=value)
+                    cell.border = thin_border_l
+                    cell.alignment = Alignment(horizontal="center")
+                    if col <= 3:
+                        pass
+                    elif col <= 12:
+                        cell.fill = cat_fill_std
+                    else:
+                        cell.fill = cat_fill_alt
+                
+                row_idx += 1
+        
+        # Column widths for SCI Lease sheet
+        sci_widths = [12, 28, 12] + [7]*9 + [7]*9
+        for col, width in enumerate(sci_widths, 1):
+            ws2.column_dimensions[openpyxl.utils.get_column_letter(col)].width = width
+        
+        # Freeze: rows 1-3 + columns A-C
+        ws2.freeze_panes = 'D4'
     
     # Save to bytes
     output = io.BytesIO()
@@ -544,15 +671,8 @@ async def extract_pdf(
                     
                     valid_programs.append(p)
             
-            # Generate Excel and send by email
+            # Generate Excel AFTER SCI Lease extraction (deferred below)
             excel_sent = False
-            if EXCEL_AVAILABLE and valid_programs and SMTP_EMAIL:
-                try:
-                    excel_data = generate_excel_from_programs(valid_programs, program_month, program_year)
-                    excel_sent = send_excel_email(excel_data, SMTP_EMAIL, program_month, program_year, len(valid_programs))
-                    logger.info(f"Excel generated and sent: {excel_sent}")
-                except Exception as excel_error:
-                    logger.error(f"Error generating/sending Excel: {str(excel_error)}")
             
             # AUTO-SAVE: Sauvegarder automatiquement les programmes dans la base de données
             saved_count = 0
@@ -750,6 +870,18 @@ EXTRAIS ABSOLUMENT TOUS LES VÉHICULES. JSON valide uniquement."""
                 except Exception as lease_error:
                     logger.error(f"Error extracting SCI Lease rates: {str(lease_error)}")
             
+            # Generate Excel with BOTH sheets (Programmes + SCI Lease) and send by email
+            sci_data_for_excel = None
+            if sci_lease_count > 0:
+                sci_data_for_excel = sci_lease_rates
+            if EXCEL_AVAILABLE and valid_programs and SMTP_EMAIL:
+                try:
+                    excel_data = generate_excel_from_programs(valid_programs, program_month, program_year, sci_lease_data=sci_data_for_excel)
+                    excel_sent = send_excel_email(excel_data, SMTP_EMAIL, program_month, program_year, len(valid_programs))
+                    logger.info(f"Excel generated and sent (with SCI Lease): {excel_sent}")
+                except Exception as excel_error:
+                    logger.error(f"Error generating/sending Excel: {str(excel_error)}")
+
             lease_msg = f" + {sci_lease_count} taux SCI Lease" if sci_lease_count > 0 else ""
             return ExtractedDataResponse(
                 success=True,
@@ -862,16 +994,6 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
                 {"$set": {"status": "saving", "message": f"{len(valid_programs)} programmes extraits. Sauvegarde..."}}
             )
 
-            # Generate Excel and send email
-            excel_sent = False
-            if EXCEL_AVAILABLE and valid_programs and SMTP_EMAIL:
-                try:
-                    excel_data = generate_excel_from_programs(valid_programs, program_month, program_year)
-                    excel_sent = send_excel_email(excel_data, SMTP_EMAIL, program_month, program_year, len(valid_programs))
-                    logger.info(f"[Async] Excel sent: {excel_sent}")
-                except Exception as excel_error:
-                    logger.error(f"[Async] Excel email error: {str(excel_error)}")
-
             # Auto-save programs
             saved_count = 0
             try:
@@ -904,6 +1026,7 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
 
             # SCI Lease extraction
             sci_lease_count = 0
+            sci_lease_data_for_excel = None
             if lease_start_page and lease_end_page:
                 try:
                     await db.extract_tasks.update_one(
@@ -995,8 +1118,23 @@ EXTRAIS ABSOLUMENT TOUS LES VÉHICULES. JSON valide uniquement."""
                             with open(sci_path, 'w', encoding='utf-8') as f:
                                 json.dump(sci_lease_rates, f, indent=2, ensure_ascii=False)
                             logger.info(f"[Async] SCI Lease saved: {sci_path} ({sci_lease_count} vehicles)")
+                            sci_lease_data_for_excel = sci_lease_rates
                 except Exception as lease_error:
                     logger.error(f"[Async] SCI Lease error: {str(lease_error)}")
+
+            # Generate Excel with BOTH sheets and send email (AFTER all extractions)
+            excel_sent = False
+            if EXCEL_AVAILABLE and valid_programs and SMTP_EMAIL:
+                try:
+                    await db.extract_tasks.update_one(
+                        {"task_id": task_id},
+                        {"$set": {"status": "sending_email", "message": "Génération Excel et envoi par email..."}}
+                    )
+                    excel_data = generate_excel_from_programs(valid_programs, program_month, program_year, sci_lease_data=sci_lease_data_for_excel)
+                    excel_sent = send_excel_email(excel_data, SMTP_EMAIL, program_month, program_year, len(valid_programs))
+                    logger.info(f"[Async] Excel sent (Programmes + SCI Lease): {excel_sent}")
+                except Exception as excel_error:
+                    logger.error(f"[Async] Excel email error: {str(excel_error)}")
 
             # Mark task as complete
             lease_msg = f" + {sci_lease_count} taux SCI Lease" if sci_lease_count > 0 else ""

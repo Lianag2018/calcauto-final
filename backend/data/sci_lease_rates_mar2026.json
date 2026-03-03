@@ -16,7 +16,7 @@
     {
       "model": "Grand Caravan SXT",
       "brand": "Chrysler",
-      "lease_cash": 0,
+      "lease_cash": 1000,
       "standard_rates": null,
       "alternative_rates": null
     },
@@ -192,13 +192,6 @@
       "model": "Grand Wagoneer / Grand Wagoneer L",
       "brand": "Jeep",
       "lease_cash": 9500,
-      "standard_rates": null,
-      "alternative_rates": null
-    },
-    {
-      "model": "Wagoneer S Limited & Premium (BEV)",
-      "brand": "Jeep",
-      "lease_cash": 8000,
       "standard_rates": null,
       "alternative_rates": null
     },
