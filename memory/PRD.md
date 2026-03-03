@@ -10,17 +10,19 @@ Application de gestion de financement et location automobile pour concessionnair
 - [x] Export/Import Excel avec comparaison avant/apres + matching flexible
 - [x] Memoire des corrections (P1) — matching flexible, compteur d'application
 - [x] Upload multiple PDFs + file d'attente revision
-- [x] Fix modal "Envoyer par email" — layout compact inline, boutons toujours visibles — 3 mars 2026
-- [x] Fix SMTP import manquant — email Excel jamais envoye — 3 mars 2026
-- [x] Extraction PDF asynchrone — upload immediat + traitement background + polling — 3 mars 2026
-- [x] Fix parser Excel import — supporte format avec en-tetes, $, %, - — 3 mars 2026
-- [x] Excel freeze_panes E4 (Programmes) + D4 (SCI Lease) — 3 mars 2026
-- [x] Import Excel cree les programmes manquants — 3 mars 2026
-- [x] Prompt AI standardise dans build_extraction_prompt() — structure FIGEE, incluant alt_consumer_cash — 3 mars 2026
-- [x] Excel 2 onglets: Programmes + SCI Lease — email inclut les deux — 3 mars 2026
-- [x] Modal detail offre CRM — comparaison complete ancien/nouveau deal avec table paiements 6 termes (36-96m), rabais, economie — 3 mars 2026
-- [x] Fix "Ouvrir le calcul" historique — restauration partielle pour anciennes soumissions sans calculator_state — 3 mars 2026
-- [x] Backend enrichi: compare-programs retourne payments_by_term pour tous les termes, Option 1 & 2 — 3 mars 2026
+- [x] Fix modal "Envoyer par email" — layout compact inline, boutons toujours visibles
+- [x] Fix SMTP import manquant — email Excel jamais envoye
+- [x] Extraction PDF asynchrone — upload immediat + traitement background + polling
+- [x] Fix parser Excel import — supporte format avec en-tetes, $, %, -
+- [x] Excel freeze_panes E4 (Programmes) + D4 (SCI Lease)
+- [x] Import Excel cree les programmes manquants
+- [x] Prompt AI standardise dans build_extraction_prompt() — structure FIGEE, incluant alt_consumer_cash
+- [x] Excel 2 onglets: Programmes + SCI Lease — email inclut les deux
+- [x] Modal detail offre CRM — comparaison complete ancien/nouveau deal avec table economies par terme
+- [x] Fix "Ouvrir le calcul" historique — restauration partielle pour anciennes soumissions
+- [x] **METHODE DELTA** pour comparaison offres — compare sur meme base (sans taxes/frais) puis applique delta au paiement reel. Evite les fausses economies — 3 mars 2026
+- [x] Fix $NaN dans l'en-tete du modal d'offre
+- [x] Table COMPARAISON PAR TERME — montre economies par terme (36-96m) avec taux, Option 1 et Option 2
 
 ## Standard Excel Structure (FIGEE)
 ### Onglet 1: Programmes
@@ -40,14 +42,15 @@ Application de gestion de financement et location automobile pour concessionnair
 - Async extraction: POST /api/extract-pdf-async + GET /api/extract-task/{task_id}
 - Prompt AI centralise dans build_extraction_prompt() - NEVER modify column structure
 
-## CRM Offer System
+## CRM Offer System — METHODE DELTA
 - POST /api/compare-programs: Compare anciennes soumissions vs programmes actuels
-  - Retourne payments_by_term pour 6 termes (36,48,60,72,84,96), Option 1 et Option 2
-  - Inclut old_selected_option, calculator_state, new_program_data
+  - **Methode delta**: Calcule old_theoretical et new_theoretical (meme base, sans taxes/frais)
+  - Delta = old_theoretical - new_theoretical (vraie economie)
+  - New estimated payment = old_actual_payment - delta
+  - Retourne payments_by_term avec opt1_delta et opt2_delta pour 6 termes
+  - Cherche l'ancien programme dans la DB pour obtenir old_consumer_cash/bonus_cash
 - GET /api/better-offers: Offres stockees en attente d'approbation
 - POST /api/better-offers/{id}/approve: Approuver et envoyer email au client
-- Modal detail: Ancien deal, Nouveau programme (rabais), Table comparaison 6 termes, Economie client
-- Historique: "Ouvrir le calcul" restaure le state partiellement meme sans calculator_state complet
 
 ## Backlog
 - (P1) Creer UI admin pour gestion des corrections sauvegardees

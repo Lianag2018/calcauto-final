@@ -71,9 +71,9 @@ interface ImportedContact {
 
 interface PaymentByTerm {
   opt1_rate: number;
-  opt1_payment: number;
+  opt1_delta: number;
   opt2_rate: number | null;
-  opt2_payment: number | null;
+  opt2_delta: number | null;
 }
 
 interface BetterOffer {
@@ -1159,7 +1159,7 @@ export default function ClientsScreen() {
               <Ionicons name="pricetag" size={22} color="#4ECDC4" style={{marginRight: 10}} />
               <View style={{flex: 1}}>
                 <Text style={{color: '#fff', fontSize: 16, fontWeight: 'bold'}}>{o.client_name}</Text>
-                <Text style={{color: '#888', fontSize: 13}}>{o.vehicle_brand} {o.vehicle_model} {o.vehicle_year} | {fmtCur(o.vehicle_price)}</Text>
+                <Text style={{color: '#888', fontSize: 13}}>{o.vehicle_brand} {o.vehicle_model} {o.vehicle_year}{o.vehicle_price > 0 ? ` | ${fmtCur(o.vehicle_price)}` : ''}</Text>
               </View>
               <TouchableOpacity onPress={() => setSelectedOffer(null)} style={{padding: 4}} data-testid="close-offer-modal">
                 <Ionicons name="close" size={22} color="#888" />
@@ -1253,19 +1253,27 @@ export default function ClientsScreen() {
                 {/* Payment comparison table for all terms */}
                 <View style={{backgroundColor: '#2d2d44', borderRadius: 10, overflow: 'hidden' as const, marginBottom: 10}}>
                   <Text style={{color: '#FFD93D', fontSize: 12, fontWeight: 'bold', padding: 10, paddingBottom: 6}}>
-                    {isFr ? 'COMPARAISON PAIEMENTS MENSUELS' : 'MONTHLY PAYMENT COMPARISON'}
+                    {isFr ? 'COMPARAISON PAR TERME' : 'COMPARISON BY TERM'}
                   </Text>
                   {/* Table header */}
                   <View style={{flexDirection: 'row' as const, backgroundColor: '#1a1a2e', paddingVertical: 6, paddingHorizontal: 10}}>
                     <Text style={{color: '#888', fontSize: 10, width: 42, fontWeight: 'bold'}}>{isFr ? 'Terme' : 'Term'}</Text>
-                    <Text style={{color: '#FF6B6B', fontSize: 10, flex: 1, textAlign: 'center' as const, fontWeight: 'bold'}}>{isFr ? 'Ancien' : 'Old'}</Text>
-                    <Text style={{color: '#4ECDC4', fontSize: 10, flex: 1, textAlign: 'center' as const, fontWeight: 'bold'}}>Opt.1</Text>
-                    {hasOpt2 && <Text style={{color: '#4ECDC4', fontSize: 10, flex: 1, textAlign: 'center' as const, fontWeight: 'bold'}}>Opt.2</Text>}
+                    <Text style={{color: '#4ECDC4', fontSize: 10, flex: 1, textAlign: 'center' as const, fontWeight: 'bold'}}>
+                      {isFr ? 'Economie Opt.1' : 'Savings Opt.1'}
+                    </Text>
+                    {hasOpt2 && <Text style={{color: '#4ECDC4', fontSize: 10, flex: 1, textAlign: 'center' as const, fontWeight: 'bold'}}>
+                      {isFr ? 'Economie Opt.2' : 'Savings Opt.2'}
+                    </Text>}
+                    <Text style={{color: '#888', fontSize: 10, width: 50, textAlign: 'center' as const, fontWeight: 'bold'}}>
+                      {isFr ? 'Taux' : 'Rate'}
+                    </Text>
                   </View>
                   {/* Table rows */}
                   {allTerms.map((t) => {
                     const termData = pbt[String(t)];
                     const isClientTerm = t === clientTerm;
+                    const o1Delta = termData?.opt1_delta ?? 0;
+                    const o2Delta = termData?.opt2_delta;
                     return (
                       <View key={t} style={{
                         flexDirection: 'row' as const, paddingVertical: 7, paddingHorizontal: 10,
@@ -1275,33 +1283,20 @@ export default function ClientsScreen() {
                         <Text style={{color: isClientTerm ? '#4ECDC4' : '#ccc', fontSize: 12, width: 42, fontWeight: isClientTerm ? 'bold' : 'normal'}}>
                           {t}m{isClientTerm ? ' *' : ''}
                         </Text>
-                        <Text style={{color: '#FF6B6B', fontSize: 12, flex: 1, textAlign: 'center' as const}}>
-                          {isClientTerm ? `${fmtCur(o.old_payment)}` : '-'}
-                        </Text>
-                        <Text style={{color: '#4ECDC4', fontSize: 12, flex: 1, textAlign: 'center' as const, fontWeight: isClientTerm ? 'bold' : 'normal'}}>
-                          {termData ? `${fmtCur(termData.opt1_payment)}` : '-'}
+                        <Text style={{color: o1Delta > 0 ? '#4ECDC4' : '#888', fontSize: 12, flex: 1, textAlign: 'center' as const, fontWeight: isClientTerm ? 'bold' : 'normal'}}>
+                          {o1Delta > 0 ? `-${fmtCur(o1Delta)}/m` : '-'}
                         </Text>
                         {hasOpt2 && (
-                          <Text style={{color: '#4ECDC4', fontSize: 12, flex: 1, textAlign: 'center' as const, fontWeight: isClientTerm ? 'bold' : 'normal'}}>
-                            {termData?.opt2_payment ? `${fmtCur(termData.opt2_payment)}` : '-'}
+                          <Text style={{color: (o2Delta ?? 0) > 0 ? '#4ECDC4' : '#888', fontSize: 12, flex: 1, textAlign: 'center' as const, fontWeight: isClientTerm ? 'bold' : 'normal'}}>
+                            {o2Delta != null && o2Delta > 0 ? `-${fmtCur(o2Delta)}/m` : '-'}
                           </Text>
                         )}
+                        <Text style={{color: '#888', fontSize: 11, width: 50, textAlign: 'center' as const}}>
+                          {termData?.opt1_rate ?? '-'}%
+                        </Text>
                       </View>
                     );
                   })}
-                  {/* Rate row */}
-                  <View style={{flexDirection: 'row' as const, paddingVertical: 6, paddingHorizontal: 10, backgroundColor: '#1a1a2e', borderTopWidth: 1, borderTopColor: '#3d3d54'}}>
-                    <Text style={{color: '#888', fontSize: 10, width: 42}}>{isFr ? 'Taux' : 'Rate'}</Text>
-                    <Text style={{color: '#FF6B6B', fontSize: 10, flex: 1, textAlign: 'center' as const}}>{o.old_rate}%</Text>
-                    <Text style={{color: '#4ECDC4', fontSize: 10, flex: 1, textAlign: 'center' as const}}>
-                      {pbt[String(clientTerm)]?.opt1_rate ?? o.new_rate}%
-                    </Text>
-                    {hasOpt2 && (
-                      <Text style={{color: '#4ECDC4', fontSize: 10, flex: 1, textAlign: 'center' as const}}>
-                        {pbt[String(clientTerm)]?.opt2_rate ?? '-'}%
-                      </Text>
-                    )}
-                  </View>
                 </View>
 
                 {/* Savings highlight */}
