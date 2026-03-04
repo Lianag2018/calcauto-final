@@ -219,7 +219,13 @@ Le PDF a souvent une colonne "Delivery Credit" (code 261Q02).
 - JEEP: Compass, Cherokee, Wrangler, Gladiator, Grand Cherokee, Grand Wagoneer
 - DODGE: Durango, Charger, Hornet
 - RAM: ProMaster, 1500, 2500, 3500, Chassis Cab
-- FIAT: 500e
+- FIAT: 500e (BEV) — IMPORTANT: le nom "FIAT" apparaît comme barre de couleur dans le PDF, le véhicule s'appelle "500e BEV". brand="Fiat", model="500e", trim="BEV"
+
+=== BONUS CASH ===
+La colonne "Bonus Cash" (jaune) a "TYPE OF SALE: 1, L or E" = pour TOUS les clients.
+- La Fiat 500e a typiquement un bonus cash de $5,000-$6,000 → EXTRAIRE le montant exact
+- D'autres véhicules comme certains Ram 1500 peuvent aussi avoir un bonus cash → EXTRAIRE
+- NE PAS confondre avec "Delivery Credit" (colonne rouge, 'E' Only) qui est ignoré
 
 === ANNÉES ===
 - "2026 MODELS" → year: 2026
