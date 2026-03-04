@@ -206,13 +206,17 @@ ATTENTION: BEAUCOUP de véhicules n'ont PAS d'Option 2 (Alternative Consumer Cas
 - Chaque ligne/véhicule doit être traitée INDIVIDUELLEMENT pour Option 2
 - En cas de DOUTE, mettre alt_consumer_cash = 0 et option2_rates = null
 
-=== BONUS CASH / DELIVERY CREDIT - RÈGLE CRITIQUE ===
-Le PDF a souvent une colonne "Delivery Credit" (code 261Q02).
-- Si la colonne est marquée "Type of Sale: 'E' Only" = c'est pour EMPLOYÉS seulement → bonus_cash = 0
-- MAIS certains véhicules ont un VRAI Bonus Cash (stackable, pour tous les clients) → EXTRAIRE le montant réel
-- Exemple: Fiat 500e peut avoir un Bonus Cash de $5,000 → bonus_cash = 5000
-- En cas de doute entre Delivery Credit et Bonus Cash, vérifier si c'est marqué 'E' Only
-- Si PAS marqué 'E' Only → c'est un vrai bonus cash, EXTRAIRE le montant
+=== BONUS CASH vs DELIVERY CREDIT — DEUX COLONNES DIFFÉRENTES ===
+Le PDF a DEUX colonnes séparées à droite:
+
+1. BONUS CASH (colonne jaune): bonus RÉEL pour tous les clients
+   → EXTRAIRE le montant dans le champ bonus_cash
+   → Exemple: Fiat 500e BEV a $5,000 de Bonus Cash
+   
+2. DELIVERY CREDIT (261Q03, dernière colonne, rouge): TYPE OF SALE 'E' Only = EMPLOYÉS SEULEMENT
+   → TOUJOURS IGNORER cette colonne, NE JAMAIS l'inclure dans bonus_cash
+   
+*** bonus_cash = montant du BONUS CASH (colonne jaune) UNIQUEMENT. JAMAIS le Delivery Credit ***
 
 === MARQUES À EXTRAIRE ===
 - CHRYSLER: Grand Caravan, Pacifica
