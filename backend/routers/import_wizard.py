@@ -172,71 +172,99 @@ router = APIRouter()
 # L'IA peut ajouter des lignes (nouveaux vehicules) mais NE DOIT JAMAIS modifier la structure.
 
 def build_extraction_prompt(pdf_text: str) -> str:
-    """Construit le prompt d'extraction standardise. Structure FIGEE: ne JAMAIS modifier les colonnes."""
-    return f"""EXTRAIS TOUS LES VÉHICULES de ce PDF de programmes de financement FCA Canada.
+    """
+    ╔══════════════════════════════════════════════════════════════╗
+    ║  PROMPT VERROUILLÉ — NE JAMAIS MODIFIER                    ║
+    ║  Structure figée pour extraction PDF FCA Canada QBC Retail  ║
+    ║  Même gabarit chaque mois. Mêmes règles. Mêmes colonnes.   ║
+    ╚══════════════════════════════════════════════════════════════╝
+    """
+    return f"""EXTRAIS TOUS LES VÉHICULES de ce PDF de programmes de financement FCA Canada QBC Retail.
 
 TEXTE COMPLET DU PDF:
 {pdf_text}
 
-=== STRUCTURE DU FICHIER EXCEL (FIGÉE - NE PAS MODIFIER) ===
-Le résultat sera converti en Excel avec EXACTEMENT cette structure:
+=== STRUCTURE EXCEL FIGÉE (IDENTIQUE CHAQUE MOIS) ===
 - Colonne A: Marque (brand)
 - Colonne B: Modèle (model)  
 - Colonne C: Version/Trim (trim)
 - Colonne D: Année (year)
-- Colonne E: Rabais Option 1 - Consumer Cash en $ (consumer_cash)
-- Colonnes F-K: Taux Option 1 - 36m, 48m, 60m, 72m, 84m, 96m (option1_rates)
-- Colonne L: Rabais Option 2 - Alternative Consumer Cash en $ (alt_consumer_cash)
-- Colonnes M-R: Taux Option 2 - 36m, 48m, 60m, 72m, 84m, 96m (option2_rates)
+- Colonne E: Rabais Option 1 — Consumer Cash en $ (consumer_cash)
+- Colonnes F-K: Taux Option 1 — 36m, 48m, 60m, 72m, 84m, 96m (option1_rates)
+- Colonne L: Rabais Option 2 — Alternative Consumer Cash en $ (alt_consumer_cash)
+- Colonnes M-R: Taux Option 2 — 36m, 48m, 60m, 72m, 84m, 96m (option2_rates)
 - Colonne S: Bonus Cash en $ (bonus_cash)
 
-=== FORMAT DES LIGNES DU PDF ===
-Chaque ligne suit ce format:
-VÉHICULE [Consumer Cash $X,XXX] [6 taux Option1] [Alternative Consumer Cash $X,XXX] [6 taux Option2] [Delivery Credit]
+=== STRUCTURE DU PDF FCA (TOUJOURS LE MÊME GABARIT) ===
+Le PDF a TOUJOURS cette structure de colonnes de GAUCHE à DROITE:
+1. Nom du véhicule (sous la barre de couleur de la marque)
+2. Consumer Cash ($) — Rabais Option 1
+3. 6 colonnes de taux Option 1: 36M, 48M, 60M, 72M, 84M, 96M
+4. Alternative Consumer Cash ($) — Rabais Option 2 (souvent vide)
+5. 6 colonnes de taux Option 2: 36M, 48M, 60M, 72M, 84M, 96M (souvent "- - - - - -")
+6. Bonus Cash ($) — colonne jaune, pour TOUS les clients
+7. Delivery Credit ($) — dernière colonne rouge — TOUJOURS IGNORER
 
-- Si tu vois "- - - - - -" = option non disponible (null)
-- Si tu vois "P" avant un montant = c'est quand même le montant
-- 6 taux = 36M, 48M, 60M, 72M, 84M, 96M
+=== RÈGLES DE LECTURE (FIGÉES) ===
+- "- - - - - -" ou colonnes vides = option non disponible → null
+- "P" ou "P$X,XXX" avant un montant = le montant est valide, extraire le chiffre
+- 6 taux = toujours dans l'ordre 36M, 48M, 60M, 72M, 84M, 96M
+- La marque apparaît comme BARRE DE COULEUR à gauche (ex: barre verte = FIAT, barre rouge = DODGE)
+- Chaque ligne SOUS la barre = un véhicule de cette marque
 
-=== OPTION 2 - RÈGLE CRITIQUE ===
-ATTENTION: BEAUCOUP de véhicules n'ont PAS d'Option 2 (Alternative Consumer Cash Finance Rates).
-- Les colonnes Option 2 dans le PDF sont SOUVENT VIDES (pas de chiffres, pas de tirets)
-- Si les colonnes Option 2 d'un véhicule sont VIDES → alt_consumer_cash = 0 et option2_rates = null
-- NE PAS inventer ou copier des taux/rabais Option 2 d'un autre véhicule
-- Chaque ligne/véhicule doit être traitée INDIVIDUELLEMENT pour Option 2
-- En cas de DOUTE, mettre alt_consumer_cash = 0 et option2_rates = null
+=== OPTION 2 — RÈGLES ===
+- BEAUCOUP de véhicules n'ont PAS d'Option 2
+- Colonnes Option 2 VIDES → alt_consumer_cash = 0, option2_rates = null
+- NE PAS inventer ou copier des taux d'un autre véhicule
+- Chaque véhicule traité INDIVIDUELLEMENT
 
-=== BONUS CASH vs DELIVERY CREDIT — DEUX COLONNES DIFFÉRENTES ===
-Le PDF a DEUX colonnes séparées à droite:
-
-1. BONUS CASH (colonne jaune): bonus RÉEL pour tous les clients
-   → EXTRAIRE le montant dans le champ bonus_cash
-   → Exemple: Fiat 500e BEV a $5,000 de Bonus Cash
+=== BONUS CASH vs DELIVERY CREDIT — DEUX COLONNES DISTINCTES ===
+1. BONUS CASH (colonne jaune) = bonus RÉEL pour TOUS les clients (TYPE OF SALE: 1, L or E)
+   → EXTRAIRE le montant exact dans bonus_cash
    
-2. DELIVERY CREDIT (261Q03, dernière colonne, rouge): TYPE OF SALE 'E' Only = EMPLOYÉS SEULEMENT
-   → TOUJOURS IGNORER cette colonne, NE JAMAIS l'inclure dans bonus_cash
-   
-*** bonus_cash = montant du BONUS CASH (colonne jaune) UNIQUEMENT. JAMAIS le Delivery Credit ***
+2. DELIVERY CREDIT (dernière colonne, rouge, 261Q03) = 'E' Only = EMPLOYÉS SEULEMENT
+   → TOUJOURS IGNORER. NE JAMAIS mettre dans bonus_cash.
 
-=== MARQUES À EXTRAIRE ===
-- CHRYSLER: Grand Caravan, Pacifica
-- JEEP: Compass, Cherokee, Wrangler, Gladiator, Grand Cherokee, Grand Wagoneer
-- DODGE: Durango, Charger, Hornet
-- RAM: ProMaster, 1500, 2500, 3500, Chassis Cab
-- FIAT: 500e (BEV) — IMPORTANT: le nom "FIAT" apparaît comme barre de couleur dans le PDF, le véhicule s'appelle "500e BEV". brand="Fiat", model="500e", trim="BEV"
+*** bonus_cash = UNIQUEMENT la colonne jaune "Bonus Cash". JAMAIS le Delivery Credit ***
 
-=== BONUS CASH ===
-La colonne "Bonus Cash" (jaune) a "TYPE OF SALE: 1, L or E" = pour TOUS les clients.
-- La Fiat 500e a typiquement un bonus cash de $5,000-$6,000 → EXTRAIRE le montant exact
-- D'autres véhicules comme certains Ram 1500 peuvent aussi avoir un bonus cash → EXTRAIRE
-- NE PAS confondre avec "Delivery Credit" (colonne rouge, 'E' Only) qui est ignoré
+=== CODES PROGRAMMES FCA — VÉHICULES À EXTRAIRE ===
+Voici la liste COMPLÈTE des véhicules FCA. Chaque véhicule du PDF DOIT correspondre à un de ces modèles:
 
-=== ANNÉES ===
+CHRYSLER:
+- Grand Caravan (CVP, SXT, etc.)
+- Pacifica (Select, Limited, Pinnacle, Select PHEV)
+
+DODGE:
+- Charger (base, GT, Scat Pack)
+- Durango (base, GT, R/T)
+- Hornet (base, R/T, GT Plus)
+
+FIAT:
+- 500e BEV (brand="Fiat", model="500e", trim="BEV")
+  ATTENTION: "FIAT" apparaît comme barre de couleur, la ligne dit juste "500e BEV"
+
+JEEP:
+- Compass (Sport, North, Altitude, Limited, Trailhawk)
+- Cherokee (base, Limited, Overland)
+- Wrangler (Sport, Willys, Sahara, Rubicon, 4Xe)
+- Gladiator (Sport, Mojave, Rubicon)
+- Grand Cherokee (Limited, Overland, Summit, 4Xe, L variants)
+- Grand Wagoneer (base, Series I, L, Summit)
+- Wagoneer (base, Series I, S, L)
+
+RAM:
+- 1500 (Tradesman, Big Horn, Sport, Rebel, Laramie, Limited, Tungsten, RHO)
+- 2500 (Tradesman, Big Horn, Rebel, Laramie, Limited)
+- 3500 (Tradesman, Big Horn, Laramie, Limited)
+- ProMaster Cargo Van (Low Roof, High Roof, Super High Roof, divers WB)
+- Chassis Cab (4500, 5500)
+
+=== SECTIONS DU PDF ===
 - "2026 MODELS" → year: 2026
 - "2025 MODELS" → year: 2025
-Extrais les véhicules des DEUX sections!
+EXTRAIS les véhicules des DEUX sections!
 
-=== JSON REQUIS (Structure FIGÉE) ===
+=== JSON REQUIS ===
 {{{{
     "programs": [
         {{{{
@@ -249,16 +277,31 @@ Extrais les véhicules des DEUX sections!
             "bonus_cash": 0,
             "option1_rates": {{{{"rate_36": 4.99, "rate_48": 4.99, "rate_60": 4.99, "rate_72": 4.99, "rate_84": 4.99, "rate_96": 4.99}}}},
             "option2_rates": null
+        }}}},
+        {{{{
+            "brand": "Fiat",
+            "model": "500e",
+            "trim": "BEV",
+            "year": 2025,
+            "consumer_cash": 0,
+            "alt_consumer_cash": 0,
+            "bonus_cash": 5000,
+            "option1_rates": {{{{"rate_36": 4.99, "rate_48": 4.99, "rate_60": 4.99, "rate_72": 4.99, "rate_84": 4.99, "rate_96": 4.99}}}},
+            "option2_rates": {{{{"rate_36": 0.00, "rate_48": 0.00, "rate_60": 1.99, "rate_72": 2.99, "rate_84": 3.99, "rate_96": 4.99}}}}
         }}}}
     ]
 }}}}
 
-RÈGLES FINALES:
-- EXTRAIS ABSOLUMENT TOUS LES VÉHICULES DES SECTIONS 2026 ET 2025
-- bonus_cash = le montant réel si c'est un vrai Bonus Cash (pas 'E' Only). Sinon 0
-- consumer_cash = Rabais Option 1 (colonne E)
-- alt_consumer_cash = Rabais Option 2 / Alternative Consumer Cash (colonne L). Si pas d'Option 2 → 0
-- CHAQUE ligne du PDF = 1 entrée dans le JSON"""
+=== VÉRIFICATION FINALE (CHECKLIST) ===
+Avant de retourner le JSON, vérifie:
+[ ] TOUS les véhicules des sections 2026 ET 2025 sont inclus
+[ ] La Fiat 500e BEV est présente (souvent oubliée car dernière marque)
+[ ] bonus_cash = montant de la colonne jaune (PAS le Delivery Credit rouge)
+[ ] Delivery Credit = IGNORÉ (colonne rouge, 'E' Only)
+[ ] Option 2: si vide dans le PDF → null (ne pas inventer)
+[ ] consumer_cash et alt_consumer_cash corrects par véhicule
+[ ] 6 taux par option (36, 48, 60, 72, 84, 96)
+[ ] Chaque brand correspond à la barre de couleur du PDF"""
 
 
 
