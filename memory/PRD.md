@@ -1,53 +1,76 @@
-# CalcAuto AiPro - PRD
+# CalcAuto AiPro - PRD (Product Requirements Document)
 
 ## Problem Statement
-Application de gestion de financement et location automobile pour concessionnaires FCA/Stellantis Canada (Quebec).
+Application CRM pour concessionnaire automobile Stellantis/FCA Canada. Calculateur de financement véhicules, gestion des clients, et importation automatique des programmes d'incitatifs mensuels depuis les PDFs Stellantis.
 
-## Completed Features
-- [x] Calcul financement Option 1/2 avec alternative_consumer_cash
-- [x] Calcul location SCI — moteur refactore (leaseCalculator.ts) + backend /api/sci/calculate-lease
-- [x] Import PDF via IA (GPT-4o) avec auto-correction
-- [x] Export/Import Excel avec comparaison avant/apres + matching flexible
-- [x] Memoire des corrections (P1) — matching flexible, compteur d'application
-- [x] Upload multiple PDFs + file d'attente revision
-- [x] Fix modal "Envoyer par email" — layout compact inline, boutons toujours visibles
-- [x] Fix SMTP import manquant — email Excel jamais envoye
-- [x] Extraction PDF asynchrone — upload immediat + traitement background + polling
-- [x] Fix parser Excel import — supporte format avec en-tetes, $, %, -
-- [x] Excel freeze_panes E4 (Programmes) + D4 (SCI Lease)
-- [x] Import Excel cree les programmes manquants
-- [x] Prompt AI standardise dans build_extraction_prompt() — structure FIGEE, incluant alt_consumer_cash
-- [x] Excel 2 onglets: Programmes + SCI Lease — email inclut les deux
-- [x] Modal detail offre CRM — comparaison complete avec METHODE DELTA (vraies economies)
-- [x] Fix "Ouvrir le calcul" historique — restauration partielle pour anciennes soumissions
-- [x] **FIX PERMANENT: Endpoints SCI dynamiques** — `_get_latest_data_file()` trouve le fichier le plus recent — 3 mars 2026
-- [x] **FIX PERMANENT: Merge taux SCI** — `_merge_previous_sci_rates()` copie les taux du mois precedent lors d'une nouvelle extraction — 3 mars 2026
+## Architecture
+- **Frontend**: React Native (Expo) 
+- **Backend**: FastAPI (Python)
+- **Database**: MongoDB + fichiers JSON versionnés (données mensuelles)
+- **PDF Parsing**: pdfplumber (déterministe, ZERO IA)
 
-## Standard Excel Structure (FIGEE)
-### Onglet 1: Programmes
-- Row 1: Titre | Row 2: Categories | Row 3: Colonnes | Row 4+: Donnees
-- A:Marque B:Modele C:Trim D:Annee | E:Rabais Opt1 F-K:Taux Opt1 | L:Rabais Opt2 M-R:Taux Opt2 | S:Bonus
-- Freeze: E4
+## Core Features
+- CRM client avec historique des offres
+- Calculateur de financement (Option 1/Option 2, Bonus Cash, taxes)
+- Inventaire véhicules avec VIN decoder
+- Importation automatique des programmes FCA depuis PDF
+- Export Excel et envoi par email
+- Panneau admin avec gestion des corrections
 
-### Onglet 2: SCI Lease
-- Row 1: Titre | Row 2: Categories | Row 3: Colonnes | Row 4+: Donnees
-- A:Marque B:Modele | C:Lease Cash | D-L:Standard Rates(24-60m) | M-U:Alt Rates(24-60m)
-- Freeze: D4
+## Data Model
+- **Programs**: MongoDB `programs` collection (brand, model, trim, year, consumer_cash, option1_rates, option2_rates, bonus_cash)
+- **SCI Lease**: Fichiers JSON versionnés `sci_lease_rates_{month}{year}.json`
+- **Key Incentives**: Fichiers JSON `key_incentives_{month}{year}.json`
+- **Residuals**: Fichiers JSON `sci_residual_values_{month}{year}.json`
 
-## Architecture Notes
-- Frontend: Expo/React Native Web, pre-built to /app/frontend/dist
-- Backend: FastAPI on port 8001
-- Frontend rebuild: npx expo export --platform web + supervisorctl restart expo
-- **SCI dynamique**: `_get_latest_data_file(prefix)` dans sci.py scanne data/ par mois/annee
-- **SCI merge**: `_merge_previous_sci_rates()` dans import_wizard.py copie les taux du mois precedent quand une nouvelle extraction cree un fichier avec taux vides
+## What's Been Implemented
 
-## CRM Offer System — METHODE DELTA
-- Compare sur meme base (sans taxes/frais) pour eviter fausses economies
-- Delta = old_theoretical - new_theoretical
-- New estimated payment = old_actual_payment - delta
+### Completed (March 6, 2026)
+- [x] **P0 - Parser pdfplumber déterministe** (TERMINÉ - 18/18 tests passent)
+  - `parse_retail_programs()`: 81 programmes Finance Prime (34 x 2026 + 47 x 2025)
+  - `parse_sci_lease()`: 74 véhicules SCI Lease (29 x 2026 + 45 x 2025)
+  - `parse_key_incentives()`: 13 entrées Go-to-Market summary
+  - Détection marques inversées (RELSYRHC → Chrysler, PEEJ → Jeep, etc.)
+  - Bonus Cash correctement identifié et extrait
+  - Colonne Delivery Credit ignorée
+  - Intégré dans `import_wizard.py` (sync + async endpoints)
+  - OpenAI/GPT-4o entièrement supprimé du flux d'extraction
+  - Modèles Pydantic mis à jour (FinancingRates Optional, VehicleProgram.option1_rates Optional)
 
-## Backlog
-- (P1) Creer UI admin pour gestion des corrections sauvegardees
-- (P2) Refactorer index.tsx (3600+ lignes)
-- (P2) Refactorer inventory.tsx
-- (P2) Refactorer clients.tsx
+### Previously Completed
+- [x] SCI Lease Data Pipeline (dynamique + historique via ?month=&year=)
+- [x] Data Carry-over (copie taux du mois précédent)
+- [x] Offer Savings Calculation (méthode delta)
+- [x] CRM Offer Modal & History Tab
+- [x] Data Versioning by Filename
+
+## Prioritized Backlog
+
+### P1 - UI Gestion des Corrections
+- Interface admin pour gérer les corrections de programmes
+- Backend APIs `/api/corrections` existent déjà
+
+### P2 - Refactoring Frontend
+- Refactorer `index.tsx` (composant monolithique)
+- Refactorer `inventory.tsx` (composant monolithique)
+- Refactorer `clients.tsx` (composant monolithique)
+
+## Key API Endpoints
+- `POST /api/extract-pdf-async` - Extraction PDF async (pdfplumber)
+- `GET /api/extract-task/{task_id}` - Poll task status
+- `POST /api/extract-pdf` - Extraction PDF sync (pdfplumber)
+- `GET /api/programs` - Liste des programmes
+- `GET /api/sci/lease-rates` - Taux SCI Lease
+- `POST /api/sci/import-rates` - Import taux SCI
+- `POST /api/programs/import-excel` - Import Excel corrections
+
+## Key Files
+- `/app/backend/services/pdfplumber_parser.py` - Parser déterministe (NOUVEAU)
+- `/app/backend/routers/import_wizard.py` - Workflow d'importation
+- `/app/backend/routers/sci.py` - Endpoints SCI Lease
+- `/app/backend/routers/programs.py` - CRUD programmes
+- `/app/backend/models.py` - Modèles Pydantic
+
+## Credentials
+- Admin: `Liana2018`
+- User: `danielgiroux007@gmail.com` / `Liana2018$`
