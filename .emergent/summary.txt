@@ -1,158 +1,521 @@
 <analysis>**original_problem_statement:**
-The user's primary goals are to enhance their CRM and data management workflow for their car dealership application.
-1.  **Enhance Offer Management:** The user wants a detailed view for each Offer in the CRM. When an offer is clicked, it should open a modal showing a full comparison between the original deal and a new deal based on current programs. This view must include details like trade-in value, balance due, and the final savings for the customer. This is to allow for detailed verification before sending a new offer.
-2.  **Fix History Tab:** The History tab currently shows an error (données complètes non disponibles) when trying to open a past calculation. This needs to be fixed so that past deals can be reviewed.
-3.  **Standardize Data Extraction:** The user wants to ensure that the structure of the Excel file generated from PDF uploads is permanently fixed and consistent every month. The AI extraction process must not alter the column structure (A-D for vehicle info, E/L/S for rebates) or the 3-line header.
-4.  **Complete Data in Excel Export:** The exported Excel file should contain *all* extracted data, including both sales programs and SCI Lease rates, each in a separate tab.
+The user wants to enhance their car dealership CRM application. The initial requests were to implement a detailed offer comparison view, fix a bug in the History tab, and stabilize the data extraction from monthly Stellantis PDF files.
+
+The project's direction has since evolved significantly. The user, frustrated with the unreliability and cost of the AI-based (GPT-4o Vision) PDF extraction, has provided a detailed technical specification to **replace it entirely with a deterministic parser using the usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing. Python library**. This new parser must be fast, accurate, and produce consistent results every month, while preserving the existing user workflow (page selection, email with Excel attachment, correction import).
 
 **PRODUCT REQUIREMENTS:**
-*   **(P0) Implement Offer Detail View & Recalculation:** Create a workflow where clicking an offer in the CRM opens a detailed modal. This modal must recalculate the offer using new programs and display a clear comparison of the old vs. new deal, including trade-in, balance, and savings.
-*   **(P0) Fix Open Calculation in History:** Resolve the bug that prevents viewing past calculations from the history tab by ensuring all necessary data is saved and retrieved.
-*   **(P1) Stabilize Excel Export Structure:** Lock the AI prompt and generation logic to produce a consistent, standardized Excel file format every time, with frozen panes as specified.
-*   **(P1) Include SCI Lease Data in Excel Export:** Ensure the automated email sent after PDF extraction contains an Excel file with two tabs: one for Programs and one for SCI Lease.
+*   **(P0) Replace AI Extraction with Deterministic Parser:** Implement a new backend service using usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing. to extract vehicle financing and lease programs from the source PDF. This parser must be robust, handle the specific table structure of the PDF, correctly map all data fields (including distinguishing Bonus Cash from Delivery Credit), and be integrated into the existing asynchronous import flow.
+*   **(P1) Ensure Historical Data Integrity:** All data (programs, lease rates, residuals) must be stored in versioned monthly files (e.g., , ). The system must prevent accidental overwriting of past months' data and allow for historical lookups.
+*   **(P2) UI for Correction Management:** Implement a frontend interface in the admin panel to manage program corrections.
 
 **User's preferred language**: French. The next agent MUST respond in French.
 
 **what currently exists?**
-The application's data pipeline has been significantly overhauled. The PDF extraction process is now an asynchronous background job to prevent Vercel timeouts, with the frontend polling for real-time status updates. The critical bug preventing email delivery of the extracted Excel file has been fixed. The AI prompt for data extraction has been standardized into a single, robust function to ensure a consistent output structure, and the Excel generation now correctly includes two tabs (Programs and SCI Lease) with frozen panes as requested. The Excel import parser has also been rewritten to handle this new, complex format and can now create new vehicle programs, not just update existing ones.
+The application is a full-stack React/FastAPI/MongoDB solution. Key features include a CRM, a vehicle financing calculator, and an admin panel for data imports.
 
-The previous P0 issue, a recurring UI bug with the Send Email modal being too tall, has been definitively resolved using a more robust layout strategy.
+The previous AI-based extraction workflow has been heavily modified and is now being replaced. Several critical bugs have been resolved in this session:
+1.  **SCI Lease Data Pipeline:** The backend was hardcoded to use February 2026 data. This has been fixed. The system now dynamically loads the latest monthly data file and supports historical data access via API parameters (). Data imports now correctly target the specified month, preventing data corruption.
+2.  **Data Continuity:** A new mechanism automatically copies rates from the previous month when a new month's PDF is extracted, preventing the empty rates issue.
+3.  **Offer Savings Calculation:** A bug that artificially inflated customer savings in the CRM has been fixed by implementing a  comparison method in the backend.
+4.  **CRM Features:** The Offer Detail modal and the History tab's Open Calculation feature are now complete and functional.
 
-The current focus is on a major feature enhancement for the CRM. The agent has identified that the core issue behind the non-functional Offers and History tabs is that past submissions were not saving the complete  (trade-in, balance, accessories, etc.). While new submissions now save this data correctly, the UI and backend logic to utilize it for detailed offer comparison are still under construction.
+The agent has begun implementing the user's request to switch to a deterministic parser by installing usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing. and successfully using its  function to inspect the structure of the PDF data.
 
 **Last working item**:
-*   **Last item agent was working:** Implementing a comprehensive Offer Management System in the CRM (). The goal is to allow the user to click on an offer, view a detailed modal comparing the old deal with a new one based on current financing programs, and see the potential savings before sending an updated quote. This involves fixing data persistence and building new UI components.
+*   **Last item agent was working:** Replacing the AI/OCR-based PDF extraction pipeline with a deterministic one using the usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing. library, as per explicit user instructions.
 *   **Status:** IN PROGRESS
 *   **Agent Testing Done:** N
-*   **Which testing method agent to use?** Frontend testing agent. This is a complex user flow that involves state management, modal interactions, and API calls to a modified backend endpoint. The agent should be instructed to test the full journey: login -> navigate to CRM -> select a client -> view offers -> click an offer -> verify the detail modal appears with correct comparison data (original vs. new program) -> close the modal.
+*   **Which testing method agent to use?** Backend testing agent. The agent must verify the entire data extraction flow: upload a PDF -> poll for task completion -> inspect the generated Excel file emailed to the user. The test must confirm that all vehicle programs are extracted with 100% accuracy, Bonus Cash is correctly identified, and the Delivery Credit column is completely ignored.
 *   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-*   **Issue 1: Open Calculation in History Tab is Broken (P0)**
-    *   **Description:** When the user clicks Ouvrir le calcul on a submission in the Historique tab, it fails with a données complètes non disponibles error.
-    *   **Attempted fixes:** The agent identified the root cause: past submissions in the MongoDB  collection have  because the full calculator state was not being saved.
-    *   **Next debug checklist:**
-        1.  The fix for this is directly tied to the In progress Task. As part of saving the full  for all *new* submissions, the logic for retrieving and re-hydrating the calculator from this state needs to be implemented.
-        2.  When a user clicks Ouvrir le calcul, the app should fetch the  object, check if  exists, and if so, use its contents to populate the main calculator view ().
-    *   **Why fix this issue and what will be achieved with the fix?** This is a core feature for the user to review and resume work on past deals. Fixing it restores essential CRM functionality.
-    *   **Status:** IN PROGRESS
-    *   **Is recurring issue?** N
-    *   **Should Test frontend/backend/both after fix?** Frontend
-    *   **Blocked on other issue:** This is part of the main In progress Task List item.
+*   There are no pending bugs. The focus is entirely on the task below.
 
 **In progress Task List**:
-*   **Task 1: Implement Full-Fledged Offer Management System (P0)**
-    *   **Description:** The user requested a 3-step implementation to make the CRM Offers tab useful.
-        1.  **Fix Data Saving:** Ensure the full calculator state is saved with every submission. (Agent verified this now works for *new* submissions).
-        2.  **Enrich Offer Generation:** Enhance the  endpoint to accept a full  object (with ) and return a detailed comparison against new programs. (Agent started modifications in ).
-        3.  **Create Offer Detail UI:** Build a modal in  that appears when an offer is clicked, showing the detailed comparison. (Agent started this implementation, adding state and ).
-    *   **Where to resume:** Continue the implementation in . The agent had added the  state and was in the process of wrapping the offer cards in  and adding the  component to the render tree. The next step is to fully build out the 's JSX and styling, and ensure it's correctly populated with data from the  state.
-    *   **What will be achieved with this?** The user will be able to efficiently review, compare, and send updated offers to clients, which is a critical business workflow.
+*   **Task 1: Build and Integrate usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing. Parser (P0)**
+    *   **Description:** The primary task is to build the new deterministic parser. The agent has already confirmed that usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing. can successfully extract the tables from the PDF. The next step is to write the Python code to process this raw table data (a list of lists) and map it to the application's data models. This new parser must be integrated into the  file, completely replacing the calls to the AI model.
+    *   **Where to resume:** Resume by creating the new parsing logic. The agent has already explored the output of  and has a clear view of the data structure. The new code should iterate through the rows, identify vehicle models, parse the different rate options, extract the Bonus Cash, and construct the  objects. This logic should then replace the  function's AI-related parts.
+    *   **What will be achieved with this?** A fast, reliable, zero-cost, and deterministic PDF extraction process that eliminates the user's primary source of frustration and errors.
     *   **Status:** IN PROGRESS
-    *   **Should Test frontend/backend/both after fix?** Both
+    *   **Should Test frontend/backend/both after fix?** Backend
     *   **Blocked on something:** None
 
 **Upcoming and Future Tasks**
 *   **Upcoming Tasks:**
-    *   **(P1) Create UI for Correction Management:** Implement a frontend interface in the admin panel to interact with the existing backend APIs () for viewing and deleting saved program corrections.
+    *   (P1) Create UI for Correction Management: Implement a frontend interface in the admin panel to interact with the existing backend APIs ().
 *   **Future Tasks:**
-    *   **(P2) Refactor :** This file remains very large and would benefit from being broken down into smaller, more focused components.
-    *   **(P2) Refactor :** This file should also be decomposed into smaller components.
-    *   **(P2) Refactor :** This file is growing in complexity with the addition of the offer detail modal and should be considered for refactoring.
+    *   (P2) Refactor large frontend components: , , and .
 
 **Completed work in this session**
-- **Send Email Modal Layout Bug (RESOLVED):** The recurring P0 bug where the modal buttons were off-screen was fixed by rebuilding the frontend and implementing a robust layout using inline styles and the  API.
-- **PDF Extraction & Email Workflow (OVERHAULED):**
-    - **Asynchronous Processing:** Re-architected PDF extraction into a background job () with frontend polling to prevent Vercel timeouts.
-    - **Email Bug Fix:** Corrected a  that silently prevented emails from being sent by adding missing SMTP variable imports in .
-    - **Excel Parser Rewrite:** The Excel import parser () was completely overhauled to support a new format with multiple headers and formatted values. It can now also create new programs from the Excel file.
-    - **Standardized AI & Excel Format:** The AI extraction prompt and Excel generation logic were centralized and hardened to produce a consistent, two-tab ( and ) Excel file with the correct frozen panes, ensuring data structure stability.
+- **AI-based Extraction Abandoned:** The user mandated a complete shift away from the unstable and costly AI/OCR PDF extraction.
+- **SCI Lease Data Workflow Overhaul (RESOLVED):**
+    - Fixed hardcoded  file paths, enabling dynamic loading of the latest monthly data.
+    - Added historical data access via  API parameters.
+    - Secured data integrity by ensuring imports target specific months.
+    - Implemented automatic carry-over of rates to new monthly files.
+- **Offer Savings Calculation (RESOLVED):** Fixed a major bug in the CRM where savings were miscalculated; a correct  method is now used.
+- **Bonus Cash Extraction (RESOLVED):** Fixed the AI prompt that ignored Bonus Cash and implemented a pre-processing step to strip the confusing Delivery Credit column, though this is now superseded by the move to usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing..
+- **CRM Offer Modal & History Tab (COMPLETED):** The offer detail view and the Open Calculation fix are complete.
 
 **Earlier issues found/mentioned but not fixed**
 *   None.
 
 **Known issue recurrence from previous fork**
-*   **Send Email Modal Layout Bug:** This issue recurred from the previous fork but was definitively resolved in this session.
-*   **Recurrence count:** 1
-*   **Status:** RESOLVED
+*   None.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-*   **Asynchronous Task Processing:** Using  for long-running background jobs (PDF extraction) to avoid HTTP timeouts, coupled with frontend polling to display progress.
-*   **Robust Data Parsing:** Advanced  usage to parse complex Excel files with multiple header rows and formatted data strings (, , ).
-*   **AI Prompt Engineering:** Centralizing an AI prompt into a single reusable function () to enforce a strict, stable JSON output structure.
-*   **Data-Driven UI Development:** Building a new feature () that depends on enriching existing data models ( with ) and API endpoints ().
-*   **React Native Layout:** Using the  API and inline styles as a robust solution for creating responsive modal layouts when standard  approaches fail.
+*   **Deterministic PDF Parsing:** The new core strategy. Using  to read structured data directly from the PDF's text layer, avoiding unreliable OCR/AI.
+*   **Data Versioning by Filename:** Storing monthly data in separate files (e.g., ) and using filename parsing to manage versions, select the latest data, and access history.
+*   **Data Carry-over:** A function that copies data from the last available month to a newly created monthly file to ensure continuity and prevent empty data states.
 
 **key DB schema**
-*   ** collection:** The schema includes a  field. The current task revolves around ensuring this field is always populated with a dictionary containing the full calculator state (trade-in, balance, accessories, etc.) upon submission, and then using this data to power the History and Offers tabs.
-*   ** (in-memory dict):** A new, non-persistent in-memory dictionary was introduced on the backend to track the status of asynchronous extraction tasks.
+*   **File-based Database:** The primary program and SCI data is no longer in MongoDB but in versioned JSON files within the  directory.
+*   ** (MongoDB):** This collection still holds user calculation history, including the full .
 
 **All files of reference**
-*   : **Primary file for the current task.** Contains the UI for the Offers tab and is where the new detail modal is being implemented.
-*   : **Primary backend file for the current task.** Contains the  endpoint that needs to be finalized.
-*   : Defines the Pydantic models, including , which is central to the current task.
-*   : Contains the main calculator, which is the source of the  data that needs to be saved and restored.
-*   : Contains the now-stable async extraction, email, and Excel generation logic.
+*   : **The primary file for the current task.** The AI extraction logic within this file must be replaced with the new usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing. parser.
+*   : A temporary script used by the agent to experiment with usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing.. The logic from here can be adapted for the final implementation.
 
 **Areas that need refactoring**:
-*   : Remains a very large monolithic component.
-*   : Also a candidate for being broken down.
-*   : The addition of the offer detail modal and its logic is increasing its complexity, making it a future candidate for refactoring.
+*   , ,  remain large monolithic components and are candidates for future cleanup.
 
 **key api endpoints**
-*   : **(IN PROGRESS)** Being modified to accept a full submission object and return detailed comparison data for the new Offer Detail modal.
-*   : **(WORKING)** The endpoint that saves submissions. It now correctly receives and stores the full  for new submissions.
-*   : **(NEW & COMPLETED)** Asynchronous endpoint for PDF extraction.
-*   : **(NEW & COMPLETED)** Endpoint for polling the status of a background extraction task.
-*   : **(ENHANCED & COMPLETED)** The completely rewritten Excel import endpoint.
+*   : The asynchronous endpoint for PDF processing. This is the main endpoint being modified.
+*    & : These endpoints now dynamically serve the latest data and accept  for historical lookups.
+*    & : These endpoints now correctly target specific monthly files.
 
 **Critical Info for New Agent**
-1.  **Parlez Français:** All user communication MUST be in French.
-2.  **Focus on the CRM Feature:** The sole priority is to complete the 3-step offer management feature requested by the user. This is a large task involving both frontend () and backend ().
-3.  **Resume in :** The implementation was paused while building the UI for the . Pick up from there. You need to build the modal view and ensure it correctly displays the comparison data returned from the enhanced  endpoint.
-4.  **Data is Key:** The entire feature hinges on correctly saving, retrieving, and using the  JSON object within the  collection. Old submissions lack this data, but all new ones should have it. The feature should gracefully handle both cases (e.g., show fewer details for older offers).
+1.  **Parlez Français:** You MUST communicate with the user in French.
+2.  **The usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing. Mandate:** The user's top and only priority is to replace the AI-based PDF extraction with a deterministic parser using usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing.. Do not suggest using AI or OCR. Follow the user's technical directive precisely.
+3.  **Resume Implementation:** The agent has already validated that  works. Your task is to write the Python logic that processes the output of this function into structured  objects and integrate it into .
+4.  **Maintain Workflow:** The user-facing experience must not change. The flow of selecting pages, uploading, and receiving an Excel file via email must be preserved. Only the backend engine is changing.
+5.  **Data Integrity:** The architecture for versioned monthly data files is critical. Ensure your new implementation respects this and correctly reads from and writes to the appropriate monthly files.
 
 **documents and test reports created in this job**
-*    (Updated)
+*   
+*   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **user:** fais les trois étapes (Do the three steps) - User explicitly approved the agent's 3-step plan to fix the CRM. **(This is the current task)**
-2.  **agent:** Explained that no past submissions have the full data () and laid out the 3-step plan: 1. Fix saving, 2. Enrich offers, 3. Create detail view.
-3.  **user:** as tu stocker sur mongo pour les comparer dans le future dit moi (have you stored in mongo to compare them in the future tell me) - Asked if the full data is being saved for future comparisons.
-4.  **user:** et dans historique ca doisoas faire ca (and in history it should do that) - Pointed out the error in the History tab with a screenshot.
-5.  **user:** Described the desired workflow for the Offers tab: click an offer -> see details -> compare with new programs -> see savings -> send.
-6.  **user:** Sent email about SCI Lease rates not being included in the automated Excel email. (Completed)
-7.  **user:** Demanded that the AI-driven Excel structure be fixed and standardized permanently. (Completed)
-8.  **user:** Reported that the Excel import was crashing when uploading a corrected file. (Completed)
-9.  **user:** Requested that the frozen panes in the generated Excel file be set to . (Completed)
-10. **user:** je veux pas une solution rapide je veux que ça marche (I don't want a quick fix, I want it to work) - Rejected the agent's suggestion of a workaround for Vercel timeouts, demanding a permanent solution. (Completed, led to async implementation).
+The user's recent messages show a clear and decisive shift in strategy:
+1.  **Concern about data corruption:** The user expressed strong concern when they realized the old import logic was corrupting historical data by overwriting the February file with March data.
+2.  **Demand for historical accuracy:** The user stated that an accurate history is essential for a CRM and the current system was unacceptable.
+3.  **Provided a new technical plan:** The user sent a long, detailed message outlining a new, deterministic approach using the usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing. library to replace the unreliable AI/OCR extraction.
+4.  **Confirmed the plan:** The user agreed with the agent's summary of the new plan, emphasizing that the user-facing workflow must remain unchanged.
+5.  **Gave go-ahead:** The user has repeatedly prompted the agent to continue with the implementation of the new usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing. parser.
 
 **Project Health Check:**
-*   **Broken:**
-    *   The CRM's Offers tab lacks a detail view, making it difficult to use.
-    *   The CRM's History tab's Open Calculation feature is non-functional due to missing historical data.
+*   **Broken:** The core PDF extraction mechanism is considered broken by the user due to its unreliability and is actively being replaced.
 *   **Mocked:** None
 
 **3rd Party Integrations**
-*   **openpyxl:** Used for creating and parsing complex Excel files.
-*   **html2canvas:** Used for generating quote screenshots.
-*   **Google Cloud Vision:** Used for OCR on scanned documents.
-*   **OpenAI GPT-4o:** Used for structuring extracted text. The prompt is now standardized.
-*   **PyMuPDF (fitz):** Used for PDF parsing.
-*   **react-beautiful-dnd:** Used for drag-and-drop UI.
+*   **usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing.:** Newly added library and central to the current task. It is replacing Google Cloud Vision and OpenAI GPT-4o.
+*   **:** Used for creating and parsing Excel files.
+*   **:** Used for initial PDF page handling.
 
 **Testing status**
-*   **Testing agent used after significant changes:** NO (for the current in-progress CRM feature).
+*   **Testing agent used after significant changes:** YES (for a previous feature).
 *   **Troubleshoot agent used after agent stuck in loop:** NO
-*   **Test files created:** None
-*   **Known regressions:** None in this session.
+*   **Test files created:** []
+*   **Known regressions:** None.
 
 **Credentials to test flow:**
 *   **User Login:**  / 
 *   **Admin Password (for saving in admin panel):** 
 
 **What agent forgot to execute**
-*   Nothing was forgotten. The agent was in the middle of a large, user-directed feature implementation when the session ended.</analysis>
+*   Nothing. The agent is in the middle of executing a new, high-priority task directly requested and specified by the user.</analysis>

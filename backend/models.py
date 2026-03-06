@@ -8,12 +8,12 @@ import uuid
 
 class FinancingRates(BaseModel):
     """Taux de financement pour chaque terme (36-96 mois)"""
-    rate_36: float
-    rate_48: float
-    rate_60: float
-    rate_72: float
-    rate_84: float
-    rate_96: float
+    rate_36: Optional[float] = None
+    rate_48: Optional[float] = None
+    rate_60: Optional[float] = None
+    rate_72: Optional[float] = None
+    rate_84: Optional[float] = None
+    rate_96: Optional[float] = None
 
 class VehicleProgram(BaseModel):
     """
@@ -58,7 +58,7 @@ class VehicleProgramCreate(BaseModel):
     year: int
     consumer_cash: float = 0
     alternative_consumer_cash: float = 0
-    option1_rates: FinancingRates
+    option1_rates: Optional[FinancingRates] = None
     option2_rates: Optional[FinancingRates] = None
     bonus_cash: float = 0
     program_month: Optional[int] = None

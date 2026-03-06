@@ -717,379 +717,115 @@ async def extract_pdf(
     lease_end_page: Optional[int] = Form(None)
 ):
     """
-    Extrait les données de financement d'un PDF via OpenAI GPT-4
-    Retourne les programmes pour prévisualisation/modification avant sauvegarde
-    
-    start_page/end_page = pages Retail
-    lease_start_page/lease_end_page = pages SCI Lease (optionnel)
-    (indexation commence à 1)
+    Extrait les données de financement d'un PDF via pdfplumber (déterministe).
+    Retourne les programmes pour prévisualisation/modification avant sauvegarde.
     """
     if password != ADMIN_PASSWORD:
         raise HTTPException(status_code=401, detail="Mot de passe incorrect")
-    
-    if not OPENAI_API_KEY:
-        raise HTTPException(status_code=500, detail="Clé OpenAI non configurée")
-    
+
     try:
-        import tempfile
-        import os as os_module
-        import base64
-        from openai import OpenAI
-        import PyPDF2
-        
-        # Save uploaded PDF temporarily
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-            content = await file.read()
-            tmp_file.write(content)
-            tmp_path = tmp_file.name
-        
+        from services.pdfplumber_parser import parse_retail_programs, parse_sci_lease, parse_key_incentives
+
+        pdf_content = await file.read()
+
+        # Parse retail programs
+        valid_programs = parse_retail_programs(pdf_content, start_page, end_page)
+        logger.info(f"[Sync] pdfplumber extracted {len(valid_programs)} retail programs")
+
+        # Auto-save programs
+        excel_sent = False
+        saved_count = 0
         try:
-            # Extract text ONLY from specified pages using PyPDF2
-            pdf_text = ""
-            with open(tmp_path, 'rb') as pdf_file:
-                reader = PyPDF2.PdfReader(pdf_file)
-                total_pages = len(reader.pages)
-                
-                # Convert to 0-based index and validate range
-                start_idx = max(0, start_page - 1)  # Convert 1-based to 0-based
-                end_idx = min(total_pages, end_page)  # Keep as-is (exclusive end)
-                
-                logger.info(f"PDF has {total_pages} pages. Extracting pages {start_page} to {end_page} (indices {start_idx} to {end_idx})")
-                
-                # Only extract the specified pages
-                for page_num in range(start_idx, end_idx):
-                    page = reader.pages[page_num]
-                    page_text = page.extract_text()
-                    pdf_text += f"\n--- PAGE {page_num + 1} ---\n{page_text}\n"
-                
-                logger.info(f"Extracted {end_idx - start_idx} pages, total text length: {len(pdf_text)} characters")
-            
-            # SUPPRIMER la colonne Delivery Credit AVANT envoi à l'IA
-            pdf_text = _strip_delivery_credit(pdf_text)
-            logger.info(f"After stripping Delivery Credit: {len(pdf_text)} characters")
-            
-            # Use OpenAI to extract structured data
-            client = OpenAI(api_key=OPENAI_API_KEY)
-            
-            extraction_prompt = build_extraction_prompt(pdf_text)
-
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": "Tu extrais TOUS les véhicules d'un PDF FCA Canada. CHAQUE ligne = 1 entrée. N'oublie AUCUN véhicule. Sections 2026 ET 2025. JSON valide uniquement."},
-                    {"role": "user", "content": extraction_prompt}
-                ],
-                temperature=0.1,
-                max_tokens=16000,
-                response_format={"type": "json_object"}
-            )
-            
-            response_text = response.choices[0].message.content.strip()
-            
-            # Clean up response (remove markdown code blocks if present)
-            if response_text.startswith("```"):
-                lines = response_text.split("\n")
-                response_text = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
-                response_text = response_text.strip()
-            if response_text.endswith("```"):
-                response_text = response_text[:-3].strip()
-            
-            # Clean common JSON issues
-            response_text = response_text.replace('\n', ' ').replace('\r', '')
-            response_text = re.sub(r',\s*}', '}', response_text)  # Remove trailing commas
-            response_text = re.sub(r',\s*]', ']', response_text)  # Remove trailing commas in arrays
-            
-            try:
-                data = json.loads(response_text)
-                programs = data.get("programs", [])
-            except json.JSONDecodeError as e:
-                # Try to fix common issues and retry
-                try:
-                    # Find the programs array and try to parse it
-                    programs_match = re.search(r'"programs"\s*:\s*\[(.*)\]', response_text, re.DOTALL)
-                    if programs_match:
-                        programs_str = programs_match.group(1)
-                        # Try to parse individual objects
-                        programs = []
-                        obj_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
-                        for obj_match in re.finditer(obj_pattern, programs_str):
-                            try:
-                                obj = json.loads(obj_match.group())
-                                programs.append(obj)
-                            except:
-                                continue
-                        if programs:
-                            data = {"programs": programs}
-                        else:
-                            raise e
-                    else:
-                        raise e
-                except:
-                    return ExtractedDataResponse(
-                        success=False,
-                        message=f"Erreur de parsing JSON: {str(e)}",
-                        programs=[],
-                        raw_text=response_text[:3000]
-                    )
-            
-            # Validate and clean programs
-            valid_programs = []
-            for p in programs:
-                # Ensure required fields exist
-                if 'brand' in p and 'model' in p:
-                    # Clean up rates
-                    if p.get('option1_rates') and isinstance(p['option1_rates'], dict):
-                        for key in ['rate_36', 'rate_48', 'rate_60', 'rate_72', 'rate_84', 'rate_96']:
-                            if key not in p['option1_rates']:
-                                p['option1_rates'][key] = 4.99
-                    
-                    # Validate Option 2 rates - remove if suspicious
-                    if p.get('option2_rates') and isinstance(p['option2_rates'], dict):
-                        opt2 = p['option2_rates']
-                        # Check if all Option 2 rates are 0 or missing -> likely should be null
-                        rate_values = [opt2.get(f'rate_{t}', 0) for t in [36, 48, 60, 72, 84, 96]]
-                        all_zero_or_missing = all(v == 0 or v is None for v in rate_values)
-                        
-                        if all_zero_or_missing:
-                            # All rates are 0 = no real Option 2
-                            p['option2_rates'] = None
-                            logger.info(f"[Import] Removed empty option2_rates for {p.get('brand')} {p.get('model')} {p.get('trim','')}")
-                        else:
-                            for key in ['rate_36', 'rate_48', 'rate_60', 'rate_72', 'rate_84', 'rate_96']:
-                                if key not in opt2:
-                                    opt2[key] = 0
-                    
-                    valid_programs.append(p)
-            
-            # Generate Excel AFTER SCI Lease extraction (deferred below)
-            excel_sent = False
-            
-            # AUTO-SAVE: Sauvegarder automatiquement les programmes dans la base de données
-            saved_count = 0
-            try:
-                # D'abord, supprimer les anciens programmes de la même période
-                delete_result = await db.programs.delete_many({
+            await db.programs.delete_many({"program_month": program_month, "program_year": program_year})
+            for prog in valid_programs:
+                opt1 = prog.get("option1_rates")
+                if opt1 is None or not isinstance(opt1, dict):
+                    opt1 = {"rate_36": None, "rate_48": None, "rate_60": None,
+                            "rate_72": None, "rate_84": None, "rate_96": None}
+                program_doc = {
+                    "id": str(uuid.uuid4()),
+                    "brand": prog.get("brand", ""),
+                    "model": prog.get("model", ""),
+                    "trim": prog.get("trim", ""),
+                    "year": prog.get("year", program_year),
+                    "consumer_cash": prog.get("consumer_cash", 0) or 0,
+                    "bonus_cash": prog.get("bonus_cash", 0) or 0,
+                    "alt_consumer_cash": prog.get("alt_consumer_cash", 0) or 0,
+                    "option1_rates": opt1,
+                    "option2_rates": prog.get("option2_rates"),
                     "program_month": program_month,
-                    "program_year": program_year
-                })
-                logger.info(f"Deleted {delete_result.deleted_count} old programs for {program_month}/{program_year}")
-                
-                # Taux par défaut (4.99% standard)
-                default_rates = {
-                    "rate_36": 4.99, "rate_48": 4.99, "rate_60": 4.99,
-                    "rate_72": 4.99, "rate_84": 4.99, "rate_96": 4.99
+                    "program_year": program_year,
+                    "created_at": datetime.utcnow().isoformat()
                 }
-                
-                # Ensuite, ajouter les nouveaux programmes
-                for prog in valid_programs:
-                    # S'assurer que option1_rates n'est pas None
-                    opt1 = prog.get("option1_rates")
-                    if opt1 is None or not isinstance(opt1, dict):
-                        opt1 = default_rates.copy()
-                    
-                    program_doc = {
-                        "id": str(uuid.uuid4()),
-                        "brand": prog.get("brand", ""),
-                        "model": prog.get("model", ""),
-                        "trim": prog.get("trim", ""),
-                        "year": prog.get("year", program_year),
-                        "consumer_cash": prog.get("consumer_cash", 0) or 0,
-                        "bonus_cash": prog.get("bonus_cash", 0) or 0,
-                        "alt_consumer_cash": prog.get("alt_consumer_cash", 0) or 0,
-                        "option1_rates": opt1,
-                        "option2_rates": prog.get("option2_rates"),
-                        "program_month": program_month,
-                        "program_year": program_year,
-                        "created_at": datetime.utcnow().isoformat()
+                await db.programs.insert_one(program_doc)
+                saved_count += 1
+            logger.info(f"[Sync] Auto-saved {saved_count} programs")
+        except Exception as save_error:
+            logger.error(f"[Sync] Save error: {str(save_error)}")
+
+        # SCI Lease extraction
+        sci_lease_count = 0
+        sci_data_for_excel = None
+        if lease_start_page and lease_end_page:
+            try:
+                lease_data = parse_sci_lease(pdf_content, lease_start_page, lease_end_page)
+                vehicles_2026 = lease_data.get("vehicles_2026", [])
+                vehicles_2025 = lease_data.get("vehicles_2025", [])
+                sci_lease_count = len(vehicles_2026) + len(vehicles_2025)
+
+                if sci_lease_count > 0:
+                    _merge_previous_sci_rates(vehicles_2026, vehicles_2025, program_month, program_year)
+                    month_names_local = ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+                                       "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+                    en_month_abbrev = ["", "jan", "feb", "mar", "apr", "may", "jun",
+                                      "jul", "aug", "sep", "oct", "nov", "dec"]
+                    sci_lease_rates = {
+                        "program_period": f"{month_names_local[program_month]} {program_year}",
+                        "source": "FCA Canada QBC Retail Lease Incentive Program",
+                        "terms": [24, 27, 36, 39, 42, 48, 51, 54, 60],
+                        "vehicles_2026": vehicles_2026,
+                        "vehicles_2025": vehicles_2025
                     }
-                    await db.programs.insert_one(program_doc)
-                    saved_count += 1
-                
-                logger.info(f"Auto-saved {saved_count} programs for {program_month}/{program_year}")
-            except Exception as save_error:
-                logger.error(f"Error auto-saving programs: {str(save_error)}")
-            
-            # ============ SCI LEASE RATES EXTRACTION ============
-            sci_lease_count = 0
-            if lease_start_page and lease_end_page:
-                try:
-                    # Extract text from SCI Lease pages
-                    lease_text = ""
-                    with open(tmp_path, 'rb') as pdf_file:
-                        reader = PyPDF2.PdfReader(pdf_file)
-                        total_pages = len(reader.pages)
-                        lease_start_idx = max(0, lease_start_page - 1)
-                        lease_end_idx = min(total_pages, lease_end_page)
-                        
-                        logger.info(f"Extracting SCI Lease pages {lease_start_page} to {lease_end_page}")
-                        
-                        for page_num in range(lease_start_idx, lease_end_idx):
-                            page = reader.pages[page_num]
-                            page_text = page.extract_text()
-                            lease_text += f"\n--- PAGE {page_num + 1} ---\n{page_text}\n"
-                        
-                        logger.info(f"SCI Lease: Extracted {lease_end_idx - lease_start_idx} pages, {len(lease_text)} chars")
-                    
-                    if lease_text.strip():
-                        # Use GPT-4o to extract SCI Lease rates
-                        lease_extraction_prompt = f"""EXTRAIS TOUS les véhicules et leurs taux de LOCATION SCI (SCI Lease) de ce PDF.
+                    sci_filename = f"sci_lease_rates_{en_month_abbrev[program_month]}{program_year}.json"
+                    sci_path = ROOT_DIR / "data" / sci_filename
+                    with open(sci_path, 'w', encoding='utf-8') as f:
+                        json.dump(sci_lease_rates, f, indent=2, ensure_ascii=False)
+                    logger.info(f"[Sync] SCI Lease saved: {sci_path} ({sci_lease_count} vehicles)")
+                    sci_data_for_excel = sci_lease_rates
+            except Exception as lease_error:
+                logger.error(f"[Sync] SCI Lease error: {str(lease_error)}")
 
-TEXTE DU PDF (pages SCI Lease):
-{lease_text}
+        # Key Incentives
+        try:
+            key_incentives = parse_key_incentives(pdf_content)
+            if key_incentives:
+                en_month_abbrev = ["", "jan", "feb", "mar", "apr", "may", "jun",
+                                  "jul", "aug", "sep", "oct", "nov", "dec"]
+                ki_path = ROOT_DIR / "data" / f"key_incentives_{en_month_abbrev[program_month]}{program_year}.json"
+                with open(ki_path, 'w', encoding='utf-8') as f:
+                    json.dump(key_incentives, f, indent=2, ensure_ascii=False)
+        except Exception as ki_error:
+            logger.error(f"[Sync] Key incentives error: {str(ki_error)}")
 
-=== CONTEXTE ===
-Ce sont les programmes de LOCATION (lease) SCI Lease Corp pour concessionnaires FCA Canada.
-Chaque véhicule peut avoir:
-- Un "Standard Rate" (taux standard SCI, stackable avec Lease Cash seulement)
-- Un "Alternative Rate" (taux alternatif, stackable avec Alternative Lease Cash)
-- Un "Lease Cash" (rabais avant taxes pour la location)
-- Un "Bonus Cash" / "Alt Lease Cash" (rabais supplémentaire)
+        # Generate Excel and send email
+        if EXCEL_AVAILABLE and valid_programs and SMTP_EMAIL:
+            try:
+                excel_data = generate_excel_from_programs(valid_programs, program_month, program_year, sci_lease_data=sci_data_for_excel)
+                excel_sent = send_excel_email(excel_data, SMTP_EMAIL, program_month, program_year, len(valid_programs))
+            except Exception as excel_error:
+                logger.error(f"[Sync] Excel email error: {str(excel_error)}")
 
-Les termes de location sont: 24, 27, 36, 39, 42, 48, 51, 54, 60 mois.
+        lease_msg = f" + {sci_lease_count} taux SCI Lease" if sci_lease_count > 0 else ""
+        return ExtractedDataResponse(
+            success=True,
+            message=f"Extrait et sauvegardé {len(valid_programs)} programmes{lease_msg}" + (" - Excel envoyé par email!" if excel_sent else ""),
+            programs=valid_programs,
+            raw_text="",
+            sci_lease_count=sci_lease_count
+        )
 
-=== IMPORTANT ===
-- Si un taux montre "- -" ou est vide = null (pas disponible)
-- Si "Standard Rate" n'est pas disponible, standard_rates = null
-- Si "Alternative Rate" n'est pas disponible, alternative_rates = null
-- Le Lease Cash peut varier par véhicule ($0, $3500, $7500, $10000, etc.)
-- SÉPARER les véhicules 2026 et 2025
-
-=== MARQUES À EXTRAIRE ===
-- CHRYSLER: Grand Caravan, Pacifica
-- JEEP: Compass, Cherokee, Wrangler, Gladiator, Grand Cherokee, Grand Wagoneer
-- DODGE: Durango, Charger, Hornet
-- RAM: ProMaster, 1500, 2500, 3500
-- FIAT: 500e
-
-=== JSON REQUIS ===
-{{
-    "vehicles_2026": [
-        {{
-            "model": "Grand Caravan SXT",
-            "brand": "Chrysler",
-            "lease_cash": 0,
-            "standard_rates": null,
-            "alternative_rates": {{"24": 4.99, "27": 4.99, "36": 5.49, "39": 5.49, "42": 5.49, "48": 6.49, "51": 6.49, "54": 6.49, "60": 6.99}}
-        }}
-    ],
-    "vehicles_2025": [
-        {{
-            "model": "Compass North",
-            "brand": "Jeep",
-            "lease_cash": 7500,
-            "standard_rates": {{"24": 8.79, "27": 8.79, "36": 8.29, "39": 8.29, "42": 8.29, "48": 8.29, "51": 8.29, "54": 8.29, "60": 8.29}},
-            "alternative_rates": {{"24": 1.99, "27": 1.99, "36": 1.99, "39": 1.99, "42": 1.99, "48": 1.99, "51": 1.99, "54": 1.99, "60": 1.99}}
-        }}
-    ]
-}}
-
-EXTRAIS ABSOLUMENT TOUS LES VÉHICULES. JSON valide uniquement."""
-
-                        lease_response = client.chat.completions.create(
-                            model="gpt-4o",
-                            messages=[
-                                {"role": "system", "content": "Tu extrais les taux de location SCI Lease d'un PDF FCA Canada. CHAQUE véhicule = 1 entrée. N'oublie AUCUN véhicule. JSON valide uniquement."},
-                                {"role": "user", "content": lease_extraction_prompt}
-                            ],
-                            temperature=0.1,
-                            max_tokens=16000,
-                            response_format={"type": "json_object"}
-                        )
-                        
-                        lease_response_text = lease_response.choices[0].message.content.strip()
-                        
-                        # Clean up response
-                        if lease_response_text.startswith("```"):
-                            lines = lease_response_text.split("\n")
-                            lease_response_text = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
-                            lease_response_text = lease_response_text.strip()
-                        if lease_response_text.endswith("```"):
-                            lease_response_text = lease_response_text[:-3].strip()
-                        
-                        lease_response_text = lease_response_text.replace('\n', ' ').replace('\r', '')
-                        lease_response_text = re.sub(r',\s*}', '}', lease_response_text)
-                        lease_response_text = re.sub(r',\s*]', ']', lease_response_text)
-                        
-                        lease_data = json.loads(lease_response_text)
-                        
-                        vehicles_2026 = lease_data.get("vehicles_2026", [])
-                        vehicles_2025 = lease_data.get("vehicles_2025", [])
-                        sci_lease_count = len(vehicles_2026) + len(vehicles_2025)
-                        
-                        if sci_lease_count > 0:
-                            # Merge rates from previous month
-                            _merge_previous_sci_rates(vehicles_2026, vehicles_2025, program_month, program_year)
-                            
-                            # Build the SCI lease rates JSON
-                            month_names_local = ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-                                           "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
-                            
-                            sci_lease_rates = {
-                                "program_period": f"{month_names_local[program_month]} {program_year}",
-                                "source": "FCA Canada QBC Retail Lease Incentive Program",
-                                "terms": [24, 27, 36, 39, 42, 48, 51, 54, 60],
-                                "notes": {
-                                    "standard_rates": "SCI Standard Rate - Stackable with Lease Cash only (Type of Sale L)",
-                                    "alternative_rates": "SCI Alternative Rate - Stackable with Alternative Lease Cash (Type of Sale L)",
-                                    "lease_cash": "Before Tax discount - reduce selling price",
-                                    "bonus_cash": "After Tax discount - shown as line item on Bill of Sale",
-                                    "dealer_reserve": "$200 flat fee from SCI Lease Corp per funded lease deal"
-                                },
-                                "vehicles_2026": vehicles_2026,
-                                "vehicles_2025": vehicles_2025
-                            }
-                            
-                            # Save to JSON file
-                            # Use English month abbreviations for file naming consistency
-                            en_month_abbrev = ["", "jan", "feb", "mar", "apr", "may", "jun",
-                                              "jul", "aug", "sep", "oct", "nov", "dec"]
-                            sci_filename = f"sci_lease_rates_{en_month_abbrev[program_month]}{program_year}.json"
-                            sci_path = ROOT_DIR / "data" / sci_filename
-                            
-                            with open(sci_path, 'w', encoding='utf-8') as f:
-                                json.dump(sci_lease_rates, f, indent=2, ensure_ascii=False)
-                            
-                            logger.info(f"SCI Lease rates saved: {sci_path} ({sci_lease_count} vehicles)")
-                            
-                            # Also update the standard reference file used by the app
-                            ref_path = ROOT_DIR / "data" / f"sci_lease_rates_{en_month_abbrev[program_month]}{program_year}.json"
-                            if sci_path != ref_path:
-                                import shutil
-                                shutil.copy2(sci_path, ref_path)
-                                logger.info(f"Updated reference file: {ref_path}")
-                        
-                except json.JSONDecodeError as je:
-                    logger.error(f"SCI Lease JSON parse error: {str(je)}")
-                except Exception as lease_error:
-                    logger.error(f"Error extracting SCI Lease rates: {str(lease_error)}")
-            
-            # Generate Excel with BOTH sheets (Programmes + SCI Lease) and send by email
-            sci_data_for_excel = None
-            if sci_lease_count > 0:
-                sci_data_for_excel = sci_lease_rates
-            if EXCEL_AVAILABLE and valid_programs and SMTP_EMAIL:
-                try:
-                    excel_data = generate_excel_from_programs(valid_programs, program_month, program_year, sci_lease_data=sci_data_for_excel)
-                    excel_sent = send_excel_email(excel_data, SMTP_EMAIL, program_month, program_year, len(valid_programs))
-                    logger.info(f"Excel generated and sent (with SCI Lease): {excel_sent}")
-                except Exception as excel_error:
-                    logger.error(f"Error generating/sending Excel: {str(excel_error)}")
-
-            lease_msg = f" + {sci_lease_count} taux SCI Lease" if sci_lease_count > 0 else ""
-            return ExtractedDataResponse(
-                success=True,
-                message=f"Extrait et sauvegardé {len(valid_programs)} programmes{lease_msg}" + (" - Excel envoyé par email!" if excel_sent else ""),
-                programs=valid_programs,
-                raw_text="",
-                sci_lease_count=sci_lease_count
-            )
-            
-        finally:
-            # Clean up temp file
-            os_module.unlink(tmp_path)
-            
     except Exception as e:
-        logger.error(f"Error extracting PDF: {str(e)}")
+        logger.error(f"[Sync] Error extracting PDF: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erreur d'extraction: {str(e)}")
 
 # ============ Async PDF Extraction (for environments with short timeouts) ============
@@ -1098,259 +834,133 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
                                 program_month: int, program_year: int,
                                 start_page: int, end_page: int,
                                 lease_start_page: Optional[int], lease_end_page: Optional[int]):
-    """Background task: extracts PDF, saves programs, sends email, updates task status in MongoDB."""
+    """Background task: extracts PDF using pdfplumber (deterministic), saves programs, sends email."""
     try:
+        from services.pdfplumber_parser import parse_retail_programs, parse_sci_lease, parse_key_incentives
+
+        # ── Step 1: Parse retail programs ──
         await db.extract_tasks.update_one(
             {"task_id": task_id},
-            {"$set": {"status": "extracting", "message": "Extraction du texte PDF..."}}
+            {"$set": {"status": "extracting", "message": "Extraction des programmes (pdfplumber)..."}}
         )
-        
-        import tempfile
-        import os as os_module
-        import base64
-        from openai import OpenAI
-        import PyPDF2
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-            tmp_file.write(pdf_content)
-            tmp_path = tmp_file.name
+        valid_programs = parse_retail_programs(pdf_content, start_page, end_page)
+        logger.info(f"[Async] pdfplumber extracted {len(valid_programs)} retail programs")
 
+        await db.extract_tasks.update_one(
+            {"task_id": task_id},
+            {"$set": {"status": "saving", "message": f"{len(valid_programs)} programmes extraits. Sauvegarde..."}}
+        )
+
+        # ── Step 2: Save programs to MongoDB ──
+        saved_count = 0
         try:
-            # Extract text from specified pages
-            pdf_text = ""
-            with open(tmp_path, 'rb') as pdf_file:
-                reader = PyPDF2.PdfReader(pdf_file)
-                total_pages = len(reader.pages)
-                start_idx = max(0, start_page - 1)
-                end_idx = min(total_pages, end_page)
-                for page_num in range(start_idx, end_idx):
-                    page = reader.pages[page_num]
-                    page_text = page.extract_text()
-                    pdf_text += f"\n--- PAGE {page_num + 1} ---\n{page_text}\n"
-                logger.info(f"[Async] Extracted {end_idx - start_idx} pages, {len(pdf_text)} chars")
+            await db.programs.delete_many({"program_month": program_month, "program_year": program_year})
+            for prog in valid_programs:
+                opt1 = prog.get("option1_rates")
+                if opt1 is None or not isinstance(opt1, dict):
+                    opt1 = {"rate_36": None, "rate_48": None, "rate_60": None,
+                            "rate_72": None, "rate_84": None, "rate_96": None}
+                program_doc = {
+                    "id": str(uuid.uuid4()),
+                    "brand": prog.get("brand", ""),
+                    "model": prog.get("model", ""),
+                    "trim": prog.get("trim", ""),
+                    "year": prog.get("year", program_year),
+                    "consumer_cash": prog.get("consumer_cash", 0) or 0,
+                    "bonus_cash": prog.get("bonus_cash", 0) or 0,
+                    "alt_consumer_cash": prog.get("alt_consumer_cash", 0) or 0,
+                    "option1_rates": opt1,
+                    "option2_rates": prog.get("option2_rates"),
+                    "program_month": program_month,
+                    "program_year": program_year,
+                    "created_at": datetime.utcnow().isoformat()
+                }
+                await db.programs.insert_one(program_doc)
+                saved_count += 1
+            logger.info(f"[Async] Saved {saved_count} programs")
+        except Exception as save_error:
+            logger.error(f"[Async] Save error: {str(save_error)}")
 
-            # SUPPRIMER la colonne Delivery Credit AVANT envoi à l'IA
-            pdf_text = _strip_delivery_credit(pdf_text)
-            logger.info(f"[Async] After stripping Delivery Credit: {len(pdf_text)} chars")
-
-            await db.extract_tasks.update_one(
-                {"task_id": task_id},
-                {"$set": {"status": "ai_processing", "message": "Analyse IA en cours (programmes)..."}}
-            )
-
-            # Use OpenAI to extract structured data (standardized prompt)
-            client = OpenAI(api_key=OPENAI_API_KEY)
-            extraction_prompt = build_extraction_prompt(pdf_text)
-
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": "Tu extrais TOUS les véhicules d'un PDF FCA Canada. CHAQUE ligne = 1 entrée. N'oublie AUCUN véhicule. Sections 2026 ET 2025. JSON valide uniquement."},
-                    {"role": "user", "content": extraction_prompt}
-                ],
-                temperature=0.1,
-                max_tokens=16000,
-                response_format={"type": "json_object"}
-            )
-
-            response_text = response.choices[0].message.content.strip()
-            if response_text.startswith("```"):
-                lines = response_text.split("\n")
-                response_text = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
-                response_text = response_text.strip()
-            if response_text.endswith("```"):
-                response_text = response_text[:-3].strip()
-            response_text = response_text.replace('\n', ' ').replace('\r', '')
-            response_text = re.sub(r',\s*}', '}', response_text)
-            response_text = re.sub(r',\s*]', ']', response_text)
-
-            data = json.loads(response_text)
-            programs = data.get("programs", [])
-
-            # Validate and clean programs
-            valid_programs = []
-            for p in programs:
-                if 'brand' in p and 'model' in p:
-                    if p.get('option1_rates') and isinstance(p['option1_rates'], dict):
-                        for key in ['rate_36', 'rate_48', 'rate_60', 'rate_72', 'rate_84', 'rate_96']:
-                            if key not in p['option1_rates']:
-                                p['option1_rates'][key] = 4.99
-                    if p.get('option2_rates') and isinstance(p['option2_rates'], dict):
-                        opt2 = p['option2_rates']
-                        rate_values = [opt2.get(f'rate_{t}', 0) for t in [36, 48, 60, 72, 84, 96]]
-                        if all(v == 0 or v is None for v in rate_values):
-                            p['option2_rates'] = None
-                        else:
-                            for key in ['rate_36', 'rate_48', 'rate_60', 'rate_72', 'rate_84', 'rate_96']:
-                                if key not in opt2:
-                                    opt2[key] = 0
-                    valid_programs.append(p)
-
-            await db.extract_tasks.update_one(
-                {"task_id": task_id},
-                {"$set": {"status": "saving", "message": f"{len(valid_programs)} programmes extraits. Sauvegarde..."}}
-            )
-
-            # Auto-save programs
-            saved_count = 0
+        # ── Step 3: Parse SCI Lease ──
+        sci_lease_count = 0
+        sci_lease_data_for_excel = None
+        if lease_start_page and lease_end_page:
             try:
-                await db.programs.delete_many({"program_month": program_month, "program_year": program_year})
-                default_rates = {"rate_36": 4.99, "rate_48": 4.99, "rate_60": 4.99, "rate_72": 4.99, "rate_84": 4.99, "rate_96": 4.99}
-                for prog in valid_programs:
-                    opt1 = prog.get("option1_rates")
-                    if opt1 is None or not isinstance(opt1, dict):
-                        opt1 = default_rates.copy()
-                    program_doc = {
-                        "id": str(uuid.uuid4()),
-                        "brand": prog.get("brand", ""),
-                        "model": prog.get("model", ""),
-                        "trim": prog.get("trim", ""),
-                        "year": prog.get("year", program_year),
-                        "consumer_cash": prog.get("consumer_cash", 0) or 0,
-                        "bonus_cash": prog.get("bonus_cash", 0) or 0,
-                        "alt_consumer_cash": prog.get("alt_consumer_cash", 0) or 0,
-                        "option1_rates": opt1,
-                        "option2_rates": prog.get("option2_rates"),
-                        "program_month": program_month,
-                        "program_year": program_year,
-                        "created_at": datetime.utcnow().isoformat()
+                await db.extract_tasks.update_one(
+                    {"task_id": task_id},
+                    {"$set": {"status": "extracting_lease", "message": "Extraction SCI Lease (pdfplumber)..."}}
+                )
+
+                lease_data = parse_sci_lease(pdf_content, lease_start_page, lease_end_page)
+                vehicles_2026 = lease_data.get("vehicles_2026", [])
+                vehicles_2025 = lease_data.get("vehicles_2025", [])
+                sci_lease_count = len(vehicles_2026) + len(vehicles_2025)
+
+                if sci_lease_count > 0:
+                    _merge_previous_sci_rates(vehicles_2026, vehicles_2025, program_month, program_year)
+
+                    month_names_local = ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+                                       "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+                    en_month_abbrev = ["", "jan", "feb", "mar", "apr", "may", "jun",
+                                      "jul", "aug", "sep", "oct", "nov", "dec"]
+                    sci_lease_rates = {
+                        "program_period": f"{month_names_local[program_month]} {program_year}",
+                        "source": "FCA Canada QBC Retail Lease Incentive Program",
+                        "terms": [24, 27, 36, 39, 42, 48, 51, 54, 60],
+                        "vehicles_2026": vehicles_2026,
+                        "vehicles_2025": vehicles_2025
                     }
-                    await db.programs.insert_one(program_doc)
-                    saved_count += 1
-                logger.info(f"[Async] Saved {saved_count} programs")
-            except Exception as save_error:
-                logger.error(f"[Async] Save error: {str(save_error)}")
+                    sci_filename = f"sci_lease_rates_{en_month_abbrev[program_month]}{program_year}.json"
+                    sci_path = ROOT_DIR / "data" / sci_filename
+                    with open(sci_path, 'w', encoding='utf-8') as f:
+                        json.dump(sci_lease_rates, f, indent=2, ensure_ascii=False)
+                    logger.info(f"[Async] SCI Lease saved: {sci_path} ({sci_lease_count} vehicles)")
+                    sci_lease_data_for_excel = sci_lease_rates
+            except Exception as lease_error:
+                logger.error(f"[Async] SCI Lease error: {str(lease_error)}")
 
-            # SCI Lease extraction
-            sci_lease_count = 0
-            sci_lease_data_for_excel = None
-            if lease_start_page and lease_end_page:
-                try:
-                    await db.extract_tasks.update_one(
-                        {"task_id": task_id},
-                        {"$set": {"status": "ai_processing_lease", "message": "Analyse IA en cours (SCI Lease)..."}}
-                    )
-                    lease_text = ""
-                    with open(tmp_path, 'rb') as pdf_file:
-                        reader = PyPDF2.PdfReader(pdf_file)
-                        total_pages = len(reader.pages)
-                        lease_start_idx = max(0, lease_start_page - 1)
-                        lease_end_idx = min(total_pages, lease_end_page)
-                        for page_num in range(lease_start_idx, lease_end_idx):
-                            page = reader.pages[page_num]
-                            lease_text += f"\n--- PAGE {page_num + 1} ---\n{page.extract_text()}\n"
+        # ── Step 4: Parse Key Incentives summary ──
+        try:
+            key_incentives = parse_key_incentives(pdf_content)
+            if key_incentives:
+                en_month_abbrev = ["", "jan", "feb", "mar", "apr", "may", "jun",
+                                  "jul", "aug", "sep", "oct", "nov", "dec"]
+                ki_filename = f"key_incentives_{en_month_abbrev[program_month]}{program_year}.json"
+                ki_path = ROOT_DIR / "data" / ki_filename
+                with open(ki_path, 'w', encoding='utf-8') as f:
+                    json.dump(key_incentives, f, indent=2, ensure_ascii=False)
+                logger.info(f"[Async] Key incentives saved: {ki_path} ({len(key_incentives)} entries)")
+        except Exception as ki_error:
+            logger.error(f"[Async] Key incentives error: {str(ki_error)}")
 
-                    if lease_text.strip():
-                        lease_extraction_prompt = f"""EXTRAIS TOUS les véhicules et leurs taux de LOCATION SCI (SCI Lease) de ce PDF.
+        # ── Step 5: Generate Excel and send email ──
+        excel_sent = False
+        if EXCEL_AVAILABLE and valid_programs and SMTP_EMAIL:
+            try:
+                await db.extract_tasks.update_one(
+                    {"task_id": task_id},
+                    {"$set": {"status": "sending_email", "message": "Génération Excel et envoi par email..."}}
+                )
+                excel_data = generate_excel_from_programs(valid_programs, program_month, program_year, sci_lease_data=sci_lease_data_for_excel)
+                excel_sent = send_excel_email(excel_data, SMTP_EMAIL, program_month, program_year, len(valid_programs))
+                logger.info(f"[Async] Excel sent: {excel_sent}")
+            except Exception as excel_error:
+                logger.error(f"[Async] Excel email error: {str(excel_error)}")
 
-TEXTE DU PDF (pages SCI Lease):
-{lease_text}
-
-Ce sont les programmes de LOCATION (lease) SCI Lease Corp pour concessionnaires FCA Canada.
-Les termes de location sont: 24, 27, 36, 39, 42, 48, 51, 54, 60 mois.
-Si un taux montre "- -" ou est vide = null.
-
-=== MARQUES À EXTRAIRE ===
-- CHRYSLER: Grand Caravan, Pacifica
-- JEEP: Compass, Cherokee, Wrangler, Gladiator, Grand Cherokee, Grand Wagoneer
-- DODGE: Durango, Charger, Hornet
-- RAM: ProMaster, 1500, 2500, 3500
-- FIAT: 500e
-
-=== JSON REQUIS ===
-{{
-    "vehicles_2026": [
-        {{
-            "model": "Grand Caravan SXT",
-            "brand": "Chrysler",
-            "lease_cash": 0,
-            "standard_rates": null,
-            "alternative_rates": {{"24": 4.99, "27": 4.99, "36": 5.49, "39": 5.49, "42": 5.49, "48": 6.49, "51": 6.49, "54": 6.49, "60": 6.99}}
-        }}
-    ],
-    "vehicles_2025": []
-}}
-
-EXTRAIS ABSOLUMENT TOUS LES VÉHICULES. JSON valide uniquement."""
-
-                        lease_response = client.chat.completions.create(
-                            model="gpt-4o",
-                            messages=[
-                                {"role": "system", "content": "Tu extrais les taux de location SCI Lease d'un PDF FCA Canada. JSON valide uniquement."},
-                                {"role": "user", "content": lease_extraction_prompt}
-                            ],
-                            temperature=0.1,
-                            max_tokens=16000,
-                            response_format={"type": "json_object"}
-                        )
-                        lease_response_text = lease_response.choices[0].message.content.strip()
-                        if lease_response_text.startswith("```"):
-                            lines_l = lease_response_text.split("\n")
-                            lease_response_text = "\n".join(lines_l[1:-1] if lines_l[-1] == "```" else lines_l[1:])
-                        if lease_response_text.endswith("```"):
-                            lease_response_text = lease_response_text[:-3].strip()
-                        lease_response_text = lease_response_text.replace('\n', ' ').replace('\r', '')
-                        lease_response_text = re.sub(r',\s*}', '}', lease_response_text)
-                        lease_response_text = re.sub(r',\s*]', ']', lease_response_text)
-                        lease_data = json.loads(lease_response_text)
-
-                        vehicles_2026 = lease_data.get("vehicles_2026", [])
-                        vehicles_2025 = lease_data.get("vehicles_2025", [])
-                        sci_lease_count = len(vehicles_2026) + len(vehicles_2025)
-
-                        if sci_lease_count > 0:
-                            # Merge rates from previous month
-                            _merge_previous_sci_rates(vehicles_2026, vehicles_2025, program_month, program_year)
-                            
-                            month_names_local = ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-                                               "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
-                            en_month_abbrev = ["", "jan", "feb", "mar", "apr", "may", "jun",
-                                              "jul", "aug", "sep", "oct", "nov", "dec"]
-                            sci_lease_rates = {
-                                "program_period": f"{month_names_local[program_month]} {program_year}",
-                                "source": "FCA Canada QBC Retail Lease Incentive Program",
-                                "terms": [24, 27, 36, 39, 42, 48, 51, 54, 60],
-                                "vehicles_2026": vehicles_2026,
-                                "vehicles_2025": vehicles_2025
-                            }
-                            sci_filename = f"sci_lease_rates_{en_month_abbrev[program_month]}{program_year}.json"
-                            sci_path = ROOT_DIR / "data" / sci_filename
-                            with open(sci_path, 'w', encoding='utf-8') as f:
-                                json.dump(sci_lease_rates, f, indent=2, ensure_ascii=False)
-                            logger.info(f"[Async] SCI Lease saved: {sci_path} ({sci_lease_count} vehicles)")
-                            sci_lease_data_for_excel = sci_lease_rates
-                except Exception as lease_error:
-                    logger.error(f"[Async] SCI Lease error: {str(lease_error)}")
-
-            # Generate Excel with BOTH sheets and send email (AFTER all extractions)
-            excel_sent = False
-            if EXCEL_AVAILABLE and valid_programs and SMTP_EMAIL:
-                try:
-                    await db.extract_tasks.update_one(
-                        {"task_id": task_id},
-                        {"$set": {"status": "sending_email", "message": "Génération Excel et envoi par email..."}}
-                    )
-                    excel_data = generate_excel_from_programs(valid_programs, program_month, program_year, sci_lease_data=sci_lease_data_for_excel)
-                    excel_sent = send_excel_email(excel_data, SMTP_EMAIL, program_month, program_year, len(valid_programs))
-                    logger.info(f"[Async] Excel sent (Programmes + SCI Lease): {excel_sent}")
-                except Exception as excel_error:
-                    logger.error(f"[Async] Excel email error: {str(excel_error)}")
-
-            # Mark task as complete
-            lease_msg = f" + {sci_lease_count} taux SCI Lease" if sci_lease_count > 0 else ""
-            email_msg = " - Excel envoyé par email!" if excel_sent else ""
-            await db.extract_tasks.update_one(
-                {"task_id": task_id},
-                {"$set": {
-                    "status": "complete",
-                    "message": f"Extrait et sauvegardé {len(valid_programs)} programmes{lease_msg}{email_msg}",
-                    "programs": valid_programs,
-                    "sci_lease_count": sci_lease_count,
-                    "completed_at": datetime.utcnow().isoformat()
-                }}
-            )
-        finally:
-            os_module.unlink(tmp_path)
+        # ── Step 6: Mark task complete ──
+        lease_msg = f" + {sci_lease_count} taux SCI Lease" if sci_lease_count > 0 else ""
+        email_msg = " - Excel envoyé par email!" if excel_sent else ""
+        await db.extract_tasks.update_one(
+            {"task_id": task_id},
+            {"$set": {
+                "status": "complete",
+                "message": f"Extrait et sauvegardé {len(valid_programs)} programmes{lease_msg}{email_msg}",
+                "programs": valid_programs,
+                "sci_lease_count": sci_lease_count,
+                "completed_at": datetime.utcnow().isoformat()
+            }}
+        )
 
     except Exception as e:
         logger.error(f"[Async] Task {task_id} failed: {str(e)}")
@@ -1374,8 +984,6 @@ async def extract_pdf_async(
     """Upload PDF and start extraction in background. Returns task_id for polling."""
     if password != ADMIN_PASSWORD:
         raise HTTPException(status_code=401, detail="Mot de passe incorrect")
-    if not OPENAI_API_KEY:
-        raise HTTPException(status_code=500, detail="Clé OpenAI non configurée")
 
     pdf_content = await file.read()
     task_id = str(uuid.uuid4())
