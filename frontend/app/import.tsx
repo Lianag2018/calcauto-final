@@ -79,12 +79,16 @@ export default function ImportScreen() {
   const [totalPages, setTotalPages] = useState(0);
   
   // Page selection for PDF extraction
-  const [pageStart, setPageStart] = useState('20');
-  const [pageEnd, setPageEnd] = useState('21');
+  const [pageStart, setPageStart] = useState('');
+  const [pageEnd, setPageEnd] = useState('');
   
   // Page selection for SCI Lease extraction (from same PDF)
-  const [leasePageStart, setLeasePageStart] = useState('28');
-  const [leasePageEnd, setLeasePageEnd] = useState('29');
+  const [leasePageStart, setLeasePageStart] = useState('');
+  const [leasePageEnd, setLeasePageEnd] = useState('');
+  
+  // Auto-detection state
+  const [detectedSections, setDetectedSections] = useState<any>(null);
+  const [scanning, setScanning] = useState(false);
   
   // Loading states
   const [loading, setLoading] = useState(false);
@@ -142,7 +146,7 @@ export default function ImportScreen() {
     }
   };
 
-  // Step 2: Pick PDF and get page count
+  // Step 2: Pick PDF and auto-detect pages
   const handlePickPDF = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -158,10 +162,11 @@ export default function ImportScreen() {
       if (!file) return;
       
       setUploading(true);
+      setScanning(true);
       setPdfFile(file);
       setPdfFileName(file.name);
       
-      // Get page count from backend
+      // Build FormData for scan
       const formData = new FormData();
       if (Platform.OS === 'web') {
         const response = await fetch(file.uri);
@@ -174,23 +179,35 @@ export default function ImportScreen() {
           name: file.name,
         } as any);
       }
+      formData.append('password', password);
       
-      const response = await axios.post(`${API_URL}/api/pdf-info`, formData, {
+      // Call scan-pdf to auto-detect pages
+      const scanResponse = await axios.post(`${API_URL}/api/scan-pdf`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 30000,
       });
       
-      if (response.data.success) {
-        setTotalPages(response.data.total_pages);
+      if (scanResponse.data.success) {
+        const d = scanResponse.data;
+        setTotalPages(d.total_pages);
+        setDetectedSections(d);
+        
+        // Auto-fill page ranges from detection
+        if (d.retail_start) setPageStart(String(d.retail_start));
+        if (d.retail_end) setPageEnd(String(d.retail_end));
+        if (d.lease_start) setLeasePageStart(String(d.lease_start));
+        if (d.lease_end) setLeasePageEnd(String(d.lease_end));
+        
         setCurrentStep('select-pages' as Step);
       } else {
-        showAlert('Erreur', 'Impossible de lire le PDF');
+        showAlert('Erreur', 'Impossible de scanner le PDF');
       }
     } catch (error: any) {
       console.error('Upload error:', error);
       showAlert('Erreur', error.response?.data?.detail || 'Erreur lors du téléversement');
     } finally {
       setUploading(false);
+      setScanning(false);
     }
   };
 
@@ -224,10 +241,10 @@ export default function ImportScreen() {
       formData.append('password', password);
       formData.append('program_month', String(selectedMonth));
       formData.append('program_year', String(selectedYear));
-      formData.append('start_page', pageStart || '20');
-      formData.append('end_page', pageEnd || '21');
-      formData.append('lease_start_page', leasePageStart || '');
-      formData.append('lease_end_page', leasePageEnd || '');
+      if (pageStart) formData.append('start_page', pageStart);
+      if (pageEnd) formData.append('end_page', pageEnd);
+      if (leasePageStart) formData.append('lease_start_page', leasePageStart);
+      if (leasePageEnd) formData.append('lease_end_page', leasePageEnd);
       
       // Use async endpoint - returns immediately with task_id
       const uploadResponse = await axios.post(`${API_URL}/api/extract-pdf-async`, formData, {
@@ -674,14 +691,24 @@ export default function ImportScreen() {
         Le PDF "{pdfFileName}" contient {totalPages} pages
       </Text>
       
-      {/* PDF Info Card */}
-      <View style={styles.pdfInfoCard}>
-        <Ionicons name="document-text" size={50} color="#4ECDC4" />
-        <View style={styles.pdfInfoText}>
-          <Text style={styles.pdfInfoTitle}>{pdfFileName}</Text>
-          <Text style={styles.pdfInfoPages}>{totalPages} pages disponibles</Text>
+      {/* Auto-detection banner */}
+      {detectedSections && (
+        <View style={{ backgroundColor: '#1a3a2a', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#4ECDC4' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Ionicons name="checkmark-circle" size={20} color="#4ECDC4" />
+            <Text style={{ color: '#4ECDC4', fontWeight: '700', fontSize: 14, marginLeft: 8 }}>
+              Sections auto-detectees
+            </Text>
+          </View>
+          <Text style={{ color: '#ccc', fontSize: 12, lineHeight: 18 }}>
+            {detectedSections.retail_start ? `Finance Prime: pages ${detectedSections.retail_start}-${detectedSections.retail_end}` : 'Finance Prime: non detecte'}
+            {'\n'}
+            {detectedSections.lease_start ? `SCI Lease: pages ${detectedSections.lease_start}-${detectedSections.lease_end}` : 'SCI Lease: non detecte'}
+            {detectedSections.non_prime_start ? `\nNon-Prime: pages ${detectedSections.non_prime_start}-${detectedSections.non_prime_end}` : ''}
+            {detectedSections.key_incentive_pages?.length ? `\nKey Incentives: pages ${detectedSections.key_incentive_pages.join(', ')}` : ''}
+          </Text>
         </View>
-      </View>
+      )}
       
       {/* Page Selection - Retail */}
       <View style={styles.periodSection}>
@@ -695,18 +722,18 @@ export default function ImportScreen() {
               value={pageStart}
               onChangeText={setPageStart}
               keyboardType="numeric"
-              placeholder="20"
+              placeholder="auto"
               placeholderTextColor="#666"
             />
           </View>
           <View style={styles.pageField}>
-            <Text style={styles.pageLabel}>À la page:</Text>
+            <Text style={styles.pageLabel}>A la page:</Text>
             <TextInput
               style={styles.pageInput}
               value={pageEnd}
               onChangeText={setPageEnd}
               keyboardType="numeric"
-              placeholder="21"
+              placeholder="auto"
               placeholderTextColor="#666"
             />
           </View>
@@ -725,18 +752,18 @@ export default function ImportScreen() {
               value={leasePageStart}
               onChangeText={setLeasePageStart}
               keyboardType="numeric"
-              placeholder="28"
+              placeholder="auto"
               placeholderTextColor="#666"
             />
           </View>
           <View style={styles.pageField}>
-            <Text style={styles.pageLabel}>À la page:</Text>
+            <Text style={styles.pageLabel}>A la page:</Text>
             <TextInput
               style={[styles.pageInput, { borderColor: '#FFB347' }]}
               value={leasePageEnd}
               onChangeText={setLeasePageEnd}
               keyboardType="numeric"
-              placeholder="29"
+              placeholder="auto"
               placeholderTextColor="#666"
             />
           </View>
@@ -744,7 +771,7 @@ export default function ImportScreen() {
       </View>
       
       <Text style={styles.pageValidation}>
-        Retail: pages {pageStart || '20'}-{pageEnd || '21'}  |  SCI Lease: pages {leasePageStart || '28'}-{leasePageEnd || '29'}
+        Retail: pages {pageStart || 'auto'}-{pageEnd || 'auto'}  |  SCI Lease: pages {leasePageStart || 'auto'}-{leasePageEnd || 'auto'}
       </Text>
       
       <TouchableOpacity

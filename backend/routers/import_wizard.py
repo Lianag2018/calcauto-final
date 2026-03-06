@@ -696,7 +696,27 @@ CalcAuto AiPro
         logger.error(f"Error sending Excel email: {str(e)}")
         return False
 
-# ============ PDF Import with AI ============
+# ============ PDF Import with pdfplumber ============
+
+@router.post("/scan-pdf")
+async def scan_pdf(
+    file: UploadFile = File(...),
+    password: str = Form(...)
+):
+    """
+    Scanne le PDF et détecte automatiquement les sections (Retail, Lease, Non-Prime, Key Incentives).
+    Retourne les numéros de pages détectés.
+    """
+    if password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Mot de passe incorrect")
+    try:
+        from services.pdfplumber_parser import auto_detect_pages
+        pdf_content = await file.read()
+        result = auto_detect_pages(pdf_content)
+        return {"success": True, **result}
+    except Exception as e:
+        logger.error(f"[ScanPDF] Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur scan: {str(e)}")
 
 @router.post("/verify-password")
 async def verify_password(password: str = Form(...)):
@@ -711,22 +731,35 @@ async def extract_pdf(
     password: str = Form(...),
     program_month: int = Form(...),
     program_year: int = Form(...),
-    start_page: int = Form(1),
-    end_page: int = Form(9999),
+    start_page: Optional[int] = Form(None),
+    end_page: Optional[int] = Form(None),
     lease_start_page: Optional[int] = Form(None),
     lease_end_page: Optional[int] = Form(None)
 ):
     """
     Extrait les données de financement d'un PDF via pdfplumber (déterministe).
-    Retourne les programmes pour prévisualisation/modification avant sauvegarde.
+    Auto-détecte les pages si non spécifiées.
     """
     if password != ADMIN_PASSWORD:
         raise HTTPException(status_code=401, detail="Mot de passe incorrect")
 
     try:
-        from services.pdfplumber_parser import parse_retail_programs, parse_sci_lease, parse_key_incentives
+        from services.pdfplumber_parser import parse_retail_programs, parse_sci_lease, parse_key_incentives, auto_detect_pages
 
         pdf_content = await file.read()
+
+        # Auto-detect pages if not provided
+        if not start_page or not end_page:
+            detected = auto_detect_pages(pdf_content)
+            if not start_page:
+                start_page = detected.get('retail_start') or 1
+            if not end_page:
+                end_page = detected.get('retail_end') or start_page
+            if not lease_start_page:
+                lease_start_page = detected.get('lease_start')
+            if not lease_end_page:
+                lease_end_page = detected.get('lease_end')
+            logger.info(f"[Sync] Auto-detected: retail={start_page}-{end_page}, lease={lease_start_page}-{lease_end_page}")
 
         # Parse retail programs
         valid_programs = parse_retail_programs(pdf_content, start_page, end_page)
@@ -976,16 +1009,31 @@ async def extract_pdf_async(
     password: str = Form(...),
     program_month: int = Form(...),
     program_year: int = Form(...),
-    start_page: int = Form(1),
-    end_page: int = Form(9999),
+    start_page: Optional[int] = Form(None),
+    end_page: Optional[int] = Form(None),
     lease_start_page: Optional[int] = Form(None),
     lease_end_page: Optional[int] = Form(None)
 ):
-    """Upload PDF and start extraction in background. Returns task_id for polling."""
+    """Upload PDF and start extraction in background. Auto-detects pages if not provided."""
     if password != ADMIN_PASSWORD:
         raise HTTPException(status_code=401, detail="Mot de passe incorrect")
 
     pdf_content = await file.read()
+
+    # Auto-detect pages if not provided
+    if not start_page or not end_page:
+        from services.pdfplumber_parser import auto_detect_pages
+        detected = auto_detect_pages(pdf_content)
+        if not start_page:
+            start_page = detected.get('retail_start') or 1
+        if not end_page:
+            end_page = detected.get('retail_end') or start_page
+        if not lease_start_page:
+            lease_start_page = detected.get('lease_start')
+        if not lease_end_page:
+            lease_end_page = detected.get('lease_end')
+        logger.info(f"[AsyncExtract] Auto-detected: retail={start_page}-{end_page}, lease={lease_start_page}-{lease_end_page}")
+
     task_id = str(uuid.uuid4())
 
     await db.extract_tasks.insert_one({

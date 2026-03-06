@@ -552,3 +552,124 @@ def _detect_loyalty(text: str) -> float:
         return 0.0
     m = re.search(r'(\d+\.?\d*)%\s+Loyalty\s+Rate\s+Reduction', text, re.IGNORECASE)
     return float(m.group(1)) if m else 0.0
+
+
+
+# ═══════════════════════════════════════════════════════════════
+# AUTO-DETECTION DES PAGES
+# ═══════════════════════════════════════════════════════════════
+
+def auto_detect_pages(pdf_content: bytes) -> Dict:
+    """
+    Scan le PDF et identifie automatiquement les sections:
+    - Finance Prime: pages avec tables de taux retail (25-27 cols, pas NON-PRIME)
+    - Non-Prime: pages avec tables retail + keyword NON-PRIME
+    - SCI Lease: pages avec tables de taux lease (30 cols)
+    - Key Incentives: pages 'Go to Market'
+
+    Returns dict with page ranges (1-indexed):
+    {
+        'retail_start': 20, 'retail_end': 21,
+        'lease_start': 28, 'lease_end': 29,
+        'non_prime_start': 24, 'non_prime_end': 25,
+        'key_incentive_pages': [3, 4],
+        'total_pages': 29,
+        'detected_sections': [...]
+    }
+    """
+    result = {
+        'retail_start': None, 'retail_end': None,
+        'lease_start': None, 'lease_end': None,
+        'non_prime_start': None, 'non_prime_end': None,
+        'key_incentive_pages': [],
+        'total_pages': 0,
+        'detected_sections': [],
+    }
+
+    with pdfplumber.open(BytesIO(pdf_content)) as pdf:
+        result['total_pages'] = len(pdf.pages)
+        retail_pages = []
+        non_prime_pages = []
+        lease_pages = []
+        ki_pages = []
+
+        for i, page in enumerate(pdf.pages):
+            page_num = i + 1
+            text = (page.extract_text() or '')[:1000]
+            text_upper = text.upper()
+
+            # Key Incentives: "Go to Market" or "Key Incentives" with table
+            if 'KEY INCENTIVES' in text_upper and page_num <= 10:
+                tables = page.extract_tables()
+                if tables and len(tables[0]) >= 3:
+                    ki_pages.append(page_num)
+                    continue
+
+            # Skip non-data pages (overviews, rules, etc.)
+            if 'MODEL YEAR' not in text_upper and 'MODEL\nYEAR' not in text_upper:
+                continue
+
+            tables = page.extract_tables()
+            if not tables:
+                continue
+
+            main_table = tables[0]
+            num_cols = len(main_table[0]) if main_table else 0
+
+            is_lease = 'LEASE INCENTIVE PROGRAM' in text_upper
+            is_non_prime = 'NON-PRIME' in text_upper or 'NON PRIME' in text_upper
+
+            if is_lease:
+                # SCI Lease pages have multi-table structure (names + rates)
+                if len(tables) >= 2:
+                    lease_pages.append(page_num)
+                    result['detected_sections'].append({
+                        'page': page_num,
+                        'type': 'lease',
+                        'year': _detect_year_from_text(text),
+                        'tables': len(tables),
+                    })
+            elif is_non_prime:
+                if num_cols >= 20:
+                    non_prime_pages.append(page_num)
+                    result['detected_sections'].append({
+                        'page': page_num,
+                        'type': 'non_prime',
+                        'year': _detect_year_from_text(text),
+                        'cols': num_cols,
+                    })
+            else:
+                # Retail Finance Prime: large table with 25+ cols
+                if num_cols >= 20:
+                    retail_pages.append(page_num)
+                    result['detected_sections'].append({
+                        'page': page_num,
+                        'type': 'retail_prime',
+                        'year': _detect_year_from_text(text),
+                        'cols': num_cols,
+                    })
+
+        # Set page ranges
+        if retail_pages:
+            result['retail_start'] = min(retail_pages)
+            result['retail_end'] = max(retail_pages)
+        if lease_pages:
+            result['lease_start'] = min(lease_pages)
+            result['lease_end'] = max(lease_pages)
+        if non_prime_pages:
+            result['non_prime_start'] = min(non_prime_pages)
+            result['non_prime_end'] = max(non_prime_pages)
+        result['key_incentive_pages'] = ki_pages
+
+    logger.info(
+        f"[AutoDetect] Retail={result['retail_start']}-{result['retail_end']}, "
+        f"Lease={result['lease_start']}-{result['lease_end']}, "
+        f"NonPrime={result['non_prime_start']}-{result['non_prime_end']}, "
+        f"KeyIncentives={ki_pages}"
+    )
+    return result
+
+
+def _detect_year_from_text(text: str) -> Optional[int]:
+    m = re.search(r'(20\d{2})\s+Model\s+Year', text, re.IGNORECASE)
+    return int(m.group(1)) if m else None
