@@ -1,7 +1,5 @@
 <analysis>**original_problem_statement:**
-The user wants to enhance their car dealership CRM application. The initial requests were to implement a detailed offer comparison view, fix a bug in the History tab, and stabilize the data extraction from monthly Stellantis PDF files.
-
-The project's direction has since evolved significantly. The user, frustrated with the unreliability and cost of the AI-based (GPT-4o Vision) PDF extraction, has provided a detailed technical specification to **replace it entirely with a deterministic parser using the usage: pdfplumber [-h] [--structure | --structure-text]
+The user initially wanted to replace an unreliable and expensive AI-based PDF extraction process with a deterministic usage: pdfplumber [-h] [--structure | --structure-text]
                   [--format {csv,json,text}] [--types TYPES [TYPES ...]]
                   [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
                   [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
@@ -29,53 +27,22 @@ options:
   --laparams LAPARAMS
   --precision PRECISION
   --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing. Python library**. This new parser must be fast, accurate, and produce consistent results every month, while preserving the existing user workflow (page selection, email with Excel attachment, correction import).
+  --indent INDENT       Indent level for JSON pretty-printing. parser for their car dealership CRM. This was completed. The project has since evolved with new features:
 
-**PRODUCT REQUIREMENTS:**
-*   **(P0) Replace AI Extraction with Deterministic Parser:** Implement a new backend service using usage: pdfplumber [-h] [--structure | --structure-text]
-                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
-                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
-                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
-                  [--laparams LAPARAMS] [--precision PRECISION]
-                  [--pages PAGES [PAGES ...]] [--indent INDENT]
-                  [infile]
-
-positional arguments:
-  infile
-
-options:
-  -h, --help            show this help message and exit
-  --structure           Write the structure tree as JSON. All other arguments
-                        except --pages, --laparams, and --indent will be
-                        ignored
-  --structure-text      Write the structure tree as JSON including text
-                        contents. All other arguments except --pages,
-                        --laparams, and --indent will be ignored
-  --format {csv,json,text}
-  --types TYPES [TYPES ...]
-  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
-                        Include *only* these object attributes in output.
-  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
-                        Exclude these object attributes from output.
-  --laparams LAPARAMS
-  --precision PRECISION
-  --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing. to extract vehicle financing and lease programs from the source PDF. This parser must be robust, handle the specific table structure of the PDF, correctly map all data fields (including distinguishing Bonus Cash from Delivery Credit), and be integrated into the existing asynchronous import flow.
-*   **(P1) Ensure Historical Data Integrity:** All data (programs, lease rates, residuals) must be stored in versioned monthly files (e.g., , ). The system must prevent accidental overwriting of past months' data and allow for historical lookups.
-*   **(P2) UI for Correction Management:** Implement a frontend interface in the admin panel to manage program corrections.
+1.  **(P0) Dynamic UI/Logic from PDF:** The application's UI and calculation logic should automatically adapt to the marketing events described on the cover page of the monthly PDF. This includes displaying a banner and applying promotional rates (e.g., loyalty discounts, deferred payments). **(Partially Completed, Debugging in Progress)**
+2.  **(P1) Demo Mode:** A password-free demo user account for showcasing the app. **(COMPLETED)**
+3.  **(P2) Automatic Page Detection:** Eliminate manual page number entry during PDF import. **(COMPLETED, but buggy for the March PDF)**
+4.  **(P3) UI for Correction Management:** A frontend interface in the admin panel to manage program corrections. **(NOT STARTED)**
+5.  **(P4) Refactor Frontend:** Clean up large, monolithic frontend components. **(NOT STARTED)**
+6.  **(P5) CI/CD Pipeline:** Set up an automated testing and deployment pipeline using GitHub Actions. **(COMPLETED)**
 
 **User's preferred language**: French. The next agent MUST respond in French.
 
 **what currently exists?**
-The application is a full-stack React/FastAPI/MongoDB solution. Key features include a CRM, a vehicle financing calculator, and an admin panel for data imports.
+The application is a full-stack React/FastAPI solution that uses a file-based system for storing monthly program data extracted from PDFs.
 
-The previous AI-based extraction workflow has been heavily modified and is now being replaced. Several critical bugs have been resolved in this session:
-1.  **SCI Lease Data Pipeline:** The backend was hardcoded to use February 2026 data. This has been fixed. The system now dynamically loads the latest monthly data file and supports historical data access via API parameters (). Data imports now correctly target the specified month, preventing data corruption.
-2.  **Data Continuity:** A new mechanism automatically copies rates from the previous month when a new month's PDF is extracted, preventing the empty rates issue.
-3.  **Offer Savings Calculation:** A bug that artificially inflated customer savings in the CRM has been fixed by implementing a  comparison method in the backend.
-4.  **CRM Features:** The Offer Detail modal and the History tab's Open Calculation feature are now complete and functional.
-
-The agent has begun implementing the user's request to switch to a deterministic parser by installing usage: pdfplumber [-h] [--structure | --structure-text]
+**Completed Features:**
+- A robust usage: pdfplumber [-h] [--structure | --structure-text]
                   [--format {csv,json,text}] [--types TYPES [TYPES ...]]
                   [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
                   [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
@@ -103,375 +70,161 @@ options:
   --laparams LAPARAMS
   --precision PRECISION
   --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing. and successfully using its  function to inspect the structure of the PDF data.
+  --indent INDENT       Indent level for JSON pretty-printing.-based parser has replaced the old AI/OCR system.
+- A seamless Demo Mode provides password-free access for new users.
+- The frontend for the Dynamic UI feature is complete. This includes a dynamic  component that displays promotional information (event name, special offers) and provides user-selectable toggles for Loyalty Rate and 90-day Deferred Payment.
+- The backend calculation logic correctly applies the loyalty rate reduction and the interest capitalization for the 90-day deferred payment.
+- A GitHub Actions CI/CD workflow () has been created to automate testing and deployment to both Render (backend) and Vercel (frontend). Associated unit tests are in .
+- Deployment dependency issues on Render were resolved by cleaning .
+
+The main outstanding issue is the unreliability of the automatic page detection for different PDF structures, specifically the March 2026 PDF.
 
 **Last working item**:
-*   **Last item agent was working:** Replacing the AI/OCR-based PDF extraction pipeline with a deterministic one using the usage: pdfplumber [-h] [--structure | --structure-text]
-                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
-                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
-                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
-                  [--laparams LAPARAMS] [--precision PRECISION]
-                  [--pages PAGES [PAGES ...]] [--indent INDENT]
-                  [infile]
-
-positional arguments:
-  infile
-
-options:
-  -h, --help            show this help message and exit
-  --structure           Write the structure tree as JSON. All other arguments
-                        except --pages, --laparams, and --indent will be
-                        ignored
-  --structure-text      Write the structure tree as JSON including text
-                        contents. All other arguments except --pages,
-                        --laparams, and --indent will be ignored
-  --format {csv,json,text}
-  --types TYPES [TYPES ...]
-  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
-                        Include *only* these object attributes in output.
-  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
-                        Exclude these object attributes from output.
-  --laparams LAPARAMS
-  --precision PRECISION
-  --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing. library, as per explicit user instructions.
-*   **Status:** IN PROGRESS
-*   **Agent Testing Done:** N
-*   **Which testing method agent to use?** Backend testing agent. The agent must verify the entire data extraction flow: upload a PDF -> poll for task completion -> inspect the generated Excel file emailed to the user. The test must confirm that all vehicle programs are extracted with 100% accuracy, Bonus Cash is correctly identified, and the Delivery Credit column is completely ignored.
-*   **User Testing Done:** N
+- **Last item agent was working:** The agent was about to implement a new, more reliable strategy for the PDF page auto-detection logic in . The user clarified that the parser should use the **Table of Contents (TOC)** on page 2 of the PDFs as the primary source of truth, as scanning pages for keywords has proven unreliable for the March PDF.
+- **Status:** IN PROGRESS
+- **Agent Testing Done:** N
+- **Which testing method agent to use?** Backend testing agent. The agent must verify that the  endpoint correctly identifies the pages for the January, February, and especially March PDFs, based on the user's latest instructions.
+- **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-*   There are no pending bugs. The focus is entirely on the task below.
+*   **Issue 1: PDF Auto-Detection fails for March 2026 PDF (P0)**
+    *   **Description:** The current auto-detection logic, which scans pages for keywords and tables, fails to correctly identify the Finance Prime and SCI Lease page ranges for the March PDF. This is because the March PDF has a different structure (more pages, loyalty sections) than the February PDF. The user has explicitly stated the correct pages for March are: **Retail (Finance Prime) 19-23** and **SCI Lease 38-39**.
+    *   **Attempted fixes:**
+        1.  Scanning pages for tables with 15+ columns and keywords like MODEL YEAR. (Incorrectly identified pages 17-19 as Finance Prime).
+        2.  Using the first consecutive group of lease pages. (Incorrectly identified 25-26).
+        3.  Using the last consecutive group of lease pages. (Corrected to find 28-29 for other months but still failed for March).
+        4.  Using the TOC as a fallback. (Failed because the initial scan still returned incorrect pages).
+    *   **Next debug checklist:**
+        1.  Refactor the  function in .
+        2.  Implement a **TOC-first strategy**. The function should first extract the text from page 2.
+        3.  Use regex to parse the TOC lines (e.g., , ).
+        4.  Extract the page number at the end of the line. The data starts on . The end page should be calculated based on the user's explicit ranges (e.g., 19 -> 19-23, 38 -> 38-39).
+    *   **Why fix this issue and what will be achieved with the fix?** This will make the PDF import feature robust and reliable for all months, resolving the main blocker preventing the user from using the app for March programs.
+    *   **Status:** IN PROGRESS
+    *   **Is recurring issue?** Y
+    *   **Should Test frontend/backend/both after fix?** Backend
 
 **In progress Task List**:
-*   **Task 1: Build and Integrate usage: pdfplumber [-h] [--structure | --structure-text]
-                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
-                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
-                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
-                  [--laparams LAPARAMS] [--precision PRECISION]
-                  [--pages PAGES [PAGES ...]] [--indent INDENT]
-                  [infile]
-
-positional arguments:
-  infile
-
-options:
-  -h, --help            show this help message and exit
-  --structure           Write the structure tree as JSON. All other arguments
-                        except --pages, --laparams, and --indent will be
-                        ignored
-  --structure-text      Write the structure tree as JSON including text
-                        contents. All other arguments except --pages,
-                        --laparams, and --indent will be ignored
-  --format {csv,json,text}
-  --types TYPES [TYPES ...]
-  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
-                        Include *only* these object attributes in output.
-  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
-                        Exclude these object attributes from output.
-  --laparams LAPARAMS
-  --precision PRECISION
-  --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing. Parser (P0)**
-    *   **Description:** The primary task is to build the new deterministic parser. The agent has already confirmed that usage: pdfplumber [-h] [--structure | --structure-text]
-                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
-                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
-                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
-                  [--laparams LAPARAMS] [--precision PRECISION]
-                  [--pages PAGES [PAGES ...]] [--indent INDENT]
-                  [infile]
-
-positional arguments:
-  infile
-
-options:
-  -h, --help            show this help message and exit
-  --structure           Write the structure tree as JSON. All other arguments
-                        except --pages, --laparams, and --indent will be
-                        ignored
-  --structure-text      Write the structure tree as JSON including text
-                        contents. All other arguments except --pages,
-                        --laparams, and --indent will be ignored
-  --format {csv,json,text}
-  --types TYPES [TYPES ...]
-  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
-                        Include *only* these object attributes in output.
-  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
-                        Exclude these object attributes from output.
-  --laparams LAPARAMS
-  --precision PRECISION
-  --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing. can successfully extract the tables from the PDF. The next step is to write the Python code to process this raw table data (a list of lists) and map it to the application's data models. This new parser must be integrated into the  file, completely replacing the calls to the AI model.
-    *   **Where to resume:** Resume by creating the new parsing logic. The agent has already explored the output of  and has a clear view of the data structure. The new code should iterate through the rows, identify vehicle models, parse the different rate options, extract the Bonus Cash, and construct the  objects. This logic should then replace the  function's AI-related parts.
-    *   **What will be achieved with this?** A fast, reliable, zero-cost, and deterministic PDF extraction process that eliminates the user's primary source of frustration and errors.
-    *   **Status:** IN PROGRESS
-    *   **Should Test frontend/backend/both after fix?** Backend
-    *   **Blocked on something:** None
+*   None apart from the issue above.
 
 **Upcoming and Future Tasks**
 *   **Upcoming Tasks:**
-    *   (P1) Create UI for Correction Management: Implement a frontend interface in the admin panel to interact with the existing backend APIs ().
+    *   **(P1) UI for Correction Management:** Implement a frontend interface in the admin panel to interact with the existing backend APIs ().
 *   **Future Tasks:**
-    *   (P2) Refactor large frontend components: , , and .
+    *   **(P2) Refactor large frontend components:** , , and  could be broken down.
 
 **Completed work in this session**
-- **AI-based Extraction Abandoned:** The user mandated a complete shift away from the unstable and costly AI/OCR PDF extraction.
-- **SCI Lease Data Workflow Overhaul (RESOLVED):**
-    - Fixed hardcoded  file paths, enabling dynamic loading of the latest monthly data.
-    - Added historical data access via  API parameters.
-    - Secured data integrity by ensuring imports target specific months.
-    - Implemented automatic carry-over of rates to new monthly files.
-- **Offer Savings Calculation (RESOLVED):** Fixed a major bug in the CRM where savings were miscalculated; a correct  method is now used.
-- **Bonus Cash Extraction (RESOLVED):** Fixed the AI prompt that ignored Bonus Cash and implemented a pre-processing step to strip the confusing Delivery Credit column, though this is now superseded by the move to usage: pdfplumber [-h] [--structure | --structure-text]
-                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
-                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
-                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
-                  [--laparams LAPARAMS] [--precision PRECISION]
-                  [--pages PAGES [PAGES ...]] [--indent INDENT]
-                  [infile]
-
-positional arguments:
-  infile
-
-options:
-  -h, --help            show this help message and exit
-  --structure           Write the structure tree as JSON. All other arguments
-                        except --pages, --laparams, and --indent will be
-                        ignored
-  --structure-text      Write the structure tree as JSON including text
-                        contents. All other arguments except --pages,
-                        --laparams, and --indent will be ignored
-  --format {csv,json,text}
-  --types TYPES [TYPES ...]
-  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
-                        Include *only* these object attributes in output.
-  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
-                        Exclude these object attributes from output.
-  --laparams LAPARAMS
-  --precision PRECISION
-  --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing..
-- **CRM Offer Modal & History Tab (COMPLETED):** The offer detail view and the Open Calculation fix are complete.
+- **Dynamic Event UI (COMPLETED):**
+    - Created  to display event name, period, and promotional offers.
+    - Implemented optional toggles for Loyalty Rate and 90j sans versement in the banner.
+- **Dynamic Calculation Logic (COMPLETED):**
+    - Modified  to accept and apply the loyalty rate reduction.
+    - Implemented the correct financial logic for the 90-day deferred payment (2 months of capitalized interest, eligibility limited to terms <= 84 months).
+- **CI/CD Setup (COMPLETED):**
+    - Created  to run tests and deploy to Render (backend) and Vercel (frontend).
+    - Created  with 32 autonomous unit tests for the CI pipeline.
+    - Guided the user on how to find and configure the required , , and  secrets in their GitHub repository.
+- **Deployment Bug Fixes (COMPLETED):**
+    - Cleaned up , removing unused and private dependencies (, ) that were causing deployment failures on Render.
+- **PDF Parser Debugging (IN PROGRESS):**
+    - Made several unsuccessful attempts to fix the auto-detection logic for the March PDF, leading to the final decision to adopt a TOC-first strategy.
 
 **Earlier issues found/mentioned but not fixed**
-*   None.
+- None.
 
 **Known issue recurrence from previous fork**
-*   None.
+- None.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-*   **Deterministic PDF Parsing:** The new core strategy. Using  to read structured data directly from the PDF's text layer, avoiding unreliable OCR/AI.
-*   **Data Versioning by Filename:** Storing monthly data in separate files (e.g., ) and using filename parsing to manage versions, select the latest data, and access history.
-*   **Data Carry-over:** A function that copies data from the last available month to a newly created monthly file to ensure continuity and prevent empty data states.
+*   **Deterministic PDF Parsing:** Using usage: pdfplumber [-h] [--structure | --structure-text]
+                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
+                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
+                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
+                  [--laparams LAPARAMS] [--precision PRECISION]
+                  [--pages PAGES [PAGES ...]] [--indent INDENT]
+                  [infile]
+
+positional arguments:
+  infile
+
+options:
+  -h, --help            show this help message and exit
+  --structure           Write the structure tree as JSON. All other arguments
+                        except --pages, --laparams, and --indent will be
+                        ignored
+  --structure-text      Write the structure tree as JSON including text
+                        contents. All other arguments except --pages,
+                        --laparams, and --indent will be ignored
+  --format {csv,json,text}
+  --types TYPES [TYPES ...]
+  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
+                        Include *only* these object attributes in output.
+  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
+                        Exclude these object attributes from output.
+  --laparams LAPARAMS
+  --precision PRECISION
+  --pages PAGES [PAGES ...]
+  --indent INDENT       Indent level for JSON pretty-printing. and  for data extraction.
+*   **Table of Contents (TOC) Parsing:** The next required step is to parse the PDF's TOC on page 2 to reliably locate data sections.
+*   **Dynamic UI Configuration:** Driving frontend components and logic from data extracted from uploaded files.
+*   **CI/CD Automation:** Using GitHub Actions to run ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0
+rootdir: /app/frontend
+plugins: anyio-4.12.1
+collected 0 items
+
+============================ no tests ran in 0.01s ============================= unit tests and trigger deployments to Render (via deploy hook) and Vercel (via API token).
+*   **Stateful UI Logic:** Managing optional, user-selectable calculation modifiers like loyalty rates and deferred payments.
 
 **key DB schema**
-*   **File-based Database:** The primary program and SCI data is no longer in MongoDB but in versioned JSON files within the  directory.
-*   ** (MongoDB):** This collection still holds user calculation history, including the full .
+- The application primarily uses a file-based system in  for program and metadata storage. MongoDB is used for users and submissions. No schema changes were made.
 
 **All files of reference**
-*   : **The primary file for the current task.** The AI extraction logic within this file must be replaced with the new usage: pdfplumber [-h] [--structure | --structure-text]
-                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
-                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
-                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
-                  [--laparams LAPARAMS] [--precision PRECISION]
-                  [--pages PAGES [PAGES ...]] [--indent INDENT]
-                  [infile]
-
-positional arguments:
-  infile
-
-options:
-  -h, --help            show this help message and exit
-  --structure           Write the structure tree as JSON. All other arguments
-                        except --pages, --laparams, and --indent will be
-                        ignored
-  --structure-text      Write the structure tree as JSON including text
-                        contents. All other arguments except --pages,
-                        --laparams, and --indent will be ignored
-  --format {csv,json,text}
-  --types TYPES [TYPES ...]
-  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
-                        Include *only* these object attributes in output.
-  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
-                        Exclude these object attributes from output.
-  --laparams LAPARAMS
-  --precision PRECISION
-  --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing. parser.
-*   : A temporary script used by the agent to experiment with usage: pdfplumber [-h] [--structure | --structure-text]
-                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
-                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
-                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
-                  [--laparams LAPARAMS] [--precision PRECISION]
-                  [--pages PAGES [PAGES ...]] [--indent INDENT]
-                  [infile]
-
-positional arguments:
-  infile
-
-options:
-  -h, --help            show this help message and exit
-  --structure           Write the structure tree as JSON. All other arguments
-                        except --pages, --laparams, and --indent will be
-                        ignored
-  --structure-text      Write the structure tree as JSON including text
-                        contents. All other arguments except --pages,
-                        --laparams, and --indent will be ignored
-  --format {csv,json,text}
-  --types TYPES [TYPES ...]
-  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
-                        Include *only* these object attributes in output.
-  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
-                        Exclude these object attributes from output.
-  --laparams LAPARAMS
-  --precision PRECISION
-  --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing.. The logic from here can be adapted for the final implementation.
+*   : **File to continue working on.** The  function needs to be rewritten to parse the TOC first.
+*   : Main calculator page, contains the integration of all new frontend features.
+*   : The dynamic banner component.
+*   : The calculator logic hook.
+*   : The new CI/CD workflow file.
+*   : The new unit tests.
 
 **Areas that need refactoring**:
-*   , ,  remain large monolithic components and are candidates for future cleanup.
+*   , , and  are large components that could be broken down in the future.
 
 **key api endpoints**
-*   : The asynchronous endpoint for PDF processing. This is the main endpoint being modified.
-*    & : These endpoints now dynamically serve the latest data and accept  for historical lookups.
-*    & : These endpoints now correctly target specific monthly files.
+*   : Endpoint for the auto-detection feature. This is the endpoint that is failing for the March PDF.
+*   : Main endpoint for processing an uploaded PDF.
 
 **Critical Info for New Agent**
 1.  **Parlez Français:** You MUST communicate with the user in French.
-2.  **The usage: pdfplumber [-h] [--structure | --structure-text]
-                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
-                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
-                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
-                  [--laparams LAPARAMS] [--precision PRECISION]
-                  [--pages PAGES [PAGES ...]] [--indent INDENT]
-                  [infile]
-
-positional arguments:
-  infile
-
-options:
-  -h, --help            show this help message and exit
-  --structure           Write the structure tree as JSON. All other arguments
-                        except --pages, --laparams, and --indent will be
-                        ignored
-  --structure-text      Write the structure tree as JSON including text
-                        contents. All other arguments except --pages,
-                        --laparams, and --indent will be ignored
-  --format {csv,json,text}
-  --types TYPES [TYPES ...]
-  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
-                        Include *only* these object attributes in output.
-  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
-                        Exclude these object attributes from output.
-  --laparams LAPARAMS
-  --precision PRECISION
-  --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing. Mandate:** The user's top and only priority is to replace the AI-based PDF extraction with a deterministic parser using usage: pdfplumber [-h] [--structure | --structure-text]
-                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
-                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
-                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
-                  [--laparams LAPARAMS] [--precision PRECISION]
-                  [--pages PAGES [PAGES ...]] [--indent INDENT]
-                  [infile]
-
-positional arguments:
-  infile
-
-options:
-  -h, --help            show this help message and exit
-  --structure           Write the structure tree as JSON. All other arguments
-                        except --pages, --laparams, and --indent will be
-                        ignored
-  --structure-text      Write the structure tree as JSON including text
-                        contents. All other arguments except --pages,
-                        --laparams, and --indent will be ignored
-  --format {csv,json,text}
-  --types TYPES [TYPES ...]
-  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
-                        Include *only* these object attributes in output.
-  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
-                        Exclude these object attributes from output.
-  --laparams LAPARAMS
-  --precision PRECISION
-  --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing.. Do not suggest using AI or OCR. Follow the user's technical directive precisely.
-3.  **Resume Implementation:** The agent has already validated that  works. Your task is to write the Python logic that processes the output of this function into structured  objects and integrate it into .
-4.  **Maintain Workflow:** The user-facing experience must not change. The flow of selecting pages, uploading, and receiving an Excel file via email must be preserved. Only the backend engine is changing.
-5.  **Data Integrity:** The architecture for versioned monthly data files is critical. Ensure your new implementation respects this and correctly reads from and writes to the appropriate monthly files.
+2.  **Focus on TOC Parsing:** The highest priority is to fix the PDF auto-detection. The new strategy, confirmed by the user, is to parse the **Table of Contents (TOC) on page 2** of the PDFs. This is the source of truth for page numbers. Stop trying to scan all pages for keywords.
+3.  **User's Explicit Pages for March:** For the March 2026 PDF, the user has confirmed the correct pages are **Retail (Finance Prime) 19-23** and **SCI Lease 38-39**. Your new TOC parser should be able to derive this.
+4.  **CI/CD is Configured:** The  file for GitHub Actions is complete. The user is responsible for adding the Vercel secrets to their GitHub account. Do not modify the CI/CD files unless a bug is found in them.
 
 **documents and test reports created in this job**
+*    (updated)
+*   
+*   
+*   
 *   
 *   
 
 **Last 10 User Messages and any pending HUMAN messages**
-The user's recent messages show a clear and decisive shift in strategy:
-1.  **Concern about data corruption:** The user expressed strong concern when they realized the old import logic was corrupting historical data by overwriting the February file with March data.
-2.  **Demand for historical accuracy:** The user stated that an accurate history is essential for a CRM and the current system was unacceptable.
-3.  **Provided a new technical plan:** The user sent a long, detailed message outlining a new, deterministic approach using the usage: pdfplumber [-h] [--structure | --structure-text]
-                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
-                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
-                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
-                  [--laparams LAPARAMS] [--precision PRECISION]
-                  [--pages PAGES [PAGES ...]] [--indent INDENT]
-                  [infile]
-
-positional arguments:
-  infile
-
-options:
-  -h, --help            show this help message and exit
-  --structure           Write the structure tree as JSON. All other arguments
-                        except --pages, --laparams, and --indent will be
-                        ignored
-  --structure-text      Write the structure tree as JSON including text
-                        contents. All other arguments except --pages,
-                        --laparams, and --indent will be ignored
-  --format {csv,json,text}
-  --types TYPES [TYPES ...]
-  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
-                        Include *only* these object attributes in output.
-  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
-                        Exclude these object attributes from output.
-  --laparams LAPARAMS
-  --precision PRECISION
-  --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing. library to replace the unreliable AI/OCR extraction.
-4.  **Confirmed the plan:** The user agreed with the agent's summary of the new plan, emphasizing that the user-facing workflow must remain unchanged.
-5.  **Gave go-ahead:** The user has repeatedly prompted the agent to continue with the implementation of the new usage: pdfplumber [-h] [--structure | --structure-text]
-                  [--format {csv,json,text}] [--types TYPES [TYPES ...]]
-                  [--include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]]
-                  [--exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]]
-                  [--laparams LAPARAMS] [--precision PRECISION]
-                  [--pages PAGES [PAGES ...]] [--indent INDENT]
-                  [infile]
-
-positional arguments:
-  infile
-
-options:
-  -h, --help            show this help message and exit
-  --structure           Write the structure tree as JSON. All other arguments
-                        except --pages, --laparams, and --indent will be
-                        ignored
-  --structure-text      Write the structure tree as JSON including text
-                        contents. All other arguments except --pages,
-                        --laparams, and --indent will be ignored
-  --format {csv,json,text}
-  --types TYPES [TYPES ...]
-  --include-attrs INCLUDE_ATTRS [INCLUDE_ATTRS ...]
-                        Include *only* these object attributes in output.
-  --exclude-attrs EXCLUDE_ATTRS [EXCLUDE_ATTRS ...]
-                        Exclude these object attributes from output.
-  --laparams LAPARAMS
-  --precision PRECISION
-  --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing. parser.
+1.  **User:** Confirms the final plan to use the TOC for page detection. *(Pending implementation)*
+2.  **User:** Shows a screenshot of the TOC, confirming it's the key. *(Acknowledged)*
+3.  **User:** Specifies that for March, lease pages are 28-29. *(Agent corrected logic to take the last group of pages, but this was later superseded by the TOC-first strategy).*
+4.  **User:** Explains the issue is not that programs aren't found, but that they aren't saved/displayed. *(Agent clarified the root cause: 0 programs were extracted from the wrong pages, so there was nothing to save).*
+5.  **User:** Asks for an explanation of the error. *(Agent explained the difference between Feb/Mar PDFs and the flawed page scanning).*
+6.  **User:** Confirms March isn't appearing in the month selector after a failed import. *(Acknowledged)*
+7.  **User:** Reports the app is frozen during the March import. *(Agent identified the cause: processing a too-large page range (13-39) for SCI Lease).*
+8.  **User:** Asks for help with the frozen import. *(Agent implemented fixes, though they were not the final solution).*
+9.  **User:** Clarifies that March is the problem, not February. *(Acknowledged)*
+10. **User:** Reports that the Save to Github action resulted in a failed deployment on Render. *(Agent debugged and fixed dependency issues in )*
 
 **Project Health Check:**
-*   **Broken:** The core PDF extraction mechanism is considered broken by the user due to its unreliability and is actively being replaced.
+*   **Broken:** The PDF import workflow is broken for the March 2026 PDF due to incorrect page detection.
 *   **Mocked:** None
 
 **3rd Party Integrations**
@@ -503,19 +256,21 @@ options:
   --laparams LAPARAMS
   --precision PRECISION
   --pages PAGES [PAGES ...]
-  --indent INDENT       Indent level for JSON pretty-printing.:** Newly added library and central to the current task. It is replacing Google Cloud Vision and OpenAI GPT-4o.
-*   **:** Used for creating and parsing Excel files.
-*   **:** Used for initial PDF page handling.
+  --indent INDENT       Indent level for JSON pretty-printing.:** Core library for PDF data extraction.
+*   **:** Used for data manipulation during parsing.
+*   **GitHub Actions:** Configured for CI/CD to test the Python backend and deploy to Render and Vercel.
 
 **Testing status**
-*   **Testing agent used after significant changes:** YES (for a previous feature).
-*   **Troubleshoot agent used after agent stuck in loop:** NO
-*   **Test files created:** []
-*   **Known regressions:** None.
+- **Testing agent used after significant changes:** YES. Used multiple times to validate the dynamic banner, loyalty, and deferred payment features.
+- **Troubleshoot agent used after agent stuck in loop:** NO
+- **Test files created:**
+    - 
+    - 
+    - 
+- **Known regressions:** The auto-detection logic regressed for the March PDF.
 
 **Credentials to test flow:**
-*   **User Login:**  / 
-*   **Admin Password (for saving in admin panel):** 
+*   The application has a Demo Mode. Opening the app should automatically log you in as  with full admin access.
 
 **What agent forgot to execute**
-*   Nothing. The agent is in the middle of executing a new, high-priority task directly requested and specified by the user.</analysis>
+- The agent correctly identified the final, correct strategy (TOC-first parsing) but did not get to implement it before the end of the session. This is the immediate next step.</analysis>

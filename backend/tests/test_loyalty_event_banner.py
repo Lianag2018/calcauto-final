@@ -206,7 +206,7 @@ def setup_base_url():
     """Ensure BASE_URL is set"""
     global BASE_URL
     if not BASE_URL:
-        BASE_URL = "https://stellantis-calc.preview.emergentagent.com"
+        BASE_URL = "https://toc-extraction-fix.preview.emergentagent.com"
     print(f"\nUsing BASE_URL: {BASE_URL}")
 
 

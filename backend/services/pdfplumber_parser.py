@@ -173,12 +173,76 @@ def _is_retail_data_row(row: list) -> bool:
 # RETAIL FINANCE PARSER
 # ═══════════════════════════════════════════════════════════════
 
+def _detect_rate_columns(table: list) -> Tuple[Optional[int], Optional[int]]:
+    """
+    Find the first column index for Option 1 and Option 2 rate headers.
+    Looks for '36M' or 'Up to 36M' in header rows.
+    Returns (opt1_start_col, opt2_start_col) or (None, None).
+    """
+    for row in table[:8]:
+        opt1_col = None
+        opt2_col = None
+        for ci, cell in enumerate(row):
+            if not cell:
+                continue
+            cs = str(cell).upper().replace('\n', ' ')
+            if '36M' in cs:
+                if opt1_col is None:
+                    opt1_col = ci
+                else:
+                    opt2_col = ci
+                    return (opt1_col, opt2_col)
+    return (None, None)
+
+
+def _find_names_table(tables: list) -> Optional[list]:
+    """
+    Find the separate names table (used in March-style PDFs).
+    It's the table where col[0] has reversed brand codes (RELSYRHC, PEEJ, etc.)
+    or col[1] has vehicle names.
+    """
+    brand_codes = set(BRAND_REVERSED_MAP.keys())
+    for t in tables[1:]:  # Skip table 0 (rates)
+        if not t or len(t) < 5 or len(t[0]) < 2:
+            continue
+        for ri in range(min(10, len(t))):
+            c0 = str(t[ri][0]).strip() if t[ri][0] else ''
+            if c0 in brand_codes:
+                return t
+    return None
+
+
+def _find_bonus_table(tables: list) -> Optional[list]:
+    """Find the separate Bonus Cash table (used in March-style PDFs)."""
+    for t in tables[1:]:
+        if not t or len(t) < 3 or len(t[0]) < 2:
+            continue
+        for ri in range(min(3, len(t))):
+            c1 = str(t[ri][1]).strip() if len(t[ri]) > 1 and t[ri][1] else ''
+            if 'Bonus Cash' in c1:
+                return t
+    return None
+
+
+def _has_rate_data(row: list, start_col: int) -> bool:
+    """Check if a row has rate data (% or -) in the rate columns."""
+    for ci in range(start_col, min(start_col + 6, len(row))):
+        v = str(row[ci]).strip() if row[ci] else ''
+        if '%' in v or v == '-':
+            return True
+    return False
+
+
 def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) -> List[Dict]:
     """
     Parse retail financing programs from PDF using pdfplumber.
+    Handles two layouts:
+      - Layout A (Jan/Feb): vehicle names + rates in the same table (25+ cols)
+      - Layout B (March): names in a separate table, rates in main table (24 cols)
     Returns list of program dicts matching the existing data schema.
     """
     programs = []
+    rate_keys = ['rate_36', 'rate_48', 'rate_60', 'rate_72', 'rate_84', 'rate_96']
 
     with pdfplumber.open(BytesIO(pdf_content)) as pdf:
         total_pages = len(pdf.pages)
@@ -194,107 +258,234 @@ def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) ->
 
             main_table = tables[0]
             num_cols = len(main_table[0]) if main_table else 0
-            logger.info(f"[RetailParser] Page {page_idx+1}: {len(main_table)} lignes, {num_cols} cols")
 
-            current_brand = None
-            model_year = None
+            # Detect rate column positions
+            opt1_start, opt2_start = _detect_rate_columns(main_table)
+            if opt1_start is None:
+                logger.info(f"[RetailParser] Page {page_idx+1}: no rate headers found")
+                continue
 
-            for row in main_table:
-                if not row or len(row) < 12:
-                    continue
+            # Consumer cash column is 2 before opt1_start (or 1 before)
+            cc_col = opt1_start - 2 if opt1_start >= 2 else 0
+            alt_cc_col = opt2_start - 2 if opt2_start and opt2_start >= 2 else None
 
-                # Detect model year
-                for cell in row:
-                    if cell:
-                        cs = str(cell)
-                        if '2026' in cs and ('MODEL' in cs.upper() or 'MODELS' in cs.upper()):
-                            model_year = 2026
-                        elif '2025' in cs and ('MODEL' in cs.upper() or 'MODELS' in cs.upper()):
-                            model_year = 2025
-                        elif '2024' in cs and ('MODEL' in cs.upper() or 'MODELS' in cs.upper()):
-                            model_year = 2024
+            logger.info(
+                f"[RetailParser] Page {page_idx+1}: {len(main_table)} rows, {num_cols} cols, "
+                f"opt1@{opt1_start}, opt2@{opt2_start}, cc@{cc_col}"
+            )
 
-                # Detect brand from col 0
-                brand = detect_brand_reversed(str(row[0]) if row[0] else '')
-                if brand:
-                    current_brand = brand
+            # Detect layout: check if main table has brand codes
+            names_table = _find_names_table(tables)
+            bonus_table = _find_bonus_table(tables)
+            layout = 'B' if names_table is not None else 'A'
 
-                if not _is_retail_data_row(row):
-                    continue
+            if layout == 'A':
+                # ── Layout A: names + rates in same table (Jan/Feb) ──
+                current_brand = None
+                model_year = None
+
+                for row in main_table:
+                    if not row or len(row) < 12:
+                        continue
+
+                    # Detect model year
+                    for cell in row:
+                        if cell:
+                            cs = str(cell)
+                            if '2026' in cs and ('MODEL' in cs.upper() or 'MODELS' in cs.upper()):
+                                model_year = 2026
+                            elif '2025' in cs and ('MODEL' in cs.upper() or 'MODELS' in cs.upper()):
+                                model_year = 2025
+                            elif '2024' in cs and ('MODEL' in cs.upper() or 'MODELS' in cs.upper()):
+                                model_year = 2024
+
+                    brand = detect_brand_reversed(str(row[0]) if row[0] else '')
+                    if brand:
+                        current_brand = brand
+
+                    if not _is_retail_data_row(row):
+                        continue
+                    if not model_year:
+                        continue
+
+                    vehicle_name = str(row[1]).replace('\n', ' ').strip() if row[1] else ''
+                    if not vehicle_name:
+                        continue
+
+                    inferred = detect_brand_from_model(vehicle_name)
+                    if inferred:
+                        if not current_brand or inferred != current_brand:
+                            current_brand = inferred
+
+                    if not current_brand:
+                        continue
+
+                    model, trim = split_model_trim(current_brand, vehicle_name)
+
+                    consumer_cash = parse_dollar(row[cc_col] if cc_col < len(row) else None)
+                    if not consumer_cash and cc_col + 1 < len(row):
+                        consumer_cash = parse_dollar(row[cc_col + 1])
+
+                    opt1 = {}
+                    opt1_ok = False
+                    for key, offset in zip(rate_keys, range(6)):
+                        idx = opt1_start + offset
+                        if idx < len(row):
+                            r = parse_rate(row[idx])
+                            opt1[key] = r
+                            if r is not None:
+                                opt1_ok = True
+                    if not opt1_ok:
+                        opt1 = None
+
+                    alt_consumer_cash = parse_dollar(row[alt_cc_col] if alt_cc_col and alt_cc_col < len(row) else None)
+
+                    opt2 = {}
+                    opt2_ok = False
+                    if opt2_start:
+                        for key, offset in zip(rate_keys, range(6)):
+                            idx = opt2_start + offset
+                            if idx < len(row):
+                                r = parse_rate(row[idx])
+                                opt2[key] = r
+                                if r is not None:
+                                    opt2_ok = True
+                    if not opt2_ok:
+                        opt2 = None
+
+                    # Bonus Cash: last col or second-to-last
+                    bonus_cash = 0
+                    if num_cols >= 27 and len(row) > 26:
+                        bonus_cash = parse_dollar(row[26])
+
+                    programs.append({
+                        'brand': current_brand,
+                        'model': model,
+                        'trim': trim,
+                        'year': model_year,
+                        'consumer_cash': consumer_cash,
+                        'alt_consumer_cash': alt_consumer_cash,
+                        'bonus_cash': bonus_cash,
+                        'option1_rates': opt1,
+                        'option2_rates': opt2,
+                    })
+
+            else:
+                # ── Layout B: names in separate table (March) ──
+                # Detect model year from all tables
+                model_year = None
+                for t in tables:
+                    for row in t[:5]:
+                        for cell in row:
+                            if cell:
+                                cs = str(cell)
+                                if '2026' in cs and ('MODEL' in cs.upper() or 'MODELS' in cs.upper()):
+                                    model_year = 2026
+                                elif '2025' in cs and ('MODEL' in cs.upper() or 'MODELS' in cs.upper()):
+                                    model_year = 2025
+                                elif '2024' in cs and ('MODEL' in cs.upper() or 'MODELS' in cs.upper()):
+                                    model_year = 2024
+                    if model_year:
+                        break
+
                 if not model_year:
+                    logger.info(f"[RetailParser] Page {page_idx+1}: no model year detected")
                     continue
 
-                vehicle_name = str(row[1]).replace('\n', ' ').strip() if row[1] else ''
-                if not vehicle_name:
-                    continue
+                # Extract vehicle names from names_table
+                vehicles = []
+                current_brand = None
+                for row in names_table:
+                    c0 = str(row[0]).strip() if row[0] else ''
+                    c1 = str(row[1]).replace('\n', ' ').strip() if len(row) > 1 and row[1] else ''
 
-                # Fiat 500e appears without brand marker
-                inferred = detect_brand_from_model(vehicle_name)
-                if inferred:
-                    if not current_brand or inferred != current_brand:
+                    brand = detect_brand_reversed(c0)
+                    if brand:
+                        current_brand = brand
+
+                    if not c1 or c1.lower().startswith('discount type'):
+                        continue
+
+                    inferred = detect_brand_from_model(c1)
+                    if inferred:
                         current_brand = inferred
 
-                if not current_brand:
-                    logger.warning(f"[RetailParser] Marque inconnue pour: {vehicle_name}")
-                    continue
+                    if not current_brand:
+                        continue
 
-                model, trim = split_model_trim(current_brand, vehicle_name)
+                    vehicles.append((current_brand, c1))
 
-                # Consumer Cash (col 4, sometimes P prefix in col 3)
-                consumer_cash = parse_dollar(row[4] if len(row) > 4 else None)
-                if not consumer_cash and len(row) > 3:
-                    c3 = str(row[3]).strip() if row[3] else ''
-                    if '$' in c3:
-                        consumer_cash = parse_dollar(c3)
+                # Extract rate rows from main table (skip headers)
+                rate_rows = []
+                for row in main_table:
+                    if _has_rate_data(row, opt1_start):
+                        rate_rows.append(row)
 
-                # Option 1 rates (cols 6-11: 36M, 48M, 60M, 72M, 84M, 96M)
-                rate_keys = ['rate_36', 'rate_48', 'rate_60', 'rate_72', 'rate_84', 'rate_96']
-                opt1 = {}
-                opt1_ok = False
-                for key, idx in zip(rate_keys, [6, 7, 8, 9, 10, 11]):
-                    if idx < len(row):
-                        r = parse_rate(row[idx])
-                        opt1[key] = r
-                        if r is not None:
-                            opt1_ok = True
-                if not opt1_ok:
-                    opt1 = None
+                # Extract bonus cash rows
+                bonus_rows = []
+                if bonus_table:
+                    for row in bonus_table:
+                        c1 = str(row[1]).strip() if len(row) > 1 and row[1] else ''
+                        if '$' in c1 or c1 == '' or c1 == '-':
+                            bonus_rows.append(parse_dollar(c1))
 
-                # Alt Consumer Cash (col 16)
-                alt_consumer_cash = parse_dollar(row[16] if len(row) > 16 else None)
-
-                # Option 2 rates (cols 18-23)
-                opt2 = {}
-                opt2_ok = False
-                for key, idx in zip(rate_keys, [18, 19, 20, 21, 22, 23]):
-                    if idx < len(row):
-                        r = parse_rate(row[idx])
-                        opt2[key] = r
-                        if r is not None:
-                            opt2_ok = True
-                if not opt2_ok:
-                    opt2 = None
-
-                # Bonus Cash (col 26 for 27-col tables)
-                bonus_cash = 0
-                if num_cols >= 27 and len(row) > 26:
-                    bonus_cash = parse_dollar(row[26])
-
-                programs.append({
-                    'brand': current_brand,
-                    'model': model,
-                    'trim': trim,
-                    'year': model_year,
-                    'consumer_cash': consumer_cash,
-                    'alt_consumer_cash': alt_consumer_cash,
-                    'bonus_cash': bonus_cash,
-                    'option1_rates': opt1,
-                    'option2_rates': opt2,
-                })
                 logger.info(
-                    f"[RetailParser] {current_brand} {model} {trim} ({model_year}) "
-                    f"cc=${consumer_cash} alt=${alt_consumer_cash} bonus=${bonus_cash}"
+                    f"[RetailParser] Layout B: {len(vehicles)} vehicles, "
+                    f"{len(rate_rows)} rate rows, {len(bonus_rows)} bonus rows"
                 )
+
+                # Zip vehicles with rate rows
+                for vi, (brand, vehicle_name) in enumerate(vehicles):
+                    if vi >= len(rate_rows):
+                        break
+
+                    rr = rate_rows[vi]
+                    model, trim = split_model_trim(brand, vehicle_name)
+
+                    consumer_cash = parse_dollar(rr[cc_col] if cc_col < len(rr) else None)
+
+                    opt1 = {}
+                    opt1_ok = False
+                    for key, offset in zip(rate_keys, range(6)):
+                        idx = opt1_start + offset
+                        if idx < len(rr):
+                            r = parse_rate(rr[idx])
+                            opt1[key] = r
+                            if r is not None:
+                                opt1_ok = True
+                    if not opt1_ok:
+                        opt1 = None
+
+                    alt_consumer_cash = parse_dollar(rr[alt_cc_col] if alt_cc_col and alt_cc_col < len(rr) else None)
+
+                    opt2 = {}
+                    opt2_ok = False
+                    if opt2_start:
+                        for key, offset in zip(rate_keys, range(6)):
+                            idx = opt2_start + offset
+                            if idx < len(rr):
+                                r = parse_rate(rr[idx])
+                                opt2[key] = r
+                                if r is not None:
+                                    opt2_ok = True
+                    if not opt2_ok:
+                        opt2 = None
+
+                    bonus_cash = bonus_rows[vi] if vi < len(bonus_rows) else 0
+
+                    programs.append({
+                        'brand': brand,
+                        'model': model,
+                        'trim': trim,
+                        'year': model_year,
+                        'consumer_cash': consumer_cash,
+                        'alt_consumer_cash': alt_consumer_cash,
+                        'bonus_cash': bonus_cash,
+                        'option1_rates': opt1,
+                        'option2_rates': opt2,
+                    })
+
+            logger.info(f"[RetailParser] Page {page_idx+1}: {len(programs)} programmes cumulés")
 
     logger.info(f"[RetailParser] Total programmes extraits: {len(programs)}")
     return programs
@@ -563,22 +754,50 @@ def _detect_loyalty(text: str) -> float:
 
 
 # ═══════════════════════════════════════════════════════════════
-# AUTO-DETECTION DES PAGES
+# AUTO-DETECTION DES PAGES (TOC-first strategy)
 # ═══════════════════════════════════════════════════════════════
+
+def _parse_toc(pdf_content: bytes) -> List[Tuple[str, int]]:
+    """
+    Parse the Table of Contents on page 2 of the PDF.
+    Returns ordered list of (section_name, page_number).
+
+    TOC format example:
+        Finance Prime Rate Landscapes ..... - 19 -
+        Lease Landscapes ..................... - 27 -
+        General Rules ......................... 5
+    """
+    with pdfplumber.open(BytesIO(pdf_content)) as pdf:
+        if len(pdf.pages) < 2:
+            return []
+        toc_text = pdf.pages[1].extract_text() or ''
+
+    entries = []
+    for line in toc_text.split('\n'):
+        # Match: "Section Name ..... - 19 -" or "Section Name ..... 19"
+        m = re.match(r'^(.+?)\s*[\.…]+\s*-?\s*(\d+)\s*-?\s*$', line.strip())
+        if m:
+            name = m.group(1).strip()
+            page = int(m.group(2))
+            entries.append((name, page))
+
+    logger.info(f"[TOC] Parsed {len(entries)} entries: {[(n, p) for n, p in entries]}")
+    return entries
+
 
 def auto_detect_pages(pdf_content: bytes) -> Dict:
     """
-    Scan le PDF et identifie automatiquement les sections:
-    - Finance Prime: pages avec tables de taux retail (25-27 cols, pas NON-PRIME)
-    - Non-Prime: pages avec tables retail + keyword NON-PRIME
-    - SCI Lease: pages avec tables de taux lease (30 cols)
-    - Key Incentives: pages 'Go to Market'
+    Détecte les sections du PDF en parsant la Table des Matières (page 2).
+
+    Chaque numéro de page dans la TOC pointe vers une PAGE TITRE.
+    Les données réelles commencent à toc_page + 1 et se terminent
+    à la page avant la section suivante (next_toc_page - 1).
 
     Returns dict with page ranges (1-indexed):
     {
-        'retail_start': 20, 'retail_end': 21,
+        'retail_start': 20, 'retail_end': 22,
         'lease_start': 28, 'lease_end': 29,
-        'non_prime_start': 24, 'non_prime_end': 25,
+        'non_prime_start': 24, 'non_prime_end': 26,
         'key_incentive_pages': [3, 4],
         'total_pages': 29,
         'detected_sections': [...]
@@ -588,143 +807,77 @@ def auto_detect_pages(pdf_content: bytes) -> Dict:
         'retail_start': None, 'retail_end': None,
         'lease_start': None, 'lease_end': None,
         'non_prime_start': None, 'non_prime_end': None,
-        'key_incentive_pages': [],
+        'key_incentive_pages': [3, 4],
         'total_pages': 0,
         'detected_sections': [],
     }
 
     with pdfplumber.open(BytesIO(pdf_content)) as pdf:
-        result['total_pages'] = len(pdf.pages)
-        retail_pages = []
-        non_prime_pages = []
-        lease_pages = []
-        ki_pages = []
+        total_pages = len(pdf.pages)
+        result['total_pages'] = total_pages
 
-        for i, page in enumerate(pdf.pages):
-            page_num = i + 1
-            text = (page.extract_text() or '')[:2000]
-            text_upper = text.upper()
+    toc = _parse_toc(pdf_content)
+    if not toc:
+        logger.warning("[AutoDetect] No TOC entries found, cannot detect pages")
+        return result
 
-            # Key Incentives: "Go to Market" or "Key Incentives" with table
-            if 'KEY INCENTIVES' in text_upper and page_num <= 10:
-                tables = page.extract_tables()
-                if tables and len(tables[0]) >= 3:
-                    ki_pages.append(page_num)
-                    continue
+    # Build an ordered list of TOC page numbers for boundary calculation
+    toc_pages_ordered = [page for _, page in toc]
 
-            # Multiple strategies to detect data pages
-            has_model_year = ('MODEL YEAR' in text_upper or 'MODEL\nYEAR' in text_upper
-                              or 'MODELYEAR' in text_upper.replace(' ', ''))
-            has_rate_keywords = any(kw in text_upper for kw in [
-                'CONSUMER CASH', 'BONUS CASH', 'RATE REDUCTION',
-                'FINANCE PRIME', 'RATE LANDSCAPE',
-            ])
-            has_term_headers = any(f'{t} MO' in text_upper or f'{t}\n' in text_upper 
-                                   for t in ['36', '48', '60', '72', '84', '96'])
-
-            # Skip if clearly not a data page
-            if not has_model_year and not has_rate_keywords and not has_term_headers:
+    def _find_section_range(keyword: str, exclude_keywords: List[str] = None) -> Optional[Tuple[int, int]]:
+        """Find a section by keyword in TOC and compute data page range."""
+        exclude_keywords = exclude_keywords or []
+        for idx, (name, toc_page) in enumerate(toc):
+            name_upper = name.upper()
+            if keyword.upper() not in name_upper:
                 continue
-
-            tables = page.extract_tables()
-            if not tables:
+            if any(ek.upper() in name_upper for ek in exclude_keywords):
                 continue
-
-            main_table = tables[0]
-            num_cols = len(main_table[0]) if main_table else 0
-
-            is_lease = 'LEASE INCENTIVE PROGRAM' in text_upper
-            is_non_prime = 'NON-PRIME' in text_upper or 'NON PRIME' in text_upper
-
-            if is_lease:
-                # SCI Lease pages have multi-table structure (names + rates)
-                if len(tables) >= 2:
-                    lease_pages.append(page_num)
-                    result['detected_sections'].append({
-                        'page': page_num,
-                        'type': 'lease',
-                        'year': _detect_year_from_text(text),
-                        'tables': len(tables),
-                    })
-            elif is_non_prime:
-                if num_cols >= 15:
-                    non_prime_pages.append(page_num)
-                    result['detected_sections'].append({
-                        'page': page_num,
-                        'type': 'non_prime',
-                        'year': _detect_year_from_text(text),
-                        'cols': num_cols,
-                    })
+            # Data starts after the title page
+            data_start = toc_page + 1
+            # Data ends before the next TOC section's title page
+            if idx + 1 < len(toc):
+                data_end = toc[idx + 1][1] - 1
             else:
-                # Retail Finance Prime: large table (lowered threshold from 20 to 15)
-                if num_cols >= 15:
-                    retail_pages.append(page_num)
-                    result['detected_sections'].append({
-                        'page': page_num,
-                        'type': 'retail_prime',
-                        'year': _detect_year_from_text(text),
-                        'cols': num_cols,
-                    })
+                data_end = total_pages
+            if data_start > data_end:
+                data_end = data_start
+            return (data_start, data_end)
+        return None
 
-        # Set page ranges — use first consecutive group to avoid overmatching
-        if retail_pages:
-            result['retail_start'] = min(retail_pages)
-            result['retail_end'] = max(retail_pages)
-        if lease_pages:
-            # Take the LAST consecutive group of lease pages
-            # SCI Lease is always near the end of the PDF
-            sorted_lease = sorted(lease_pages)
-            groups = [[sorted_lease[0]]]
-            for i in range(1, len(sorted_lease)):
-                if sorted_lease[i] - sorted_lease[i-1] <= 2:
-                    groups[-1].append(sorted_lease[i])
-                else:
-                    groups.append([sorted_lease[i]])
-            last_group = groups[-1]  # Take the last group
-            result['lease_start'] = min(last_group)
-            result['lease_end'] = max(last_group)
-            logger.info(f"[AutoDetect] Lease pages detected: {sorted_lease}, groups: {groups}, using last group: {last_group}")
-        if non_prime_pages:
-            result['non_prime_start'] = min(non_prime_pages)
-            result['non_prime_end'] = max(non_prime_pages)
-        result['key_incentive_pages'] = ki_pages
+    # Finance Prime Rate Landscapes (exclude "Non-Prime" and "Loyalty")
+    retail = _find_section_range('Finance Prime Rate Landscape', exclude_keywords=['Non', 'Loyalty'])
+    if retail:
+        result['retail_start'], result['retail_end'] = retail
+        result['detected_sections'].append({
+            'type': 'retail_prime', 'pages': f"{retail[0]}-{retail[1]}", 'source': 'TOC'
+        })
 
-        # Fallback: Try TOC-based detection if retail not found
-        if not retail_pages:
-            logger.info("[AutoDetect] Retail not found by table scan, trying TOC fallback...")
-            for i in range(min(5, len(pdf.pages))):
-                toc_text = (pdf.pages[i].extract_text() or '').upper()
-                # Look for TOC entries like "Finance Prime Rate Landscapes...20"
-                toc_patterns = [
-                    r'FINANCE\s+PRIME\s+RATE\s+LANDSCAPE[S]?\s*[\.…\s]+(\d+)',
-                    r'PRIME\s+RATE\s+LANDSCAPE[S]?\s*[\.…\s]+(\d+)',
-                    r'RETAIL\s+INCENTIVE[S]?\s+PROGRAM[S]?\s*[\.…\s]+(\d+)',
-                    r'FINANCE\s+PRIME[^\.]*[\.…\s]+(\d+)',
-                ]
-                for pattern in toc_patterns:
-                    m = re.search(pattern, toc_text)
-                    if m:
-                        toc_start = int(m.group(1))
-                        result['retail_start'] = toc_start
-                        # Estimate end page: scan a few pages after start
-                        result['retail_end'] = min(toc_start + 4, len(pdf.pages))
-                        logger.info(f"[AutoDetect] TOC fallback found retail at pages {toc_start}-{result['retail_end']}")
-                        break
-                if result['retail_start']:
-                    break
+    # Finance Non-Prime Rate Landscapes (exclude "Loyalty")
+    non_prime = _find_section_range('Non- Prime Rate Landscape', exclude_keywords=['Loyalty'])
+    if not non_prime:
+        non_prime = _find_section_range('Non-Prime Rate Landscape', exclude_keywords=['Loyalty'])
+    if non_prime:
+        result['non_prime_start'], result['non_prime_end'] = non_prime
+        result['detected_sections'].append({
+            'type': 'non_prime', 'pages': f"{non_prime[0]}-{non_prime[1]}", 'source': 'TOC'
+        })
+
+    # Lease Landscapes (exclude "Loyalty")
+    lease = _find_section_range('Lease Landscape', exclude_keywords=['Loyalty'])
+    if lease:
+        result['lease_start'], result['lease_end'] = lease
+        result['detected_sections'].append({
+            'type': 'lease', 'pages': f"{lease[0]}-{lease[1]}", 'source': 'TOC'
+        })
 
     logger.info(
-        f"[AutoDetect] Retail={result['retail_start']}-{result['retail_end']}, "
+        f"[AutoDetect] TOC-based: Retail={result['retail_start']}-{result['retail_end']}, "
         f"Lease={result['lease_start']}-{result['lease_end']}, "
         f"NonPrime={result['non_prime_start']}-{result['non_prime_end']}, "
-        f"KeyIncentives={ki_pages}"
+        f"KeyIncentives={result['key_incentive_pages']}"
     )
     return result
-
-
-def _detect_year_from_text(text: str) -> Optional[int]:
-    m = re.search(r'(20\d{2})\s+Model\s+Year', text, re.IGNORECASE)
-    return int(m.group(1)) if m else None
 
 
 

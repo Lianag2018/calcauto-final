@@ -915,47 +915,6 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
         valid_programs = parse_retail_programs(pdf_content, start_page, end_page)
         logger.info(f"[Async] pdfplumber extracted {len(valid_programs)} retail programs from pages {start_page}-{end_page}")
 
-        # Fallback: if 0 programs found, try TOC-based page detection
-        if len(valid_programs) == 0 and start_page > 0:
-            logger.info("[Async] 0 programs found, trying TOC fallback...")
-            from services.pdfplumber_parser import auto_detect_pages
-            detected = auto_detect_pages(pdf_content)
-
-            # Try TOC-based pages (different from table-scan pages)
-            toc_start = None
-            toc_end = None
-
-            # Scan TOC for Finance Prime page references
-            import pdfplumber as _pdfplumber
-            from io import BytesIO as _BytesIO
-            with _pdfplumber.open(_BytesIO(pdf_content)) as _pdf:
-                for i in range(min(5, len(_pdf.pages))):
-                    toc_text = (_pdf.pages[i].extract_text() or '').upper()
-                    # Multiple patterns for Finance Prime in TOC
-                    import re as _re
-                    toc_patterns = [
-                        r'LOYALTY.*FINANCE\s+PRIME\s+RATE\s+LANDSCAPE[S]?\s*[\.…\.\s]+(\d+)',
-                        r'FINANCE\s+PRIME\s+RATE\s+LANDSCAPE[S]?\s*[\.…\.\s]+(\d+)',
-                        r'PRIME\s+RATE\s+LANDSCAPE[S]?\s*[\.…\.\s]+(\d+)',
-                    ]
-                    for pattern in toc_patterns:
-                        m = _re.search(pattern, toc_text)
-                        if m:
-                            toc_start = int(m.group(1))
-                            toc_end = toc_start + 3  # scan a few pages
-                            logger.info(f"[Async] TOC fallback found Finance Prime at page {toc_start}")
-                            break
-                    if toc_start:
-                        break
-
-            if toc_start and toc_start != start_page:
-                logger.info(f"[Async] Retrying with TOC pages {toc_start}-{toc_end}")
-                valid_programs = parse_retail_programs(pdf_content, toc_start, toc_end)
-                logger.info(f"[Async] TOC fallback extracted {len(valid_programs)} programs")
-                if len(valid_programs) > 0:
-                    start_page = toc_start
-                    end_page = toc_end
-
         await db.extract_tasks.update_one(
             {"task_id": task_id},
             {"$set": {"status": "saving", "message": f"{len(valid_programs)} programmes extraits. Sauvegarde..."}}

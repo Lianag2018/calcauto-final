@@ -1,12 +1,13 @@
 {
   "event_names": [
-    "Month of Ram"
+    "Month of Ram",
+    "Jeep No Limits Event"
   ],
-  "program_period": "March 3, 2026 - March 30, 2026",
+  "program_period": "March 3, 2026 - March 31, 2026",
   "program_month": "March",
   "program_year": 2026,
   "loyalty_rate": 0.5,
-  "no_payments_days": 90,
+  "no_payments_days": 0,
   "featured_rate": 0.0,
   "featured_term": 72,
   "key_message": "For March, the 'Month of Ram' is here! Celebrate with exclusive rate reductions, including a 0.5% loyalty rate reduction for eligible customers, plus No Finance Payments for 90 Days!",

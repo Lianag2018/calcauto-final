@@ -7,7 +7,7 @@ import requests
 import os
 import math
 
-BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://stellantis-calc.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://toc-extraction-fix.preview.emergentagent.com').rstrip('/')
 
 class TestDeferredPaymentAPI:
     """Test backend API for program metadata with no_payments_days"""
