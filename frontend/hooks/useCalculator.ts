@@ -65,6 +65,7 @@ interface CalculatorInputs {
   montantDuEchange: string;
   accessories: Array<{ description: string; price: string }>;
   rabaisConcess: string;
+  loyaltyRate?: number;
 }
 
 /**
@@ -78,6 +79,7 @@ export function useCalculator(inputs: CalculatorInputs) {
     selectedProgram, vehiclePrice, selectedTerm, customBonusCash,
     comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM,
     prixEchange, montantDuEchange, accessories, rabaisConcess,
+    loyaltyRate = 0,
   } = inputs;
 
   const calculateForTerm = useCallback(() => {
@@ -116,7 +118,7 @@ export function useCalculator(inputs: CalculatorInputs) {
     const taxesO1 = montantAvantTaxesO1 * TAUX_TAXE;
     const principalOption1Brut = montantAvantTaxesO1 + taxesO1 + detteSurEchange;
     const principalOption1 = principalOption1Brut - comptant - bonusCash;
-    const rate1 = getRateForTerm(selectedProgram.option1_rates, selectedTerm);
+    const rate1 = Math.max(0, getRateForTerm(selectedProgram.option1_rates, selectedTerm) - loyaltyRate);
     const monthly1 = calculateMonthlyPayment(Math.max(0, principalOption1), rate1, selectedTerm);
     const biweekly1 = monthly1 * 12 / 26;
     const weekly1 = monthly1 * 12 / 52;
@@ -139,7 +141,7 @@ export function useCalculator(inputs: CalculatorInputs) {
     const principalOption2 = principalOption2Brut - comptant;
 
     if (selectedProgram.option2_rates) {
-      rate2 = getRateForTerm(selectedProgram.option2_rates, selectedTerm);
+      rate2 = Math.max(0, getRateForTerm(selectedProgram.option2_rates, selectedTerm) - loyaltyRate);
       monthly2 = calculateMonthlyPayment(Math.max(0, principalOption2), rate2, selectedTerm);
       biweekly2 = monthly2 * 12 / 26;
       weekly2 = monthly2 * 12 / 52;
@@ -178,7 +180,7 @@ export function useCalculator(inputs: CalculatorInputs) {
       comptant,
       bonusCash,
     });
-  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, rabaisConcess]);
+  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, rabaisConcess, loyaltyRate]);
 
   useEffect(() => {
     calculateForTerm();

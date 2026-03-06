@@ -43,6 +43,7 @@ import {
 import type { FinancingRates, VehicleProgram, PaymentComparison, CalculationResult, LocalResult, ProgramPeriod, PaymentFrequency } from '../../types/calculator';
 // Extracted components and styles
 import { LoadingBorderAnimation } from '../../components/LoadingBorderAnimation';
+import { EventBanner } from '../../components/EventBanner';
 import { styles, loadingStyles } from './styles/homeStyles';
 
 import { API_URL } from '../../utils/api';
@@ -137,6 +138,21 @@ export default function HomeScreen() {
   // Current program period
   const [currentPeriod, setCurrentPeriod] = useState<{month: number, year: number} | null>(null);
   
+  // Program event metadata (from cover page parsing)
+  const [programMeta, setProgramMeta] = useState<{
+    event_names: string[];
+    program_period: string;
+    program_month: string;
+    loyalty_rate: number;
+    no_payments_days: number;
+    featured_rate: number | null;
+    featured_term: number | null;
+    key_message: string;
+  } | null>(null);
+  
+  // Loyalty rate toggle (from event metadata)
+  const [loyaltyChecked, setLoyaltyChecked] = useState(false);
+  
   // Available periods (from API)
   const [availablePeriods, setAvailablePeriods] = useState<{month: number, year: number, count: number}[]>([]);
   const [showPeriodSelector, setShowPeriodSelector] = useState(false);
@@ -214,6 +230,7 @@ export default function HomeScreen() {
   const leaseKmOptions = [12000, 18000, 24000];
 
   // Calcul de financement (logique extraite dans useCalculator)
+  const activeLoyaltyRate = loyaltyChecked && programMeta?.loyalty_rate ? programMeta.loyalty_rate : 0;
   const { localResult } = useCalculator({
     selectedProgram,
     vehiclePrice,
@@ -227,6 +244,7 @@ export default function HomeScreen() {
     montantDuEchange,
     accessories,
     rabaisConcess: leaseRabaisConcess,
+    loyaltyRate: activeLoyaltyRate,
   });
 
   const loadPrograms = useCallback(async (month?: number, year?: number) => {
@@ -273,10 +291,24 @@ export default function HomeScreen() {
       
       // Get current period from first program or params
       if (response.data.length > 0) {
-        setCurrentPeriod({
-          month: month || response.data[0].program_month,
-          year: year || response.data[0].program_year
-        });
+        const periodMonth = month || response.data[0].program_month;
+        const periodYear = year || response.data[0].program_year;
+        setCurrentPeriod({ month: periodMonth, year: periodYear });
+        
+        // Load program metadata (event info from cover page)
+        try {
+          const metaRes = await axios.get(`${API_URL}/api/program-meta`, {
+            params: { month: periodMonth, year: periodYear }
+          });
+          if (metaRes.data && metaRes.data.event_names) {
+            setProgramMeta(metaRes.data);
+            // Reset loyalty checkbox when switching periods
+            setLoyaltyChecked(false);
+          }
+        } catch (e) {
+          console.log('Could not load program meta');
+          setProgramMeta(null);
+        }
       }
       
       // Ensure minimum loading time for animation effect
@@ -1590,6 +1622,16 @@ export default function HomeScreen() {
           }
           keyboardShouldPersistTaps="handled"
         >
+          {/* Event Banner - Dynamic from PDF cover page */}
+          {programMeta && programMeta.event_names?.length > 0 && programMeta.event_names[0] && (
+            <EventBanner
+              meta={programMeta}
+              lang={lang}
+              loyaltyChecked={loyaltyChecked}
+              onToggleLoyalty={() => setLoyaltyChecked(prev => !prev)}
+            />
+          )}
+
           {/* Year Filter */}
           <View style={styles.filterSection}>
             <Text style={styles.filterLabel}>{t.filters.year}</Text>

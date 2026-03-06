@@ -718,6 +718,41 @@ async def scan_pdf(
         logger.error(f"[ScanPDF] Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erreur scan: {str(e)}")
 
+
+@router.get("/program-meta")
+async def get_program_meta(month: Optional[int] = None, year: Optional[int] = None):
+    """
+    Retourne les métadonnées du programme du mois (événement, loyauté, etc.).
+    Auto-détecte le dernier fichier si month/year non spécifiés.
+    """
+    en_month_abbrev = ["", "jan", "feb", "mar", "apr", "may", "jun",
+                      "jul", "aug", "sep", "oct", "nov", "dec"]
+    data_dir = ROOT_DIR / "data"
+
+    if month and year:
+        filename = f"program_meta_{en_month_abbrev[month]}{year}.json"
+        filepath = data_dir / filename
+    else:
+        # Find latest program_meta file
+        meta_files = sorted(data_dir.glob("program_meta_*.json"), reverse=True)
+        filepath = meta_files[0] if meta_files else None
+
+    if filepath and filepath.exists():
+        with open(filepath, 'r', encoding='utf-8') as f:
+            return json.load(f)
+
+    return {
+        "event_names": [],
+        "program_period": "",
+        "program_month": "",
+        "program_year": None,
+        "loyalty_rate": 0.0,
+        "no_payments_days": 0,
+        "featured_rate": None,
+        "featured_term": None,
+        "key_message": "",
+    }
+
 @router.post("/verify-password")
 async def verify_password(password: str = Form(...)):
     """Vérifie le mot de passe admin"""
@@ -966,6 +1001,25 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
                 logger.info(f"[Async] Key incentives saved: {ki_path} ({len(key_incentives)} entries)")
         except Exception as ki_error:
             logger.error(f"[Async] Key incentives error: {str(ki_error)}")
+
+        # ── Step 4.5: Parse cover page metadata ──
+        cover_data = None
+        try:
+            from services.pdfplumber_parser import parse_cover_page
+            cover_data = parse_cover_page(pdf_content)
+            if cover_data:
+                en_month_abbrev = ["", "jan", "feb", "mar", "apr", "may", "jun",
+                                  "jul", "aug", "sep", "oct", "nov", "dec"]
+                cover_filename = f"program_meta_{en_month_abbrev[program_month]}{program_year}.json"
+                cover_path = ROOT_DIR / "data" / cover_filename
+                # Remove raw_intro to keep file small
+                save_data = {k: v for k, v in cover_data.items() if k != 'raw_intro'}
+                save_data['program_month_num'] = program_month
+                with open(cover_path, 'w', encoding='utf-8') as f:
+                    json.dump(save_data, f, indent=2, ensure_ascii=False)
+                logger.info(f"[Async] Cover page metadata saved: {cover_path}")
+        except Exception as cover_error:
+            logger.error(f"[Async] Cover page error: {str(cover_error)}")
 
         # ── Step 5: Generate Excel and send email ──
         excel_sent = False

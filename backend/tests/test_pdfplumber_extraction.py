@@ -7,7 +7,7 @@ import requests
 import os
 import json
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://stellar-parser.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://stellantis-calc.preview.emergentagent.com').rstrip('/')
 
 
 class TestRetailProgramsAPI:

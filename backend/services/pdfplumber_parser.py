@@ -673,3 +673,89 @@ def auto_detect_pages(pdf_content: bytes) -> Dict:
 def _detect_year_from_text(text: str) -> Optional[int]:
     m = re.search(r'(20\d{2})\s+Model\s+Year', text, re.IGNORECASE)
     return int(m.group(1)) if m else None
+
+
+
+# ═══════════════════════════════════════════════════════════════
+# COVER PAGE PARSER (page 1)
+# ═══════════════════════════════════════════════════════════════
+
+def parse_cover_page(pdf_content: bytes) -> Dict:
+    """
+    Parse la page de couverture (p.1) du PDF pour extraire:
+    - Nom(s) d'événement (ex: '4X4 Winter Event', 'Month of Ram')
+    - Période du programme
+    - Taux loyauté si mentionné
+    - Offre No-Payments si mentionnée
+    - Message clé du mois
+    - Taux vedette (ex: "0% for 72 months")
+    """
+    result = {
+        'event_names': [],
+        'program_period': '',
+        'program_month': '',
+        'program_year': None,
+        'loyalty_rate': 0.0,
+        'no_payments_days': 0,
+        'featured_rate': None,
+        'featured_term': None,
+        'key_message': '',
+        'raw_intro': '',
+    }
+
+    with pdfplumber.open(BytesIO(pdf_content)) as pdf:
+        if not pdf.pages:
+            return result
+        text = pdf.pages[0].extract_text() or ''
+        result['raw_intro'] = text
+
+    # Event names: text between single quotes
+    events = re.findall(r"['\u2018\u2019]([^'\u2018\u2019]+)['\u2018\u2019]", text)
+    result['event_names'] = [e.strip() for e in events if len(e.strip()) > 3]
+
+    # Program period: "February 3, 2026 – March 2, 2026"
+    period_m = re.search(
+        r'Program Period:\s*\n?\s*(.+?\d{4})\s*[–\-]\s*(.+?\d{4})',
+        text, re.IGNORECASE
+    )
+    if period_m:
+        result['program_period'] = f"{period_m.group(1).strip()} - {period_m.group(2).strip()}"
+
+    # Program month/year: "incentive programs for February 2026"
+    month_m = re.search(
+        r'incentive programs for (\w+)\s+(\d{4})',
+        text, re.IGNORECASE
+    )
+    if month_m:
+        result['program_month'] = month_m.group(1)
+        result['program_year'] = int(month_m.group(2))
+
+    # Loyalty rate: "up to a 0.5% loyalty rate reduction"
+    loyalty_m = re.search(r'(\d+\.?\d*)%\s+loyalty\s+rate\s+reduction', text, re.IGNORECASE)
+    if loyalty_m:
+        result['loyalty_rate'] = float(loyalty_m.group(1))
+
+    # No payments: "No Finance Payments for 90 Days"
+    # Handle newlines in PDF text
+    text_flat = ' '.join(text.split())
+    payments_m = re.search(r'No Finance Payments\s+for\s+(\d+)\s+Days', text_flat, re.IGNORECASE)
+    if payments_m:
+        result['no_payments_days'] = int(payments_m.group(1))
+
+    # Featured rate: "as low as 0% for 72 months"
+    rate_m = re.search(r'as low as (\d+\.?\d*)%\s+for\s+(\d+)\s+months', text, re.IGNORECASE)
+    if rate_m:
+        result['featured_rate'] = float(rate_m.group(1))
+        result['featured_term'] = int(rate_m.group(2))
+
+    # Key message: paragraph starting with "For January/February/March..."
+    msg_m = re.search(r'(For \w+,\s+the .+?)(?:Get your plan|$)', text, re.DOTALL | re.IGNORECASE)
+    if msg_m:
+        result['key_message'] = ' '.join(msg_m.group(1).split())
+
+    logger.info(
+        f"[CoverPage] Events={result['event_names']}, "
+        f"Month={result['program_month']} {result['program_year']}, "
+        f"Loyalty={result['loyalty_rate']}%, NoPayments={result['no_payments_days']}d"
+    )
+    return result

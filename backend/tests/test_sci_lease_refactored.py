@@ -11,7 +11,7 @@ import requests
 import os
 import math
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://stellar-parser.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://stellantis-calc.preview.emergentagent.com')
 
 # Test credentials
 TEST_EMAIL = "danielgiroux007@gmail.com"
