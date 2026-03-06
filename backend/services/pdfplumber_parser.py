@@ -666,13 +666,23 @@ def auto_detect_pages(pdf_content: bytes) -> Dict:
                         'cols': num_cols,
                     })
 
-        # Set page ranges
+        # Set page ranges — use first consecutive group to avoid overmatching
         if retail_pages:
             result['retail_start'] = min(retail_pages)
             result['retail_end'] = max(retail_pages)
         if lease_pages:
-            result['lease_start'] = min(lease_pages)
-            result['lease_end'] = max(lease_pages)
+            # Only take the first consecutive group of lease pages
+            # e.g., [25, 26, 37, 38, 39] → only [25, 26]
+            sorted_lease = sorted(lease_pages)
+            first_group = [sorted_lease[0]]
+            for i in range(1, len(sorted_lease)):
+                if sorted_lease[i] - sorted_lease[i-1] <= 2:  # allow 1 gap page
+                    first_group.append(sorted_lease[i])
+                else:
+                    break
+            result['lease_start'] = min(first_group)
+            result['lease_end'] = max(first_group)
+            logger.info(f"[AutoDetect] Lease pages detected: {sorted_lease}, using first group: {first_group}")
         if non_prime_pages:
             result['non_prime_start'] = min(non_prime_pages)
             result['non_prime_end'] = max(non_prime_pages)
