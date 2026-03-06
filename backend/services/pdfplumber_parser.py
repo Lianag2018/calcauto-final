@@ -327,6 +327,13 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
 
         for page_idx in range(start_idx, end_idx):
             page = pdf.pages[page_idx]
+
+            # Quick text pre-filter: skip pages without lease-relevant keywords
+            quick_text = (page.extract_text() or '')[:500].upper()
+            if 'MODEL YEAR' not in quick_text and 'MODEL\nYEAR' not in quick_text:
+                logger.info(f"[SCIParser] Page {page_idx+1}: skipped (no MODEL YEAR)")
+                continue
+
             tables = page.extract_tables()
             if len(tables) < 2:
                 continue
