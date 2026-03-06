@@ -45,6 +45,13 @@ Application CRM pour concessionnaire automobile Stellantis/FCA Canada. Calculate
   - Testé : Mars 2026 "Month of Ram" (-0.5%) et Février 2026 "4X4 Winter Event" (0%)
   - Tests 100% : backend (10/10) + frontend (toutes fonctionnalités vérifiées)
 
+- [x] **P0 - 90 Jours Sans Versement (Paiement Différé)** (TERMINÉ - Mars 6, 2026)
+  - Checkbox optionnel "90j sans versement" dans le bandeau
+  - Logique : 2 mois d'intérêts composés capitalisés, 1er versement au 90e jour
+  - Éligible uniquement pour termes ≤ 84 mois (message "Non disponible" pour 96 mois)
+  - Combinable avec la fidélité (réduction taux + capitalisation)
+  - Tests 100% : backend (9/9) + frontend complet
+
 ### Previously Completed
 - [x] SCI Lease Data Pipeline (dynamique + historique)
 - [x] Data Carry-over (copie taux du mois précédent)
