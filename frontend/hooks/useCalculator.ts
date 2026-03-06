@@ -66,6 +66,7 @@ interface CalculatorInputs {
   accessories: Array<{ description: string; price: string }>;
   rabaisConcess: string;
   loyaltyRate?: number;
+  deferredPayment?: boolean;
 }
 
 /**
@@ -80,6 +81,7 @@ export function useCalculator(inputs: CalculatorInputs) {
     comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM,
     prixEchange, montantDuEchange, accessories, rabaisConcess,
     loyaltyRate = 0,
+    deferredPayment = false,
   } = inputs;
 
   const calculateForTerm = useCallback(() => {
@@ -119,7 +121,16 @@ export function useCalculator(inputs: CalculatorInputs) {
     const principalOption1Brut = montantAvantTaxesO1 + taxesO1 + detteSurEchange;
     const principalOption1 = principalOption1Brut - comptant - bonusCash;
     const rate1 = Math.max(0, getRateForTerm(selectedProgram.option1_rates, selectedTerm) - loyaltyRate);
-    const monthly1 = calculateMonthlyPayment(Math.max(0, principalOption1), rate1, selectedTerm);
+
+    // 90 jours sans paiement: capitalise 2 mois d'intérêts (éligible ≤ 84 mois seulement)
+    const canDefer = deferredPayment && selectedTerm <= 84;
+    const monthlyRate1 = rate1 / 100 / 12;
+    const deferredPrincipal1 = canDefer && monthlyRate1 > 0
+      ? Math.max(0, principalOption1) * Math.pow(1 + monthlyRate1, 2)
+      : Math.max(0, principalOption1);
+    const deferredInterest1 = canDefer ? deferredPrincipal1 - Math.max(0, principalOption1) : 0;
+
+    const monthly1 = calculateMonthlyPayment(deferredPrincipal1, rate1, selectedTerm);
     const biweekly1 = monthly1 * 12 / 26;
     const weekly1 = monthly1 * 12 / 52;
     const total1 = monthly1 * selectedTerm;
@@ -142,7 +153,14 @@ export function useCalculator(inputs: CalculatorInputs) {
 
     if (selectedProgram.option2_rates) {
       rate2 = Math.max(0, getRateForTerm(selectedProgram.option2_rates, selectedTerm) - loyaltyRate);
-      monthly2 = calculateMonthlyPayment(Math.max(0, principalOption2), rate2, selectedTerm);
+
+      // 90 jours sans paiement pour Option 2 aussi
+      const monthlyRate2 = rate2 / 100 / 12;
+      const deferredPrincipal2 = canDefer && monthlyRate2 > 0
+        ? Math.max(0, principalOption2) * Math.pow(1 + monthlyRate2, 2)
+        : Math.max(0, principalOption2);
+
+      monthly2 = calculateMonthlyPayment(deferredPrincipal2, rate2, selectedTerm);
       biweekly2 = monthly2 * 12 / 26;
       weekly2 = monthly2 * 12 / 52;
       total2 = monthly2 * selectedTerm;
@@ -179,8 +197,10 @@ export function useCalculator(inputs: CalculatorInputs) {
       echangeNet,
       comptant,
       bonusCash,
+      deferredInterest: deferredInterest1,
+      deferredActive: canDefer,
     });
-  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, rabaisConcess, loyaltyRate]);
+  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, rabaisConcess, loyaltyRate, deferredPayment]);
 
   useEffect(() => {
     calculateForTerm();

@@ -19,6 +19,9 @@ interface EventBannerProps {
   lang: 'fr' | 'en';
   loyaltyChecked: boolean;
   onToggleLoyalty: () => void;
+  deferredChecked: boolean;
+  onToggleDeferred: () => void;
+  selectedTerm: number;
 }
 
 const brandColors: Record<string, { bg: string; text: string; accent: string }> = {
@@ -39,7 +42,7 @@ function BrandBadge({ brand }: { brand: string }) {
   );
 }
 
-export function EventBanner({ meta, lang, loyaltyChecked, onToggleLoyalty }: EventBannerProps) {
+export function EventBanner({ meta, lang, loyaltyChecked, onToggleLoyalty, deferredChecked, onToggleDeferred, selectedTerm }: EventBannerProps) {
   const eventName = meta.event_names?.[0] || '';
   if (!eventName) return null;
 
@@ -47,6 +50,7 @@ export function EventBanner({ meta, lang, loyaltyChecked, onToggleLoyalty }: Eve
   const hasNoPayments = meta.no_payments_days > 0;
   const hasFeaturedRate = meta.featured_rate !== null && meta.featured_rate !== undefined;
   const brands = meta.brands || [];
+  const termEligible = selectedTerm <= 84;
 
   return (
     <View style={s.container} data-testid="event-banner">
@@ -90,29 +94,58 @@ export function EventBanner({ meta, lang, loyaltyChecked, onToggleLoyalty }: Eve
         )}
       </View>
 
-      {/* Loyalty rate toggle */}
-      {hasLoyalty && (
-        <TouchableOpacity
-          style={[s.loyaltyRow, loyaltyChecked && s.loyaltyRowActive]}
-          onPress={onToggleLoyalty}
-          activeOpacity={0.7}
-          data-testid="loyalty-toggle"
-        >
-          <View style={[s.checkbox, loyaltyChecked && s.checkboxActive]}>
-            {loyaltyChecked && <Ionicons name="checkmark" size={14} color="#1a1a2e" />}
-          </View>
-          <View style={s.loyaltyTextWrap}>
-            <Text style={s.loyaltyLabel}>
-              {lang === 'fr' ? 'Fidelite' : 'Loyalty'} -{meta.loyalty_rate}%
-            </Text>
-            <Text style={s.loyaltyDesc}>
-              {lang === 'fr'
-                ? 'Reduction de taux appliquee aux calculs'
-                : 'Rate reduction applied to calculations'}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      )}
+      {/* Toggles row */}
+      <View style={s.togglesSection}>
+        {/* 90 days deferred payment toggle */}
+        {hasNoPayments && (
+          <TouchableOpacity
+            style={[s.toggleRow, deferredChecked && termEligible && s.toggleRowActiveDeferred]}
+            onPress={onToggleDeferred}
+            activeOpacity={0.7}
+            data-testid="deferred-toggle"
+          >
+            <View style={[s.checkbox, deferredChecked && termEligible ? s.checkboxActiveDeferred : null]}>
+              {deferredChecked && termEligible && <Ionicons name="checkmark" size={14} color="#1a1a2e" />}
+            </View>
+            <View style={s.toggleTextWrap}>
+              <Text style={[s.toggleLabel, { color: '#FFD700' }]}>
+                {meta.no_payments_days}j {lang === 'fr' ? 'sans versement' : 'no payment'}
+              </Text>
+              <Text style={s.toggleDesc}>
+                {!termEligible
+                  ? (lang === 'fr' ? 'Non disponible pour 96 mois (max 84)' : 'Not available for 96mo (max 84)')
+                  : (lang === 'fr'
+                    ? '1er versement au 90e jour, interets capitalises'
+                    : '1st payment on day 90, interest capitalized')}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* Loyalty rate toggle */}
+        {hasLoyalty && (
+          <TouchableOpacity
+            style={[s.toggleRow, loyaltyChecked && s.toggleRowActiveLoyalty]}
+            onPress={onToggleLoyalty}
+            activeOpacity={0.7}
+            data-testid="loyalty-toggle"
+          >
+            <View style={[s.checkbox, loyaltyChecked && s.checkboxActiveLoyalty]}>
+              {loyaltyChecked && <Ionicons name="checkmark" size={14} color="#1a1a2e" />}
+            </View>
+            <View style={s.toggleTextWrap}>
+              <Text style={[s.toggleLabel, { color: '#4ECDC4' }]}>
+                {lang === 'fr' ? 'Fidelite' : 'Loyalty'} -{meta.loyalty_rate}%
+              </Text>
+              <Text style={s.toggleDesc}>
+                {lang === 'fr'
+                  ? 'Reduction de taux appliquee aux calculs'
+                  : 'Rate reduction applied to calculations'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
@@ -193,18 +226,25 @@ const s = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
-  loyaltyRow: {
+  togglesSection: {
+    gap: 8,
+    marginTop: 10,
+  },
+  toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginTop: 10,
     backgroundColor: '#1a1a2e',
     padding: 10,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#2d2d44',
   },
-  loyaltyRowActive: {
+  toggleRowActiveDeferred: {
+    borderColor: '#FFD700',
+    backgroundColor: 'rgba(255,215,0,0.08)',
+  },
+  toggleRowActiveLoyalty: {
     borderColor: '#4ECDC4',
     backgroundColor: 'rgba(78,205,196,0.08)',
   },
@@ -214,21 +254,25 @@ const s = StyleSheet.create({
     borderRadius: 6,
     borderWidth: 2,
     borderColor: '#4ECDC4',
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
-  checkboxActive: {
+  checkboxActiveDeferred: {
+    backgroundColor: '#FFD700',
+    borderColor: '#FFD700',
+  },
+  checkboxActiveLoyalty: {
     backgroundColor: '#4ECDC4',
+    borderColor: '#4ECDC4',
   },
-  loyaltyTextWrap: {
+  toggleTextWrap: {
     flex: 1,
   },
-  loyaltyLabel: {
+  toggleLabel: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#4ECDC4',
+    fontWeight: '700' as const,
   },
-  loyaltyDesc: {
+  toggleDesc: {
     fontSize: 11,
     color: 'rgba(255,255,255,0.5)',
     marginTop: 1,

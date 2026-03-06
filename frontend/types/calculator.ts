@@ -69,6 +69,8 @@ export interface LocalResult {
   echangeNet: number;
   comptant: number;
   bonusCash: number;
+  deferredInterest?: number;
+  deferredActive?: boolean;
 }
 
 export interface ProgramPeriod {

@@ -154,6 +154,9 @@ export default function HomeScreen() {
   // Loyalty rate toggle (from event metadata)
   const [loyaltyChecked, setLoyaltyChecked] = useState(false);
   
+  // 90 days deferred payment toggle
+  const [deferredPayment, setDeferredPayment] = useState(false);
+  
   // Available periods (from API)
   const [availablePeriods, setAvailablePeriods] = useState<{month: number, year: number, count: number}[]>([]);
   const [showPeriodSelector, setShowPeriodSelector] = useState(false);
@@ -246,6 +249,7 @@ export default function HomeScreen() {
     accessories,
     rabaisConcess: leaseRabaisConcess,
     loyaltyRate: activeLoyaltyRate,
+    deferredPayment,
   });
 
   const loadPrograms = useCallback(async (month?: number, year?: number) => {
@@ -305,6 +309,7 @@ export default function HomeScreen() {
             setProgramMeta(metaRes.data);
             // Reset loyalty checkbox when switching periods
             setLoyaltyChecked(false);
+            setDeferredPayment(false);
           }
         } catch (e) {
           console.log('Could not load program meta');
@@ -1630,6 +1635,9 @@ export default function HomeScreen() {
               lang={lang}
               loyaltyChecked={loyaltyChecked}
               onToggleLoyalty={() => setLoyaltyChecked(prev => !prev)}
+              deferredChecked={deferredPayment}
+              onToggleDeferred={() => setDeferredPayment(prev => !prev)}
+              selectedTerm={selectedTerm}
             />
           )}
 
