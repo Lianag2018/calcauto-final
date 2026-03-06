@@ -1,91 +1,79 @@
-# CalcAuto AiPro - PRD (Product Requirements Document)
+# CalcAuto AiPro - PRD
 
-## Problem Statement
-Application CRM pour concessionnaire automobile Stellantis/FCA Canada. Calculateur de financement véhicules, gestion des clients, et importation automatique des programmes d'incitatifs mensuels depuis les PDFs Stellantis.
-
-## Architecture
-- **Frontend**: React Native (Expo) avec export web statique (dist/)
-- **Backend**: FastAPI (Python)
-- **Database**: MongoDB + fichiers JSON versionnés (données mensuelles)
-- **PDF Parsing**: pdfplumber (déterministe, ZERO IA, auto-détection des pages)
+## Original Problem Statement
+Application CRM pour concessionnaires automobiles Stellantis/FCA Canada. Extraction déterministe des programmes de financement à partir de PDFs mensuels via pdfplumber (remplaçant l'ancienne solution IA/OCR).
 
 ## Core Features
-- CRM client avec historique des offres
-- Calculateur de financement (Option 1/Option 2, Bonus Cash, taxes)
-- Inventaire véhicules avec VIN decoder
-- Importation automatique des programmes FCA depuis PDF (auto-détection des sections)
-- Export Excel et envoi par email
-- Panneau admin avec gestion des corrections
-- Accès démo sans restriction (auto-login, admin complet)
+1. **Parser PDF déterministe** (pdfplumber) pour extraire programmes retail et SCI Lease
+2. **Mode Démo** - accès sans mot de passe via `demo@calcauto.ca`
+3. **UI Dynamique** - bannière événement + toggles fidélité/paiement différé basés sur la couverture PDF
+4. **Calcul de financement** - logique complète avec options 1/2, taxes QC, accessoires, échange
+5. **CI/CD** - GitHub Actions avec tests unitaires, déploiement Render/Vercel
+
+## Architecture
+- **Frontend**: React/Expo web (TypeScript)
+- **Backend**: FastAPI (Python)
+- **Database**: MongoDB (users, programs, submissions) + fichiers JSON (data/)
+- **PDF Parsing**: pdfplumber + regex
 
 ## What's Been Implemented
 
-### Completed (March 6, 2026)
-- [x] **P0 - Parser pdfplumber déterministe** (18/18 tests passent)
-  - `parse_retail_programs()`: 81 programmes Finance Prime
-  - `parse_sci_lease()`: 74 véhicules SCI Lease
-  - `parse_key_incentives()`: 13 entrées Go-to-Market summary
-  - OpenAI/GPT-4o entièrement supprimé du flux d'extraction
+### Completed (Feb 2026)
+- Parser PDF déterministe remplaçant IA/OCR
+- Mode Démo avec auto-login
+- EventBanner dynamique avec toggles fidélité et 90j
+- Logique calcul fidélité (-0.5%) et paiement différé 90j
+- CI/CD GitHub Actions
+- Correction dépendances Render
 
-- [x] **Auto-détection des pages PDF** (TERMINÉ)
-  - `auto_detect_pages()`: scanne le PDF et identifie automatiquement les sections
-  - Endpoint `POST /api/scan-pdf`: retourne les pages détectées
-  - Endpoints sync/async: auto-détectent si pages non fournies
-  - Frontend: auto-remplit les numéros de pages après upload
-  - Plus besoin d'entrer manuellement 20-21 et 28-29
+### Completed (Mar 6, 2026)
+- **TOC-first auto-detection** - Réécriture complète de `auto_detect_pages()` pour parser la Table des Matières (page 2) au lieu de scanner chaque page
+- **Support dual-layout retail parser** - `parse_retail_programs()` gère deux layouts:
+  - Layout A (Jan/Feb): noms + taux dans le même tableau (25+ cols)
+  - Layout B (Mars): noms dans un tableau séparé, taux dans le tableau principal (24 cols)
+- **Détection dynamique des colonnes** - Les indices de colonnes pour les taux sont détectés depuis les headers (plus de hardcoding)
+- **Correction metadata Mars** - `no_payments_days=0` (pas 90), `loyalty_rate=0.5`
+- **Résultats validés**: 
+  - Janvier: 90 programmes, 83 SCI Lease
+  - Février: 95 programmes, 74 SCI Lease
+  - Mars: 93 programmes, 73 SCI Lease
 
-- [x] **Accès Démo sans restriction** (TERMINÉ)
-  - Auto-login Demo Admin, mot de passe admin pré-rempli
+## TOC Structure Reference
+### January/February 2026
+- Finance Prime Rate Landscapes: page 19 (data: 20-22)
+- Finance Non-Prime Rate Landscapes: page 23 (data: 24-26)
+- Lease Landscapes: page 27 (data: 28-29/30)
 
-- [x] **P0 - Bandeau Événementiel Dynamique + Logique Fidélité** (TERMINÉ - Mars 6, 2026)
-  - Composant `EventBanner` : affiche nom événement, période, taux vedette, jours sans paiement
-  - Toggle fidélité : visible uniquement quand `loyalty_rate > 0` dans les métadonnées
-  - Logique de calcul : réduction du taux appliquée aux Options 1 et 2 via `useCalculator`
-  - Backend : endpoint `GET /api/program-meta` + parsing couverture PDF
-  - Testé : Mars 2026 "Month of Ram" (-0.5%) et Février 2026 "4X4 Winter Event" (0%)
-  - Tests 100% : backend (10/10) + frontend (toutes fonctionnalités vérifiées)
-
-- [x] **P0 - 90 Jours Sans Versement (Paiement Différé)** (TERMINÉ - Mars 6, 2026)
-  - Checkbox optionnel "90j sans versement" dans le bandeau
-  - Logique : 2 mois d'intérêts composés capitalisés, 1er versement au 90e jour
-  - Éligible uniquement pour termes ≤ 84 mois (message "Non disponible" pour 96 mois)
-  - Combinable avec la fidélité (réduction taux + capitalisation)
-  - Tests 100% : backend (9/9) + frontend complet
-
-### Previously Completed
-- [x] SCI Lease Data Pipeline (dynamique + historique)
-- [x] Data Carry-over (copie taux du mois précédent)
-- [x] Offer Savings Calculation (méthode delta)
-- [x] CRM Offer Modal & History Tab
-- [x] Data Versioning by Filename
+### March 2026
+- Finance Prime Rate Landscapes: page 16 (data: 17-19)
+- Finance Non-Prime Rate Landscapes: page 20 (data: 21-23)
+- Lease Landscapes: page 24 (data: 25-26)
+- Loyalty Finance Prime: page 34 (data: 35-36)
+- Loyalty Lease: page 37 (data: 38-39)
 
 ## Prioritized Backlog
 
 ### P1 - UI Gestion des Corrections
-- Interface admin pour gérer les corrections de programmes
+- Interface frontend admin pour `/api/corrections` APIs existantes
 
 ### P2 - Refactoring Frontend
-- Refactorer `index.tsx`, `inventory.tsx`, `clients.tsx`
+- Découper `index.tsx`, `inventory.tsx`, `clients.tsx`
 
-## Key API Endpoints
-- `POST /api/scan-pdf` - Auto-détection des sections du PDF (NOUVEAU)
-- `POST /api/extract-pdf-async` - Extraction async (auto-détecte si pages non fournies)
-- `POST /api/extract-pdf` - Extraction sync (auto-détecte si pages non fournies)
-- `POST /api/auth/demo-login` - Auto-login démo
-- `GET /api/programs` - Liste des programmes
-- `GET /api/sci/lease-rates` - Taux SCI Lease
-- `GET /api/program-meta` - Métadonnées événement du mois (couverture PDF)
+### P3 - Loyalty Rate Landscapes (Mars)
+- Parser les pages de taux fidélité (34-39 dans Mars) pour extraction séparée
 
 ## Key Files
-- `/app/backend/services/pdfplumber_parser.py` - Parser + auto_detect_pages()
-- `/app/backend/routers/import_wizard.py` - scan-pdf endpoint + extraction + program-meta
-- `/app/backend/routers/auth.py` - Auth + demo login
-- `/app/frontend/app/import.tsx` - Import wizard avec auto-détection
-- `/app/frontend/contexts/AuthContext.tsx` - Auth context + auto-demo
-- `/app/frontend/components/EventBanner.tsx` - Bandeau événementiel dynamique
-- `/app/frontend/hooks/useCalculator.ts` - Logique calcul financement + loyauté
+- `backend/services/pdfplumber_parser.py` - Parsers PDF
+- `backend/routers/import_wizard.py` - API import
+- `frontend/components/EventBanner.tsx` - Bannière événement
+- `frontend/hooks/useCalculator.ts` - Logique calcul
+- `frontend/app/(tabs)/index.tsx` - Page calculateur principale
+
+## Test Reports
+- `/app/test_reports/iteration_25.json` - Tests TOC extraction (100% pass)
+- `/app/backend/tests/test_toc_extraction.py` - Tests unitaires TOC
+- `/app/backend/tests/test_ci_unit.py` - Tests CI
 
 ## Credentials
 - Admin: `Liana2018`
-- User: `danielgiroux007@gmail.com` / `Liana2018$`
-- Demo: `demo@calcauto.ca` (auto-login)
+- Demo: auto-login `demo@calcauto.ca`
