@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Animated, Easing, Platform } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 
 interface AnimatedSplashScreenProps {
   visible: boolean;
@@ -7,11 +7,39 @@ interface AnimatedSplashScreenProps {
 }
 
 export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ visible, onFinish }) => {
+  const rotateAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
+  // Animations pour les particules de traînée (décalées)
+  const trailAnims = Array.from({ length: 4 }).map(() => useRef(new Animated.Value(0)).current);
+
   useEffect(() => {
     if (visible) {
+      // Animation de rotation principale
+      Animated.loop(
+        Animated.timing(rotateAnim, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      ).start();
+
+      // Animations décalées pour les particules de traînée
+      trailAnims.forEach((anim, index) => {
+        Animated.loop(
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 2000,
+            easing: Easing.linear,
+            delay: (index + 1) * 100, // Décalage progressif pour l'effet queue
+            useNativeDriver: true,
+          })
+        ).start();
+      });
+
+      // Fade out après 2.5s
       setTimeout(() => {
         Animated.parallel([
           Animated.timing(fadeAnim, {
@@ -24,102 +52,69 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ visi
             duration: 500,
             useNativeDriver: true,
           }),
-        ]).start(() => onFinish());
+        ]).start(() => {
+          onFinish();
+        });
       }, 2500);
     }
   }, [visible]);
+
+  const rotation = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  // Rotations décalées pour les particules
+  const trailRotations = trailAnims.map(anim =>
+    anim.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0deg', '360deg'],
+    })
+  );
 
   if (!visible) return null;
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <Animated.View style={[styles.logoContainer, { transform: [{ scale: scaleAnim }] }]}>
-        {Platform.OS === 'web' && <CometRingWeb />}
+        {/* Anneau rotatif avec point principal */}
+        <Animated.View style={[styles.rotatingRing, { transform: [{ rotate: rotation }] }]}>
+          <View style={styles.glowDot} /> {/* Point principal plus fin */}
+        </Animated.View>
+
+        {/* Particules de traînée (comète) */}
+        {trailRotations.map((trailRotation, index) => (
+          <Animated.View
+            key={`trail-${index}`}
+            style={[
+              styles.rotatingRing,
+              { transform: [{ rotate: trailRotation }] },
+            ]}
+          >
+            <View
+              style={[
+                styles.trailParticle,
+                {
+                  opacity: 0.8 - index * 0.2, // Opacité décroissante
+                  transform: [{ scale: 0.8 - index * 0.2 }], // Taille décroissante
+                },
+              ]}
+            />
+          </Animated.View>
+        ))}
+
+        {/* Anneau statique */}
+        <View style={styles.ringBackground} />
+
+        {/* Centre du logo */}
         <View style={styles.logoCenter}>
           <Text style={styles.logoText}>CalcAuto</Text>
           <Text style={styles.logoSubtext}>AiPro</Text>
         </View>
       </Animated.View>
+
       <Text style={styles.loadingText}>Chargement...</Text>
     </Animated.View>
-  );
-};
-
-const CometRingWeb = () => {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
-  if (!mounted) return null;
-
-  // All trail + head in ONE rotating container = perfect sync
-  return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes orbit {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 0.2; }
-          50% { opacity: 0.4; }
-        }
-        .orbit-group {
-          position: absolute;
-          width: 180px;
-          height: 180px;
-          animation: orbit 2s linear infinite;
-        }
-        .static-ring {
-          position: absolute;
-          width: 174px;
-          height: 174px;
-          border-radius: 50%;
-          border: 2px solid rgba(78,205,196,0.2);
-          animation: pulse 3s ease-in-out infinite;
-        }
-        .comet-head {
-          position: absolute;
-          top: -7px;
-          left: 50%;
-          margin-left: -7px;
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          background: radial-gradient(circle, #fff 0%, #4ECDC4 50%, rgba(78,205,196,0) 80%);
-          box-shadow: 0 0 6px 2px rgba(78,205,196,0.8), 0 0 15px 5px rgba(78,205,196,0.4), 0 0 30px 10px rgba(78,205,196,0.15);
-        }
-        .trail-arc {
-          position: absolute;
-          width: 180px;
-          height: 180px;
-          border-radius: 50%;
-          border: 3px solid transparent;
-          border-top-color: rgba(78,205,196,0.7);
-          border-right-color: rgba(78,205,196,0.15);
-        }
-        .trail-glow {
-          position: absolute;
-          width: 186px;
-          height: 186px;
-          top: -3px;
-          left: -3px;
-          border-radius: 50%;
-          border: 4px solid transparent;
-          border-top-color: rgba(78,205,196,0.25);
-          border-right-color: rgba(78,205,196,0.05);
-          filter: blur(4px);
-        }
-      `}} />
-
-      {/* Static orbit ring */}
-      <div className="static-ring" />
-
-      {/* Single rotating group: trail + head = perfectly synced */}
-      <div className="orbit-group">
-        <div className="trail-glow" />
-        <div className="trail-arc" />
-        <div className="comet-head" />
-      </div>
-    </>
   );
 };
 
@@ -132,10 +127,50 @@ const styles = StyleSheet.create({
     zIndex: 9999,
   },
   logoContainer: {
-    width: 190,
-    height: 190,
+    width: 180,
+    height: 180,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  rotatingRing: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
+  glowDot: {
+    width: 8, // Point plus fin
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4ECDC4',
+    shadowColor: '#4ECDC4',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 20, // Glow plus étendu pour effet comète
+    elevation: 20,
+    marginTop: -5,
+  },
+  trailParticle: {
+    width: 6, // Particules plus petites
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#4ECDC4',
+    shadowColor: '#4ECDC4',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 15,
+    elevation: 15,
+    marginTop: -5,
+  },
+  ringBackground: {
+    position: 'absolute',
+    width: 170,
+    height: 170,
+    borderRadius: 85,
+    borderWidth: 4,
+    borderColor: 'rgba(78, 205, 196, 0.3)',
   },
   logoCenter: {
     width: 140,
@@ -144,9 +179,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#2d2d44',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(78, 205, 196, 0.5)',
-    zIndex: 10,
+    borderWidth: 3,
+    borderColor: '#4ECDC4',
   },
   logoText: {
     fontSize: 22,
