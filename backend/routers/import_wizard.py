@@ -779,7 +779,7 @@ async def extract_pdf(
         raise HTTPException(status_code=401, detail="Mot de passe incorrect")
 
     try:
-        from services.pdfplumber_parser import parse_retail_programs, parse_sci_lease, parse_key_incentives, auto_detect_pages
+        from services.pdfplumber_parser import parse_retail_programs, parse_sci_lease, parse_key_incentives, auto_detect_pages, parse_bonus_cash_page, apply_bonus_cash
 
         pdf_content = await file.read()
 
@@ -799,6 +799,12 @@ async def extract_pdf(
         # Parse retail programs
         valid_programs = parse_retail_programs(pdf_content, start_page, end_page)
         logger.info(f"[Sync] pdfplumber extracted {len(valid_programs)} retail programs")
+
+        # Apply bonus cash from Bonus Cash Program page
+        bonus_entries = parse_bonus_cash_page(pdf_content)
+        if bonus_entries:
+            valid_programs = apply_bonus_cash(valid_programs, bonus_entries)
+            logger.info(f"[Sync] Applied {len(bonus_entries)} bonus cash entries")
 
         # Auto-save programs
         excel_sent = False
@@ -904,7 +910,7 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
                                 lease_start_page: Optional[int], lease_end_page: Optional[int]):
     """Background task: extracts PDF using pdfplumber (deterministic), saves programs, sends email."""
     try:
-        from services.pdfplumber_parser import parse_retail_programs, parse_sci_lease, parse_key_incentives
+        from services.pdfplumber_parser import parse_retail_programs, parse_sci_lease, parse_key_incentives, parse_bonus_cash_page, apply_bonus_cash
 
         # ── Step 1: Parse retail programs ──
         await db.extract_tasks.update_one(
@@ -914,6 +920,12 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
 
         valid_programs = parse_retail_programs(pdf_content, start_page, end_page)
         logger.info(f"[Async] pdfplumber extracted {len(valid_programs)} retail programs from pages {start_page}-{end_page}")
+
+        # Apply bonus cash from Bonus Cash Program page
+        bonus_entries = parse_bonus_cash_page(pdf_content)
+        if bonus_entries:
+            valid_programs = apply_bonus_cash(valid_programs, bonus_entries)
+            logger.info(f"[Async] Applied {len(bonus_entries)} bonus cash entries")
 
         await db.extract_tasks.update_one(
             {"task_id": task_id},

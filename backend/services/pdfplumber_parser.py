@@ -90,6 +90,9 @@ def detect_brand_from_model(vehicle_name: str) -> Optional[str]:
 
 def split_model_trim(brand: str, full_name: str) -> Tuple[str, str]:
     full_name = full_name.replace('\n', ' ').strip()
+    # Strip common prefixes
+    if full_name.lower().startswith('all-new '):
+        full_name = full_name[8:].strip()
     if full_name.lower().startswith('new '):
         full_name = full_name[4:].strip()
     if brand == 'Ram':
@@ -104,7 +107,11 @@ def split_model_trim(brand: str, full_name: str) -> Tuple[str, str]:
     models = MODELS_BY_BRAND.get(brand, [])
     for model in sorted(models, key=len, reverse=True):
         if full_name.lower().startswith(model.lower()):
-            trim = full_name[len(model):].strip().lstrip('/').strip()
+            # Ensure we match at a word boundary (not "Grand Cherokee L" eating "Laredo")
+            after_model = full_name[len(model):]
+            if after_model and after_model[0].isalpha():
+                continue  # Not a real match - next char is a letter
+            trim = after_model.strip().lstrip('/').strip()
             return model, trim
     parts = full_name.split(maxsplit=1)
     return parts[0], parts[1] if len(parts) > 1 else ''
@@ -638,6 +645,105 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
 
     logger.info(f"[SCIParser] Total: {len(vehicles_2026)} v2026 + {len(vehicles_2025)} v2025")
     return {'vehicles_2026': vehicles_2026, 'vehicles_2025': vehicles_2025}
+
+
+# ═══════════════════════════════════════════════════════════════
+# BONUS CASH PARSER (Page "Bonus Cash Program")
+# ═══════════════════════════════════════════════════════════════
+
+def parse_bonus_cash_page(pdf_content: bytes) -> List[Dict]:
+    """
+    Parse the 'Bonus Cash Program' page (typically page 8) to extract
+    bonus cash amounts per vehicle/year. The TOC entry is
+    'Bonus Cash Program – 2618'.
+
+    Returns list of dicts:
+      [{'year': 2025, 'model': 'FIAT 500e', 'amount': 5000, 'tax_type': 'After Tax'}, ...]
+    """
+    toc = _parse_toc(pdf_content)
+    bonus_page = None
+    for name, page_num in toc:
+        if 'Bonus Cash' in name:
+            bonus_page = page_num
+            break
+
+    if not bonus_page:
+        logger.info("[BonusCash] No 'Bonus Cash' section found in TOC")
+        return []
+
+    results = []
+    with pdfplumber.open(BytesIO(pdf_content)) as pdf:
+        if bonus_page - 1 >= len(pdf.pages):
+            return []
+        page = pdf.pages[bonus_page - 1]
+        tables = page.extract_tables()
+
+        for t in tables:
+            if not t or len(t) < 3:
+                continue
+            # Look for the table with "Bonus Cash" and "Amount" headers
+            has_bonus_header = False
+            for row in t[:2]:
+                for cell in row:
+                    if cell and 'Bonus Cash' in str(cell):
+                        has_bonus_header = True
+                        break
+            if not has_bonus_header:
+                continue
+
+            # Parse data rows (skip header rows 0 and 1)
+            for ri in range(2, len(t)):
+                row = t[ri]
+                year_str = str(row[0]).strip() if row[0] else ''
+                model_str = str(row[3]).strip() if len(row) > 3 and row[3] else ''
+                amount_str = str(row[10]).strip() if len(row) > 10 and row[10] else ''
+                tax_type = str(row[13]).strip() if len(row) > 13 and row[13] else ''
+
+                if not model_str or not amount_str:
+                    continue
+
+                year = None
+                if '2026' in year_str:
+                    year = 2026
+                elif '2025' in year_str:
+                    year = 2025
+                elif '2024' in year_str:
+                    year = 2024
+
+                amount = parse_dollar(amount_str)
+                if amount and amount > 0:
+                    results.append({
+                        'year': year,
+                        'model': model_str,
+                        'amount': amount,
+                        'tax_type': tax_type,
+                    })
+                    logger.info(f"[BonusCash] {model_str} ({year}): ${amount} {tax_type}")
+
+    logger.info(f"[BonusCash] Extracted {len(results)} bonus cash entries")
+    return results
+
+
+def apply_bonus_cash(programs: List[Dict], bonus_entries: List[Dict]) -> List[Dict]:
+    """Apply bonus cash from page 8 to matching retail programs."""
+    if not bonus_entries:
+        return programs
+
+    for entry in bonus_entries:
+        model_lower = entry['model'].lower().replace('fiat ', '').strip()
+        for prog in programs:
+            # Match by year
+            if entry.get('year') and prog.get('year') != entry['year']:
+                continue
+            # Match by model name: compare against brand+model+trim and model+trim
+            full_name = f"{prog.get('brand', '')} {prog.get('model', '')} {prog.get('trim', '')}".lower()
+            model_trim = f"{prog.get('model', '')} {prog.get('trim', '')}".lower()
+            if (model_lower in full_name or model_lower in model_trim
+                    or full_name.startswith(model_lower) or model_trim.startswith(model_lower)):
+                prog['bonus_cash'] = entry['amount']
+                logger.info(f"[BonusCash] Applied ${entry['amount']} to {prog['brand']} {prog['model']} {prog.get('trim', '')} ({prog['year']})")
+
+    return programs
 
 
 # ═══════════════════════════════════════════════════════════════
