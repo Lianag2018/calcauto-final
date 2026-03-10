@@ -31,7 +31,7 @@
   "test_credentials": {
     "email": "danielgiroux007@gmail.com",
     "password": "Liana2018$",
-    "base_url": "https://toc-extraction-fix.preview.emergentagent.com"
+    "base_url": "https://lease-extraction.preview.emergentagent.com"
   },
   "seed_data_creation": "None - tested with existing data",
   "retest_needed": false,

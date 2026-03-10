@@ -9,7 +9,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://toc-extraction-fix.preview.emergentagent.com')
+BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://lease-extraction.preview.emergentagent.com')
 ADMIN_PASSWORD = "Liana2018"
 
 # Test PDF paths

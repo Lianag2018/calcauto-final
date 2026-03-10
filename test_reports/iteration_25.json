@@ -38,7 +38,7 @@
   "test_credentials": {
     "demo_mode": "Auto-login as demo@calcauto.ca",
     "admin_password": "Liana2018",
-    "backend_url": "https://toc-extraction-fix.preview.emergentagent.com"
+    "backend_url": "https://lease-extraction.preview.emergentagent.com"
   },
   "seed_data_creation": "Using test PDFs at /tmp/jan2026.pdf, /tmp/feb2026.pdf, /tmp/mar2026.pdf",
   "retest_needed": false,

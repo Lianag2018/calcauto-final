@@ -9,7 +9,7 @@ import requests
 import os
 import time
 
-BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://toc-extraction-fix.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://lease-extraction.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 TEST_EMAIL = "danielgiroux007@gmail.com"

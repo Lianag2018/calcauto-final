@@ -29,9 +29,11 @@ BRAND_REVERSED_MAP = {
 }
 
 MODEL_TO_BRAND = [
+    ('Grand Wagoneer L', 'Jeep'),
     ('Grand Wagoneer', 'Jeep'),
     ('Grand Cherokee', 'Jeep'),
     ('Wagoneer S', 'Jeep'),
+    ('Wagoneer L', 'Jeep'),
     ('Wagoneer', 'Jeep'),
     ('Gladiator', 'Jeep'),
     ('Wrangler', 'Jeep'),
@@ -61,10 +63,14 @@ MODEL_TO_BRAND = [
 ]
 
 MODELS_BY_BRAND = {
-    'Chrysler': ['Grand Caravan', 'Pacifica'],
+    'Chrysler': [
+        'Grand Caravan', 'Pacifica',
+        # Wagoneer sometimes appears under Chrysler section in PDFs
+        'Grand Wagoneer L', 'Grand Wagoneer', 'Wagoneer S', 'Wagoneer L', 'Wagoneer',
+    ],
     'Jeep': [
-        'Grand Wagoneer', 'Grand Cherokee L', 'Grand Cherokee',
-        'Wagoneer S', 'Wagoneer', 'Gladiator', 'Wrangler', 'Compass', 'Cherokee',
+        'Grand Wagoneer L', 'Grand Wagoneer', 'Grand Cherokee L', 'Grand Cherokee',
+        'Wagoneer S', 'Wagoneer L', 'Wagoneer', 'Gladiator', 'Wrangler', 'Compass', 'Cherokee',
     ],
     'Dodge': ['Durango', 'Charger', 'Hornet'],
     'Ram': ['ProMaster', 'Promaster', 'Chassis Cab', '2500/3500', '1500', '2500', '3500', '4500', '5500'],
@@ -105,7 +111,24 @@ def split_model_trim(brand: str, full_name: str) -> Tuple[str, str]:
         if m:
             return m.group(1), m.group(2).strip()
     models = MODELS_BY_BRAND.get(brand, [])
-    for model in sorted(models, key=len, reverse=True):
+    sorted_models = sorted(models, key=len, reverse=True)
+
+    # Handle combined model patterns: "Grand Cherokee/Grand Cherokee L Altitude (CPOS 2B5)"
+    # or "Grand Wagoneer/Grand Wagoneer L", "Wagoneer / Wagoneer L"
+    if '/' in full_name:
+        slash_idx = full_name.index('/')
+        after_slash = full_name[slash_idx + 1:].strip()
+        # Check if the text after "/" starts with a known model
+        for model in sorted_models:
+            if after_slash.lower().startswith(model.lower()):
+                after_model = after_slash[len(model):]
+                if not after_model or not after_model[0].isalpha():
+                    # Matched: use the combined "ModelA/ModelB" as model, rest as trim
+                    combined_model = full_name[:slash_idx].strip() + '/' + model
+                    trim = after_model.strip()
+                    return combined_model, trim
+
+    for model in sorted_models:
         if full_name.lower().startswith(model.lower()):
             # Ensure we match at a word boundary (not "Grand Cherokee L" eating "Laredo")
             after_model = full_name[len(model):]

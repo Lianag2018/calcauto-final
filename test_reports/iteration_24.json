@@ -29,7 +29,7 @@
   },
   "test_credentials": {
     "demo_mode": "Auto-login as demo@calcauto.ca",
-    "backend_url": "https://toc-extraction-fix.preview.emergentagent.com"
+    "backend_url": "https://lease-extraction.preview.emergentagent.com"
   },
   "seed_data_creation": "Using existing March 2026 program metadata with no_payments_days=90",
   "retest_needed": false,
