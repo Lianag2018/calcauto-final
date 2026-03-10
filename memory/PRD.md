@@ -20,12 +20,15 @@ Application CRM pour concessionnaires automobiles Stellantis/FCA Canada. Extract
 ## What's Been Implemented
 
 ### Completed (Mar 10, 2026 - Session courante)
-- **Fix nommage modeles combines** - "Grand Cherokee/Grand Cherokee L" correctement parse (plus de duplication trim)
+- **Extraction PDF Mars 2026** - 93 programmes + 73 taux SCI Lease extraits correctement
+  - Auto-detection pages correcte: retail=17-19, SCI=25-26 (Mars a 39 pages vs 29 pour Fevrier)
+  - Cherokee 2026: seulement Option 1 a 4.99%, PAS d'Option 2
+  - Grand Cherokee/Grand Cherokee L: taux variables 0.99-4.49%
+  - Fiat 500e: CC=$7,000, BC=$5,000 (2025)
+- **Fix nommage modeles combines** - "Grand Cherokee/Grand Cherokee L" correctement parse
 - **Ajout modeles manquants** - Grand Wagoneer L, Wagoneer L ajoutes a MODELS_BY_BRAND
-- **Fix Brand Wagoneer** - Wagoneer sous Chrysler corrige vers Jeep
-- **Fix DB existante** - 13 corrections appliquees (6 dups Mars, 6 dups Fev, 1 aredo)
-- **Verification SCI Lease Mars** - 33 vehicules 2026 + 40 vehicules 2025, matching OK
-- **Tests complets** - 23/23 backend, 100% frontend
+- **Fix DB existante** - 13 corrections appliquees (duplications + bug "aredo")
+- **Tests complets** - 12/12 backend (iteration_27), 23/23 backend (iteration_26)
 
 ### Completed (Sessions precedentes)
 - **TOC-first auto-detection** - Parse la Table des Matieres (page 2)
@@ -35,16 +38,21 @@ Application CRM pour concessionnaires automobiles Stellantis/FCA Canada. Extract
 - **Fix "All-New" prefix** - Suppression du prefixe "All-New"
 - **Fix word boundary** - "Grand Cherokee L" ne mange plus le "L" de "Laredo"
 - **Animation comete** - Trainee de particules (code utilisateur)
-- **Correction metadata Mars** - `no_payments_days=0`, `loyalty_rate=0.5`
 - **Mode Demo** - Auto-login sans mot de passe
 - **Detection auto pages** - Plus besoin d'entrer les numeros de pages manuellement
 
-### Resultats valides
-- Janvier: 90 programmes, 83 SCI Lease, 1 bonus cash
-- Fevrier: 95 programmes, 74 SCI Lease, 1 bonus cash (re-extrait avec corrections)
-- Mars: 93 programmes, 73 SCI Lease, 1 bonus cash (Fiat 500e $5000)
-- 0 duplications de nommage sur tous les mois
-- Matching SCI Lease fonctionne pour tous les vehicules (Cherokee, Grand Cherokee, Wagoneer)
+### Resultats valides Mars 2026
+- 93 programmes (36 x 2026, 43 x 2025, 14 x 2024)
+- 73 SCI Lease (33 x 2026, 40 x 2025)
+- Cherokee 2026: opt1=4.99% flat, opt2=None
+- Grand Cherokee 2026: opt1=0.99%-4.49%, opt2=None
+- Compass North: CC=$3,500, opt1=True, opt2=True
+- 0 duplications de nommage
+
+## Important: Guide d'extraction
+- **Fevrier 2026** (29 pages): Retail=20-22, SCI=28-29
+- **Mars 2026** (39 pages): Retail=17-19, SCI=25-26
+- Les pages sont auto-detectees depuis le TOC (page 2) - NE PAS changer les pages auto-detectees
 
 ## Prioritized Backlog
 
@@ -58,22 +66,17 @@ Application CRM pour concessionnaires automobiles Stellantis/FCA Canada. Extract
 - Decouper `index.tsx` (3696 lignes), `inventory.tsx`, `clients.tsx`
 
 ## Key Files
-- `backend/services/pdfplumber_parser.py` - Parsers PDF (TOC, retail, bonus, lease, split_model_trim)
-- `backend/routers/import_wizard.py` - API import et extraction async
+- `backend/services/pdfplumber_parser.py` - Parsers PDF
+- `backend/routers/import_wizard.py` - API import et extraction
 - `backend/routers/programs.py` - CRUD programmes
-- `backend/routers/sci.py` - API SCI Lease rates et residuels
-- `frontend/utils/leaseCalculator.ts` - Logique calcul location (findRateEntry, findResidualVehicle)
+- `backend/routers/sci.py` - API SCI Lease rates
+- `frontend/utils/leaseCalculator.ts` - Logique calcul location
 - `frontend/app/(tabs)/index.tsx` - Page principale calculateur
-- `frontend/components/AnimatedSplashScreen.tsx` - Animation comete
+- `backend/data/march2026_source.pdf` - PDF Mars pour tests
 
 ## Key API Endpoints
-- `POST /api/extract-pdf-async` - Extraction PDF async
+- `POST /api/extract-pdf` - Extraction PDF sync
+- `POST /api/extract-pdf-async` - Extraction PDF async (auto-detect pages)
 - `GET /api/programs?month=M&year=Y` - Liste programmes
 - `GET /api/sci/lease-rates` - Taux SCI Lease
 - `GET /api/sci/residuals` - Residuels vehicules
-- `POST /api/auth/demo-login` - Connexion demo
-
-## DB Schema
-- `db.programs` - Programmes vehicules (model, trim, rates, consumer_cash, bonus_cash)
-- `db.users` - Comptes utilisateurs
-- `db.residuals` - Valeurs residuelles
