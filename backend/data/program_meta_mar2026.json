@@ -10,13 +10,10 @@
   "no_payments_days": 0,
   "featured_rate": 0.0,
   "featured_term": 72,
-  "key_message": "For March, the 'Month of Ram' is here! Celebrate with exclusive rate reductions, including a 0.5% loyalty rate reduction for eligible customers, plus No Finance Payments for 90 Days!",
-  "program_month_num": 3,
+  "key_message": "For March, the ‘Month of Ram’ and ‘Jeep No Limits Event’ provides cash discounts or aggressive rates on eligible 2025 and 2026 models, featuring finance rates as low as 0% for 72 months. Plus, eligible current Stellantis vehicle owners can receive up to a 0.5% loyalty rate reduction on eligible finance and lease offers. This is a great time to call your customers and get them into your showroom today!",
   "brands": [
-    "Chrysler",
-    "Dodge",
-    "Fiat",
     "Jeep",
     "Ram"
-  ]
+  ],
+  "program_month_num": 3
 }
