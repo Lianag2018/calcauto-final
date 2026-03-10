@@ -783,18 +783,31 @@ async def extract_pdf(
 
         pdf_content = await file.read()
 
-        # Auto-detect pages if not provided
-        if not start_page or not end_page:
-            detected = auto_detect_pages(pdf_content)
-            if not start_page:
-                start_page = detected.get('retail_start') or 1
-            if not end_page:
-                end_page = detected.get('retail_end') or start_page
-            if not lease_start_page:
-                lease_start_page = detected.get('lease_start')
-            if not lease_end_page:
-                lease_end_page = detected.get('lease_end')
-            logger.info(f"[Sync] Auto-detected: retail={start_page}-{end_page}, lease={lease_start_page}-{lease_end_page}")
+        # ALWAYS auto-detect pages from TOC first - this is the most reliable method
+        detected = auto_detect_pages(pdf_content)
+        auto_retail_start = detected.get('retail_start')
+        auto_retail_end = detected.get('retail_end')
+        auto_lease_start = detected.get('lease_start')
+        auto_lease_end = detected.get('lease_end')
+        logger.info(f"[Sync] Auto-detected: retail={auto_retail_start}-{auto_retail_end}, lease={auto_lease_start}-{auto_lease_end}")
+
+        # If user provided pages that differ from auto-detected, try auto-detected first
+        if auto_retail_start and auto_retail_end:
+            if start_page and end_page and (start_page != auto_retail_start or end_page != auto_retail_end):
+                logger.warning(f"[Sync] Pages manuelles ({start_page}-{end_page}) différentes de auto-détectées ({auto_retail_start}-{auto_retail_end}). Essai auto-détection d'abord.")
+            # Always use auto-detected pages (most reliable)
+            start_page = auto_retail_start
+            end_page = auto_retail_end
+        elif not start_page or not end_page:
+            start_page = start_page or 1
+            end_page = end_page or start_page
+
+        if auto_lease_start and auto_lease_end:
+            lease_start_page = auto_lease_start
+            lease_end_page = auto_lease_end
+        elif not lease_start_page:
+            lease_start_page = detected.get('lease_start')
+            lease_end_page = detected.get('lease_end')
 
         # Parse retail programs
         valid_programs = parse_retail_programs(pdf_content, start_page, end_page)
@@ -806,10 +819,19 @@ async def extract_pdf(
             valid_programs = apply_bonus_cash(valid_programs, bonus_entries)
             logger.info(f"[Sync] Applied {len(bonus_entries)} bonus cash entries")
 
-        # Auto-save programs
+        # Auto-save programs (only if extraction returned data - prevent data loss)
         excel_sent = False
         saved_count = 0
         try:
+            if not valid_programs:
+                logger.warning(f"[Sync] 0 programmes extraits - données existantes CONSERVÉES pour éviter la perte de données")
+                return ExtractedDataResponse(
+                    success=False,
+                    message=f"0 programmes extraits des pages {start_page}-{end_page}. Vérifiez les numéros de pages. Les données existantes n'ont PAS été effacées.",
+                    programs=[],
+                    raw_text="",
+                    sci_lease_count=0
+                )
             await db.programs.delete_many({"program_month": program_month, "program_year": program_year})
             for prog in valid_programs:
                 opt1 = prog.get("option1_rates")
@@ -932,9 +954,20 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
             {"$set": {"status": "saving", "message": f"{len(valid_programs)} programmes extraits. Sauvegarde..."}}
         )
 
-        # ── Step 2: Save programs to MongoDB ──
+        # ── Step 2: Save programs to MongoDB (protect against data loss) ──
         saved_count = 0
         try:
+            if not valid_programs:
+                logger.warning(f"[Async] 0 programmes extraits des pages {start_page}-{end_page} - données existantes CONSERVÉES")
+                await db.extract_tasks.update_one(
+                    {"task_id": task_id},
+                    {"$set": {
+                        "status": "error",
+                        "message": f"0 programmes extraits des pages {start_page}-{end_page}. Vérifiez les numéros de pages. Les données existantes n'ont PAS été effacées.",
+                        "error": "zero_programs"
+                    }}
+                )
+                return
             await db.programs.delete_many({"program_month": program_month, "program_year": program_year})
             for prog in valid_programs:
                 opt1 = prog.get("option1_rates")
@@ -1086,19 +1119,30 @@ async def extract_pdf_async(
 
     pdf_content = await file.read()
 
-    # Auto-detect pages if not provided
-    if not start_page or not end_page:
-        from services.pdfplumber_parser import auto_detect_pages
-        detected = auto_detect_pages(pdf_content)
-        if not start_page:
-            start_page = detected.get('retail_start') or 1
-        if not end_page:
-            end_page = detected.get('retail_end') or start_page
-        if not lease_start_page:
-            lease_start_page = detected.get('lease_start')
-        if not lease_end_page:
-            lease_end_page = detected.get('lease_end')
-        logger.info(f"[AsyncExtract] Auto-detected: retail={start_page}-{end_page}, lease={lease_start_page}-{lease_end_page}")
+    # ALWAYS auto-detect pages from TOC - ignore manual overrides
+    from services.pdfplumber_parser import auto_detect_pages
+    detected = auto_detect_pages(pdf_content)
+    auto_retail_start = detected.get('retail_start')
+    auto_retail_end = detected.get('retail_end')
+    auto_lease_start = detected.get('lease_start')
+    auto_lease_end = detected.get('lease_end')
+    logger.info(f"[AsyncExtract] Auto-detected: retail={auto_retail_start}-{auto_retail_end}, lease={auto_lease_start}-{auto_lease_end}")
+
+    if auto_retail_start and auto_retail_end:
+        if start_page and end_page and (start_page != auto_retail_start or end_page != auto_retail_end):
+            logger.warning(f"[AsyncExtract] Overriding manual pages ({start_page}-{end_page}) with auto-detected ({auto_retail_start}-{auto_retail_end})")
+        start_page = auto_retail_start
+        end_page = auto_retail_end
+    else:
+        start_page = start_page or 1
+        end_page = end_page or start_page
+
+    if auto_lease_start and auto_lease_end:
+        lease_start_page = auto_lease_start
+        lease_end_page = auto_lease_end
+    elif not lease_start_page:
+        lease_start_page = detected.get('lease_start')
+        lease_end_page = detected.get('lease_end')
 
     task_id = str(uuid.uuid4())
 

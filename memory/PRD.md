@@ -3,80 +3,60 @@
 ## Original Problem Statement
 Application CRM pour concessionnaires automobiles Stellantis/FCA Canada. Extraction deterministe des programmes de financement a partir de PDFs mensuels via pdfplumber.
 
-## Core Features
-1. **Parser PDF deterministe** (pdfplumber) pour extraire programmes retail et SCI Lease
-2. **Mode Demo** - acces sans mot de passe via `demo@calcauto.ca`
-3. **UI Dynamique** - banniere evenement + toggles fidelite/paiement differe
-4. **Calcul de financement** - logique complete avec options 1/2, taxes QC, accessoires, echange
-5. **Calcul Location SCI** - lease calculator avec residuels, ajustement km, taux standard/alternatif
-6. **CI/CD** - GitHub Actions avec tests unitaires, deploiement Render/Vercel
+## CORRECTIONS CRITIQUES (Mar 10, 2026)
+
+### 1. Protection anti-perte de donnees
+**Probleme**: L'ancien code effacait les programmes AVANT l'extraction. Si extraction echouait (0 programmes), les donnees etaient perdues.
+**Fix**: Si 0 programmes extraits, les donnees existantes sont CONSERVEES avec message d'erreur.
+
+### 2. Auto-correction des numeros de pages
+**Probleme**: L'utilisateur entrait les pages de Fevrier (20-21) pour le PDF de Mars qui a des pages differentes (17-19). Resultat: 0 programmes.
+**Fix**: L'extraction auto-detecte TOUJOURS les pages depuis le TOC, ignorant les pages manuelles. Meme avec des mauvaises pages, le systeme trouve les bonnes.
+
+### 3. Cherokee 2026 - pas d'Option 2
+**Probleme**: Les anciennes donnees montraient Option 2 pour Cherokee 2026 qui n'existe pas dans le PDF de Mars.
+**Fix**: Re-extraction avec parseur corrige. Cherokee 2026 a seulement Option 1 a 4.99%.
+
+## Pages par PDF (auto-detectees depuis TOC)
+- **Fevrier 2026** (29 pages): Retail=20-22, SCI Lease=28-29
+- **Mars 2026** (39 pages): Retail=17-19, SCI Lease=25-26
+- Note: les numeros de pages CHANGENT entre les mois car les PDFs ont des structures differentes
 
 ## Architecture
 - **Frontend**: React/Expo web (TypeScript)
 - **Backend**: FastAPI (Python)
-- **Database**: MongoDB (users, programs, submissions) + fichiers JSON (data/)
+- **Database**: MongoDB + fichiers JSON (data/)
 - **PDF Parsing**: pdfplumber + regex
 
 ## What's Been Implemented
 
-### Completed (Mar 10, 2026 - Session courante)
-- **Extraction PDF Mars 2026** - 93 programmes + 73 taux SCI Lease extraits correctement
-  - Auto-detection pages correcte: retail=17-19, SCI=25-26 (Mars a 39 pages vs 29 pour Fevrier)
-  - Cherokee 2026: seulement Option 1 a 4.99%, PAS d'Option 2
-  - Grand Cherokee/Grand Cherokee L: taux variables 0.99-4.49%
-  - Fiat 500e: CC=$7,000, BC=$5,000 (2025)
-- **Fix nommage modeles combines** - "Grand Cherokee/Grand Cherokee L" correctement parse
-- **Ajout modeles manquants** - Grand Wagoneer L, Wagoneer L ajoutes a MODELS_BY_BRAND
-- **Fix DB existante** - 13 corrections appliquees (duplications + bug "aredo")
-- **Tests complets** - 12/12 backend (iteration_27), 23/23 backend (iteration_26)
+### Completed (Mar 10, 2026)
+- Protection anti-perte de donnees (0 programmes → garde les existants)
+- Auto-correction pages (ignore les pages manuelles, utilise TOC)
+- Fix nommage modeles combines (Grand Cherokee/Grand Cherokee L)
+- Ajout modeles: Grand Wagoneer L, Wagoneer L
+- Fix DB: 13 corrections (duplications + bug "aredo")
+- Tests: 12/12 backend (iteration_27), 23/23 (iteration_26)
 
 ### Completed (Sessions precedentes)
-- **TOC-first auto-detection** - Parse la Table des Matieres (page 2)
-- **Support dual-layout retail parser** - Layout A (Jan/Feb 25+ cols) et Layout B (Mars 24 cols)
-- **Detection dynamique des colonnes** - Indices detectes depuis les headers
-- **Bonus Cash parser** - Extraction de la page 8 (Bonus Cash Program)
-- **Fix "All-New" prefix** - Suppression du prefixe "All-New"
-- **Fix word boundary** - "Grand Cherokee L" ne mange plus le "L" de "Laredo"
-- **Animation comete** - Trainee de particules (code utilisateur)
-- **Mode Demo** - Auto-login sans mot de passe
-- **Detection auto pages** - Plus besoin d'entrer les numeros de pages manuellement
-
-### Resultats valides Mars 2026
-- 93 programmes (36 x 2026, 43 x 2025, 14 x 2024)
-- 73 SCI Lease (33 x 2026, 40 x 2025)
-- Cherokee 2026: opt1=4.99% flat, opt2=None
-- Grand Cherokee 2026: opt1=0.99%-4.49%, opt2=None
-- Compass North: CC=$3,500, opt1=True, opt2=True
-- 0 duplications de nommage
-
-## Important: Guide d'extraction
-- **Fevrier 2026** (29 pages): Retail=20-22, SCI=28-29
-- **Mars 2026** (39 pages): Retail=17-19, SCI=25-26
-- Les pages sont auto-detectees depuis le TOC (page 2) - NE PAS changer les pages auto-detectees
+- TOC-first auto-detection
+- Support dual-layout (Layout A/B)
+- Bonus Cash parser (page 8)
+- Fix "All-New", fix word boundary "Laredo"
+- Mode Demo, Detection auto pages, CI/CD
 
 ## Prioritized Backlog
-
-### P1 - Splash Screen Animation
-- En attente du retour utilisateur sur la derniere version
-
-### P2 - UI Gestion des Corrections
-- Interface frontend admin pour `/api/corrections` APIs existantes
-
-### P3 - Refactoring Frontend
-- Decouper `index.tsx` (3696 lignes), `inventory.tsx`, `clients.tsx`
+- P1: Splash Screen Animation (attente retour utilisateur)
+- P2: UI Gestion des Corrections (admin panel)
+- P3: Refactoring Frontend (index.tsx 3696 lignes)
 
 ## Key Files
 - `backend/services/pdfplumber_parser.py` - Parsers PDF
-- `backend/routers/import_wizard.py` - API import et extraction
-- `backend/routers/programs.py` - CRUD programmes
-- `backend/routers/sci.py` - API SCI Lease rates
-- `frontend/utils/leaseCalculator.ts` - Logique calcul location
-- `frontend/app/(tabs)/index.tsx` - Page principale calculateur
+- `backend/routers/import_wizard.py` - API extraction (PROTEGE)
 - `backend/data/march2026_source.pdf` - PDF Mars pour tests
 
 ## Key API Endpoints
-- `POST /api/extract-pdf` - Extraction PDF sync
-- `POST /api/extract-pdf-async` - Extraction PDF async (auto-detect pages)
+- `POST /api/extract-pdf` - Extraction sync (auto-detecte pages, protege contre perte)
+- `POST /api/extract-pdf-async` - Extraction async (auto-detecte pages, protege contre perte)
 - `GET /api/programs?month=M&year=Y` - Liste programmes
 - `GET /api/sci/lease-rates` - Taux SCI Lease
-- `GET /api/sci/residuals` - Residuels vehicules
