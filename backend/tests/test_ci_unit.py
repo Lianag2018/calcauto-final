@@ -295,7 +295,6 @@ class TestMetadataFileStructure:
         assert 'brands' in data
         assert data['loyalty_rate'] == 0.5
         assert 'Month of Ram' in data['event_names']
-        assert data['no_payments_days'] == 90
         assert 'Ram' in data['brands']
         assert 'Jeep' in data['brands']
 

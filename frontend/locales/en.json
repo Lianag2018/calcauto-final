@@ -21,7 +21,8 @@
     "title": "Additional fees (taxable)",
     "dossier": "Admin fees",
     "tires": "Tire tax",
-    "rdprm": "RDPRM fees"
+    "rdprm": "RDPRM fees",
+    "cashDown": "Cash down (tax incl.)"
   },
   
   "exchange": {

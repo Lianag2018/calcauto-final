@@ -1649,6 +1649,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1a1a2e',
   },
+  secondaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    padding: 14,
+    width: '100%',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+    marginTop: 10,
+  },
+  secondaryButtonText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#888',
+  },
   buttonDisabled: {
     opacity: 0.6,
   },
