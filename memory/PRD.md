@@ -1,62 +1,59 @@
-# CalcAuto AiPro - PRD
+# CalcAuto AiPro - Product Requirements Document
 
-## Original Problem Statement
-Application CRM pour concessionnaires automobiles Stellantis/FCA Canada. Extraction deterministe des programmes de financement a partir de PDFs mensuels via pdfplumber.
-
-## CORRECTIONS CRITIQUES (Mar 10, 2026)
-
-### 1. Protection anti-perte de donnees
-**Probleme**: L'ancien code effacait les programmes AVANT l'extraction. Si extraction echouait (0 programmes), les donnees etaient perdues.
-**Fix**: Si 0 programmes extraits, les donnees existantes sont CONSERVEES avec message d'erreur.
-
-### 2. Auto-correction des numeros de pages
-**Probleme**: L'utilisateur entrait les pages de Fevrier (20-21) pour le PDF de Mars qui a des pages differentes (17-19). Resultat: 0 programmes.
-**Fix**: L'extraction auto-detecte TOUJOURS les pages depuis le TOC, ignorant les pages manuelles. Meme avec des mauvaises pages, le systeme trouve les bonnes.
-
-### 3. Cherokee 2026 - pas d'Option 2
-**Probleme**: Les anciennes donnees montraient Option 2 pour Cherokee 2026 qui n'existe pas dans le PDF de Mars.
-**Fix**: Re-extraction avec parseur corrige. Cherokee 2026 a seulement Option 1 a 4.99%.
-
-## Pages par PDF (auto-detectees depuis TOC)
-- **Fevrier 2026** (29 pages): Retail=20-22, SCI Lease=28-29
-- **Mars 2026** (39 pages): Retail=17-19, SCI Lease=25-26
-- Note: les numeros de pages CHANGENT entre les mois car les PDFs ont des structures differentes
+## Problème Original
+Application CRM pour concessionnaires automobiles utilisant un parser PDF déterministe (pdfplumber) pour extraire les données de programmes de financement mensuels FCA Canada.
 
 ## Architecture
-- **Frontend**: React/Expo web (TypeScript)
+- **Frontend**: React/Expo (TypeScript)
 - **Backend**: FastAPI (Python)
-- **Database**: MongoDB + fichiers JSON (data/)
-- **PDF Parsing**: pdfplumber + regex
+- **Database**: MongoDB
+- **Parser**: pdfplumber (déterministe, sans IA)
 
-## What's Been Implemented
+## Fonctionnalités Implémentées
 
-### Completed (Mar 10, 2026)
-- Protection anti-perte de donnees (0 programmes → garde les existants)
-- Auto-correction pages (ignore les pages manuelles, utilise TOC)
-- Fix nommage modeles combines (Grand Cherokee/Grand Cherokee L)
-- Ajout modeles: Grand Wagoneer L, Wagoneer L
-- Fix DB: 13 corrections (duplications + bug "aredo")
-- Tests: 12/12 backend (iteration_27), 23/23 (iteration_26)
+### Parser PDF (CORE)
+- Extraction déterministe via pdfplumber (Layout A: Jan/Feb, Layout B: Mars+)
+- Stratégie TOC-first pour détection automatique des pages
+- Extraction Consumer Cash, taux Option 1 et Option 2 (36m-96m)
+- Extraction Alternative Consumer Cash
+- Extraction Bonus Cash depuis page dédiée (page 8)
+- **[Mars 2026] Détection des marqueurs de loyauté "P"** (colonnes 2, 4, 16)
+- Extraction SCI Lease rates
+- Extraction Key Incentives
 
-### Completed (Sessions precedentes)
-- TOC-first auto-detection
-- Support dual-layout (Layout A/B)
-- Bonus Cash parser (page 8)
-- Fix "All-New", fix word boundary "Laredo"
-- Mode Demo, Detection auto pages, CI/CD
+### Export Excel (VÉRIFIÉ)
+- Onglet "Financement": Année, Marque, Modèle, Version, P(Loyauté), Rabais, Taux 36m-96m (Opt1 + Opt2), Bonus
+- Onglet "SCI Lease": Marque, Modèle, Rabais, Taux Standard/Alternative
+- Freeze panes F4 (5 colonnes + 3 lignes d'en-tête figées)
+- Couleurs par section (rouge Opt1, bleu Opt2, vert Bonus, orange Loyauté)
+- **Endpoint GET /api/download-excel?month=X&year=Y** pour téléchargement direct
 
-## Prioritized Backlog
-- P1: Splash Screen Animation (attente retour utilisateur)
-- P2: UI Gestion des Corrections (admin panel)
-- P3: Refactoring Frontend (index.tsx 3696 lignes)
+### Protection des Données
+- Pas de suppression des données existantes si extraction retourne 0 programmes
+- Auto-détection forcée des pages (ignore les valeurs client)
 
-## Key Files
-- `backend/services/pdfplumber_parser.py` - Parsers PDF
-- `backend/routers/import_wizard.py` - API extraction (PROTEGE)
-- `backend/data/march2026_source.pdf` - PDF Mars pour tests
+### Mode Démo
+- Connexion automatique demo@calcauto.ca avec accès admin complet
 
-## Key API Endpoints
-- `POST /api/extract-pdf` - Extraction sync (auto-detecte pages, protege contre perte)
-- `POST /api/extract-pdf-async` - Extraction async (auto-detecte pages, protege contre perte)
-- `GET /api/programs?month=M&year=Y` - Liste programmes
+### CI/CD
+- GitHub Actions configuré (test-backend + deploy)
+- Fix du test unitaire bloquant (PENDING PUSH via "Save to GitHub")
+
+## Endpoints API Clés
+- `POST /api/extract-pdf` - Import PDF synchrone
+- `POST /api/extract-pdf-async` - Import PDF asynchrone
+- `GET /api/download-excel?month=3&year=2026` - Téléchargement Excel
+- `GET /api/programs` - Liste des programmes
 - `GET /api/sci/lease-rates` - Taux SCI Lease
+- `GET /api/program-meta?month=3&year=2026` - Métadonnées du programme
+
+## Schéma DB
+- `db.programs`: brand, model, trim, year, consumer_cash, alt_consumer_cash, bonus_cash, option1_rates, option2_rates, loyalty_cash, loyalty_opt1, loyalty_opt2, program_month, program_year
+- `db.residuals`: Valeurs résiduelles
+- `db.users`: Comptes utilisateurs
+
+## Tâches Restantes (par priorité)
+- **P0**: CI/CD - L'utilisateur doit cliquer "Save to GitHub" pour pousser les fixes
+- **P1**: Splash screen animé - en attente du feedback utilisateur
+- **P2**: Interface de gestion des corrections (frontend)
+- **P3**: Refactoring des composants frontend (index.tsx, inventory.tsx, clients.tsx)
