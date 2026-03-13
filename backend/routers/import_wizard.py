@@ -514,7 +514,11 @@ def generate_excel_from_programs(programs: List[Dict[str, Any]], program_month: 
         for col, value in enumerate(data, 1):
             cell = ws.cell(row=row_idx, column=col, value=value)
             cell.border = thin_border
-            cell.alignment = Alignment(horizontal="center")
+            # Trim column (col 4) left-aligned for readability
+            if col == 4:
+                cell.alignment = Alignment(horizontal="left", wrap_text=True)
+            else:
+                cell.alignment = Alignment(horizontal="center")
             if col == 5:
                 cell.fill = loyalty_data_fill
                 if value == "P":
@@ -527,7 +531,7 @@ def generate_excel_from_programs(programs: List[Dict[str, Any]], program_month: 
                 cell.fill = bonus_data_fill
 
     # ── Column widths ──
-    col_widths = [7, 12, 22, 40, 4, 12, 8, 8, 8, 8, 8, 8, 12, 8, 8, 8, 8, 8, 8, 12]
+    col_widths = [7, 12, 22, 55, 4, 12, 8, 8, 8, 8, 8, 8, 12, 8, 8, 8, 8, 8, 8, 12]
     for col, width in enumerate(col_widths, 1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = width
 
@@ -643,7 +647,11 @@ def generate_excel_from_programs(programs: List[Dict[str, Any]], program_month: 
                 for col, value in enumerate(data, 1):
                     cell = ws2.cell(row=row_idx, column=col, value=value)
                     cell.border = thin_border_l
-                    cell.alignment = Alignment(horizontal="center")
+                    # Model column (col 2) left-aligned for readability
+                    if col == 2:
+                        cell.alignment = Alignment(horizontal="left", wrap_text=True)
+                    else:
+                        cell.alignment = Alignment(horizontal="center")
                     if col <= 3:
                         pass
                     elif col <= 12:
@@ -654,7 +662,7 @@ def generate_excel_from_programs(programs: List[Dict[str, Any]], program_month: 
                 row_idx += 1
         
         # Column widths for SCI Lease sheet
-        sci_widths = [12, 28, 12] + [7]*9 + [7]*9
+        sci_widths = [12, 60, 12] + [7]*9 + [7]*9
         for col, width in enumerate(sci_widths, 1):
             ws2.column_dimensions[openpyxl.utils.get_column_letter(col)].width = width
         
