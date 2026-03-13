@@ -231,28 +231,33 @@ export function findRateEntry(
   const modelLower = model.toLowerCase();
   const trimLower = (trim || '').toLowerCase();
 
-  // Priorité: match modèle + trim
-  let entry = vehicleList?.find((v: any) => {
+  // Get ALL entries that match brand + model
+  const candidates = (vehicleList || []).filter((v: any) => {
     const vModel = v.model.toLowerCase();
     const vBrand = v.brand.toLowerCase();
     if (vBrand !== brandLower) return false;
-    const hasModel = vModel.includes(modelLower) || modelLower.includes(vModel);
-    if (!hasModel) return false;
-    if (!trimLower) return true;
-    return vModel.includes(trimLower) || trimLower.split(',').some((t: string) => vModel.includes(t.trim()));
+    return vModel.includes(modelLower) || modelLower.includes(vModel);
   });
 
-  // Fallback: match modèle seul
-  if (!entry) {
-    entry = vehicleList?.find((v: any) => {
+  if (candidates.length === 0) return null;
+  if (candidates.length === 1) return candidates[0];
+
+  // Multiple matches — pick the best one based on trim
+  // 1. Exact trim match (e.g., trim="Base" → "Cherokee Base")
+  if (trimLower) {
+    const trimMatch = candidates.find((v: any) => {
       const vModel = v.model.toLowerCase();
-      const vBrand = v.brand.toLowerCase();
-      if (vBrand !== brandLower) return false;
-      return vModel.includes(modelLower) || modelLower.includes(vModel);
+      return vModel.includes(trimLower) || trimLower.split(',').some((t: string) => vModel.includes(t.trim()));
     });
+    if (trimMatch) return trimMatch;
   }
 
-  return entry || null;
+  // 2. Prefer "(excluding ...)" entries as the generic/default match
+  const excludingEntry = candidates.find((v: any) => v.model.toLowerCase().includes('excluding'));
+  if (excludingEntry) return excludingEntry;
+
+  // 3. Fallback to first match
+  return candidates[0];
 }
 
 /** Calcule l'ajustement km pour un terme donné */
