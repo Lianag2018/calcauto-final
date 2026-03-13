@@ -204,15 +204,92 @@ def _is_retail_data_row(row: list) -> bool:
 
 
 # ═══════════════════════════════════════════════════════════════
+# CONTENT-DRIVEN TABLE CLASSIFICATION
+# ═══════════════════════════════════════════════════════════════
+
+# Known vehicle model keywords for content detection
+_VEHICLE_KEYWORDS = [
+    'Grand Caravan', 'Pacifica', 'Compass', 'Cherokee', 'Wrangler',
+    'Gladiator', 'Wagoneer', 'Durango', 'Charger', 'Hornet',
+    'Ram 1500', 'Ram 2500', 'Ram 3500', '500e', 'ProMaster',
+]
+
+
+def _classify_table(table: list) -> str:
+    """
+    Classify a table by analyzing its CONTENT, not its position.
+    Returns: 'rates', 'names', 'bonus', 'delivery', or 'unknown'
+    """
+    if not table or len(table) < 2:
+        return 'unknown'
+
+    ncols = max(len(row) for row in table)
+
+    pct_count = 0
+    all_text = []
+
+    for row in table:
+        for cell in row:
+            if not cell:
+                continue
+            s = str(cell).strip()
+            if '%' in s:
+                pct_count += 1
+            all_text.append(s)
+
+    joined = ' '.join(all_text)
+
+    # RATES TABLE: 15+ cols with many % values
+    if ncols >= 15 and pct_count >= 10:
+        return 'rates'
+
+    # NAMES TABLE: 2-10 cols with vehicle model keywords or brand codes
+    if 2 <= ncols <= 10:
+        brand_code_hits = sum(1 for t in all_text if t in BRAND_REVERSED_MAP)
+        model_hits = sum(1 for kw in _VEHICLE_KEYWORDS if kw in joined)
+        if brand_code_hits >= 2 or model_hits >= 3:
+            return 'names'
+
+    # BONUS TABLE: header contains "Bonus Cash"
+    if ncols <= 6:
+        for row in table[:5]:
+            for cell in row:
+                if cell and 'Bonus Cash' in str(cell):
+                    return 'bonus'
+
+    # DELIVERY CREDIT TABLE
+    if ncols <= 6:
+        for row in table[:5]:
+            for cell in row:
+                if cell and 'Delivery Credit' in str(cell):
+                    return 'delivery'
+
+    return 'unknown'
+
+
+def _classify_all_tables(tables: list) -> Dict[str, list]:
+    """
+    Classify all tables on a page by content. Returns dict keyed by role.
+    """
+    classified = {'rates': [], 'names': [], 'bonus': [], 'delivery': [], 'unknown': []}
+    for i, t in enumerate(tables):
+        role = _classify_table(t)
+        classified[role].append(t)
+        logger.debug(f"[Classify] Table {i}: {role} ({len(t)}r x {len(t[0]) if t else 0}c)")
+    return classified
+
+
+# ═══════════════════════════════════════════════════════════════
 # RETAIL FINANCE PARSER
 # ═══════════════════════════════════════════════════════════════
 
 def _detect_rate_columns(table: list) -> Tuple[Optional[int], Optional[int]]:
     """
     Find the first column index for Option 1 and Option 2 rate headers.
-    Looks for '36M' or 'Up to 36M' in header rows.
-    Returns (opt1_start_col, opt2_start_col) or (None, None).
+    Method 1: Look for '36M' in header rows.
+    Method 2: Fall back to scanning data rows for clusters of % values.
     """
+    # Method 1: Header-based detection
     for row in table[:8]:
         opt1_col = None
         opt2_col = None
@@ -220,23 +297,44 @@ def _detect_rate_columns(table: list) -> Tuple[Optional[int], Optional[int]]:
             if not cell:
                 continue
             cs = str(cell).upper().replace('\n', ' ')
-            if '36M' in cs:
+            if '36M' in cs or '36 MONTH' in cs:
                 if opt1_col is None:
                     opt1_col = ci
                 else:
                     opt2_col = ci
                     return (opt1_col, opt2_col)
+
+    # Method 2: Data-pattern fallback
+    for ri in range(min(20, len(table))):
+        row = table[ri]
+        pct_cols = [ci for ci, c in enumerate(row) if c and '%' in str(c)]
+        if len(pct_cols) >= 6:
+            clusters = []
+            current = [pct_cols[0]]
+            for j in range(1, len(pct_cols)):
+                if pct_cols[j] - pct_cols[j-1] <= 2:
+                    current.append(pct_cols[j])
+                else:
+                    clusters.append(current)
+                    current = [pct_cols[j]]
+            clusters.append(current)
+            if clusters:
+                opt1 = clusters[0][0]
+                opt2 = clusters[1][0] if len(clusters) >= 2 else None
+                logger.info(f"[RateDetect] Fallback from data: opt1@{opt1}, opt2@{opt2}")
+                return (opt1, opt2)
+
     return (None, None)
 
 
 def _find_names_table(tables: list) -> Optional[list]:
-    """
-    Find the separate names table (used in March-style PDFs).
-    It's the table where col[0] has reversed brand codes (RELSYRHC, PEEJ, etc.)
-    or col[1] has vehicle names.
-    """
+    """Find the names table by content (brand codes or vehicle keywords)."""
+    classified = _classify_all_tables(tables)
+    if classified['names']:
+        return classified['names'][0]
+    # Fallback: look for reversed brand codes
     brand_codes = set(BRAND_REVERSED_MAP.keys())
-    for t in tables[1:]:  # Skip table 0 (rates)
+    for t in tables[1:]:
         if not t or len(t) < 5 or len(t[0]) < 2:
             continue
         for ri in range(min(10, len(t))):
@@ -247,14 +345,10 @@ def _find_names_table(tables: list) -> Optional[list]:
 
 
 def _find_bonus_table(tables: list) -> Optional[list]:
-    """Find the separate Bonus Cash table (used in March-style PDFs)."""
-    for t in tables[1:]:
-        if not t or len(t) < 3 or len(t[0]) < 2:
-            continue
-        for ri in range(min(3, len(t))):
-            c1 = str(t[ri][1]).strip() if len(t[ri]) > 1 and t[ri][1] else ''
-            if 'Bonus Cash' in c1:
-                return t
+    """Find the Bonus Cash table by content."""
+    classified = _classify_all_tables(tables)
+    if classified['bonus']:
+        return classified['bonus'][0]
     return None
 
 
@@ -269,7 +363,7 @@ def _has_rate_data(row: list, start_col: int) -> bool:
 
 def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) -> List[Dict]:
     """
-    Parse retail financing programs from PDF using pdfplumber.
+    Parse retail financing programs from PDF using content-driven table identification.
     Handles two layouts:
       - Layout A (Jan/Feb): vehicle names + rates in the same table (25+ cols)
       - Layout B (March): names in a separate table, rates in main table (24 cols)
@@ -290,7 +384,14 @@ def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) ->
                 logger.info(f"[RetailParser] Page {page_idx+1}: aucune table")
                 continue
 
-            main_table = tables[0]
+            # ── Content-driven: find the rates table ──
+            classified = _classify_all_tables(tables)
+            if classified['rates']:
+                main_table = classified['rates'][0]
+            else:
+                # Fallback: largest table is likely the rates table
+                main_table = max(tables, key=lambda t: len(t[0]) if t else 0)
+
             num_cols = len(main_table[0]) if main_table else 0
 
             # Detect rate column positions
@@ -732,11 +833,9 @@ def _detect_sci_columns(rates_t: list) -> Dict:
 
 def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
     """
-    Parse SCI Lease rates. Returns {vehicles_2026: [...], vehicles_2025: [...]}.
-
-    PDF structure per page:
-    - Table 0 (6-7 cols): Vehicle names in col 1
-    - Table 1 (30+ cols): Rate data (columns detected dynamically)
+    Parse SCI Lease rates using CONTENT-DRIVEN table identification.
+    Tables are classified by what they contain, not by their position index.
+    Returns {vehicles_2026: [...], vehicles_2025: [...]}.
     """
     vehicles_2026 = []
     vehicles_2025 = []
@@ -750,7 +849,6 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
         for page_idx in range(start_idx, end_idx):
             page = pdf.pages[page_idx]
 
-            # Quick text pre-filter: skip pages without lease-relevant keywords
             quick_text = (page.extract_text() or '')[:500].upper()
             if 'MODEL YEAR' not in quick_text and 'MODEL\nYEAR' not in quick_text:
                 logger.info(f"[SCIParser] Page {page_idx+1}: skipped (no MODEL YEAR)")
@@ -760,11 +858,26 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
             if len(tables) < 2:
                 continue
 
-            names_t = tables[0]
-            rates_t = tables[1]
-            bonus_t = tables[2] if len(tables) > 2 else None
+            # ── Content-driven table identification ──
+            classified = _classify_all_tables(tables)
+            names_t = classified['names'][0] if classified['names'] else None
+            rates_t = classified['rates'][0] if classified['rates'] else None
+            bonus_t = classified['bonus'][0] if classified['bonus'] else None
 
-            # Detect year — check for "YYYY Model Year" at the START of the cell
+            if not names_t or not rates_t:
+                logger.warning(
+                    f"[SCIParser] Page {page_idx+1}: Could not identify tables "
+                    f"(names={bool(names_t)}, rates={bool(rates_t)}). "
+                    f"Tables: {[(len(t), len(t[0]) if t else 0) for t in tables]}"
+                )
+                continue
+
+            logger.info(
+                f"[SCIParser] Page {page_idx+1}: names={len(names_t)}r, "
+                f"rates={len(rates_t)}r x {len(rates_t[0])}c"
+            )
+
+            # ── Detect model year from names table ──
             model_year = None
             for row in names_t[:5]:
                 for cell in row:
@@ -781,18 +894,32 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
                 if model_year:
                     break
             if not model_year:
+                # Fallback: check all tables
+                for t in tables:
+                    for row in t[:5]:
+                        for cell in row:
+                            if cell:
+                                cs = str(cell)
+                                ym = re.search(r'(\d{4})\s+Model', cs)
+                                if ym:
+                                    model_year = int(ym.group(1))
+                                    break
+                        if model_year:
+                            break
+                    if model_year:
+                        break
+            if not model_year:
+                logger.warning(f"[SCIParser] Page {page_idx+1}: no model year found")
                 continue
 
-            # Dynamically detect column positions
+            # ── Dynamically detect column positions from header content ──
             col_map = _detect_sci_columns(rates_t)
             lease_cash_col = col_map['lease_cash_col']
             std_indices = list(range(col_map['std_start'], col_map['std_start'] + 9))
             alt_indices = list(range(col_map['alt_start'], col_map['alt_start'] + 9))
             bonus_col = col_map['bonus_col']
 
-            logger.info(f"[SCIParser] Page {page_idx+1}: {model_year}, names={len(names_t)}, rates={len(rates_t)}")
-
-            # Find first data row in rates table
+            # ── Find first data row by scanning for % or - in rate columns ──
             data_start = None
             for ri, row in enumerate(rates_t):
                 for idx in std_indices + alt_indices:
@@ -804,12 +931,19 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
                 if data_start is not None:
                     break
             if data_start is None:
+                logger.warning(f"[SCIParser] Page {page_idx+1}: no data rows found in rates table")
                 continue
 
+            logger.info(f"[SCIParser] Page {page_idx+1}: year={model_year}, data_start=R{data_start}")
+
+            # ── Extract vehicles with row-level validation ──
+            extracted = 0
             for ri in range(data_start, min(len(names_t), len(rates_t))):
                 vname = ''
                 if ri < len(names_t) and len(names_t[ri]) > 1:
                     vname = str(names_t[ri][1]).replace('\n', ' ').strip() if names_t[ri][1] else ''
+
+                # Skip non-vehicle rows
                 if not vname or '*See' in vname or 'Program Rules' in vname:
                     continue
                 vname_lower = vname.lower()
@@ -867,6 +1001,9 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
 
                 target = vehicles_2026 if model_year == 2026 else vehicles_2025
                 target.append(vehicle)
+                extracted += 1
+
+            logger.info(f"[SCIParser] Page {page_idx+1}: extracted {extracted} vehicles for {model_year}")
 
     logger.info(f"[SCIParser] Total: {len(vehicles_2026)} v2026 + {len(vehicles_2025)} v2025")
     return {'vehicles_2026': vehicles_2026, 'vehicles_2025': vehicles_2025}
