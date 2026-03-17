@@ -852,7 +852,7 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
 
             for ri in range(8, min(len(names_t), len(rates_t))):  # ← skip en-têtes (démarre plus tard)
                 vname = str(names_t[ri][1]).replace('\n', ' ').strip() if len(names_t[ri]) > 1 else ''
-                if not vname or any(k in vname.lower() for k in ['discount', 'stackable', 'type of sale', 'model year', 'program', 'stackability', 'important']):
+                if not vname or vname == 'None' or any(k in vname.lower() for k in ['discount', 'stackable', 'type of sale', 'model year', 'program', 'stackability', 'important', 'color key', 'see program', 'before tax', 'after tax']):
                     continue
 
                 rr = rates_t[ri]
