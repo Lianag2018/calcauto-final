@@ -69,6 +69,7 @@ chainlit.md
 
 # Expo
 .expo/
+.metro-cache/
 
 # CalcAuto data files (synced from Supabase at runtime)
 backend/data/sci_lease_rates_*.json
