@@ -507,16 +507,27 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
     Parse SCI Lease rates. Returns {vehicles_2026: [...], vehicles_2025: [...]}.
 
     PDF structure per page:
-    - Table 0 (6 cols): Vehicle names in col 1
-    - Table 1 (30 cols): Rate data
+    - Table 0 (6-7 cols): Vehicle names in col 1
+    - Table 1 (30-31 cols): Rate data
       col 2 = Lease Cash, cols 4-12 = Standard rates, cols 19-27 = Alt rates
-    - Table 2 (optional): Bonus Cash in col 1 (separate on 2026 pages)
+    - Table 2 (optional): Bonus Cash (separate on some pages)
+
+    IMPORTANT: The names table and rates table have different numbers of header
+    rows, causing a row offset. We build separate filtered lists and zip them.
     """
     vehicles_2026 = []
     vehicles_2025 = []
     term_keys = ['24', '27', '36', '39', '42', '48', '51', '54', '60']
     std_indices = list(range(4, 13))
     alt_indices = list(range(19, 28))
+
+    # Patterns to skip in the names table (headers, footers)
+    _skip_patterns = [
+        'discount type', 'stackability', 'type of sale',
+        'before tax', 'after tax', 'program period',
+        'model year', 'fca canada', 'fca qbc', 'program incentiv',
+        'color key', '262ql3', 'program rules',
+    ]
 
     with pdfplumber.open(BytesIO(pdf_content)) as pdf:
         total_pages = len(pdf.pages)
@@ -526,7 +537,7 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
         for page_idx in range(start_idx, end_idx):
             page = pdf.pages[page_idx]
 
-            # Quick text pre-filter: skip pages without lease-relevant keywords
+            # Quick text pre-filter
             quick_text = (page.extract_text() or '')[:500].upper()
             if 'MODEL YEAR' not in quick_text and 'MODEL\nYEAR' not in quick_text:
                 logger.info(f"[SCIParser] Page {page_idx+1}: skipped (no MODEL YEAR)")
@@ -540,18 +551,16 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
             rates_t = tables[1]
             bonus_t = tables[2] if len(tables) > 2 else None
 
-            # Detect year — check for "YYYY Model Year" at the START of the cell
+            # Detect year
             model_year = None
             for row in names_t[:5]:
                 for cell in row:
                     if cell:
                         cs = str(cell)
-                        # Match "2025 Model Year" or "2026 Model Year" at start
                         ym = re.match(r'(\d{4})\s+Model\s+Year', cs)
                         if ym:
                             model_year = int(ym.group(1))
                             break
-                        # Fallback: "YYYY\nMODEL YEAR"
                         ym2 = re.match(r'(\d{4})\n', cs)
                         if ym2 and 'MODEL' in cs.upper():
                             model_year = int(ym2.group(1))
@@ -561,48 +570,68 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
             if not model_year:
                 continue
 
-            logger.info(f"[SCIParser] Page {page_idx+1}: {model_year}, names={len(names_t)}, rates={len(rates_t)}")
+            # ── Build vehicle name list (filtered) ──
+            vehicle_names = []
+            for row in names_t:
+                c1 = str(row[1]).replace('\n', ' ').strip() if len(row) > 1 and row[1] else ''
+                if not c1 or '*See' in c1:
+                    continue
+                if any(p in c1.lower() for p in _skip_patterns):
+                    continue
+                vehicle_names.append(c1)
 
-            # Find first data row in rates table
-            data_start = None
-            for ri, row in enumerate(rates_t):
+            # ── Build rate data rows (filtered) ──
+            rate_rows = []
+            for row in rates_t:
+                has_data = False
                 for idx in std_indices + alt_indices:
                     if idx < len(row):
                         v = str(row[idx]).strip() if row[idx] else ''
                         if '%' in v or v == '-':
-                            data_start = ri
+                            has_data = True
                             break
-                if data_start is not None:
-                    break
-            if data_start is None:
-                continue
+                if has_data:
+                    rate_rows.append(row)
 
+            # ── Build bonus list from separate table ──
+            bonus_values = []
+            if bonus_t:
+                for row in bonus_t:
+                    c1 = str(row[1]).strip() if len(row) > 1 and row[1] else ''
+                    if '$' in c1 or c1 == '' or c1 == '-':
+                        bonus_values.append(parse_dollar(c1))
+
+            # Detect bonus column in rates table (last column with "Bonus Cash" header)
             rates_cols = len(rates_t[0]) if rates_t else 0
-            has_bonus_col = rates_cols >= 30
+            bonus_col = None
+            for row in rates_t[:8]:
+                for ci in range(rates_cols - 1, max(rates_cols - 3, 0), -1):
+                    if ci < len(row) and row[ci] and 'Bonus Cash' in str(row[ci]):
+                        bonus_col = ci
+                        break
+                if bonus_col is not None:
+                    break
 
-            for ri in range(data_start, min(len(names_t), len(rates_t))):
-                vname = ''
-                if ri < len(names_t) and len(names_t[ri]) > 1:
-                    vname = str(names_t[ri][1]).replace('\n', ' ').strip() if names_t[ri][1] else ''
-                if not vname or '*See' in vname or 'Program Rules' in vname:
-                    continue
-                # Skip header rows that leak into data range
-                vname_lower = vname.lower()
-                if any(s in vname_lower for s in [
-                    'discount type', 'stackability', 'type of sale',
-                    'before tax', 'after tax', 'program period',
-                ]):
-                    continue
+            logger.info(
+                f"[SCIParser] Page {page_idx+1}: {model_year}, "
+                f"{len(vehicle_names)} vehicles, {len(rate_rows)} rate rows, "
+                f"bonus_col={bonus_col}, bonus_t={len(bonus_values) if bonus_values else 0}"
+            )
 
-                rr = rates_t[ri]
+            # ── Zip vehicle names with rate rows ──
+            for i, vname in enumerate(vehicle_names):
+                if i >= len(rate_rows):
+                    break
+
+                rr = rate_rows[i]
 
                 lease_cash = parse_dollar(rr[2] if len(rr) > 2 else None)
 
                 std = {}
                 std_ok = False
-                for k, i in zip(term_keys, std_indices):
-                    if i < len(rr):
-                        r = parse_rate(rr[i])
+                for k, idx in zip(term_keys, std_indices):
+                    if idx < len(rr):
+                        r = parse_rate(rr[idx])
                         std[k] = r
                         if r is not None:
                             std_ok = True
@@ -611,9 +640,9 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
 
                 alt = {}
                 alt_ok = False
-                for k, i in zip(term_keys, alt_indices):
-                    if i < len(rr):
-                        r = parse_rate(rr[i])
+                for k, idx in zip(term_keys, alt_indices):
+                    if idx < len(rr):
+                        r = parse_rate(rr[idx])
                         alt[k] = r
                         if r is not None:
                             alt_ok = True
@@ -621,10 +650,10 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
                     alt = None
 
                 bonus = 0
-                if has_bonus_col and len(rr) > 29:
-                    bonus = parse_dollar(rr[29])
-                elif bonus_t and ri < len(bonus_t) and len(bonus_t[ri]) > 1:
-                    bonus = parse_dollar(bonus_t[ri][1])
+                if bonus_col is not None and bonus_col < len(rr):
+                    bonus = parse_dollar(rr[bonus_col])
+                elif i < len(bonus_values):
+                    bonus = bonus_values[i]
 
                 brand = detect_brand_from_model(vname)
                 if not brand:

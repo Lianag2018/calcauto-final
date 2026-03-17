@@ -1,0 +1,91 @@
+{
+  "summary": "Complete backend testing of SCI Lease parser fix. All 11 tests passed verifying the 2-row offset bug has been fixed. The fix correctly uses zip() to align vehicle names with rate rows instead of using the same index for both tables.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_sci_lease_fix.py",
+    "/app/test_reports/pytest/pytest_sci_lease_fix.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "The parse_sci_lease() function fix in pdfplumber_parser.py correctly builds separate filtered lists for vehicle_names and rate_rows, then zips them together",
+    "Names table (col 1) has different header rows than rates table - the old code used same index causing 2-row offset",
+    "March 2026 data correctly shows Grand Caravan SXT with alt_rates starting at 4.99% (not 3.49% old bug)",
+    "All expected Lease Cash values verified: Compass North=$3,500, Ram Sport Rebel=$8,250, Durango Hellcat=$15,500, Ram Laramie=$11,500"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_sci_lease_fix.py"
+  ],
+  "success_rate": {
+    "backend": "100% (11/11 tests passed)",
+    "frontend": "N/A (backend only testing requested)"
+  },
+  "test_credentials": {
+    "admin_password": "Liana2018",
+    "march_pdf": "/app/march_2026.pdf",
+    "february_pdf": "/app/pdf_source.pdf",
+    "backend_url": "https://toc-extraction-fix.preview.emergentagent.com"
+  },
+  "seed_data_creation": "Using existing test PDFs",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "SCI Lease parser fix fully verified. Backend tests in test_sci_lease_fix.py cover all requirements from the problem statement.",
+  "verified_features": {
+    "POST_scan_pdf_March2026": {
+      "status": "PASSED",
+      "result": "Lease pages 25-26 detected correctly"
+    },
+    "POST_extract_pdf_March2026": {
+      "status": "PASSED",
+      "result": "93 retail programs + 74 SCI lease vehicles extracted"
+    },
+    "sci_lease_rates_mar2026_vehicle_counts": {
+      "status": "PASSED",
+      "result": "33 vehicles_2026 + 41 vehicles_2025 = 74 total"
+    },
+    "Compass_North_lease_cash": {
+      "status": "PASSED",
+      "result": "Lease Cash = $3,500"
+    },
+    "Ram_1500_Sport_Rebel_lease_cash": {
+      "status": "PASSED",
+      "result": "Lease Cash = $8,250"
+    },
+    "Durango_SRT_Hellcat_lease_cash": {
+      "status": "PASSED",
+      "result": "Lease Cash = $15,500"
+    },
+    "Ram_Laramie_lease_cash": {
+      "status": "PASSED",
+      "result": "Lease Cash = $11,500"
+    },
+    "Grand_Caravan_SXT_alt_rates": {
+      "status": "PASSED",
+      "result": "Alt rates start at 4.99% (not 3.49% old bug)"
+    },
+    "sci_lease_rates_feb2026_vehicle_counts": {
+      "status": "PASSED",
+      "result": "29 vehicles_2026 + 45 vehicles_2025 = 74 total"
+    },
+    "all_2026_vehicles_have_rates": {
+      "status": "PASSED",
+      "result": "All 33 vehicles have either standard_rates or alternative_rates"
+    },
+    "parse_sci_lease_direct_test": {
+      "status": "PASSED",
+      "result": "Direct parser function test verified alignment"
+    }
+  },
+  "rca_of_the_issue": {
+    "root_cause": "The SCI Lease PDF has two tables per page - a names table (col 1 = vehicle names) and a rates table (30+ cols with rate data). These tables have different numbers of header rows: names table had vehicle names starting at row 14, but rates table had rate data starting at row 12. The old code used the same index `ri` for both tables, causing a 2-row offset where each vehicle got rates from 2 positions ahead.",
+    "fix_applied": "The fix builds separate filtered lists: vehicle_names (from names_t) and rate_rows (from rates_t), then uses zip() to pair them together correctly instead of accessing both tables with the same row index.",
+    "verification": "All test cases pass confirming the fix: vehicle counts match expected values, Lease Cash amounts are correctly mapped to the right vehicles, and alternative rates (like Grand Caravan SXT 4.99%) are aligned properly."
+  }
+}
