@@ -796,7 +796,7 @@ def _detect_sci_columns(rates_t: list) -> Dict:
             if not cell: continue
             cs = str(cell).strip().upper()
             if 'STACKABLE' in cs or 'TYPE OF SALE' in cs: continue
-            if result['lease_cash_col'] is None and cs == 'LEASE CASH':
+            if result['lease_cash_col'] is None and 'LEASE CASH' in cs:
                 result['lease_cash_col'] = ci
             elif result['std_start'] is None and 'SCI' in cs and 'STANDARD' in cs:
                 result['std_start'] = ci
@@ -811,7 +811,7 @@ def _detect_sci_columns(rates_t: list) -> Dict:
     return result
 
 def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
-    """Parse SCI Lease – VERSION FINALE sans JAMAIS inventer d'Option 2"""
+    """Parse SCI Lease – VERSION FINALE sans lignes parasites"""
     vehicles_2026 = []
     vehicles_2025 = []
     term_keys = ['24', '27', '36', '39', '42', '48', '51', '54', '60']
@@ -840,37 +840,20 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
             std_indices = list(range(col_map['std_start'], col_map['std_start'] + 9))
             alt_indices = list(range(col_map['alt_start'], col_map['alt_start'] + 9)) if col_map.get('alt_start') is not None else []
 
-            # Vérification ULTRA-STRICTE : on compte vraiment les % valides dans alt
             has_real_alt = False
             if alt_indices:
                 for row in rates_t:
                     for idx in alt_indices:
                         if idx < len(row):
                             v = str(row[idx]).strip()
-                            if '%' in v and v != '-' and v != '' and float(re.search(r'[\d.]+', v).group(0)) > 0:
+                            if '%' in v and v != '-' and v != '':
                                 has_real_alt = True
                                 break
 
-            for ri in range(5, min(len(names_t), len(rates_t))):
-                vname = str(names_t[ri][1]).replace('\n', ' ').strip() if len(names_t[ri]) > 1 and names_t[ri][1] else ''
-                if not vname: continue
-                # Filtrer en-têtes et lignes parasites
-                vname_lower = vname.lower()
-                if any(k in vname_lower for k in [
-                    'discount', 'stackable', 'type of sale', 'model year',
-                    'program period', 'before tax', 'after tax',
-                    'color key', 'see program', '*see',
-                ]): continue
-                # Ignorer les lignes sans aucun taux valide
-                rr = rates_t[ri]
-                has_any_rate = False
-                for idx in std_indices + alt_indices:
-                    if idx < len(rr):
-                        v = str(rr[idx]).strip() if rr[idx] else ''
-                        if '%' in v or v == '-':
-                            has_any_rate = True
-                            break
-                if not has_any_rate: continue
+            for ri in range(8, min(len(names_t), len(rates_t))):  # ← skip en-têtes (démarre plus tard)
+                vname = str(names_t[ri][1]).replace('\n', ' ').strip() if len(names_t[ri]) > 1 else ''
+                if not vname or any(k in vname.lower() for k in ['discount', 'stackable', 'type of sale', 'model year', 'program', 'stackability', 'important']):
+                    continue
 
                 rr = rates_t[ri]
                 lease_cash = parse_dollar(rr[lease_cash_col] if lease_cash_col < len(rr) else None)
@@ -886,7 +869,6 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
                     for k, i in zip(term_keys, alt_indices):
                         if i < len(rr):
                             alt[k] = parse_rate(rr[i])
-                # Si alt est vide ou zéro → on force None
                 if alt and all(v is None or v == 0 for v in alt.values()):
                     alt = None
 
@@ -897,7 +879,7 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
                     'brand': brand,
                     'lease_cash': lease_cash,
                     'standard_rates': std,
-                    'alternative_rates': alt   # ← JAMAIS inventé
+                    'alternative_rates': alt
                 }
 
                 target = vehicles_2026 if model_year == 2026 else vehicles_2025
@@ -1397,7 +1379,6 @@ async def extract_stable_all(pdf_bytes: bytes) -> Dict:
     from database import db
     from product_code_lookup import _MASTER_CODES as FCA_PRODUCT_CODES
 
-    # TOC amélioré + pages
     toc = improved_parse_toc(pdf_bytes)
     pages = auto_detect_pages(pdf_bytes)
 
@@ -1406,17 +1387,15 @@ async def extract_stable_all(pdf_bytes: bytes) -> Dict:
         retail_merged = merge_multi_page_tables(pdf, pages.get('retail_start', 16), pages.get('retail_end', 25))
         sci_merged = merge_multi_page_tables(pdf, pages.get('lease_start', 28), pages.get('lease_end', 29))
 
-    # Appel des parsers (ils continuent de marcher comme avant, mais sur les bonnes pages)
+    # Appel des parsers
     programs = parse_retail_programs(pdf_bytes, pages.get('retail_start', 16), pages.get('retail_end', 25))
     sci = parse_sci_lease(pdf_bytes, pages.get('lease_start', 28), pages.get('lease_end', 29))
 
-    # Bonus Cash depuis page séparée (ex: Fiat 500e $5,000)
+    # Bonus Cash (fix Emergent)
     bonus_entries = parse_bonus_cash_page(pdf_bytes)
-    if bonus_entries:
-        apply_bonus_cash(programs, bonus_entries)
-        logger.info(f"[extract_stable_all] Bonus Cash appliqué: {len(bonus_entries)} entrées")
+    programs = apply_bonus_cash(programs, bonus_entries)
 
-    # Nettoyage + corrections DB + product codes (inchangé)
+    # Nettoyage + corrections DB + product codes
     for p in programs:
         p['model'] = p['model'].replace('Delivery Credit', '').replace('E Only', '').strip()
         code = f"{p['brand']}_{p['model']}_{p['trim']}"
