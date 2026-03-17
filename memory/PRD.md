@@ -36,16 +36,24 @@ Application CRM pour concessionnaire automobile. Parseur PDF deterministe avec `
 - Module `backend/services/storage.py`
 - Sync au demarrage : telecharge JSON depuis Supabase
 - Upload apres extraction : sauvegarde JSON + PDF sur Supabase
-- Repo Git allege : 20MB -> 220KB dans data/
+- Repo Git allege
 
 ### Autres
 - Mode Demo: `demo@calcauto.ca`
 - Detection automatique des pages (TOC-first)
 - CI/CD GitHub Actions
 - Export Excel avec onglets multiples
-- .gitignore nettoye (corrompu par Save to GitHub)
+- .gitignore nettoye
+
+## Nettoyage Git (Complete)
+- Suppression de `frontend/node_modules/` de l'index Git (41 654 fichiers)
+- Suppression de `.metro-cache/` de l'index Git (56 fichiers)
+- Suppression de `__pycache__/` de l'index Git
+- .gitignore mis a jour avec regles correctes
+- Utilisateur doit faire "Save to GitHub" pour finaliser
 
 ## Backlog
+- (P1) Splash Screen anime - en attente validation utilisateur
 - (P2) UI Gestion des corrections frontend
 - (P3) Refactoring composants frontend volumineux
 
@@ -63,6 +71,6 @@ Application CRM pour concessionnaire automobile. Parseur PDF deterministe avec `
 - `db.extract_tasks`: Taches d'extraction async
 
 ## Credentials
-- Demo: `demo@calcauto.ca`
+- Demo: `demo@calcauto.ca` / `demo_access_2026`
 - Admin password: `Liana2018`
 - Supabase: `https://oslbndkfizswhsipjavm.supabase.co`
