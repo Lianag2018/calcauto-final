@@ -186,6 +186,17 @@ npx expo start --web
 
 ---
 
+## Etat actuel / Limites
+
+- Le stockage fichiers passe par **Supabase Storage** — le backend maintient un **cache local** synchronise au demarrage
+- **MongoDB** reste la base principale pour les programmes, utilisateurs et CRM
+- Le parseur PDF (`pdfplumber`) est deterministe mais **sensible aux changements de format** des PDF mensuels — chaque nouveau mois peut reveler des cas limites
+- Les composants frontend `index.tsx` (~3000 lignes), `inventory.tsx` et `clients.tsx` sont encore **monolithiques** et candidats au refactoring
+- L'authentification utilise des tokens SHA256 maison — pas de JWT standard ni OAuth
+- Le projet utilise **yarn** comme gestionnaire de paquets (pas npm)
+
+---
+
 ## Tests
 
 ```bash
