@@ -6,7 +6,7 @@ Car dealership CRM that parses FCA Canada monthly incentive PDFs to extract reta
 ## Architecture
 - **Backend:** FastAPI + pdfplumber + pandas, file-based storage in `backend/data/`
 - **Frontend:** React/Expo (static export), served from `dist/`
-- **DB:** MongoDB (users, submissions)
+- **DB:** MongoDB (users, submissions, corrections)
 - **CI/CD:** GitHub Actions -> Render (backend) + Vercel (frontend)
 
 ## Completed Features
@@ -20,17 +20,20 @@ Car dealership CRM that parses FCA Canada monthly incentive PDFs to extract reta
 8. **Demo Mode** - password-free access via demo@calcauto.ca
 9. **CI/CD Pipeline** - GitHub Actions with pytest + deploy hooks
 10. **Animated Splash Screen** - comet trail loading animation
+11. **Corrections Management UI** - Admin panel tab to view, expand, and delete memorized corrections
 
-## Key Bug Fixes (March 2026)
+## Key Bug Fixes
 - **SCI Lease Row Alignment (P0):** Fixed 2-row offset between names table (row 14) and rates table (row 12). Now uses zip of filtered lists instead of same-index iteration.
 - **Missing Bonus Cash:** Added `parse_bonus_cash_page()` for separate bonus page
-- **Model Name Prefix:** Fixed "All-New" prefix handling for Charger Daytona, Hornet
-- **Trim Parsing:** Fixed "Grand Cherokee Laredo" split into "Grand Cherokee L" + "aredo"
+- **Model Name Prefix:** Fixed "All-New" prefix handling
+- **Trim Parsing:** Fixed "Grand Cherokee Laredo" split
 
 ## API Endpoints
 - `POST /api/scan-pdf` - auto-detect section pages
 - `POST /api/extract-pdf` - full PDF extraction pipeline
-- `POST /api/corrections` - manage program corrections
+- `GET /api/corrections` - list memorized corrections
+- `DELETE /api/corrections/{brand}/{model}/{year}` - delete specific correction
+- `DELETE /api/corrections/all` - delete all corrections
 - `GET /api/programs/:month/:year` - get programs by month
 
 ## Credentials
@@ -38,6 +41,5 @@ Car dealership CRM that parses FCA Canada monthly incentive PDFs to extract reta
 - Demo: auto-login `demo@calcauto.ca`
 
 ## Upcoming Tasks
-- **(P1)** UI for Correction Management (admin panel frontend)
 - **(P2)** Refactor large frontend components (index.tsx, inventory.tsx, clients.tsx)
 - **(P3)** Parse Loyalty Rate Landscapes (pages 34-39 in March PDF)
