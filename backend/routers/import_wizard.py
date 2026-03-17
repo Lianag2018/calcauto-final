@@ -1124,6 +1124,12 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
                 with open(sci_json_path, 'w', encoding='utf-8') as f:
                     json.dump(sci_save_data, f, indent=2, ensure_ascii=False)
                 logger.info(f"[Async] SCI Lease saved: {sci_json_path} ({len(vehicles_2026)} v2026 + {len(vehicles_2025)} v2025)")
+                # Upload to Supabase
+                try:
+                    from services.storage import upload_monthly_json
+                    upload_monthly_json(str(sci_json_path), "sci_lease_rates", program_month, program_year)
+                except Exception as sb_err:
+                    logger.warning(f"[Async] Supabase upload SCI failed: {sb_err}")
             except Exception as json_err:
                 logger.error(f"[Async] SCI JSON save error: {json_err}")
 
@@ -1456,6 +1462,13 @@ async def upload_residual_guide(
         # Also update the current reference file
         current_path = ROOT_DIR / "data" / f"sci_residuals_{month_lower}{effective_year}.json"
         logger.info(f"Residual guide saved: {json_path} ({len(all_vehicles)} vehicles)")
+        
+        # Upload to Supabase
+        try:
+            from services.storage import upload_local_file
+            upload_local_file(str(json_path), f"monthly/{month_lower}{effective_year}/sci_residuals.json")
+        except Exception as sb_err:
+            logger.warning(f"[Storage] Supabase upload residuals failed: {sb_err}")
         
         # Generate Excel for verification
         from openpyxl import Workbook

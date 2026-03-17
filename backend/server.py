@@ -72,6 +72,19 @@ async def shutdown_db_client():
 
 
 @app.on_event("startup")
+async def sync_supabase_storage():
+    """Sync les fichiers data depuis Supabase Storage au demarrage (Render = filesystem ephemere)"""
+    try:
+        from services.storage import sync_from_supabase
+        from database import ROOT_DIR
+        data_dir = str(ROOT_DIR / "data")
+        sync_from_supabase(data_dir)
+        logger.info("[STARTUP] Supabase sync complete")
+    except Exception as e:
+        logger.warning(f"[STARTUP] Supabase sync skipped: {e}")
+
+
+@app.on_event("startup")
 async def run_data_migration():
     """Migration automatique: corrige les donnees 2025 erronees au demarrage"""
     try:
