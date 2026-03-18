@@ -630,16 +630,17 @@ mongodump --uri="mongodb+srv://user:pass@cluster.mongodb.net/calcauto_prod" --ou
 
 ## Annexe : Comptes et acces
 
-| Service | URL | Identifiants |
-|---------|-----|-------------|
-| Application (demo) | *(votre URL Vercel)* | Auto-login `demo@calcauto.ca` |
-| Application (login) | *(votre URL Vercel)* | `danielgiroux007@gmail.com` / `Liana2018$` |
-| Admin (import/gestion) | *(meme app, onglet Admin)* | Mot de passe: `Liana2018` |
-| Supabase Dashboard | supabase.com | *(votre compte)* |
-| MongoDB Atlas | cloud.mongodb.com | *(votre compte)* |
-| Render Dashboard | dashboard.render.com | *(votre compte GitHub)* |
-| Vercel Dashboard | vercel.com/dashboard | *(votre compte GitHub)* |
-| GitHub | github.com/Lianag2018 | *(votre compte)* |
+> **IMPORTANT:** Les identifiants et mots de passe ne doivent PAS etre stockes dans un fichier versionne.
+> Consultez votre gestionnaire de mots de passe ou le fichier `.env` (non versionne) pour les credentials.
+
+| Service | URL |
+|---------|-----|
+| Application | *(votre URL Vercel)* |
+| Supabase Dashboard | supabase.com |
+| MongoDB Atlas | cloud.mongodb.com |
+| Render Dashboard | dashboard.render.com |
+| Vercel Dashboard | vercel.com/dashboard |
+| GitHub | github.com/Lianag2018 |
 
 ---
 
