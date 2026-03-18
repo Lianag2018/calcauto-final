@@ -119,17 +119,24 @@ pip install -r requirements.txt
 
 Creer un fichier `backend/.env` :
 ```env
-MONGO_URL=mongodb://localhost:27017
-DB_NAME=calcauto_dev
+MONGO_URL=mongodb+srv://user:pass@cluster.mongodb.net/calcauto
+DB_NAME=calcauto_prod
 ADMIN_PASSWORD=VotreMotDePasse
 SUPABASE_URL=https://votre-projet.supabase.co
-SUPABASE_SERVICE_KEY=votre-cle-service
+SUPABASE_KEY=votre-cle-service-role
 OPENAI_API_KEY=sk-...
+GOOGLE_VISION_API_KEY=AIza...
 SMTP_EMAIL=votre@email.com
 SMTP_PASSWORD=mot-de-passe-application
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 ```
+
+> **OPENAI_API_KEY** : Pour GPT-4o Vision (structuration IA des factures). Obtenir sur [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+>
+> **GOOGLE_VISION_API_KEY** : Pour l'OCR haute precision des factures. Obtenir sur [Google Cloud Console](https://console.cloud.google.com) > APIs & Services > Activer "Cloud Vision API" > Credentials
+>
+> **SUPABASE_KEY** : Cle `service_role` (pas `anon`). Obtenir sur Supabase > Project Settings > API
 
 Demarrer le serveur :
 ```bash

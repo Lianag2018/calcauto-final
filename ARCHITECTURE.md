@@ -436,23 +436,37 @@ Mettez a jour l'URL si vous changez de serveur backend.
 
 ### Backend (`.env`)
 
-| Variable | Description | Requis |
-|----------|-------------|--------|
-| `MONGO_URL` | Chaine de connexion MongoDB Atlas | Oui |
-| `DB_NAME` | Nom de la base de donnees | Oui |
-| `ADMIN_PASSWORD` | Mot de passe admin pour imports | Oui |
-| `SUPABASE_URL` | URL du projet Supabase | Oui |
-| `SUPABASE_SERVICE_KEY` | Cle de service Supabase | Oui |
-| `OPENAI_API_KEY` | Cle API OpenAI (OCR/IA) | Oui |
-| `GOOGLE_VISION_API_KEY` | Cle Google Cloud Vision (OCR) | Optionnel |
-| `SMTP_EMAIL` | Email Gmail pour envoi | Oui |
-| `SMTP_PASSWORD` | Mot de passe d'application Gmail | Oui |
-| `SMTP_HOST` | Serveur SMTP (`smtp.gmail.com`) | Oui |
-| `SMTP_PORT` | Port SMTP (`587`) | Oui |
+| Variable | Description | Requis | Ou l'obtenir |
+|----------|-------------|--------|--------------|
+| `MONGO_URL` | Chaine de connexion MongoDB Atlas | Oui | MongoDB Atlas > Database > Connect > Drivers |
+| `DB_NAME` | Nom de la base de donnees | Oui | Nom choisi dans MongoDB Atlas |
+| `ADMIN_PASSWORD` | Mot de passe admin pour imports | Oui | Votre choix |
+| `SUPABASE_URL` | URL du projet Supabase | Oui | Supabase > Project Settings > API > Project URL |
+| `SUPABASE_KEY` | Cle de service Supabase (accepte aussi `SUPABASE_SERVICE_KEY`) | Oui | Supabase > Project Settings > API > `service_role` (secret) |
+| `OPENAI_API_KEY` | Cle API OpenAI pour GPT-4o Vision (structuration IA des factures) | Oui | platform.openai.com > API Keys > Create new secret key |
+| `GOOGLE_VISION_API_KEY` | Cle API Google Cloud Vision (OCR haute precision des factures) | Oui | Google Cloud Console > APIs & Services > Credentials > Create API Key. Activer l'API "Cloud Vision" |
+| `SMTP_EMAIL` | Email Gmail pour envoi | Oui | Votre adresse Gmail |
+| `SMTP_PASSWORD` | Mot de passe d'application Gmail | Oui | Google > Securite > Verification 2 etapes > Mots de passe d'application |
+| `SMTP_HOST` | Serveur SMTP | Oui | `smtp.gmail.com` |
+| `SMTP_PORT` | Port SMTP | Oui | `587` |
 
-> **SMTP_PASSWORD :** Doit etre un **mot de passe d'application** Google (Parametres > Securite > Verification en 2 etapes > Mots de passe d'application).
+### Details des cles IA (scan de factures)
 
-> **SUPABASE_SERVICE_KEY :** Trouvable dans Supabase Dashboard > Project Settings > API > `service_role` key.
+**`OPENAI_API_KEY` — GPT-4o Vision (structuration intelligente)**
+- Utilisee dans `routers/invoice.py` (ligne 1244) pour structurer le texte OCR en JSON
+- GPT-4o recoit le texte brut extrait par Google Vision et le transforme en donnees structurees (VIN, code produit, montants)
+- Obtenir la cle: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+
+**`GOOGLE_VISION_API_KEY` — Google Cloud Vision (OCR de precision)**
+- Utilisee dans `ocr.py` (ligne 51) et `routers/invoice.py` (lignes 1043, 1199)
+- Sert de fallback OCR haute precision quand le parser PDF + Tesseract n'atteint pas un score suffisant
+- Pipeline: Image facture → Pretraitement CamScanner → Google Vision OCR → GPT-4o structuration
+- Obtenir la cle: [console.cloud.google.com](https://console.cloud.google.com) > APIs & Services > Activer "Cloud Vision API" > Credentials > API Key
+
+> **Note :** Le scan de factures fonctionne en 3 niveaux:
+> 1. **Niveau 1 (gratuit):** PDF → pdfplumber + regex (100% local)
+> 2. **Niveau 2 (gratuit):** Image → Tesseract OCR + parser.py (100% local)
+> 3. **Niveau 3 (payant):** Image → Google Vision OCR + GPT-4o structuration (fallback si niveaux 1-2 insuffisants)
 
 ### Frontend
 Le frontend n'a **pas besoin de variables d'environnement en production** sur Vercel. La communication avec le backend se fait via les `rewrites` de `vercel.json`.
