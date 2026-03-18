@@ -324,17 +324,38 @@ async def compare_programs_with_submissions(authorization: Optional[str] = Heade
             opt2_rates = new_program.get("option2_rates")
             
             rate_key = f"rate_{term}"
-            new_rate = float(opt1_rates.get(rate_key, 0))
+            new_opt1_rate = float(opt1_rates.get(rate_key, 0))
             
             # DELTA METHOD: compare theoretical payments (same base, no taxes)
             old_principal = vehicle_price - old_cc - old_bonus
-            new_principal = vehicle_price - new_cc - new_bonus
+            new_opt1_principal = vehicle_price - new_cc - new_bonus
             
-            if new_principal <= 0 or old_principal <= 0:
+            if old_principal <= 0:
                 continue
             
             old_theoretical = _calc_payment(old_principal, old_rate, term)
-            new_theoretical = _calc_payment(new_principal, new_rate, term)
+            
+            # Check Option 1
+            best_new_rate = new_opt1_rate
+            best_new_principal = new_opt1_principal
+            best_option_label = "1"
+            best_new_theoretical = _calc_payment(new_opt1_principal, new_opt1_rate, term) if new_opt1_principal > 0 else 999999
+            
+            # Also check Option 2 - this is critical for finding better deals!
+            if opt2_rates:
+                new_opt2_rate = float(opt2_rates.get(rate_key, 0) or 0)
+                new_opt2_principal = vehicle_price - new_alt_cc - new_bonus
+                if new_opt2_principal > 0 and new_opt2_rate >= 0:
+                    new_opt2_theoretical = _calc_payment(new_opt2_principal, new_opt2_rate, term)
+                    if new_opt2_theoretical < best_new_theoretical:
+                        best_new_rate = new_opt2_rate
+                        best_new_principal = new_opt2_principal
+                        best_option_label = "2"
+                        best_new_theoretical = new_opt2_theoretical
+            
+            new_rate = best_new_rate
+            new_principal = best_new_principal
+            new_theoretical = best_new_theoretical
             
             # Delta = how much the payment drops due to better rate/rebates
             delta = old_theoretical - new_theoretical
@@ -397,6 +418,7 @@ async def compare_programs_with_submissions(authorization: Optional[str] = Heade
                 "new_rate": round(new_rate, 2),
                 "old_consumer_cash": round(old_cc, 2),
                 "new_consumer_cash": round(new_cc, 2),
+                "best_new_option": best_option_label,
                 "savings_monthly": savings_monthly,
                 "savings_total": savings_total,
                 "term": term,
