@@ -19,13 +19,11 @@ import { useAuth } from '../../../contexts/AuthContext';
 import frTranslations from '../../../locales/fr.json';
 import enTranslations from '../../../locales/en.json';
 import { useCalculator, getRateForTerm, formatCurrency, formatCurrencyDecimal } from '../../../hooks/useCalculator';
-import {
-  computeLeasePayment, computeLeaseForGrid,
-  findResidualVehicle, findRateEntry, getKmAdjustment,
-  LeaseInputs,
-} from '../../../utils/leaseCalculator';
-import type { FinancingRates, VehicleProgram, CalculationResult, LocalResult } from '../../../types/calculator';
+import { VehicleProgram, CalculationResult, LocalResult } from '../../../types/calculator';
 import { API_URL } from '../../../utils/api';
+import { useProgramsData } from './useProgramsData';
+import { useInventoryData } from './useInventoryData';
+import { useLeaseModule } from './useLeaseModule';
 
 // ─── Constants ───────────────────────────────────────────────
 const SUBMISSIONS_KEY = 'calcauto_submissions';
@@ -74,20 +72,10 @@ export function useCalculatorPage() {
     loadLanguage().then((savedLang) => setLang(savedLang));
   }, []);
 
-  // ── Programs ──
-  const [programs, setPrograms] = useState<VehicleProgram[]>([]);
-  const [filteredPrograms, setFilteredPrograms] = useState<VehicleProgram[]>([]);
-  const [selectedProgram, setSelectedProgram] = useState<VehicleProgram | null>(null);
-  const [vehiclePrice, setVehiclePrice] = useState('');
+  // ── General UI ──
   const [results, setResults] = useState<CalculationResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [programsLoading, setProgramsLoading] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
-
-  // ── Filters ──
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
-  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
 
   // ── Import modal ──
   const [showImportModal, setShowImportModal] = useState(false);
@@ -104,48 +92,8 @@ export function useCalculatorPage() {
   const [showSmsPreview, setShowSmsPreview] = useState(false);
   const [smsPreviewText, setSmsPreviewText] = useState('');
 
-  // ── Period ──
-  const [currentPeriod, setCurrentPeriod] = useState<{ month: number; year: number } | null>(null);
-  const [availablePeriods, setAvailablePeriods] = useState<{ month: number; year: number; count: number }[]>([]);
-  const [showPeriodSelector, setShowPeriodSelector] = useState(false);
-
-  // ── Program event metadata ──
-  const [programMeta, setProgramMeta] = useState<{
-    event_names: string[];
-    program_period: string;
-    program_month: string;
-    loyalty_rate: number;
-    no_payments_days: number;
-    featured_rate: number | null;
-    featured_term: number | null;
-    key_message: string;
-    brands?: string[];
-  } | null>(null);
-
-  const [loyaltyChecked, setLoyaltyChecked] = useState(false);
-  const [deferredPayment, setDeferredPayment] = useState(false);
-
-  // ── Term & frequency ──
-  const [selectedTerm, setSelectedTerm] = useState<number>(72);
-  const [paymentFrequency, setPaymentFrequency] = useState<'monthly' | 'biweekly' | 'weekly'>('monthly');
-  const [selectedOption, setSelectedOption] = useState<'1' | '2' | null>(null);
-
-  // ── Inventory ──
-  const [inventoryList, setInventoryList] = useState<any[]>([]);
-  const [selectedInventory, setSelectedInventory] = useState<any>(null);
-  const [showInventoryPicker, setShowInventoryPicker] = useState(false);
-  const [manualVin, setManualVin] = useState<string>('');
-
-  // ── Auto-financing ──
-  const [autoFinancing, setAutoFinancing] = useState<{
-    consumer_cash: number;
-    bonus_cash: number;
-    option1_rates: Record<string, number | null>;
-    option2_rates: Record<string, number | null>;
-    programme_source: string;
-  } | null>(null);
-
   // ── Pricing inputs ──
+  const [vehiclePrice, setVehiclePrice] = useState('');
   const [customBonusCash, setCustomBonusCash] = useState('');
   const [comptantTxInclus, setComptantTxInclus] = useState('');
   const [accessories, setAccessories] = useState<Array<{ description: string; price: string }>>([]);
@@ -154,20 +102,105 @@ export function useCalculatorPage() {
   const [fraisRDPRM, setFraisRDPRM] = useState('100');
   const [prixEchange, setPrixEchange] = useState('');
   const [montantDuEchange, setMontantDuEchange] = useState('');
-
-  // ── Lease SCI ──
-  const [showLease, setShowLease] = useState(false);
-  const [leaseKmPerYear, setLeaseKmPerYear] = useState<number>(24000);
-  const [leaseTerm, setLeaseTerm] = useState<number>(48);
-  const [leaseResiduals, setLeaseResiduals] = useState<any>(null);
-  const [leaseRates, setLeaseRates] = useState<any>(null);
-  const [leaseResult, setLeaseResult] = useState<any>(null);
-  const [leaseLoading, setLeaseLoading] = useState(false);
-  const [leasePdsf, setLeasePdsf] = useState('');
-  const [leaseSoldeReporte, setLeaseSoldeReporte] = useState('');
   const [leaseRabaisConcess, setLeaseRabaisConcess] = useState('');
-  const [bestLeaseOption, setBestLeaseOption] = useState<any>(null);
-  const [leaseAnalysisGrid, setLeaseAnalysisGrid] = useState<any[]>([]);
+
+  // ── Finance options ──
+  const [selectedTerm, setSelectedTerm] = useState<number>(72);
+  const [paymentFrequency, setPaymentFrequency] = useState<'monthly' | 'biweekly' | 'weekly'>('monthly');
+  const [selectedOption, setSelectedOption] = useState<'1' | '2' | null>(null);
+
+  // ── Event toggles ──
+  const [loyaltyChecked, setLoyaltyChecked] = useState(false);
+  const [deferredPayment, setDeferredPayment] = useState(false);
+
+  // ── Programs (delegated to useProgramsData) ──
+  const programsState = useProgramsData({
+    onProgramMetaLoaded: () => {
+      setLoyaltyChecked(false);
+      setDeferredPayment(false);
+    },
+  });
+
+  const {
+    programs,
+    filteredPrograms,
+    selectedProgram,
+    setSelectedProgram,
+    selectProgram: baseSelectProgram,
+    clearSelection: baseClearSelection,
+    selectedYear,
+    setSelectedYear,
+    selectedBrand,
+    setSelectedBrand,
+    years,
+    brands,
+    currentPeriod,
+    availablePeriods,
+    showPeriodSelector,
+    setShowPeriodSelector,
+    handlePeriodSelect,
+    programMeta,
+    programsLoading,
+    setProgramsLoading,
+    refreshing,
+    onRefresh,
+    loadPrograms,
+  } = programsState;
+
+  // ── Inventory (delegated to useInventoryData) ──
+  const inventoryState = useInventoryData({
+    getToken,
+    setVehiclePrice,
+  });
+
+  const {
+    inventoryList,
+    selectedInventory,
+    setSelectedInventory,
+    showInventoryPicker,
+    setShowInventoryPicker,
+    manualVin,
+    setManualVin,
+    autoFinancing,
+    setAutoFinancing,
+    selectInventoryVehicle,
+    clearInventorySelection,
+  } = inventoryState;
+
+  // ── Lease SCI (delegated to useLeaseModule) ──
+  const leaseState = useLeaseModule({
+    selectedProgram,
+    selectedInventory,
+    vehiclePrice,
+    customBonusCash,
+    comptantTxInclus,
+    fraisDossier,
+    prixEchange,
+    montantDuEchange,
+    accessories,
+    leaseRabaisConcess,
+    leasePdsf: '',
+    leaseSoldeReporte: '',
+  });
+
+  const {
+    showLease,
+    setShowLease,
+    leaseKmPerYear,
+    setLeaseKmPerYear,
+    leaseTerm,
+    setLeaseTerm,
+    leaseResiduals,
+    leaseRates,
+    leaseResult,
+    leaseLoading,
+    leasePdsf,
+    setLeasePdsf,
+    leaseSoldeReporte,
+    setLeaseSoldeReporte,
+    bestLeaseOption,
+    leaseAnalysisGrid,
+  } = leaseState;
 
   // ── useCalculator (finance calculation) ──
   const activeLoyaltyRate = loyaltyChecked && programMeta?.loyalty_rate ? programMeta.loyalty_rate : 0;
@@ -188,10 +221,6 @@ export function useCalculatorPage() {
     deferredPayment,
   });
 
-  // ── Derived values ──
-  const years = [...new Set(programs.map(p => p.year))].sort((a, b) => b - a);
-  const brands = [...new Set(programs.map(p => p.brand))].sort();
-
   // ─── Effects ───────────────────────────────────────────────
 
   // Pre-fill from contact params
@@ -200,138 +229,6 @@ export function useCalculatorPage() {
     if (params.clientEmail) setClientEmail(params.clientEmail);
     if (params.clientPhone) setClientPhone(params.clientPhone);
   }, [params]);
-
-  // Load programs
-  const loadPrograms = useCallback(async (month?: number, year?: number) => {
-    const startTime = Date.now();
-    const MIN_LOADING_TIME = 2000;
-
-    try {
-      try {
-        const periodsRes = await axios.get(`${API_URL}/api/periods`);
-        setAvailablePeriods(periodsRes.data);
-      } catch (e) {
-        console.log('Could not load periods');
-      }
-
-      try {
-        const token = await getToken();
-        if (token) {
-          const invRes = await axios.get(`${API_URL}/api/inventory`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          setInventoryList(invRes.data.filter((v: any) => v.status === 'disponible'));
-        }
-      } catch (e) {
-        console.log('Could not load inventory');
-      }
-
-      let url = `${API_URL}/api/programs`;
-      if (month && year) {
-        url += `?month=${month}&year=${year}`;
-      }
-
-      const response = await axios.get(url, {
-        headers: { 'Cache-Control': 'no-cache' },
-      });
-      setPrograms(response.data);
-      const sorted = [...response.data].sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0));
-      setFilteredPrograms(sorted);
-
-      if (response.data.length > 0) {
-        const periodMonth = month || response.data[0].program_month;
-        const periodYear = year || response.data[0].program_year;
-        setCurrentPeriod({ month: periodMonth, year: periodYear });
-
-        try {
-          const metaRes = await axios.get(`${API_URL}/api/program-meta`, {
-            params: { month: periodMonth, year: periodYear },
-          });
-          if (metaRes.data && metaRes.data.event_names) {
-            setProgramMeta(metaRes.data);
-            setLoyaltyChecked(false);
-            setDeferredPayment(false);
-          }
-        } catch (e) {
-          console.log('Could not load program meta');
-          setProgramMeta(null);
-        }
-      }
-
-      const elapsed = Date.now() - startTime;
-      if (elapsed < MIN_LOADING_TIME) {
-        await new Promise(resolve => setTimeout(resolve, MIN_LOADING_TIME - elapsed));
-      }
-    } catch (error) {
-      console.error('Error loading programs:', error);
-    } finally {
-      setProgramsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadPrograms();
-  }, [loadPrograms]);
-
-  // Load inventory separately
-  useEffect(() => {
-    const loadInventory = async () => {
-      try {
-        const token = await getToken();
-        if (token) {
-          const invRes = await axios.get(`${API_URL}/api/inventory`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const disponible = invRes.data.filter((v: any) => v.status === 'disponible');
-          setInventoryList(disponible);
-        }
-      } catch (e) {
-        console.log('Could not load inventory:', e);
-      }
-    };
-    loadInventory();
-  }, []);
-
-  // Load auto-financing when inventory vehicle selected
-  useEffect(() => {
-    const loadAutoFinancing = async () => {
-      if (!selectedInventory?.model_code) {
-        setAutoFinancing(null);
-        return;
-      }
-      try {
-        const response = await axios.get(
-          `${API_URL}/api/product-codes/${selectedInventory.model_code}/financing`
-        );
-        if (response.data.success && response.data.financing) {
-          setAutoFinancing(response.data.financing);
-        } else {
-          setAutoFinancing(null);
-        }
-      } catch (e) {
-        console.log('Could not load auto-financing:', e);
-        setAutoFinancing(null);
-      }
-    };
-    loadAutoFinancing();
-  }, [selectedInventory?.model_code]);
-
-  // Load SCI lease data
-  useEffect(() => {
-    const loadLeaseData = async () => {
-      try {
-        const [residualsRes, ratesRes] = await Promise.all([
-          axios.get(`${API_URL}/api/sci/residuals`),
-          axios.get(`${API_URL}/api/sci/lease-rates`),
-        ]);
-        setLeaseResiduals(residualsRes.data);
-        setLeaseRates(ratesRes.data);
-      } catch (e) {
-        console.log('Could not load SCI lease data:', e);
-      }
-    };
-    loadLeaseData();
-  }, []);
 
   // Restore calculator state from CRM
   useEffect(() => {
@@ -372,158 +269,30 @@ export function useCalculatorPage() {
       }
     };
     checkForRestore();
-  }, []);
-
-  // Calculate lease when parameters change
-  useEffect(() => {
-    if (!showLease || !selectedProgram || !vehiclePrice || !leaseResiduals || !leaseRates) {
-      setLeaseResult(null);
-      return;
-    }
-
-    const price = parseFloat(vehiclePrice);
-    if (isNaN(price) || price <= 0) return;
-
-    const residualVehicle = findResidualVehicle(
-      leaseResiduals.vehicles || [],
-      selectedProgram.brand,
-      selectedProgram.model,
-      selectedProgram.trim || '',
-      selectedInventory?.body_style
-    );
-    if (!residualVehicle) { setLeaseResult(null); return; }
-
-    const residualPct = residualVehicle.residual_percentages?.[String(leaseTerm)] || 0;
-    if (residualPct === 0) { setLeaseResult(null); return; }
-
-    const yr = selectedProgram.year;
-    const vehicleList = yr === 2025 ? leaseRates.vehicles_2025 : leaseRates.vehicles_2026;
-    const rateEntry = findRateEntry(vehicleList || [], selectedProgram.brand, selectedProgram.model, selectedProgram.trim || '');
-
-    const termKey = String(leaseTerm);
-    const standardRate = rateEntry?.standard_rates?.[termKey] ?? null;
-    const alternativeRate = rateEntry?.alternative_rates?.[termKey] ?? null;
-    const leaseCashVal = rateEntry?.lease_cash || 0;
-
-    const kmAdj = leaseResiduals.km_adjustments?.adjustments;
-    const kmAdjustment = getKmAdjustment(kmAdj, leaseKmPerYear, leaseTerm);
-    const adjustedResidualPct = residualPct + kmAdjustment;
-    const pdsf = parseFloat(leasePdsf) || parseFloat(vehiclePrice);
-
-    const bonusCash = parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0;
-    const comptant = parseFloat(comptantTxInclus) || 0;
-    const tradeVal = parseFloat(prixEchange) || 0;
-    const tradeOwed = parseFloat(montantDuEchange) || 0;
-    const soldeReporte = parseFloat(leaseSoldeReporte) || 0;
-    const totalAccessoires = accessories.reduce((sum, acc) => sum + (parseFloat(acc.price) || 0), 0);
-
-    const baseInputs: Omit<LeaseInputs, 'rate' | 'leaseCash'> = {
-      price,
-      pdsf,
-      term: leaseTerm,
-      residualPct: adjustedResidualPct,
-      fraisDossier: parseFloat(fraisDossier) || 0,
-      totalAccessoires,
-      rabaisConcess: parseFloat(leaseRabaisConcess) || 0,
-      soldeReporte,
-      tradeValue: tradeVal,
-      tradeOwed,
-      comptant,
-      bonusCash,
-    };
-
-    const results: any = {
-      vehicleName: `${residualVehicle.brand} ${residualVehicle.model_name} ${residualVehicle.trim}`,
-      residualPct: adjustedResidualPct,
-      residualValue: pdsf * (adjustedResidualPct / 100),
-      kmAdjustment,
-      term: leaseTerm,
-      kmPerYear: leaseKmPerYear,
-    };
-
-    if (standardRate !== null) {
-      results.standard = computeLeasePayment({ ...baseInputs, rate: standardRate, leaseCash: leaseCashVal });
-    }
-    if (alternativeRate !== null) {
-      results.alternative = computeLeasePayment({ ...baseInputs, rate: alternativeRate, leaseCash: 0 });
-    }
-
-    if (results.standard && results.alternative) {
-      results.bestLease = results.standard.total < results.alternative.total ? 'standard' : 'alternative';
-      results.leaseSavings = Math.abs(results.standard.total - results.alternative.total);
-    } else if (results.standard) {
-      results.bestLease = 'standard';
-    } else if (results.alternative) {
-      results.bestLease = 'alternative';
-    }
-
-    setLeaseResult(results);
-
-    // === Best lease analysis grid (all terms × all km) ===
-    let bestOption: any = null;
-    const grid: any[] = [];
-
-    for (const km of [12000, 18000, 24000]) {
-      for (const tt of LEASE_TERMS) {
-        const resPct = residualVehicle.residual_percentages?.[String(tt)] || 0;
-        if (resPct === 0) continue;
-
-        const kmAdj2 = getKmAdjustment(kmAdj, km, tt);
-        const adjResPct = resPct + kmAdj2;
-
-        const stdRate = rateEntry?.standard_rates?.[String(tt)] ?? null;
-        const altRate = rateEntry?.alternative_rates?.[String(tt)] ?? null;
-
-        const gridInputs: Omit<LeaseInputs, 'rate' | 'leaseCash' | 'term' | 'residualPct'> = {
-          price, pdsf,
-          fraisDossier: parseFloat(fraisDossier) || 0,
-          totalAccessoires,
-          rabaisConcess: parseFloat(leaseRabaisConcess) || 0,
-          soldeReporte,
-          tradeValue: tradeVal,
-          tradeOwed,
-          comptant,
-          bonusCash,
-        };
-
-        if (altRate !== null) {
-          const r = computeLeaseForGrid({ ...gridInputs, rate: altRate, leaseCash: 0, term: tt, residualPct: adjResPct });
-          const entry = { ...r, kmPerYear: km, option: 'alt', optionLabel: 'Alt' };
-          grid.push(entry);
-          if (!bestOption || r.monthly < bestOption.monthly) {
-            bestOption = { ...entry, option: 'alternative', optionLabel: 'Taux Alternatif' };
-          }
-        }
-        if (stdRate !== null) {
-          const r = computeLeaseForGrid({ ...gridInputs, rate: stdRate, leaseCash: leaseCashVal, term: tt, residualPct: adjResPct });
-          const entry = { ...r, kmPerYear: km, option: 'std', optionLabel: 'Std' };
-          grid.push(entry);
-          if (!bestOption || r.monthly < bestOption.monthly) {
-            bestOption = { ...entry, option: 'standard', optionLabel: 'Std + Lease Cash' };
-          }
-        }
-      }
-    }
-
-    setBestLeaseOption(bestOption);
-    setLeaseAnalysisGrid(grid);
-  }, [showLease, selectedProgram, vehiclePrice, leaseTerm, leaseKmPerYear, leaseResiduals, leaseRates,
-    customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, leasePdsf, leaseSoldeReporte, leaseRabaisConcess, selectedInventory?.body_style]);
-
-  // Filter programs when year or brand changes
-  useEffect(() => {
-    let filtered = [...programs];
-    if (selectedYear) {
-      filtered = filtered.filter(p => p.year === selectedYear);
-    }
-    if (selectedBrand) {
-      filtered = filtered.filter(p => p.brand === selectedBrand);
-    }
-    filtered.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-    setFilteredPrograms(filtered);
-  }, [programs, selectedYear, selectedBrand]);
+  }, [
+    setSelectedProgram,
+    setLeasePdsf,
+    setLeaseSoldeReporte,
+    setLeaseTerm,
+    setLeaseKmPerYear,
+    setShowLease,
+    setManualVin,
+    setSelectedYear,
+    setSelectedBrand,
+    setSelectedInventory,
+  ]);
 
   // ─── Callbacks ─────────────────────────────────────────────
+
+  const selectProgram = useCallback((program: VehicleProgram) => {
+    baseSelectProgram(program);
+    setResults(null);
+  }, [baseSelectProgram]);
+
+  const clearSelection = useCallback(() => {
+    baseClearSelection();
+    setResults(null);
+  }, [baseClearSelection]);
 
   const handleLogout = useCallback(() => {
     if (Platform.OS === 'web') {
@@ -542,28 +311,6 @@ export function useCalculatorPage() {
     }
   }, [logout]);
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadPrograms();
-    setRefreshing(false);
-  }, [loadPrograms]);
-
-  const selectProgram = useCallback((program: VehicleProgram) => {
-    setSelectedProgram(program);
-    setResults(null);
-  }, []);
-
-  const clearSelection = useCallback(() => {
-    setSelectedProgram(null);
-    setResults(null);
-  }, []);
-
-  const handlePeriodSelect = useCallback((month: number, year: number) => {
-    setProgramsLoading(true);
-    loadPrograms(month, year);
-    setShowPeriodSelector(false);
-  }, [loadPrograms]);
-
   const handleImportConfirm = useCallback(() => {
     if (importPassword === 'Admin') {
       setShowImportModal(false);
@@ -577,18 +324,6 @@ export function useCalculatorPage() {
       }
     }
   }, [importPassword, router, t]);
-
-  const clearInventorySelection = useCallback(() => {
-    setSelectedInventory(null);
-    setVehiclePrice('');
-    setAutoFinancing(null);
-  }, []);
-
-  const selectInventoryVehicle = useCallback((vehicle: any) => {
-    setSelectedInventory(vehicle);
-    setManualVin('');
-    setVehiclePrice(String(vehicle.asking_price || vehicle.msrp || ''));
-  }, []);
 
   // ── Generate submission text ──
   const generateSubmissionText = useCallback(() => {
@@ -1273,7 +1008,9 @@ export function useCalculatorPage() {
     montantDuEchange, setMontantDuEchange,
     leaseRabaisConcess, setLeaseRabaisConcess,
     // Inventory
-    inventoryList, selectedInventory, setSelectedInventory, selectInventoryVehicle, clearInventorySelection,
+    inventoryList, selectedInventory, setSelectedInventory,
+    showInventoryPicker, setShowInventoryPicker,
+    selectInventoryVehicle, clearInventorySelection,
     manualVin, setManualVin, autoFinancing, setAutoFinancing,
     // Lease SCI
     showLease, setShowLease, leaseKmPerYear, setLeaseKmPerYear,
