@@ -195,30 +195,111 @@ export function findResidualVehicle(
   const trimLower = (trim || '').toLowerCase();
   const bodyStyleLower = (bodyStyle || '').toLowerCase();
 
-  // Priorité 1: match avec body_style
+  // If trim starts with model name + extra word(s), use extended model for better matching
+  // e.g., model="Grand Cherokee", trim="Grand Cherokee L Altitude..." → effectiveModel="grand cherokee l"
+  let effectiveModel = modelLower;
+  if (trimLower.startsWith(modelLower + ' ')) {
+    const extra = trimLower.slice(modelLower.length).trim().split(/[\s(]/)[0];
+    if (extra && extra.length >= 1 && extra.length <= 5) {
+      effectiveModel = modelLower + ' ' + extra;
+    }
+  }
+
+  // Extract trim keywords for fuzzy matching
+  const combined = (trimLower + ' ' + modelLower).replace(/[()]/g, ' ');
+  const skipWords = new Set(['cpos', 'grand', 'cherokee', 'ram', 'dodge', 'jeep', 'chrysler', 'fiat', 'all', 'new', 'model', 'models', 'excl', 'excludes', 'excluding', 'with', 'plus']);
+  const trimKeywords = combined.split(/[\s,/]+/).filter(w => w.length > 3 && !skipWords.has(w));
+
+  const matchesBrand = (v: any) => v.brand.toLowerCase() === brandLower;
+
+  // Model matching: use effectiveModel first, then fallback to modelLower
+  const matchesModelExact = (v: any) => {
+    const vm = (v.model_name || '').toLowerCase().trim();
+    return vm === effectiveModel;
+  };
+  const matchesModelLoose = (v: any) => {
+    const vm = (v.model_name || '').toLowerCase().trim();
+    return vm.startsWith(effectiveModel) || effectiveModel.startsWith(vm);
+  };
+  // Fallback: original model name (less specific)
+  const matchesModelBase = (v: any) => {
+    const vm = (v.model_name || '').toLowerCase().trim();
+    return vm === modelLower || vm.startsWith(modelLower) || modelLower.startsWith(vm);
+  };
+
+  const matchesTrimExact = (v: any) => {
+    const vt = (v.trim || '').toLowerCase();
+    if (!trimLower) return true;
+    return vt.includes(trimLower) || trimLower.includes(vt);
+  };
+  const matchesTrimKeyword = (v: any) => {
+    const vt = (v.trim || '').toLowerCase();
+    const vm = (v.model_name || '').toLowerCase();
+    const target = vt + ' ' + vm;
+    return trimKeywords.some(kw => target.includes(kw));
+  };
+
+  // P1: exact model + body_style + trim
   if (bodyStyleLower) {
-    const match = vehicles.find((v: any) => {
-      const vBrand = v.brand.toLowerCase();
-      const vModel = v.model_name.toLowerCase();
-      const vTrim = (v.trim || '').toLowerCase();
-      const vBody = (v.body_style || '').toLowerCase();
-      return vBrand === brandLower &&
-        (vModel.includes(modelLower) || modelLower.includes(vModel)) &&
-        (vTrim.includes(trimLower) || trimLower.includes(vTrim) || !trimLower) &&
-        vBody === bodyStyleLower;
-    });
+    const match = vehicles.find((v: any) =>
+      matchesBrand(v) && matchesModelExact(v) && matchesTrimExact(v) &&
+      (v.body_style || '').toLowerCase() === bodyStyleLower
+    );
     if (match) return match;
   }
 
-  // Priorité 2: sans body_style
-  return vehicles.find((v: any) => {
-    const vBrand = v.brand.toLowerCase();
-    const vModel = v.model_name.toLowerCase();
-    const vTrim = (v.trim || '').toLowerCase();
-    return vBrand === brandLower &&
-      (vModel.includes(modelLower) || modelLower.includes(vModel)) &&
-      (vTrim.includes(trimLower) || trimLower.includes(vTrim) || !trimLower);
-  }) || null;
+  // P2: exact model + exact trim
+  const exactBoth = vehicles.find((v: any) =>
+    matchesBrand(v) && matchesModelExact(v) && matchesTrimExact(v)
+  );
+  if (exactBoth) return exactBoth;
+
+  // P3: loose model + exact trim
+  const looseTrim = vehicles.find((v: any) =>
+    matchesBrand(v) && matchesModelLoose(v) && matchesTrimExact(v)
+  );
+  if (looseTrim) return looseTrim;
+
+  // P4: exact model + keyword trim
+  const exactKw = vehicles.find((v: any) =>
+    matchesBrand(v) && matchesModelExact(v) && matchesTrimKeyword(v)
+  );
+  if (exactKw) return exactKw;
+
+  // P5: loose model + keyword trim
+  const looseKw = vehicles.find((v: any) =>
+    matchesBrand(v) && matchesModelLoose(v) && matchesTrimKeyword(v)
+  );
+  if (looseKw) return looseKw;
+
+  // P6: exact model only (no trim)
+  const exactOnly = vehicles.find((v: any) =>
+    matchesBrand(v) && matchesModelExact(v)
+  );
+  if (exactOnly) return exactOnly;
+
+  // P7: loose model only (fallback)
+  const looseOnly = vehicles.find((v: any) =>
+    matchesBrand(v) && matchesModelLoose(v)
+  );
+  if (looseOnly) return looseOnly;
+
+  // P8: base model (original, less specific) + trim
+  const baseTrim = vehicles.find((v: any) =>
+    matchesBrand(v) && matchesModelBase(v) && matchesTrimExact(v)
+  );
+  if (baseTrim) return baseTrim;
+
+  // P9: base model + keyword
+  const baseKw = vehicles.find((v: any) =>
+    matchesBrand(v) && matchesModelBase(v) && matchesTrimKeyword(v)
+  );
+  if (baseKw) return baseKw;
+
+  // P10: base model only
+  return vehicles.find((v: any) =>
+    matchesBrand(v) && matchesModelBase(v)
+  ) || null;
 }
 
 export function findRateEntry(

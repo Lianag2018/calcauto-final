@@ -11,30 +11,29 @@ Car dealership CRM that parses FCA Canada monthly incentive PDFs to extract reta
 
 ## Completed Features
 1. **Deterministic PDF Parser** (pdfplumber) - replaces old AI/OCR
-2. **TOC-based Auto-Detection** - parses Table of Contents on page 2 for section pages
+2. **TOC-based Auto-Detection** - parses Table of Contents on page 2
 3. **Retail Program Parser** - extracts Option 1, Option 2, Consumer Cash, Bonus Cash
-4. **SCI Lease Parser** - extracts vehicle names, lease cash, standard/alternative rates (FIXED: row alignment bug)
-5. **Bonus Cash Parser** - separate page parsing for bonus cash (e.g., Fiat 500e $5,000)
-6. **Dynamic Event Banner** - shows promotional info from PDF cover page
-7. **Loyalty Rate & 90-day Deferred Payment** - calculation modifiers in UI
+4. **SCI Lease Parser** - FIXED row alignment bug (2-row offset between names/rates tables)
+5. **Bonus Cash Parser** - separate page parsing
+6. **Dynamic Event Banner** - promotional info from PDF cover page
+7. **Loyalty Rate & 90-day Deferred Payment** - calculation modifiers
 8. **Demo Mode** - password-free access via demo@calcauto.ca
 9. **CI/CD Pipeline** - GitHub Actions with pytest + deploy hooks
 10. **Animated Splash Screen** - comet trail loading animation
-11. **Corrections Management UI** - Admin panel tab to view, expand, and delete memorized corrections
+11. **Corrections Management UI** - Admin panel tab for viewing/deleting corrections
+12. **Improved Residual Vehicle Matching** - 10-priority matching with effectiveModel, keyword, and fallback levels
 
-## Key Bug Fixes
-- **SCI Lease Row Alignment (P0):** Fixed 2-row offset between names table (row 14) and rates table (row 12). Now uses zip of filtered lists instead of same-index iteration.
-- **Missing Bonus Cash:** Added `parse_bonus_cash_page()` for separate bonus page
-- **Model Name Prefix:** Fixed "All-New" prefix handling
-- **Trim Parsing:** Fixed "Grand Cherokee Laredo" split
+## Key Bug Fixes (Current Session)
+- **SCI Lease Row Alignment:** Fixed 2-row offset between names table (row 14) and rates table (row 12). Uses zip of filtered lists.
+- **Residual Vehicle Matching:** Improved `findResidualVehicle` from 2-priority to 10-priority matching. Added effectiveModel extraction from trim (e.g., "Grand Cherokee L" from trim "Grand Cherokee L Altitude..."), keyword matching, and base model fallback.
 
 ## API Endpoints
 - `POST /api/scan-pdf` - auto-detect section pages
 - `POST /api/extract-pdf` - full PDF extraction pipeline
 - `GET /api/corrections` - list memorized corrections
-- `DELETE /api/corrections/{brand}/{model}/{year}` - delete specific correction
+- `DELETE /api/corrections/{brand}/{model}/{year}` - delete correction
 - `DELETE /api/corrections/all` - delete all corrections
-- `GET /api/programs/:month/:year` - get programs by month
+- `GET /api/programs/:month/:year` - get programs
 
 ## Credentials
 - Admin: password `Liana2018`
