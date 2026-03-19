@@ -1366,17 +1366,29 @@ export default function ClientsScreen() {
   };
 
   const openSubmissionInCalculator = async (sub: Submission) => {
-    if (sub.calculator_state && typeof sub.calculator_state === 'object') {
-      await AsyncStorage.setItem('calcauto_restore_state', JSON.stringify(sub.calculator_state));
+    if (sub.calculator_state && typeof sub.calculator_state === 'object' && sub.calculator_state.selectedProgram) {
+      // Full state available - add client info and period if missing
+      const state = {
+        ...sub.calculator_state,
+        clientName: sub.calculator_state.clientName || sub.client_name || '',
+        clientEmail: sub.calculator_state.clientEmail || sub.client_email || '',
+        clientPhone: sub.calculator_state.clientPhone || sub.client_phone || '',
+        currentPeriod: sub.calculator_state.currentPeriod || (sub.program_month && sub.program_year
+          ? { month: sub.program_month, year: sub.program_year }
+          : null),
+      };
+      await AsyncStorage.setItem('calcauto_restore_state', JSON.stringify(state));
       router.push('/(tabs)');
     } else {
-      // Old submission without full state - reconstruct partial state from available fields
+      // Old submission without full state - reconstruct from available fields + API
       try {
         const headers = await getAuthHeaders();
-        // Try to find a matching program to get rate data
         let matchedProgram = null;
         try {
-          const progResp = await axios.get(`${API_URL}/api/programs`, { headers });
+          const progUrl = sub.program_month && sub.program_year
+            ? `${API_URL}/api/programs?month=${sub.program_month}&year=${sub.program_year}`
+            : `${API_URL}/api/programs`;
+          const progResp = await axios.get(progUrl, { headers });
           const allProgs = progResp.data || [];
           matchedProgram = allProgs.find((p: any) =>
             p.brand === sub.vehicle_brand && p.model === sub.vehicle_model && p.year === sub.vehicle_year
@@ -1384,21 +1396,25 @@ export default function ClientsScreen() {
         } catch (e) {
           console.log('Could not fetch programs for restore:', e);
         }
-        
+
         const partialState: any = {
           vehiclePrice: String(sub.vehicle_price || ''),
           selectedTerm: sub.term || 72,
           selectedOption: sub.selected_option || '1',
           paymentFrequency: 'monthly',
           selectedBrand: sub.vehicle_brand || '',
-          selectedModel: sub.vehicle_model || '',
           selectedYear: sub.vehicle_year || 2025,
+          clientName: sub.client_name || '',
+          clientEmail: sub.client_email || '',
+          clientPhone: sub.client_phone || '',
+          currentPeriod: sub.program_month && sub.program_year
+            ? { month: sub.program_month, year: sub.program_year }
+            : null,
         };
-        
+
         if (matchedProgram) {
           partialState.selectedProgram = matchedProgram;
         } else {
-          // Construct a minimal program-like object 
           partialState.selectedProgram = {
             brand: sub.vehicle_brand,
             model: sub.vehicle_model,
@@ -1408,7 +1424,7 @@ export default function ClientsScreen() {
             option1_rates: { rate_36: sub.rate || 0, rate_48: sub.rate || 0, rate_60: sub.rate || 0, rate_72: sub.rate || 0, rate_84: sub.rate || 0, rate_96: sub.rate || 0 },
           };
         }
-        
+
         await AsyncStorage.setItem('calcauto_restore_state', JSON.stringify(partialState));
         router.push('/(tabs)');
       } catch (e) {

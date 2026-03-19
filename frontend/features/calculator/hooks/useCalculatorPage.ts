@@ -6,7 +6,7 @@ import {
   Linking,
   Dimensions,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Print from 'expo-print';
@@ -145,6 +145,7 @@ export function useCalculatorPage() {
     refreshing,
     onRefresh,
     loadPrograms,
+    markRestorePending,
   } = programsState;
 
   // ── Inventory (delegated to useInventoryData) ──
@@ -230,57 +231,71 @@ export function useCalculatorPage() {
     if (params.clientPhone) setClientPhone(params.clientPhone);
   }, [params]);
 
-  // Restore calculator state from CRM
-  useEffect(() => {
-    const checkForRestore = async () => {
-      try {
-        const stateJson = await AsyncStorage.getItem('calcauto_restore_state');
-        if (!stateJson) return;
-        await AsyncStorage.removeItem('calcauto_restore_state');
-        const s = JSON.parse(stateJson);
+  // Restore calculator state from CRM (runs on every tab focus)
+  useFocusEffect(
+    useCallback(() => {
+      const checkForRestore = async () => {
+        try {
+          const stateJson = await AsyncStorage.getItem('calcauto_restore_state');
+          if (!stateJson) return;
+          await AsyncStorage.removeItem('calcauto_restore_state');
+          const s = JSON.parse(stateJson);
 
-        if (s.selectedProgram) setSelectedProgram(s.selectedProgram);
-        if (s.vehiclePrice !== undefined) setVehiclePrice(s.vehiclePrice);
-        if (s.selectedTerm) setSelectedTerm(s.selectedTerm);
-        if (s.selectedOption) setSelectedOption(s.selectedOption);
-        if (s.paymentFrequency) setPaymentFrequency(s.paymentFrequency);
-        if (s.customBonusCash !== undefined) setCustomBonusCash(s.customBonusCash);
-        if (s.comptantTxInclus !== undefined) setComptantTxInclus(s.comptantTxInclus);
-        if (s.fraisDossier !== undefined) setFraisDossier(s.fraisDossier);
-        if (s.taxePneus !== undefined) setTaxePneus(s.taxePneus);
-        if (s.fraisRDPRM !== undefined) setFraisRDPRM(s.fraisRDPRM);
-        if (s.prixEchange !== undefined) setPrixEchange(s.prixEchange);
-        if (s.montantDuEchange !== undefined) setMontantDuEchange(s.montantDuEchange);
-        if (s.accessories) setAccessories(s.accessories);
-        if (s.leaseRabaisConcess !== undefined) setLeaseRabaisConcess(s.leaseRabaisConcess);
-        if (s.leasePdsf !== undefined) setLeasePdsf(s.leasePdsf);
-        if (s.leaseSoldeReporte !== undefined) setLeaseSoldeReporte(s.leaseSoldeReporte);
-        if (s.leaseTerm) setLeaseTerm(s.leaseTerm);
-        if (s.leaseKmPerYear) setLeaseKmPerYear(s.leaseKmPerYear);
-        if (s.showLease !== undefined) setShowLease(s.showLease);
-        if (s.manualVin !== undefined) setManualVin(s.manualVin);
-        if (s.selectedYear) setSelectedYear(s.selectedYear);
-        if (s.selectedBrand) setSelectedBrand(s.selectedBrand);
-        if (s.selectedInventory) setSelectedInventory(s.selectedInventory);
+          // Mark restore pending so loadPrograms doesn't overwrite selectedProgram
+          markRestorePending();
 
-        console.log('Calculator state restored from submission');
-      } catch (e) {
-        console.log('Error restoring calculator state:', e);
-      }
-    };
-    checkForRestore();
-  }, [
-    setSelectedProgram,
-    setLeasePdsf,
-    setLeaseSoldeReporte,
-    setLeaseTerm,
-    setLeaseKmPerYear,
-    setShowLease,
-    setManualVin,
-    setSelectedYear,
-    setSelectedBrand,
-    setSelectedInventory,
-  ]);
+          // Restore all pricing/UI state
+          if (s.vehiclePrice !== undefined) setVehiclePrice(s.vehiclePrice);
+          if (s.selectedTerm) setSelectedTerm(s.selectedTerm);
+          if (s.selectedOption) setSelectedOption(s.selectedOption);
+          if (s.paymentFrequency) setPaymentFrequency(s.paymentFrequency);
+          if (s.customBonusCash !== undefined) setCustomBonusCash(s.customBonusCash);
+          if (s.comptantTxInclus !== undefined) setComptantTxInclus(s.comptantTxInclus);
+          if (s.fraisDossier !== undefined) setFraisDossier(s.fraisDossier);
+          if (s.taxePneus !== undefined) setTaxePneus(s.taxePneus);
+          if (s.fraisRDPRM !== undefined) setFraisRDPRM(s.fraisRDPRM);
+          if (s.prixEchange !== undefined) setPrixEchange(s.prixEchange);
+          if (s.montantDuEchange !== undefined) setMontantDuEchange(s.montantDuEchange);
+          if (s.accessories) setAccessories(s.accessories);
+          if (s.leaseRabaisConcess !== undefined) setLeaseRabaisConcess(s.leaseRabaisConcess);
+          if (s.leasePdsf !== undefined) setLeasePdsf(s.leasePdsf);
+          if (s.leaseSoldeReporte !== undefined) setLeaseSoldeReporte(s.leaseSoldeReporte);
+          if (s.leaseTerm) setLeaseTerm(s.leaseTerm);
+          if (s.leaseKmPerYear) setLeaseKmPerYear(s.leaseKmPerYear);
+          if (s.showLease !== undefined) setShowLease(s.showLease);
+          if (s.manualVin !== undefined) setManualVin(s.manualVin);
+          if (s.selectedYear) setSelectedYear(s.selectedYear);
+          if (s.selectedBrand) setSelectedBrand(s.selectedBrand);
+          if (s.selectedInventory) setSelectedInventory(s.selectedInventory);
+          if (s.clientName) setClientName(s.clientName);
+          if (s.clientEmail) setClientEmail(s.clientEmail);
+          if (s.clientPhone) setClientPhone(s.clientPhone);
+
+          // Set the program — the restored object has all rates/cash data needed
+          if (s.selectedProgram) {
+            setSelectedProgram(s.selectedProgram);
+          }
+
+          console.log('Calculator state restored from submission');
+        } catch (e) {
+          console.log('Error restoring calculator state:', e);
+        }
+      };
+      checkForRestore();
+    }, [
+      markRestorePending,
+      setSelectedProgram,
+      setLeasePdsf,
+      setLeaseSoldeReporte,
+      setLeaseTerm,
+      setLeaseKmPerYear,
+      setShowLease,
+      setManualVin,
+      setSelectedYear,
+      setSelectedBrand,
+      setSelectedInventory,
+    ])
+  );
 
   // ─── Callbacks ─────────────────────────────────────────────
 
@@ -883,6 +898,20 @@ export function useCalculatorPage() {
                 prixEchange, montantDuEchange, accessories, leaseRabaisConcess, leasePdsf,
                 leaseSoldeReporte, leaseTerm, leaseKmPerYear, showLease, manualVin,
                 selectedYear, selectedBrand,
+                currentPeriod,
+                clientName: clientName || 'Client',
+                clientEmail,
+                clientPhone,
+                localResult: localResult ? {
+                  option1Monthly: localResult.option1Monthly,
+                  option1Biweekly: localResult.option1Biweekly,
+                  option1Weekly: localResult.option1Weekly,
+                  option1Rate: localResult.option1Rate,
+                  option2Monthly: localResult.option2Monthly,
+                  option2Biweekly: localResult.option2Biweekly,
+                  option2Weekly: localResult.option2Weekly,
+                  option2Rate: localResult.option2Rate,
+                } : null,
                 selectedInventory: selectedInventory ? {
                   id: selectedInventory.id, vin: selectedInventory.vin, brand: selectedInventory.brand,
                   model: selectedInventory.model, trim: selectedInventory.trim, year: selectedInventory.year,

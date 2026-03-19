@@ -79,6 +79,12 @@ export function useProgramsData({
   const currentPeriodRef = useRef<{ month: number; year: number } | null>(null);
   const onMetaLoadedRef = useRef(onProgramMetaLoaded);
   onMetaLoadedRef.current = onProgramMetaLoaded;
+  // Flag to skip overwriting selectedProgram after a restore
+  const restorePendingRef = useRef(false);
+
+  const markRestorePending = useCallback(() => {
+    restorePendingRef.current = true;
+  }, []);
 
   const loadPeriods = useCallback(async () => {
     try {
@@ -153,7 +159,12 @@ export function useProgramsData({
           onMetaLoadedRef.current?.(null);
         }
 
-        setSelectedProgram((previous) => findMatchingProgram(sorted, previous));
+        // If a restore is pending, don't overwrite the restored selectedProgram
+        if (restorePendingRef.current) {
+          restorePendingRef.current = false;
+        } else {
+          setSelectedProgram((previous) => findMatchingProgram(sorted, previous));
+        }
       } catch (error) {
         console.error('Error loading programs:', error);
         setPrograms([]);
@@ -226,5 +237,6 @@ export function useProgramsData({
     refreshing,
     onRefresh,
     loadPrograms,
+    markRestorePending,
   };
 }
