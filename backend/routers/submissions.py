@@ -477,7 +477,7 @@ def send_better_offers_notification(offers: List[dict]):
                     Ouvrez l'application pour approuver l'envoi des emails aux clients.
                 </div>
                 
-                <a href="https://toc-extraction-fix.preview.emergentagent.com" style="display: inline-block; background: #4ECDC4; color: #1a1a2e; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+                <a href="{os.environ.get('APP_URL', 'https://calcauto.vercel.app')}" style="display: inline-block; background: #4ECDC4; color: #1a1a2e; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
                     Ouvrir l'application
                 </a>
             </div>
