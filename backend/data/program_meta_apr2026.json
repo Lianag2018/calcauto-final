@@ -1,0 +1,20 @@
+{
+  "event_names": [
+    "Month of Ram",
+    "Jeep No Limits Event"
+  ],
+  "program_period": "April 1, 2026 - April 30, 2026",
+  "program_month": "April",
+  "program_year": 2026,
+  "loyalty_rate": 0.0,
+  "no_payments_days": 0,
+  "featured_rate": 0.0,
+  "featured_term": 72,
+  "key_message": "For April, the ‘Month of Ram’ and ‘Jeep No Limits Event’ continues, providing cash discounts or aggressive rates on eligible 2025 and 2026 models, featuring finance rates as low as 0% for 72 months, now including eligible 2026 Ram 1500 (DT) and Jeep Wrangler models. Plus, enhanced Consumer Cash on eligible 2026 Model Year vehicles, including up to $7,500 on eligible Jeep Compass and Chrysler Pacifica models.",
+  "brands": [
+    "Chrysler",
+    "Jeep",
+    "Ram"
+  ],
+  "program_month_num": 4
+}

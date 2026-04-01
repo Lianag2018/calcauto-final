@@ -3,6 +3,7 @@
   "source": "SCI Lease Corp Stellantis Residual Guide - Février 2026",
   "km_adjustments": {
     "standard_km": 24000,
+    "max_km_per_year": 36000,
     "adjustments": {
       "18000": {
         "24": 1,
@@ -27,7 +28,7 @@
         "60": 5
       }
     },
-    "max_km_per_year": 36000
+    "source": "extracted"
   },
   "vehicles": [
     {

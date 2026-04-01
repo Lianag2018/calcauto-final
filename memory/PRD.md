@@ -22,24 +22,23 @@ CRM complet pour concessionnaires automobiles qui analyse les PDFs mensuels d'in
 9. **CI/CD Pipeline** - GitHub Actions with pytest + deploy hooks
 10. **Animated Splash Screen** - comet trail loading animation
 11. **Corrections Management UI** - Admin panel tab for corrections
-12. **Improved Residual Vehicle Matching** - 10-priority matching
+12. **Improved Residual Vehicle Matching** - 10-priority matching + primary trim priority
 13. **Supabase Storage Integration** - persistence for ephemeral deployments
-14. **Dynamic KM Adjustments Extraction** - parses "General Rules" section for Low/Super Low Kilometre residual enhancements from both retail PDF and residual guide PDF
-15. **Auto-Import Résiduel Guide** - Auto-détection mois/année, extraction km adjustments depuis dernière page, comparaison ancien/nouveau avec rapport de changements (DONE - April 2026)
+14. **Dynamic KM Adjustments Extraction** - from General Rules section AND from SCI residual guide last page
+15. **Auto-Import Résiduel Guide** - Auto-détection mois/année, extraction km adjustments, comparaison ancien/nouveau
+16. **Primary Trim Matching Fix** - For multi-trim programs (e.g. "Sport, Rebel"), prioritizes first trim variant to prevent incorrect residual matching
+
+## Bug Fixes (This Session)
+- **Sport 2026 residual 52% → 51%** : Matching "Sport, Rebel" found Rebel (47%) before Sport (46%). Fixed by adding P0/P1.5 priority levels for primary trim matching.
+- **CI/CD test failure** : `test_mar_metadata_structure` assertion on `no_payments_days` fixed.
+- **Hardcoded "FEBRUARY 2026"** filter in residual guide upload - replaced with generic month pattern matching.
 
 ## Key APIs
 - `POST /api/scan-pdf` - auto-detect section pages via TOC
-- `POST /api/extract-pdf-async` - full PDF extraction pipeline (includes General Rules parsing)
-- `GET /api/sci/residuals` - residuals + dynamic km_adjustments (merges standalone km_adjustments file)
+- `POST /api/extract-pdf-async` - full PDF extraction pipeline
+- `GET /api/sci/residuals` - residuals + dynamic km_adjustments
 - `POST /api/upload-residual-guide` - upload SCI residual PDF (auto-detect month, compare, extract km adj)
 - `GET /api/sci/lease-rates` - lease rates data
-- `GET /api/corrections` - list corrections
-
-## Key Data Files
-- `km_adjustments_{month}{year}.json` - dynamic km adjustments per month
-- `sci_residuals_{month}{year}.json` - vehicle residual percentages (French month names)
-- `sci_lease_rates_{month}{year}.json` - lease rates
-- `program_meta_{month}{year}.json` - event/cover page metadata
 
 ## Credentials
 - Admin: danielgiroux007@gmail.com / Liana2018$

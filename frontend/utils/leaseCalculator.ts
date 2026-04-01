@@ -232,6 +232,18 @@ export function findResidualVehicle(
     if (!trimLower) return true;
     return vt.includes(trimLower) || trimLower.includes(vt);
   };
+
+  // When trim contains commas (e.g., "Sport, Rebel"), split into variants
+  // and match the FIRST variant with highest priority
+  const trimVariants = trimLower.split(/[,\/]/).map((t: string) => t.trim()).filter((t: string) => t.length > 0);
+  const primaryTrim = trimVariants[0] || trimLower;
+
+  const matchesTrimPrimary = (v: any) => {
+    const vt = (v.trim || '').toLowerCase();
+    if (!primaryTrim) return true;
+    return vt === primaryTrim || vt.includes(primaryTrim) || primaryTrim.includes(vt);
+  };
+
   const matchesTrimKeyword = (v: any) => {
     const vt = (v.trim || '').toLowerCase();
     const vm = (v.model_name || '').toLowerCase();
@@ -239,11 +251,28 @@ export function findResidualVehicle(
     return trimKeywords.some(kw => target.includes(kw));
   };
 
+  // P0: exact model + body_style + PRIMARY trim (first variant before comma)
+  if (bodyStyleLower && trimVariants.length > 1) {
+    const match = vehicles.find((v: any) =>
+      matchesBrand(v) && matchesModelExact(v) && matchesTrimPrimary(v) &&
+      (v.body_style || '').toLowerCase() === bodyStyleLower
+    );
+    if (match) return match;
+  }
+
   // P1: exact model + body_style + trim
   if (bodyStyleLower) {
     const match = vehicles.find((v: any) =>
       matchesBrand(v) && matchesModelExact(v) && matchesTrimExact(v) &&
       (v.body_style || '').toLowerCase() === bodyStyleLower
+    );
+    if (match) return match;
+  }
+
+  // P1.5: exact model + PRIMARY trim (no body_style)
+  if (trimVariants.length > 1) {
+    const match = vehicles.find((v: any) =>
+      matchesBrand(v) && matchesModelExact(v) && matchesTrimPrimary(v)
     );
     if (match) return match;
   }

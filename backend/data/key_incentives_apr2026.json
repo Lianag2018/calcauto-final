@@ -1,0 +1,146 @@
+[
+  {
+    "vehicle": "2026 Ram 1500 DT",
+    "brand": "Ram",
+    "year": 2026,
+    "model": "Ram 1500 DT",
+    "key_incentives": "",
+    "key_messages": "",
+    "noted_changes": "",
+    "parsed": {},
+    "loyalty_reduction": 0.0
+  },
+  {
+    "vehicle": "2025 Ram 1500 DT",
+    "brand": "Ram",
+    "year": 2025,
+    "model": "Ram 1500 DT",
+    "key_incentives": "0% Financing for 72 Months\nOr\nUp to $12,250 Consumer Cash",
+    "key_messages": "",
+    "noted_changes": "",
+    "parsed": {
+      "rate": 0.0,
+      "term": 72,
+      "consumer_cash": 12250,
+      "has_alternative": true,
+      "as_low_as": false
+    },
+    "loyalty_reduction": 0.0
+  },
+  {
+    "vehicle": "2026 Ram HD",
+    "brand": "Ram",
+    "year": 2026,
+    "model": "Ram HD",
+    "key_incentives": "As low as 0% Financing for 72 Months\nOr\nUp to $8,000 Consumer Cash\n*Gas Models",
+    "key_messages": "",
+    "noted_changes": "",
+    "parsed": {
+      "rate": 0.0,
+      "term": 72,
+      "consumer_cash": 8000,
+      "has_alternative": true,
+      "as_low_as": true
+    },
+    "loyalty_reduction": 0.0
+  },
+  {
+    "vehicle": "2026 Jeep Wrangler",
+    "brand": null,
+    "year": 2026,
+    "model": "Jeep Wrangler",
+    "key_incentives": "",
+    "key_messages": "",
+    "noted_changes": "",
+    "parsed": {},
+    "loyalty_reduction": 0.0
+  },
+  {
+    "vehicle": "2026 Jeep Gladiator",
+    "brand": null,
+    "year": 2026,
+    "model": "Jeep Gladiator",
+    "key_incentives": "As low as 2.99% Financing for 48 Months",
+    "key_messages": "",
+    "noted_changes": "",
+    "parsed": {
+      "rate": 2.99,
+      "term": 48,
+      "has_alternative": false,
+      "as_low_as": true
+    },
+    "loyalty_reduction": 0.0
+  },
+  {
+    "vehicle": "2026 Jeep Compass",
+    "brand": null,
+    "year": 2026,
+    "model": "Jeep Compass",
+    "key_incentives": "As low as 0% Financing for 36 Months\nOr\nUp to $7,500 Consumer Cash",
+    "key_messages": "",
+    "noted_changes": "",
+    "parsed": {
+      "rate": 0.0,
+      "term": 36,
+      "consumer_cash": 7500,
+      "has_alternative": true,
+      "as_low_as": true
+    },
+    "loyalty_reduction": 0.0
+  },
+  {
+    "vehicle": "2026 Jeep Grand Cherokee",
+    "brand": null,
+    "year": 2026,
+    "model": "Jeep Grand Cherokee",
+    "key_incentives": "",
+    "key_messages": "1.99% Financing for 72 Months",
+    "noted_changes": "",
+    "parsed": {},
+    "loyalty_reduction": 0.0
+  },
+  {
+    "vehicle": "2025 Jeep Grand Cherokee",
+    "brand": null,
+    "year": 2025,
+    "model": "Jeep Grand Cherokee",
+    "key_incentives": "",
+    "key_messages": "As low as 0% Financing for 72 Months",
+    "noted_changes": "",
+    "parsed": {},
+    "loyalty_reduction": 0.0
+  },
+  {
+    "vehicle": "2026 Charger ICE",
+    "brand": "Dodge",
+    "year": 2026,
+    "model": "Charger ICE",
+    "key_incentives": "",
+    "key_messages": "3.99% Financing for up to 72 Months",
+    "noted_changes": "",
+    "parsed": {},
+    "loyalty_reduction": 0.0
+  },
+  {
+    "vehicle": "2026 Dodge Durango",
+    "brand": null,
+    "year": 2026,
+    "model": "Dodge Durango",
+    "key_incentives": "",
+    "key_messages": "Up to $10,000 Consumer Cash",
+    "noted_changes": "",
+    "parsed": {},
+    "loyalty_reduction": 0.0
+  },
+  {
+    "vehicle": "2026 Chrysler Pacifica",
+    "brand": null,
+    "year": 2026,
+    "model": "Chrysler Pacifica",
+    "key_incentives": "",
+    "key_messages": "Up to $7,500 Consumer Cash",
+    "noted_changes": "",
+    "parsed": {},
+    "loyalty_reduction": 0.0
+  }
+]
