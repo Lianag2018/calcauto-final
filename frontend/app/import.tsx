@@ -583,22 +583,69 @@ export default function ImportScreen() {
           
           {/* Changes summary */}
           {residualResult.changes && (
-            <View style={{ marginTop: 10, marginBottom: 10, padding: 10, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.05)' }}>
-              <Text style={{ color: '#ccc', fontSize: 13, fontWeight: '600', marginBottom: 6 }}>Comparaison :</Text>
-              {residualResult.changes.modified_vehicles > 0 && (
-                <Text style={{ color: '#FFB347', fontSize: 13, marginBottom: 2 }}>
-                  {residualResult.changes.modified_vehicles} véhicules modifiés
-                </Text>
+            <View style={{ marginTop: 10, marginBottom: 10, padding: 12, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: '#333' }}>
+              <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700', marginBottom: 8 }}>Rapport de comparaison</Text>
+              
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                {residualResult.changes.improved > 0 && (
+                  <View style={{ backgroundColor: 'rgba(78,205,196,0.15)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
+                    <Text style={{ color: '#4ECDC4', fontSize: 13, fontWeight: '700' }}>+{residualResult.changes.improved} améliorés</Text>
+                  </View>
+                )}
+                {residualResult.changes.deteriorated > 0 && (
+                  <View style={{ backgroundColor: 'rgba(255,107,107,0.15)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
+                    <Text style={{ color: '#FF6B6B', fontSize: 13, fontWeight: '700' }}>-{residualResult.changes.deteriorated} détériorés</Text>
+                  </View>
+                )}
+                {residualResult.changes.new_vehicles > 0 && (
+                  <View style={{ backgroundColor: 'rgba(69,183,209,0.15)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
+                    <Text style={{ color: '#45B7D1', fontSize: 13, fontWeight: '700' }}>{residualResult.changes.new_vehicles} nouveaux</Text>
+                  </View>
+                )}
+                {residualResult.changes.removed_vehicles > 0 && (
+                  <View style={{ backgroundColor: 'rgba(255,179,71,0.15)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
+                    <Text style={{ color: '#FFB347', fontSize: 13, fontWeight: '700' }}>{residualResult.changes.removed_vehicles} retirés</Text>
+                  </View>
+                )}
+                {residualResult.changes.unchanged_vehicles > 0 && (
+                  <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
+                    <Text style={{ color: '#888', fontSize: 13 }}>{residualResult.changes.unchanged_vehicles} inchangés</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Improved details */}
+              {residualResult.changes.improved_details?.length > 0 && (
+                <View style={{ marginTop: 4, marginBottom: 6 }}>
+                  <Text style={{ color: '#4ECDC4', fontSize: 12, fontWeight: '600', marginBottom: 4 }}>Améliorés (résiduels en hausse) :</Text>
+                  {residualResult.changes.improved_details.slice(0, 5).map((d: any, i: number) => (
+                    <Text key={i} style={{ color: '#aaa', fontSize: 11, marginLeft: 8 }}>
+                      {d.vehicle} (moy. +{d.avg_diff}%)
+                    </Text>
+                  ))}
+                </View>
               )}
-              {residualResult.changes.new_vehicles > 0 && (
-                <Text style={{ color: '#4ECDC4', fontSize: 13, marginBottom: 2 }}>
-                  {residualResult.changes.new_vehicles} nouveaux véhicules
-                </Text>
+
+              {/* Deteriorated details */}
+              {residualResult.changes.deteriorated_details?.length > 0 && (
+                <View style={{ marginTop: 4, marginBottom: 6 }}>
+                  <Text style={{ color: '#FF6B6B', fontSize: 12, fontWeight: '600', marginBottom: 4 }}>Détériorés (résiduels en baisse) :</Text>
+                  {residualResult.changes.deteriorated_details.slice(0, 5).map((d: any, i: number) => (
+                    <Text key={i} style={{ color: '#aaa', fontSize: 11, marginLeft: 8 }}>
+                      {d.vehicle} (moy. {d.avg_diff}%)
+                    </Text>
+                  ))}
+                </View>
               )}
-              {residualResult.changes.unchanged_vehicles > 0 && (
-                <Text style={{ color: '#888', fontSize: 13, marginBottom: 2 }}>
-                  {residualResult.changes.unchanged_vehicles} inchangés
-                </Text>
+
+              {/* New trims */}
+              {residualResult.changes.new_trims?.length > 0 && (
+                <View style={{ marginTop: 4 }}>
+                  <Text style={{ color: '#45B7D1', fontSize: 12, fontWeight: '600', marginBottom: 4 }}>Nouveaux trims :</Text>
+                  {residualResult.changes.new_trims.slice(0, 5).map((t: string, i: number) => (
+                    <Text key={i} style={{ color: '#aaa', fontSize: 11, marginLeft: 8 }}>{t}</Text>
+                  ))}
+                </View>
               )}
             </View>
           )}

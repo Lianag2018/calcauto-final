@@ -932,9 +932,26 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
             {"$set": {"status": "saving", "message": f"{len(valid_programs)} programmes extraits. Sauvegarde..."}}
         )
 
-        # ── Step 2: Save programs to MongoDB ──
+        # ── Step 2: Compare with previous month & save programs to MongoDB ──
         saved_count = 0
+        program_comparison = {
+            "new_models": [], "removed_models": [], "rate_changes": [],
+            "cash_changes": [], "improved": 0, "deteriorated": 0, "unchanged": 0
+        }
         try:
+            # Load previous month's programs for comparison
+            prev_month = program_month - 1 if program_month > 1 else 12
+            prev_year = program_year if program_month > 1 else program_year - 1
+            prev_programs = await db.programs.find(
+                {"program_month": prev_month, "program_year": prev_year},
+                {"_id": 0}
+            ).to_list(500)
+            prev_lookup = {}
+            for pp in prev_programs:
+                pk = f"{pp.get('brand','')}|{pp.get('model','')}|{pp.get('trim','')}|{pp.get('year','')}"
+                prev_lookup[pk] = pp
+            
+            new_keys = set()
             await db.programs.delete_many({"program_month": program_month, "program_year": program_year})
             for prog in valid_programs:
                 opt1 = prog.get("option1_rates")
@@ -958,6 +975,58 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
                 }
                 await db.programs.insert_one(program_doc)
                 saved_count += 1
+                
+                # Compare with previous month
+                pk = f"{prog.get('brand','')}|{prog.get('model','')}|{prog.get('trim','')}|{prog.get('year','')}"
+                new_keys.add(pk)
+                if pk in prev_lookup:
+                    pp = prev_lookup[pk]
+                    diffs = {}
+                    # Compare rates
+                    for rk in ["rate_36", "rate_48", "rate_60", "rate_72", "rate_84", "rate_96"]:
+                        old_r = (pp.get("option1_rates") or {}).get(rk)
+                        new_r = (opt1 or {}).get(rk)
+                        if old_r is not None and new_r is not None and old_r != new_r:
+                            diffs[rk] = {"old": old_r, "new": new_r, "diff": round(new_r - old_r, 2)}
+                    # Compare cash
+                    old_cc = pp.get("consumer_cash", 0) or 0
+                    new_cc = prog.get("consumer_cash", 0) or 0
+                    old_bc = pp.get("bonus_cash", 0) or 0
+                    new_bc = prog.get("bonus_cash", 0) or 0
+                    cash_diff = {}
+                    if old_cc != new_cc:
+                        cash_diff["consumer_cash"] = {"old": old_cc, "new": new_cc, "diff": new_cc - old_cc}
+                    if old_bc != new_bc:
+                        cash_diff["bonus_cash"] = {"old": old_bc, "new": new_bc, "diff": new_bc - old_bc}
+                    
+                    if diffs or cash_diff:
+                        label = f"{prog.get('brand','')} {prog.get('model','')} {prog.get('trim','')}"
+                        # Determine if improved or deteriorated
+                        rate_better = all(d["diff"] <= 0 for d in diffs.values()) if diffs else True
+                        cash_better = all(d["diff"] >= 0 for d in cash_diff.values()) if cash_diff else True
+                        if rate_better and cash_better:
+                            program_comparison["improved"] += 1
+                        else:
+                            program_comparison["deteriorated"] += 1
+                        if diffs and len(program_comparison["rate_changes"]) < 30:
+                            program_comparison["rate_changes"].append({"vehicle": label, "changes": diffs})
+                        if cash_diff and len(program_comparison["cash_changes"]) < 30:
+                            program_comparison["cash_changes"].append({"vehicle": label, "changes": cash_diff})
+                    else:
+                        program_comparison["unchanged"] += 1
+                else:
+                    program_comparison["new_models"].append(
+                        f"{prog.get('brand','')} {prog.get('model','')} {prog.get('trim','')}"
+                    )
+            
+            # Detect removed models
+            for prev_key in prev_lookup:
+                if prev_key not in new_keys:
+                    parts = prev_key.split("|")
+                    program_comparison["removed_models"].append(" ".join(parts[:3]))
+            
+            if prev_programs:
+                logger.info(f"[Async] Program comparison: {program_comparison['improved']} improved, {program_comparison['deteriorated']} deteriorated, {program_comparison['unchanged']} unchanged, {len(program_comparison['new_models'])} new, {len(program_comparison['removed_models'])} removed")
             logger.info(f"[Async] Saved {saved_count} programs")
         except Exception as save_error:
             logger.error(f"[Async] Save error: {str(save_error)}")
@@ -1089,13 +1158,27 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
         # ── Step 6: Mark task complete ──
         lease_msg = f" + {sci_lease_count} taux SCI Lease" if sci_lease_count > 0 else ""
         email_msg = " - Excel envoyé par email!" if excel_sent else ""
+        
+        # Build comparison summary
+        comp_msg_parts = []
+        if program_comparison.get("improved"):
+            comp_msg_parts.append(f"{program_comparison['improved']} améliorés")
+        if program_comparison.get("deteriorated"):
+            comp_msg_parts.append(f"{program_comparison['deteriorated']} détériorés")
+        if program_comparison.get("new_models"):
+            comp_msg_parts.append(f"{len(program_comparison['new_models'])} nouveaux")
+        if program_comparison.get("removed_models"):
+            comp_msg_parts.append(f"{len(program_comparison['removed_models'])} retirés")
+        comp_msg = f" | Comparaison: {', '.join(comp_msg_parts)}" if comp_msg_parts else ""
+        
         await db.extract_tasks.update_one(
             {"task_id": task_id},
             {"$set": {
                 "status": "complete",
-                "message": f"Extrait et sauvegardé {len(valid_programs)} programmes{lease_msg}{email_msg}",
+                "message": f"Extrait et sauvegardé {len(valid_programs)} programmes{lease_msg}{email_msg}{comp_msg}",
                 "programs": valid_programs,
                 "sci_lease_count": sci_lease_count,
+                "program_comparison": program_comparison,
                 "completed_at": datetime.utcnow().isoformat()
             }}
         )
@@ -1449,9 +1532,16 @@ async def upload_residual_guide(
             raise HTTPException(status_code=400, detail="Aucun véhicule trouvé dans le PDF. Vérifiez le format du document.")
         
         # ── Comparison: detect changes from previous data ──
-        changes_summary = {"new": 0, "modified": 0, "unchanged": 0, "details": []}
+        changes_summary = {
+            "new": 0, "modified": 0, "unchanged": 0, "removed": 0,
+            "improved": 0, "deteriorated": 0, "mixed": 0,
+            "details": [], "new_trims": [], "removed_trims": [],
+            "improved_details": [], "deteriorated_details": []
+        }
+        new_keys = set()
         for v in all_vehicles:
             key = f"{v.get('brand')}|{v.get('model_name')}|{v.get('trim')}|{v.get('body_style')}"
+            new_keys.add(key)
             new_res = v.get("residual_percentages", {})
             if key in prev_data:
                 old_res = prev_data[key]
@@ -1465,17 +1555,39 @@ async def upload_residual_guide(
                         diffs[term] = {"old": old_val, "new": new_val, "diff": new_val - old_val}
                 if diffs:
                     changes_summary["modified"] += 1
+                    # Classify: improved (all diffs > 0), deteriorated (all < 0), or mixed
+                    diff_vals = [d["diff"] for d in diffs.values()]
+                    avg_diff = sum(diff_vals) / len(diff_vals)
+                    veh_label = f"{v['brand']} {v.get('model_name','')} {v['trim']} {v.get('body_style','')}"
+                    change_entry = {"vehicle": veh_label, "changes": diffs, "avg_diff": round(avg_diff, 1)}
+                    if all(d > 0 for d in diff_vals):
+                        changes_summary["improved"] += 1
+                        if len(changes_summary["improved_details"]) < 20:
+                            changes_summary["improved_details"].append(change_entry)
+                    elif all(d < 0 for d in diff_vals):
+                        changes_summary["deteriorated"] += 1
+                        if len(changes_summary["deteriorated_details"]) < 20:
+                            changes_summary["deteriorated_details"].append(change_entry)
+                    else:
+                        changes_summary["mixed"] += 1
                     if len(changes_summary["details"]) < 50:
-                        changes_summary["details"].append({
-                            "vehicle": f"{v['brand']} {v.get('model_name','')} {v['trim']} {v.get('body_style','')}",
-                            "changes": diffs
-                        })
+                        changes_summary["details"].append(change_entry)
                 else:
                     changes_summary["unchanged"] += 1
             else:
                 changes_summary["new"] += 1
+                changes_summary["new_trims"].append(
+                    f"{v['brand']} {v.get('model_name','')} {v['trim']} {v.get('body_style','')}"
+                )
         
-        logger.info(f"[ResidualGuide] Comparison: {changes_summary['new']} new, {changes_summary['modified']} modified, {changes_summary['unchanged']} unchanged")
+        # Detect removed vehicles (in previous but not in new)
+        for prev_key in prev_data:
+            if prev_key not in new_keys:
+                changes_summary["removed"] += 1
+                parts = prev_key.split("|")
+                changes_summary["removed_trims"].append(" ".join(parts))
+        
+        logger.info(f"[ResidualGuide] Comparison: {changes_summary['new']} new, {changes_summary['modified']} modified ({changes_summary['improved']} improved, {changes_summary['deteriorated']} deteriorated), {changes_summary['unchanged']} unchanged, {changes_summary['removed']} removed")
         
         # Build JSON result
         month_names = ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
@@ -1652,9 +1764,17 @@ CalcAuto AiPro"""
                 "new_vehicles": changes_summary["new"],
                 "modified_vehicles": changes_summary["modified"],
                 "unchanged_vehicles": changes_summary["unchanged"],
+                "removed_vehicles": changes_summary["removed"],
+                "improved": changes_summary["improved"],
+                "deteriorated": changes_summary["deteriorated"],
+                "mixed": changes_summary["mixed"],
+                "new_trims": changes_summary["new_trims"][:20],
+                "removed_trims": changes_summary["removed_trims"][:20],
                 "sample_changes": changes_summary["details"][:10],
+                "improved_details": changes_summary["improved_details"][:10],
+                "deteriorated_details": changes_summary["deteriorated_details"][:10],
             },
-            "message": f"{len(all_vehicles)} véhicules extraits pour {month_names[effective_month]} {effective_year} — {changes_summary['modified']} modifiés, {changes_summary['new']} nouveaux"
+            "message": f"{len(all_vehicles)} véhicules extraits pour {month_names[effective_month]} {effective_year} — {changes_summary['improved']} améliorés, {changes_summary['deteriorated']} détériorés, {changes_summary['new']} nouveaux, {changes_summary['removed']} retirés"
         }
     
     except HTTPException:
