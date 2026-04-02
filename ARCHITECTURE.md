@@ -1,6 +1,7 @@
 # CalcAuto AiPro - Architecture & Guide de Deploiement
 
 > Document complet pour comprendre, deployer et maintenir l'application de maniere independante.
+> Derniere mise a jour : Avril 2026
 
 ---
 
@@ -11,13 +12,11 @@
 3. [Architecture Frontend (Expo React)](#3-architecture-frontend-expo-react)
 4. [Base de donnees (MongoDB)](#4-base-de-donnees-mongodb)
 5. [Deploiement](#5-deploiement)
-   - [GitHub](#51-github)
-   - [Backend sur Render](#52-backend-sur-render)
-   - [Frontend sur Vercel](#53-frontend-sur-vercel)
 6. [Variables d'environnement](#6-variables-denvironnement)
 7. [Flux de donnees](#7-flux-de-donnees)
 8. [Maintenance et operations courantes](#8-maintenance-et-operations-courantes)
 9. [Depannage](#9-depannage)
+10. [CI/CD Pipeline](#10-cicd-pipeline)
 
 ---
 
@@ -32,17 +31,24 @@
 │   Expo/React    │       │   FastAPI       │       │   (MongoDB      │
 │   TypeScript    │       │   Python 3.11   │       │    Atlas)       │
 └─────────────────┘       └─────────────────┘       └─────────────────┘
+                                   │
+                          ┌────────┴────────┐
+                          │  FICHIERS JSON  │
+                          │  (Programmes,   │
+                          │  Residuels, KM) │
+                          └─────────────────┘
 ```
 
 | Composant | Technologie | Hebergement |
 |-----------|-------------|-------------|
-| Frontend  | Expo (React) + TypeScript | Vercel |
-| Backend   | FastAPI + Python 3.11 | Render |
-| Base de donnees | MongoDB | MongoDB Atlas (cloud) |
+| Frontend  | Expo (React Native for Web) + TypeScript | Vercel |
+| Backend   | FastAPI + Python 3.11 + pdfplumber | Render |
+| Base de donnees | MongoDB Atlas | MongoDB Atlas (cloud) |
+| Stockage fichiers | JSON locaux + Supabase | Supabase |
 
 **Repositories GitHub (compte `Lianag2018`):**
-- Backend : `Lianag2018/calcauto-backend` (ou similaire)
-- Frontend : `Lianag2018/calcauto-frontend` (ou similaire)
+- Backend : `Lianag2018/calcauto-backend`
+- Frontend : `Lianag2018/calcauto-frontend`
 
 ---
 
@@ -52,47 +58,52 @@
 
 ```
 backend/
-├── server.py              # Point d'entree principal (FastAPI app)
-├── database.py            # Connexion MongoDB + configuration globale
-├── models.py              # Modeles Pydantic (validation des donnees)
-├── dependencies.py        # Fonctions utilitaires (auth, calculs)
-├── validation.py          # Validation de donnees
-├── vin_utils.py           # Utilitaires VIN (decodage vehicule)
-├── product_code_lookup.py # Referentiel codes produits FCA
-├── fca_parser.py          # Parseur de programmes FCA depuis PDF
-├── ocr.py                 # Logique OCR pour scan de factures
-├── ocr_zones.py           # Zones de detection OCR
-├── parser.py              # Parseur de factures
+├── server.py                 # Point d'entree principal (FastAPI app)
+├── database.py               # Connexion MongoDB + configuration globale
+├── models.py                 # Modeles Pydantic (validation des donnees)
+├── dependencies.py           # Fonctions utilitaires (auth, calculs)
+├── validation.py             # Validation de donnees
+├── vin_utils.py              # Utilitaires VIN (decodage vehicule)
+├── product_code_lookup.py    # Referentiel codes produits FCA
+├── fca_parser.py             # Parseur legacy de programmes FCA
 │
-├── routers/               # Endpoints API (chaque fichier = un groupe)
-│   ├── auth.py            # /api/auth/register, /api/auth/login, /api/auth/logout
-│   ├── programs.py        # /api/programs (CRUD), /api/calculate, /api/import, /api/seed
-│   ├── submissions.py     # /api/submissions (CRM: soumissions clients)
-│   ├── contacts.py        # /api/contacts (carnet d'adresses)
-│   ├── inventory.py       # /api/inventory (gestion vehicules en stock)
-│   ├── invoice.py         # /api/invoice/scan (scanner factures OCR/IA)
-│   ├── email.py           # /api/email/send (envoi emails de calcul)
-│   ├── import_wizard.py   # /api/import-wizard (import PDF/Excel programmes)
-│   ├── sci.py             # /api/sci/* (taux location SCI, residuels)
-│   └── admin.py           # /api/admin/* (gestion utilisateurs, stats)
+├── routers/                  # Endpoints API (chaque fichier = un groupe)
+│   ├── auth.py               # /api/auth/* (register, login, logout, demo-login)
+│   ├── programs.py           # /api/programs, /api/calculate, /api/periods
+│   ├── submissions.py        # /api/submissions (CRM: soumissions clients)
+│   ├── contacts.py           # /api/contacts (carnet d'adresses)
+│   ├── inventory.py          # /api/inventory (gestion vehicules en stock)
+│   ├── invoice.py            # /api/invoice/scan (scanner factures OCR/IA)
+│   ├── email.py              # /api/email/send (envoi emails de calcul)
+│   ├── import_wizard.py      # /api/scan-pdf, /api/extract-pdf-async, /api/upload-residual-guide
+│   ├── sci.py                # /api/sci/* (taux location SCI, residuels, calculs)
+│   ├── corrections.py        # /api/corrections/* (corrections manuelles des taux)
+│   └── admin.py              # /api/admin/* (gestion utilisateurs, stats)
 │
 ├── services/
-│   ├── email_service.py   # Service SMTP (envoi emails via Gmail)
-│   └── window_sticker.py  # Recuperation Window Sticker Stellantis
+│   ├── pdfplumber_parser.py  # Parseur PDF principal (retail + lease + residuels + TOC)
+│   ├── email_service.py      # Service SMTP (envoi emails via Gmail)
+│   ├── storage.py            # Service Supabase (sync fichiers JSON)
+│   └── window_sticker.py     # Recuperation Window Sticker Stellantis
 │
-├── scripts/
-│   └── setup_trim_orders.py  # Script pour configurer l'ordre des trims
+├── data/                     # Fichiers de donnees (generes automatiquement)
+│   ├── sci_residuals_{mois}{annee}.json      # Residuels par vehicule/trim
+│   ├── sci_lease_rates_{month}{year}.json    # Taux de location SCI
+│   ├── km_adjustments_{month}{year}.json     # Ajustements 12k/18k km
+│   ├── program_meta_{month}{year}.json       # Metadonnees evenement (banniere)
+│   ├── code_program_mapping.json             # Mapping codes FCA
+│   └── fca_product_codes*.json               # Codes produits FCA
 │
-├── data/                  # Fichiers de donnees statiques
-│   ├── sci_residuals_feb2026.json      # Valeurs residuelles SCI
-│   ├── sci_lease_rates_feb2026.json    # Taux de location SCI
-│   ├── fca_product_codes_2026.json     # Codes produits FCA
+├── tests/                    # Tests automatises
+│   ├── test_ci_unit.py       # Tests unitaires pour CI/CD (32 tests)
+│   ├── test_km_adjustments.py # Tests ajustements kilometrage (20 tests)
+│   ├── test_sci_lease.py     # Tests API SCI Lease (13 tests)
 │   └── ...
 │
-├── requirements.txt       # Dependances Python
-├── Procfile               # Commande de demarrage (Render)
-├── render.yaml            # Configuration Render
-└── runtime.txt            # Version Python (3.11.4)
+├── requirements.txt          # Dependances Python
+├── Procfile                  # Commande de demarrage (Render)
+├── render.yaml               # Configuration Render
+└── runtime.txt               # Version Python (3.11.4)
 ```
 
 ### Fichiers cles expliques
@@ -138,19 +149,40 @@ Contient :
 |---------|----------|-------------|
 | POST | `/api/auth/register` | Inscription d'un utilisateur |
 | POST | `/api/auth/login` | Connexion (retourne un token) |
+| POST | `/api/auth/demo-login` | Connexion mode demo (sans mot de passe) |
 | GET | `/api/programs` | Liste des programmes de financement (tries par sort_order) |
+| GET | `/api/periods` | Periodes disponibles (mois/annee) |
 | POST | `/api/calculate` | Calcul de financement pour un vehicule |
-| POST | `/api/import` | Import de programmes (protege par mot de passe admin) |
+| POST | `/api/scan-pdf` | Scan un PDF retail, detecte les pages via la TOC |
+| POST | `/api/extract-pdf-async` | Extraction async des programmes retail + comparaison mois precedent |
+| GET | `/api/extract-task/{id}` | Poll le statut d'une extraction async |
+| POST | `/api/upload-residual-guide` | Upload guide residuel (auto-detect, multi-mois, comparaison) |
+| GET | `/api/sci/residuals` | Valeurs residuelles SCI (avec ajustements KM) |
+| GET | `/api/sci/lease-rates` | Taux de location SCI |
+| POST | `/api/sci/calculate-lease` | Calcul de location SCI |
+| GET | `/api/program-meta` | Metadonnees evenement (banniere, loyalty, 90j) |
 | PUT | `/api/programs/reorder` | Reordonnement des programmes (admin) |
 | GET/POST | `/api/inventory` | Gestion de l'inventaire vehiculaire |
 | POST | `/api/invoice/scan` | Scanner une facture (OCR) |
 | POST | `/api/email/send` | Envoyer un calcul par email |
 | GET/POST | `/api/submissions` | Gestion des soumissions (CRM) |
 | GET/POST | `/api/contacts` | Gestion des contacts |
-| GET | `/api/sci/residuals` | Valeurs residuelles SCI |
-| GET | `/api/sci/lease-rates` | Taux de location SCI |
+| GET/POST | `/api/corrections` | Corrections manuelles des taux |
 | GET | `/api/admin/users` | Liste des utilisateurs (admin) |
 | GET | `/api/admin/stats` | Statistiques globales (admin) |
+
+### Fonctionnalites cles du parseur PDF (`pdfplumber_parser.py`)
+
+| Fonctionnalite | Description |
+|----------------|-------------|
+| **Detection TOC** | Parse la table des matieres (page 2) pour localiser les sections |
+| **Extraction retail** | Programmes Option 1/2, consumer cash, bonus cash |
+| **Extraction SCI Lease** | Taux standard/alternatif, lease cash |
+| **Extraction residuels** | Par vehicule, trim, body style, annee modele |
+| **Ajustements KM** | Regles 12k/18k depuis le guide residuel |
+| **Detection plage dates** | "Effective: Mar 01 - Apr 30" → sauvegarde multi-mois |
+| **Comparaison** | Ameliores/deteriores/nouveaux/retires vs mois precedent |
+| **Key Incentives** | Parse les incentifs cles (bonus cash after tax, etc.) |
 
 ---
 
@@ -163,44 +195,37 @@ frontend/
 ├── app/
 │   ├── _layout.tsx              # Layout racine (authentification, navigation)
 │   ├── login.tsx                # Page de connexion
-│   ├── import.tsx               # Page d'import de programmes
+│   ├── import.tsx               # Page d'import de programmes et residuels
 │   ├── manage.tsx               # Page de gestion
 │   └── (tabs)/
 │       ├── _layout.tsx          # Configuration des onglets (barre de navigation)
-│       ├── index.tsx            # Onglet "Calcul" (calculateur principal)
+│       ├── index.tsx            # Onglet "Calcul" (calculateur principal, ~3700 lignes)
 │       ├── inventory.tsx        # Onglet "Inventaire"
 │       ├── clients.tsx          # Onglet "CRM" (soumissions + contacts)
 │       └── admin.tsx            # Onglet "Admin" (visible admin seulement)
 │
-├── components/
-│   ├── AnimatedSplashScreen.tsx # Animation d'ecran de demarrage
-│   ├── EmailModal.tsx           # Modal d'envoi d'email
-│   ├── FilterBar.tsx            # Barre de filtres
-│   ├── LanguageSelector.tsx     # Selecteur de langue (FR/EN)
-│   ├── LoadingBorderAnimation.tsx
-│   └── calculator/              # Composants du calculateur
-│       ├── CalculatorInputs.tsx
-│       ├── CostBreakdown.tsx
-│       ├── PaymentResult.tsx
-│       ├── ProgramSelector.tsx
-│       └── index.ts
-│
-├── contexts/
-│   └── AuthContext.tsx           # Contexte d'authentification (login, token, user)
-│
-├── hooks/
-│   ├── useCalculator.ts         # Hook du calculateur
-│   ├── useFinancingCalculation.ts # Calculs de financement
-│   ├── useNetCost.ts            # Calcul du cout net
-│   └── usePrograms.ts           # Recuperation des programmes
+├── src/
+│   ├── components/
+│   │   ├── EventBanner.tsx      # Banniere dynamique (evenement, loyalty, 90j)
+│   │   ├── AnimatedSplashScreen.tsx
+│   │   ├── EmailModal.tsx
+│   │   ├── FilterBar.tsx
+│   │   ├── LanguageSelector.tsx
+│   │   └── calculator/          # Composants du calculateur
+│   │
+│   ├── context/
+│   │   └── AuthContext.tsx       # Contexte d'authentification (login, token, demo)
+│   │
+│   └── hooks/
+│       ├── useCalculator.ts     # Hook du calculateur (loyalty, deferred payment)
+│       ├── useFinancingCalculation.ts
+│       ├── useNetCost.ts
+│       └── usePrograms.ts
 │
 ├── utils/
 │   ├── api.ts                   # Configuration de l'URL backend
+│   ├── leaseCalculator.ts       # Calculs de location (matching trim, residuels)
 │   └── i18n.ts                  # Internationalisation (FR/EN)
-│
-├── locales/
-│   ├── fr.json                  # Traductions francaises
-│   └── en.json                  # Traductions anglaises
 │
 ├── types/
 │   └── calculator.ts            # Types TypeScript du calculateur
@@ -477,17 +502,23 @@ EXPO_PUBLIC_BACKEND_URL=http://localhost:8001
 
 ### Flux de l'import de programmes
 ```
-1. L'admin televerse un PDF/Excel de programmes
+1. L'admin televerse un PDF (Retail ou Residuel)
    │
-2. Le backend parse le fichier (pdfplumber/openpyxl)
+2. Le backend detecte automatiquement le type, le mois et l'annee
    │
-3. Les programmes extraits sont presentes pour validation
+3a. [PDF Retail] → Extraction async des programmes (Option 1/2, cash, taux SCI Lease)
+   │  → Comparaison avec le mois precedent (ameliores/deteriores/nouveaux/retires)
+   │  → Sauvegarde en MongoDB + fichiers JSON
+   │  → Generation Excel + envoi email
    │
-4. L'admin confirme l'import (avec mot de passe)
+3b. [Guide Residuel] → Extraction des residuels par vehicule/trim/body
+   │  → Detection de la plage effective (ex: "Mar 01 - Apr 30")
+   │  → Sauvegarde pour TOUS les mois couverts
+   │  → Extraction des ajustements KM (12k/18k)
+   │  → Comparaison: ameliores vs deteriores vs nouveaux vs retires
+   │  → Generation Excel + envoi email
    │
-5. Les anciens programmes du mois sont supprimes
-   │
-6. Les nouveaux programmes sont inseres avec le sort_order calcule
+4. Le frontend affiche le rapport de comparaison detaille
 ```
 
 ### Flux d'authentification
@@ -628,4 +659,44 @@ Sur MongoDB Atlas, vous devez autoriser les IP de Render a se connecter :
 
 ---
 
-*Document genere le 27 fevrier 2026 pour CalcAuto AiPro*
+## 10. CI/CD Pipeline
+
+### GitHub Actions (`.github/workflows/ci-cd.yml`)
+
+Le projet utilise GitHub Actions pour automatiser les tests et le deploiement.
+
+#### Declenchement
+- A chaque `push` sur `main`
+- A chaque Pull Request vers `main`
+
+#### Etapes du pipeline
+```
+1. Checkout du code
+2. Installation Python 3.11
+3. Installation des dependances (requirements.txt)
+4. Execution des tests unitaires (pytest)
+   - test_ci_unit.py (32 tests: loyalty, deferred, parsing, metadata)
+   - test_km_adjustments.py (20 tests: regles KM 12k/18k)
+5. [Si tests OK] Deploy Backend vers Render (via deploy hook)
+6. [Si tests OK] Deploy Frontend vers Vercel (via VERCEL_TOKEN)
+```
+
+#### Secrets GitHub requis
+| Secret | Description |
+|--------|-------------|
+| `RENDER_DEPLOY_HOOK_URL` | URL de deploy hook Render |
+| `VERCEL_TOKEN` | Token API Vercel |
+| `VERCEL_ORG_ID` | ID organisation Vercel |
+| `VERCEL_PROJECT_ID` | ID projet Vercel |
+
+### Tests automatises
+
+| Fichier | Tests | Description |
+|---------|-------|-------------|
+| `test_ci_unit.py` | 32 | Parsing retail, loyalty, deferred payment, metadata |
+| `test_km_adjustments.py` | 20 | Regles KM 12k/18k, expansion termes |
+| `test_sci_lease.py` | 13 | API SCI, matching Sport/Rebel, calculs lease |
+
+---
+
+*Document mis a jour le 2 avril 2026 pour CalcAuto AiPro*
