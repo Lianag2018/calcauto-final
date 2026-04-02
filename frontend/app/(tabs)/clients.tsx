@@ -291,6 +291,36 @@ export default function ClientsScreen() {
   const [followUpNotes, setFollowUpNotes] = useState('');
   const [savingFollowUp, setSavingFollowUp] = useState(false);
 
+  // Add contact manually
+  const [showAddContactModal, setShowAddContactModal] = useState(false);
+  const [newContactName, setNewContactName] = useState('');
+  const [newContactPhone, setNewContactPhone] = useState('');
+  const [newContactEmail, setNewContactEmail] = useState('');
+  const [savingContact, setSavingContact] = useState(false);
+
+  const handleCreateContact = async () => {
+    if (!newContactName.trim()) return;
+    setSavingContact(true);
+    try {
+      const headers = await getAuthHeaders();
+      await axios.post(`${API_URL}/api/contacts`, {
+        name: newContactName.trim(),
+        phone: newContactPhone.trim(),
+        email: newContactEmail.trim(),
+        source: 'manual'
+      }, { headers });
+      setShowAddContactModal(false);
+      setNewContactName('');
+      setNewContactPhone('');
+      setNewContactEmail('');
+      loadData();
+    } catch (e) {
+      console.error('Error creating contact:', e);
+    } finally {
+      setSavingContact(false);
+    }
+  };
+
   // Helper function to get auth headers
   const getAuthHeaders = async () => {
     const token = await getToken();
@@ -1541,7 +1571,8 @@ export default function ClientsScreen() {
       <View style={styles.actionsRow}>
         <TouchableOpacity 
           style={styles.addButton}
-          onPress={() => router.push('/(tabs)')}
+          onPress={() => setShowAddContactModal(true)}
+          data-testid="add-contact-btn"
         >
           <Ionicons name="add" size={20} color="#1a1a2e" />
           <Text style={styles.addButtonText}>{crm.add}</Text>
@@ -1563,6 +1594,66 @@ export default function ClientsScreen() {
       
       {/* Offer Detail Modal */}
       {renderOfferDetailModal()}
+
+      {/* ============================================ */}
+      {/* ADD CONTACT MODAL */}
+      {/* ============================================ */}
+      <Modal visible={showAddContactModal} animationType="slide" transparent={true} onRequestClose={() => setShowAddContactModal(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 20 }}>
+          <View style={{ backgroundColor: '#1a1a2e', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: '#333' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>Nouveau contact</Text>
+              <TouchableOpacity onPress={() => setShowAddContactModal(false)} data-testid="close-add-contact-modal">
+                <Ionicons name="close" size={24} color="#888" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={{ color: '#aaa', fontSize: 13, marginBottom: 6 }}>Nom *</Text>
+            <TextInput
+              style={{ backgroundColor: '#16213e', borderRadius: 10, padding: 14, color: '#fff', fontSize: 16, marginBottom: 14, borderWidth: 1, borderColor: '#333' }}
+              value={newContactName}
+              onChangeText={setNewContactName}
+              placeholder="Nom complet"
+              placeholderTextColor="#555"
+              data-testid="new-contact-name-input"
+            />
+
+            <Text style={{ color: '#aaa', fontSize: 13, marginBottom: 6 }}>Téléphone</Text>
+            <TextInput
+              style={{ backgroundColor: '#16213e', borderRadius: 10, padding: 14, color: '#fff', fontSize: 16, marginBottom: 14, borderWidth: 1, borderColor: '#333' }}
+              value={newContactPhone}
+              onChangeText={setNewContactPhone}
+              placeholder="(418) 555-1234"
+              placeholderTextColor="#555"
+              keyboardType="phone-pad"
+              data-testid="new-contact-phone-input"
+            />
+
+            <Text style={{ color: '#aaa', fontSize: 13, marginBottom: 6 }}>Courriel</Text>
+            <TextInput
+              style={{ backgroundColor: '#16213e', borderRadius: 10, padding: 14, color: '#fff', fontSize: 16, marginBottom: 20, borderWidth: 1, borderColor: '#333' }}
+              value={newContactEmail}
+              onChangeText={setNewContactEmail}
+              placeholder="email@exemple.com"
+              placeholderTextColor="#555"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              data-testid="new-contact-email-input"
+            />
+
+            <TouchableOpacity
+              style={{ backgroundColor: savingContact ? '#555' : '#4ECDC4', borderRadius: 12, padding: 16, alignItems: 'center' }}
+              onPress={handleCreateContact}
+              disabled={savingContact || !newContactName.trim()}
+              data-testid="save-new-contact-btn"
+            >
+              <Text style={{ color: '#1a1a2e', fontSize: 16, fontWeight: '700' }}>
+                {savingContact ? 'Enregistrement...' : 'Enregistrer'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* ============================================ */}
       {/* IMPORT CONTACTS MODAL - vCard/CSV Options */}
