@@ -71,6 +71,7 @@ export interface LocalResult {
   bonusCash: number;
   deferredInterest?: number;
   deferredActive?: boolean;
+  soldeReporte?: number;
 }
 
 export interface ProgramPeriod {

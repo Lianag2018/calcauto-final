@@ -202,6 +202,9 @@ export default function HomeScreen() {
   // Custom bonus cash input (after taxes)
   const [customBonusCash, setCustomBonusCash] = useState('');
   
+  // Solde reporté location (ajouté au prix avant taxes)
+  const [soldeReporteLocation, setSoldeReporteLocation] = useState('');
+  
   // Comptant (cash down payment, taxes included)
   const [comptantTxInclus, setComptantTxInclus] = useState('');
   
@@ -250,6 +253,7 @@ export default function HomeScreen() {
     rabaisConcess: leaseRabaisConcess,
     loyaltyRate: activeLoyaltyRate,
     deferredPayment,
+    soldeReporteLocation,
   });
 
   const loadPrograms = useCallback(async (month?: number, year?: number) => {
@@ -2094,6 +2098,23 @@ export default function HomeScreen() {
                     keyboardType="numeric"
                     value={customBonusCash}
                     onChangeText={setCustomBonusCash}
+                  />
+                </View>
+              </View>
+
+              {/* Solde reporté location (taxable) */}
+              <View style={styles.inputRow}>
+                <Text style={styles.inputLabel}>{lang === 'fr' ? 'Solde reporté location' : 'Lease Carried Balance'}</Text>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.currencySymbol}>$</Text>
+                  <TextInput
+                    style={styles.priceInput}
+                    placeholder="0"
+                    placeholderTextColor="#666"
+                    keyboardType="numeric"
+                    value={soldeReporteLocation}
+                    onChangeText={setSoldeReporteLocation}
+                    data-testid="solde-reporte-input"
                   />
                 </View>
               </View>

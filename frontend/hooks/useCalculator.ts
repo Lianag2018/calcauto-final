@@ -67,6 +67,7 @@ interface CalculatorInputs {
   rabaisConcess: string;
   loyaltyRate?: number;
   deferredPayment?: boolean;
+  soldeReporteLocation?: string;
 }
 
 /**
@@ -82,6 +83,7 @@ export function useCalculator(inputs: CalculatorInputs) {
     prixEchange, montantDuEchange, accessories, rabaisConcess,
     loyaltyRate = 0,
     deferredPayment = false,
+    soldeReporteLocation = '',
   } = inputs;
 
   const calculateForTerm = useCallback(() => {
@@ -115,8 +117,11 @@ export function useCalculator(inputs: CalculatorInputs) {
     // Accessoires
     const totalAccessoires = accessories.reduce((sum, acc) => sum + (parseFloat(acc.price) || 0), 0);
 
-    // Option 1: Prix + Accessoires - Consumer Cash - Rabais concess. - valeur echange + frais + dette echange + taxes - comptant - bonus cash
-    const montantAvantTaxesO1 = price + totalAccessoires - consumerCash - rabais - valeurEchange + fraisTaxables;
+    // Solde reporté location (taxable - s'ajoute au prix avant taxes)
+    const soldeReporte = parseFloat(soldeReporteLocation) || 0;
+
+    // Option 1: Prix + Accessoires + Solde reporté - Consumer Cash - Rabais concess. - valeur echange + frais + dette echange + taxes - comptant - bonus cash
+    const montantAvantTaxesO1 = price + totalAccessoires + soldeReporte - consumerCash - rabais - valeurEchange + fraisTaxables;
     const taxesO1 = montantAvantTaxesO1 * TAUX_TAXE;
     const principalOption1Brut = montantAvantTaxesO1 + taxesO1 + detteSurEchange;
     const principalOption1 = principalOption1Brut - comptant - bonusCash;
@@ -144,9 +149,9 @@ export function useCalculator(inputs: CalculatorInputs) {
     let bestOption: string | null = null;
     let savings = 0;
 
-    // Option 2: Prix - Alternative Consumer Cash - Rabais concess. - valeur echange + frais + dette echange + taxes - comptant
+    // Option 2: Prix + Solde reporté - Alternative Consumer Cash - Rabais concess. - valeur echange + frais + dette echange + taxes - comptant
     const altConsumerCash = selectedProgram.alternative_consumer_cash || 0;
-    const montantAvantTaxesO2 = price + totalAccessoires - altConsumerCash - rabais - valeurEchange + fraisTaxables;
+    const montantAvantTaxesO2 = price + totalAccessoires + soldeReporte - altConsumerCash - rabais - valeurEchange + fraisTaxables;
     const taxesO2 = montantAvantTaxesO2 * TAUX_TAXE;
     const principalOption2Brut = montantAvantTaxesO2 + taxesO2 + detteSurEchange;
     const principalOption2 = principalOption2Brut - comptant;
@@ -199,8 +204,9 @@ export function useCalculator(inputs: CalculatorInputs) {
       bonusCash,
       deferredInterest: deferredInterest1,
       deferredActive: canDefer,
+      soldeReporte,
     });
-  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, rabaisConcess, loyaltyRate, deferredPayment]);
+  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, rabaisConcess, loyaltyRate, deferredPayment, soldeReporteLocation]);
 
   useEffect(() => {
     calculateForTerm();
