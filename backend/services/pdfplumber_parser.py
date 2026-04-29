@@ -13,6 +13,7 @@ import re
 import logging
 from typing import List, Dict, Optional, Tuple
 from io import BytesIO
+from utils.fca_helpers import normalize_model_name, merge_multiline_names, match_names_to_rates
 
 logger = logging.getLogger(__name__)
 
@@ -550,10 +551,10 @@ def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) ->
                     logger.info(f"[RetailParser] Page {page_idx+1}: no model year detected")
                     continue
 
-                # Extract vehicle names from names_table
-                vehicles = []
+                # Extract vehicle names from names_table (with row indices for matching)
+                vehicles_raw = []
                 current_brand = None
-                for row in names_table:
+                for ri, row in enumerate(names_table):
                     c0 = str(row[0]).strip() if row[0] else ''
                     c1 = str(row[1]).replace('\n', ' ').strip() if len(row) > 1 and row[1] else ''
 
@@ -571,13 +572,23 @@ def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) ->
                     if not current_brand:
                         continue
 
-                    vehicles.append((current_brand, c1))
+                    vehicles_raw.append((ri, current_brand, c1))
 
-                # Extract rate rows from main table (skip headers)
-                rate_rows = []
-                for row in main_table:
+                # Merge multi-line names (parentheses continuations)
+                name_tuples = [(ri, name) for ri, _, name in vehicles_raw]
+                merged_names = merge_multiline_names(name_tuples)
+                # Rebuild vehicles list with merged names + brands
+                vehicles = []
+                brand_map = {ri: brand for ri, brand, _ in vehicles_raw}
+                for ri, name in merged_names:
+                    brand = brand_map.get(ri, detect_brand_from_model(name) or 'Unknown')
+                    vehicles.append((ri, brand, name))
+
+                # Extract rate rows from main table (with row indices)
+                rate_rows_indexed = []
+                for ri, row in enumerate(main_table):
                     if _has_rate_data(row, opt1_start):
-                        rate_rows.append(row)
+                        rate_rows_indexed.append((ri, row))
 
                 # Extract bonus cash rows
                 bonus_rows = []
@@ -589,23 +600,30 @@ def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) ->
 
                 logger.info(
                     f"[RetailParser] Layout B: {len(vehicles)} vehicles, "
-                    f"{len(rate_rows)} rate rows, {len(bonus_rows)} bonus rows"
+                    f"{len(rate_rows_indexed)} rate rows, {len(bonus_rows)} bonus rows"
                 )
 
-                # Alignment check - warn if counts don't match
-                if len(vehicles) != len(rate_rows):
+                # Intelligent matching: use proximity if counts mismatch
+                name_for_match = [(ri, name) for ri, _, name in vehicles]
+                matched = match_names_to_rates(name_for_match, rate_rows_indexed)
+
+                if len(vehicles) != len(rate_rows_indexed):
                     logger.warning(
-                        f"[RetailParser] ⚠ ALIGNMENT MISMATCH: {len(vehicles)} vehicles "
-                        f"vs {len(rate_rows)} rate rows on page {page_idx+1}. "
-                        f"Data may be shifted for the last vehicles."
+                        f"[RetailParser] ALIGNMENT MISMATCH: {len(vehicles)} vehicles "
+                        f"vs {len(rate_rows_indexed)} rate rows on page {page_idx+1}. "
+                        f"Using proximity matching ({len(matched)} matched)."
                     )
 
-                # Zip vehicles with rate rows
-                for vi, (brand, vehicle_name) in enumerate(vehicles):
-                    if vi >= len(rate_rows):
-                        break
-
-                    rr = rate_rows[vi]
+                # Process matched pairs
+                for vi, ((name_ri, _vname), (rate_ri, rr)) in enumerate(matched):
+                    # Find brand for this name_ri
+                    brand = 'Unknown'
+                    vehicle_name = _vname
+                    for v_ri, v_brand, v_name in vehicles:
+                        if v_ri == name_ri:
+                            brand = v_brand
+                            vehicle_name = v_name
+                            break
                     model, trim = split_model_trim(brand, vehicle_name)
 
                     consumer_cash = parse_dollar(rr[cc_col] if cc_col < len(rr) else None)
@@ -850,11 +868,11 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
                                 has_real_alt = True
                                 break
 
-            # STEP 1: Extract vehicle names (skip header rows)
+            # STEP 1: Extract vehicle names (skip header rows) + merge multi-line
             skip_keywords = ['discount', 'stackable', 'type of sale', 'model year',
                              'program', 'stackability', 'important', 'color key',
                              'see program', 'before tax', 'after tax']
-            vehicle_names = []
+            vehicle_names_raw = []
             for ri in range(len(names_t)):
                 # Try column 1 first (common), then column 0
                 vname = ''
@@ -865,7 +883,10 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
                             vname = candidate
                             break
                 if vname:
-                    vehicle_names.append((ri, vname))
+                    vehicle_names_raw.append((ri, vname))
+
+            # Merge multi-line vehicle names (parentheses continuations)
+            vehicle_names = merge_multiline_names(vehicle_names_raw)
 
             # STEP 2: Extract rate data rows (skip header rows)
             rate_data_rows = []
@@ -878,13 +899,20 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
                 if has_rate or has_lc or has_sale_type:
                     rate_data_rows.append((ri, rr))
 
-            # STEP 3: Zip vehicle names with rate data (1:1 mapping)
-            count = min(len(vehicle_names), len(rate_data_rows))
+            # STEP 3: Intelligent matching - names to rate data rows
+            # Use proximity matching to handle misalignments
+            matched = match_names_to_rates(vehicle_names, rate_data_rows)
+            count = len(matched)
             logger.info(f"[SCI Lease] Page {page_idx+1}: {len(vehicle_names)} noms, {len(rate_data_rows)} lignes de taux, {count} matches")
 
-            for vi in range(count):
-                _, vname = vehicle_names[vi]
-                _, rr = rate_data_rows[vi]
+            if len(vehicle_names) != len(rate_data_rows):
+                logger.warning(
+                    f"[SCI Lease] MISMATCH on page {page_idx+1}: "
+                    f"{len(vehicle_names)} names vs {len(rate_data_rows)} rate rows. "
+                    f"Proximity matching used ({count} matched)."
+                )
+
+            for (_, vname), (_, rr) in matched:
 
                 lease_cash = parse_dollar(rr[lease_cash_col] if lease_cash_col < len(rr) else None)
 
