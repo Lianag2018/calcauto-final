@@ -6,10 +6,77 @@ Appliqué après le pipeline OCR par zones.
 """
 
 import re
+import os
+import json
+import glob
 from typing import Dict, List, Optional, Any
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+# ============ CATALOGUE D'OPTIONS FCA (par marque/modèle) ============
+
+_FCA_OPTIONS_CATALOG: Dict[str, str] = {}
+_OPTIONS_CATALOG_LOADED = False
+
+
+def _load_fca_options_catalog() -> Dict[str, str]:
+    """
+    Charge tous les fichiers JSON de /backend/data/options/*.json
+    et fusionne en un dict unique {code: description}.
+
+    Source de vérité prioritaire pour parse_options() — utilisé pour éviter
+    le décalage code↔description lors de l'OCR (ex: MH1 sans description).
+    """
+    global _FCA_OPTIONS_CATALOG, _OPTIONS_CATALOG_LOADED
+
+    if _OPTIONS_CATALOG_LOADED:
+        return _FCA_OPTIONS_CATALOG
+
+    options_dir = os.path.join(os.path.dirname(__file__), 'data', 'options')
+    if not os.path.isdir(options_dir):
+        logger.warning(f"[Parser] Répertoire options introuvable: {options_dir}")
+        _OPTIONS_CATALOG_LOADED = True
+        return _FCA_OPTIONS_CATALOG
+
+    merged: Dict[str, str] = {}
+    files_loaded = 0
+
+    for json_path in sorted(glob.glob(os.path.join(options_dir, '*.json'))):
+        try:
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            opts = (data or {}).get('options', {})
+            if not isinstance(opts, dict):
+                continue
+            # Les fichiers spécifiques à un modèle ont priorité sur _generic
+            for code, desc in opts.items():
+                if code not in merged:
+                    merged[code] = desc
+            files_loaded += 1
+        except Exception as e:
+            logger.warning(f"[Parser] Erreur chargement {json_path}: {e}")
+
+    _FCA_OPTIONS_CATALOG = merged
+    _OPTIONS_CATALOG_LOADED = True
+    logger.info(f"[Parser] Catalogue FCA chargé: {len(merged)} codes depuis {files_loaded} fichiers")
+    return _FCA_OPTIONS_CATALOG
+
+
+def get_fca_option_description(code: str) -> Optional[str]:
+    """
+    Retourne la description officielle d'un code FCA depuis le catalogue,
+    ou None si le code n'est pas connu.
+    """
+    if not code:
+        return None
+    catalog = _load_fca_options_catalog()
+    return catalog.get(code.upper().strip())
+
+
+# Charger le catalogue au démarrage du module
+_load_fca_options_catalog()
 
 
 def clean_fca_price(raw_value: str) -> int:
@@ -864,9 +931,36 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
             continue
         
         # Chercher un code au début de la ligne
-        # Format: CODE + espace + description
+        # Format 1: CODE + espace + description (ligne complète)
+        # Format 2: CODE seul sur sa ligne (ex: MH1 sans description sur facture FCA)
         # Accepte codes de 2-6 caractères (pour 92HC1, 92HC2, DT6S98 etc.)
         match = re.match(r'^([A-Z0-9]{2,6})\s+(.+)$', line)
+        match_code_only = re.match(r'^([A-Z0-9]{2,6})\s*$', line)
+
+        # ====== CAS SPÉCIAL: Code seul sans description (ex: MH1) ======
+        # Le code apparaît seul sur sa ligne. Sans le catalogue FCA on prendrait
+        # la description de la ligne suivante par erreur (= décalage en cascade).
+        # Solution: si le code est dans notre catalogue FCA, l'ajouter avec sa
+        # description officielle. Sinon, l'ignorer (il sera peut-être récupéré
+        # dans le fallback).
+        if match_code_only and not match:
+            code_only = match_code_only.group(1)
+            if code_only in skip_codes or code_only in seen_codes:
+                continue
+            if re.match(r'^[GHJKLMNP]\d[A-Z]$', code_only):
+                continue
+            catalog_desc = get_fca_option_description(code_only)
+            if catalog_desc:
+                seen_codes.add(code_only)
+                found_options.append({
+                    "product_code": code_only,
+                    "description": f"{code_only} - {catalog_desc}"[:60],
+                    "amount": 0,
+                    "source": "catalog_code_only"
+                })
+            # Si pas dans catalogue, on n'ajoute rien (évite le décalage)
+            continue
+
         if match:
             code = match.group(1)
             description_raw = match.group(2).strip()
@@ -911,6 +1005,22 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
             
             # Vérifier que c'est un code d'option valide (pas trop long de description)
             if len(description_clean) > 2 and len(description_clean) < 80:
+                # ====== PRIORITÉ ABSOLUE: catalogue FCA (par marque/modèle) ======
+                # Si le code est dans notre catalogue, sa description est AUTORITAIRE.
+                # Cela évite le décalage code↔description quand l'OCR Google Vision
+                # a mal aligné les colonnes (ex: MH1 sans description → MARCHEPIEDS
+                # se retrouvait sur MH1 au lieu de MRU).
+                catalog_desc = get_fca_option_description(code)
+                if catalog_desc:
+                    seen_codes.add(code)
+                    found_options.append({
+                        "product_code": code,
+                        "description": f"{code} - {catalog_desc}"[:60],
+                        "amount": 0,
+                        "source": "catalog"
+                    })
+                    continue
+
                 # Vérifier si le code est connu OU si c'est un code FCA valide (2-6 chars alnum)
                 # Si le "code" n'est pas valide mais la description l'est, chercher dans description_to_code
                 real_code = code
@@ -937,8 +1047,12 @@ def parse_options(text: str) -> List[Dict[str, Any]]:
                 seen_codes.add(real_code)
                 
                 # Format: "CODE - Description"
-                formatted = f"{real_code} - {real_desc.title()}"
-                
+                # Si le code détecté correspond à une entrée du catalogue FCA, utiliser
+                # la description du catalogue (plus fiable que l'OCR brut).
+                catalog_desc_real = get_fca_option_description(real_code)
+                final_desc = catalog_desc_real if catalog_desc_real else real_desc.title()
+                formatted = f"{real_code} - {final_desc}"
+
                 found_options.append({
                     "product_code": real_code,
                     "description": formatted[:60],

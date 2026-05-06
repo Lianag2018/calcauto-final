@@ -444,33 +444,19 @@ FCA_OPTION_CODES = {
 
 def _build_trim_string(product_info: dict) -> str:
     """
-    Construit la chaîne de trim à partir des données product_info.
-    Gère les deux formats: {trim, body} et {trim, cab, drive}
+    Retourne UNIQUEMENT le trim (Sport, Big Horn, Tradesman, Limited, etc.).
+
+    Le frontend utilise un dropdown avec des trims simples. Auparavant cette
+    fonction concaténait trim + cab + drive (ex: "Sport Crew Cab 4x4") ce qui
+    ne matchait aucune option du dropdown → champ vide.
+
+    La carrosserie (cab + drive) est calculée séparément côté frontend ou via
+    le décodage VIN/NHTSA.
     """
     if not product_info:
         return ""
-    
-    trim = product_info.get("trim") or ""
-    
-    # Format 1: body direct
-    body = product_info.get("body") or ""
-    
-    # Format 2: cab + drive (fichier JSON)
-    if not body:
-        cab = product_info.get("cab") or ""
-        drive = product_info.get("drive") or ""
-        if cab or drive:
-            body = f"{cab} {drive}".strip()
-    
-    # Combiner trim et body
-    if trim and body:
-        return f"{trim} {body}"
-    elif trim:
-        return trim
-    elif body:
-        return body
-    else:
-        return ""
+    return (product_info.get("trim") or "").strip()
+
 
 def calculate_holdback(brand: str, pdco: float, parsed_holdback: float = None) -> float:
     """

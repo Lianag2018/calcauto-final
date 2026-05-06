@@ -1,0 +1,20 @@
+{
+  "_meta": {
+    "brand": "Jeep",
+    "model": "Wrangler_Gladiator",
+    "description": "Codes d'options FCA pour Jeep Wrangler et Gladiator",
+    "last_updated": "2026-05-06"
+  },
+  "options": {
+    "PGE": "Vert Sarge",
+    "E7X9": "Sièges baq dossier bas tissu",
+    "AJK": "Ensemble Commodités",
+    "DFT": "Transmission Automatique 8 Vitesses",
+    "ERC": "Moteur V6 Pentastar 3.6L",
+    "HT1": "Toit Rigide Freedom Top 3 Sect Noir",
+    "YGN": "15L Supplémentaires Essence",
+    "41G": "Rabais",
+    "2TW": "Ensemble Éclair 2TW",
+    "24W": "Ensemble Éclair 24W"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "_meta": {
+    "brand": "Jeep",
+    "model": "Grand Cherokee",
+    "description": "Codes d'options FCA pour Jeep Grand Cherokee (Limited, Overland, Summit, etc.)",
+    "last_updated": "2026-05-06"
+  },
+  "options": {
+    "PAS": "Gris de mer métallisé",
+    "FLX7": "Sièges dessus en cuir Nappa",
+    "ACX": "Ensemble finition Mopar",
+    "ADT": "Ensemble Premium",
+    "DC1": "Transmission automatique 8 vitesses",
+    "EC7": "Mot 4cyl ligne 2,0L GME Evo A/A-D",
+    "2C1": "Ensemble Éclair 2C1",
+    "2T1": "Ensemble Éclair 2T1"
+  }
+}

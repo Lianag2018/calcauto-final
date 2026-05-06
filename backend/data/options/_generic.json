@@ -1,0 +1,30 @@
+{
+  "_meta": {
+    "brand": "_generic",
+    "model": "_all",
+    "description": "Codes d'options FCA génériques utilisés sur tous les modèles. Inclut accessoires intérieur, sièges, packages communs.",
+    "last_updated": "2026-05-06"
+  },
+  "options": {
+    "PWL": "Blanc perle",
+    "PYB": "Jaune stinger",
+    "PBJ": "Bleu hydro",
+    "PFQ": "Granite cristal",
+
+    "B6W7": "Sièges en similicuir capri",
+    "CLX9": "Cuir Nappa ventilé",
+    "YLX9": "Premium Leather Bucket Seats",
+    "CU2": "Red Interior Accents",
+
+    "2BZ": "Groupe luxe",
+    "2BX": "Groupe technologie",
+    "21D": "Groupe remorquage",
+    "22B": "Groupe commodité",
+    "27A": "Groupe apparence",
+    "3CC": "Groupe 3CC",
+    "2TY": "Customer Preferred Package 2TY",
+    "22Y": "Customer Preferred Package 22Y",
+
+    "801": "Frais de Transport"
+  }
+}

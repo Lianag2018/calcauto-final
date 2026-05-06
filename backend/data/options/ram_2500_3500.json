@@ -1,0 +1,23 @@
+{
+  "_meta": {
+    "brand": "Ram",
+    "model": "2500_3500",
+    "description": "Codes d'options FCA pour Ram Heavy Duty (2500, 3500)",
+    "last_updated": "2026-05-06"
+  },
+  "options": {
+    "AHU": "Prep remorq sellette/col-de-cygne",
+    "ASH": "Édition nuit",
+    "A7H": "Ensemble équip niveau 2 Big Horn",
+    "CLF": "Tapis protect avant/arr Mopar",
+    "DFM": "Transmission auto 8 vit ZF Powerline",
+    "ETM": "6 cyl turbo diesel Cummins 6.7L",
+    "LHL": "Commandes auxiliaires tableau bord",
+    "LNC": "Feux de gabarit",
+    "MWH": "Doublures passage roue arrière",
+    "Z7H": "PNBV 4490 kg (9900 lb)",
+    "24Z": "Ensemble Éclair 24Z",
+    "MJX9": "Baquets avant tissu catégorie sup",
+    "PDN": "Gris céramique"
+  }
+}

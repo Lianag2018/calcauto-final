@@ -1,0 +1,71 @@
+{
+  "_meta": {
+    "brand": "Ram",
+    "model": "1500",
+    "description": "Codes d'options FCA pour Ram 1500 (Sport, Big Horn, Tradesman, Laramie, Limited/Longhorn, Tungsten, RHO, Rebel)",
+    "last_updated": "2026-05-06"
+  },
+  "options": {
+    "PJ7": "Canyon Lake",
+    "PXJ": "Couche nacrée cristal noir étincelant",
+    "PW7": "Blanc éclatant",
+    "PWZ": "Blanc ivoire 3 couches",
+    "PX8": "Noir diamant",
+    "PAU": "Rouge flamme",
+    "PSC": "Gris destroyer",
+    "PGG": "Gris granit cristal",
+    "PBF": "Bleu patriote",
+    "PRM": "Rouge velours",
+    "PAR": "Argent billet",
+    "PDN": "Gris céramique",
+
+    "CJX9": "Baquets avant dessus cuir",
+    "MJX9": "Baquets avant tissu catégorie sup",
+
+    "AHC": "Ensemble attelage de remorque",
+    "ABR": "Ensemble attelage de remorque",
+    "ALC": "Ensemble allure noire",
+    "A71": "Ensemble équipement de niv 1 Sport",
+    "A6H": "RHO Level 1 Equipment Group",
+    "A7H": "Ensemble équipement niv 2 Big Horn",
+
+    "CLF": "Tapis protect avant/arr Mopar",
+    "CS7": "Tri-Fold Soft Tonneau Cover",
+
+    "DFR": "Transmission automatique 8 vitesses",
+    "DFW": "Transmission automatique 8 vitesses",
+    "DMH": "Rapport de pont arrière 3,92",
+    "DSA": "Essieu arr a/différentiel autobloq",
+
+    "EFC": "3.0L I-6 HO Twin-Turbo Engine",
+    "EFH": "Hurricane biturbo 3L 6cyl ligne RD STD ess",
+    "ETM": "6 cyl turbo diesel Cummins 6.7L",
+
+    "GWJ": "Toit ouvrant panoramique 2 panneaux",
+
+    "MH1": "Steel Sport Hood",
+    "MH7": "MOPAR RHO Exterior Graphics",
+    "MMB": "MOPAR RHO Hood Graphics",
+    "MRU": "Marchepieds lat tub noirs Mopar (MD)",
+    "MTW": "MOPAR Off-Road Style Running Boards",
+
+    "ANT": "Bed Utility Group",
+
+    "YGV": "17 L supplémentaires d'essence",
+    "YGW": "20 L supplémentaires d'essence",
+
+    "2TL": "Ensemble Éclair 2TL",
+    "21L": "Ensemble Éclair 21L",
+    "2TE": "Ensemble Éclair 2TE",
+    "23E": "Ensemble Éclair 23E",
+    "24Z": "Ensemble Éclair 24Z",
+
+    "DMC": "Climatisation 3 zones",
+    "AHR": "Volant chauffant",
+    "AWL": "Système audio premium Alpine",
+    "RSD": "Roues 20 pouces",
+    "ADE": "Système de divertissement arrière",
+    "ADG": "Navigation et radio satellite",
+    "UAQ": "Groupe remorquage haute capacité"
+  }
+}
