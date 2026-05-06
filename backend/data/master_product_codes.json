@@ -1448,15 +1448,25 @@
   },
   "RUCH53": {
     "brand": "Chrysler",
+    "cab": "",
+    "code": "RUCH53",
+    "drive": "FWD",
+    "full_description": "Chrysler Pacifica Select FWD",
     "model": "Pacifica",
+    "raw": "PACIFICASELECTFWD",
     "trim": "Select",
-    "raw": "PACIFICASELECTFWD"
+    "year": "2026"
   },
   "RUFH53": {
     "brand": "Chrysler",
+    "cab": "",
+    "code": "RUFH53",
+    "drive": "AWD",
+    "full_description": "Chrysler Pacifica Select AWD",
     "model": "Pacifica",
+    "raw": "PACIFICASELECTAWD",
     "trim": "Select",
-    "raw": "PACIFICASELECTAWD"
+    "year": "2026"
   },
   "VFLL16": {
     "brand": "Ram",
@@ -1488,9 +1498,14 @@
   },
   "DT6T91": {
     "brand": "Ram",
+    "cab": "Crew Cab",
+    "code": "DT6T91",
+    "drive": "4x4",
+    "full_description": "Ram 1500 Sport Crew Cab 4x4",
     "model": "1500",
-    "trim": "",
-    "raw": "5INWB6FT4INBOX)"
+    "raw": "1500SPORTCREWCAB4X4(140INWB6FT4INBOX)",
+    "trim": "Sport",
+    "year": "2026"
   },
   "WLJP75": {
     "brand": "Jeep",
