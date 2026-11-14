@@ -497,6 +497,7 @@ export default function HomeScreen() {
         
         // Restore all calculator fields
         if (s.selectedProgram) setSelectedProgram(s.selectedProgram);
+        setLoyaltyBonusChecked(!!s.loyaltyBonusChecked);
         if (s.vehiclePrice !== undefined) setVehiclePrice(s.vehiclePrice);
         if (s.selectedTerm) setSelectedTerm(s.selectedTerm);
         if (s.selectedOption) setSelectedOption(s.selectedOption);
@@ -518,7 +519,6 @@ export default function HomeScreen() {
         if (s.manualVin !== undefined) setManualVin(s.manualVin);
         if (s.selectedYear) setSelectedYear(s.selectedYear);
         if (s.selectedBrand) setSelectedBrand(s.selectedBrand);
-        if (s.selectedModel) setSelectedModel(s.selectedModel);
         if (s.selectedInventory) setSelectedInventory(s.selectedInventory);
         
         console.log('Calculator state restored from submission');
@@ -729,11 +729,14 @@ export default function HomeScreen() {
 
   const selectProgram = (program: VehicleProgram) => {
     setSelectedProgram(program);
+    // La prime de fidélité se recoche pour chaque véhicule : jamais reportée d'un client à l'autre.
+    setLoyaltyBonusChecked(false);
     setResults(null);
   };
 
   const clearSelection = () => {
     setSelectedProgram(null);
+    setLoyaltyBonusChecked(false);
     setResults(null);
     // localResult se réinitialise automatiquement via useCalculator quand selectedProgram = null
   };
@@ -1435,7 +1438,7 @@ export default function HomeScreen() {
                 ${leaseResult.alternative ? `
                 <div class="option-card ${leaseResult.bestLease === 'alternative' ? 'winner' : ''}">
                   <div class="option-title" style="color:#0277BD;">${lang === 'fr' ? 'Taux Alternatif' : 'Alt. Rate'} ${leaseResult.bestLease === 'alternative' ? '<span class="winner-badge" style="background:#FFD700;color:#000;">✓</span>' : ''}</div>
-                  <div class="option-detail"><span>Lease Cash:</span><span>$0</span></div>
+                  <div class="option-detail"><span>Lease Cash:</span><span>${leaseResult.alternative.leaseCash > 0 ? `-${fmt(leaseResult.alternative.leaseCash)} $` : '$0'}</span></div>
                   <div class="option-detail"><span>${lang === 'fr' ? 'Taux:' : 'Rate:'}</span><span style="color:#0277BD;">${leaseResult.alternative.rate}%</span></div>
                   <div class="payment-box" style="border-top:3px solid #0277BD;">
                     <div class="payment-label">${paymentLabel}</div>
@@ -3534,6 +3537,7 @@ export default function HomeScreen() {
                             consumer_cash: selectedProgram.consumer_cash,
                             bonus_cash: (parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0) + loyaltyBonus,
                             after_tax_rebates: afterTaxRebates,
+                            alternative_consumer_cash: selectedProgram.alternative_consumer_cash || 0,
                             comparisons: [{
                               term_months: selectedTerm,
                               option1_rate: localResult.option1Rate,
@@ -3709,7 +3713,7 @@ export default function HomeScreen() {
                                 manualVin,
                                 selectedYear,
                                 selectedBrand,
-                                selectedModel,
+                                loyaltyBonusChecked,
                                 selectedInventory: selectedInventory ? {
                                   id: selectedInventory.id,
                                   vin: selectedInventory.vin,
