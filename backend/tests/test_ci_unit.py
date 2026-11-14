@@ -948,3 +948,88 @@ class TestAlternativeConsumerCash:
         assert _with_alternative_cash({"alt_consumer_cash": 2000})["alternative_consumer_cash"] == 2000
         # Une correction volontaire à 0 n'est pas écrasée par l'ancien champ.
         assert _with_alternative_cash({"alt_consumer_cash": 2000, "alternative_consumer_cash": 0})["alternative_consumer_cash"] == 0
+
+
+class TestSpecialOffersTemplate:
+    """Gabarit des promotions du mois : toute page « <Nom> – <code> » avec un
+    « Discount Type Before/After Tax Discount » devient des offres à cocher.
+    Valeurs inventées, même mise en page que les PDF."""
+
+    PAGES = [
+        "Bonus Cash Program – 2618\nBonus Cash Program Elements\nEligible Customers All\n"
+        "Discount Type After Tax Discount\n2025 FIAT 500e 2618Z9 1/L/E $900 After Tax",
+        "Loyalty Bonus Cash Program – 2646\nRam & Jeep Loyalty Bonus Cash Program Elements\n"
+        "Customers that currently own or lease a vehicle\nEligible Customers\nregistered before the 1st.\n"
+        "Discount Type After Tax Discount\n"
+        "Ram 1500 (DT) (excluding Tradesman, Express\n2026 2646Z1 1/L/E $700 After Tax\nWarlock models)\n"
+        "2026 Ram 1500 (DT) RHO 2646Z1 1/L/E $2,100 After Tax\n"
+        "Ram2500/3500 Diesel (excluding Gas models\n2026 2646Z1 1/L/E $700 After Tax\n& Chassis Cab)\n"
+        "2026 Jeep Grand Cherokee/Grand Cherokee L 2646Z1 1/L/E $700 After Tax\n"
+        "2026 Jeep Cherokee 2646Z1 1/L/E $300 After Tax",
+        "Targeted Inventory Clear-Out Cash Program – 2634Z1\nTargeted Inventory Program Elements\n"
+        "Eligible Customers All\nDiscount Type Before Tax Discount\n"
+        "(Please refer to dealerships Manifest list)\n"
+        "Ram 1500 (DT) Sport with Leather Seats\n2026 2634Z1 1/L/E $600 Before Tax\n(DT6T91/DT6T98 w/ A71)\n"
+        "Ram 1500 (DT) Rebel with Leather Seats\n2026 2634Z1 1/L/E $600 Before Tax\n(excluding DT6X98 w/ G7XR)\n"
+        "Note: Full value on the certificate must be passed on.",
+        "Summer Splash Cash – 2699Z2\nSummer Splash Elements\nEligible Customers All\n"
+        "Discount Type After Tax Discount\n2026 Ram 1500 Tradesman, Express & Warlock 2699Z2 L $450 After Tax",
+        "Finance Prime\nRate Landscapes",
+    ]
+    PROGRAMS = [
+        {'brand': 'Ram', 'model': '1500', 'trim': 'Sport, Rebel', 'year': 2026},
+        {'brand': 'Ram', 'model': '1500', 'trim': 'Tradesman, Express, Warlock', 'year': 2026},
+        {'brand': 'Ram', 'model': '1500', 'trim': 'RHO', 'year': 2026},
+        {'brand': 'Ram', 'model': '2500/3500', 'trim': 'Diesel Models (excl Chassis Cab Models)', 'year': 2026},
+        {'brand': 'Ram', 'model': '2500/3500', 'trim': 'Gas Models (excl Chassis Cab Models)', 'year': 2026},
+        {'brand': 'Jeep', 'model': 'Grand Cherokee', 'trim': 'Grand Cherokee L Altitude', 'year': 2026},
+        {'brand': 'Jeep', 'model': 'Cherokee', 'trim': 'Base', 'year': 2026},
+        {'brand': 'Ram', 'model': '1500', 'trim': 'Sport, Rebel', 'year': 2027},
+    ]
+
+    def _offers(self):
+        from services.pdfplumber_parser import read_special_offers
+        return read_special_offers(self.PAGES)
+
+    def _for(self, index):
+        from services.pdfplumber_parser import offers_for_program
+        found = offers_for_program(self._offers(), self.PROGRAMS[index], self.PROGRAMS)
+        return {o['code']: o for o in found}
+
+    def test_pages_become_offers_whatever_the_name(self):
+        offers = self._offers()
+        assert {o['code'] for o in offers} == {'2646Z1', '2634Z1', '2699Z2'}   # 2618 : déjà dans les tableaux
+        splash = next(o for o in offers if o['code'] == '2699Z2')
+        assert (splash['name'], splash['tax'], splash['amount'], splash['sale_types']) == (
+            'Summer Splash Cash', 'after', 450, ['L'])
+        targeted = [o for o in offers if o['code'] == '2634Z1']
+        assert all(o['tax'] == 'before' and o['vin_list'] for o in targeted)
+        assert targeted[0]['models'] == 'Ram 1500 (DT) Sport with Leather Seats (DT6T91/DT6T98 w/ A71)'
+
+    def test_wrapped_model_text_is_rebuilt(self):
+        loyalty = [o for o in self._offers() if o['code'] == '2646Z1']
+        assert loyalty[0]['models'] == 'Ram 1500 (DT) (excluding Tradesman, Express Warlock models)'
+        assert loyalty[2]['models'] == 'Ram 2500/3500 Diesel (excluding Gas models & Chassis Cab)'
+        assert loyalty[0]['kind'] == 'loyalty' and 'registered before' in loyalty[0]['eligible_customers']
+
+    def test_offers_follow_model_trim_and_year(self):
+        sport = self._for(0)
+        assert sport['2646Z1']['amount'] == 700 and sport['2634Z1']['tax'] == 'before'
+        assert 'Sport with Leather' in sport['2634Z1']['condition'] and 'Rebel with Leather' in sport['2634Z1']['condition']
+        assert set(self._for(1)) == {'2699Z2'}                 # version exclue de la fidélité
+        assert self._for(2)['2646Z1']['amount'] == 2100        # la ligne qui nomme le RHO l'emporte
+        assert set(self._for(3)) == {'2646Z1'} and self._for(4) == {}
+        assert self._for(5)['2646Z1']['amount'] == 700         # « Grand Cherokee », pas « Cherokee »
+        assert self._for(6)['2646Z1']['amount'] == 300
+        assert self._for(7) == {}                              # autre année-modèle
+
+    def test_table_amount_rules_for_loyalty(self):
+        from services.pdfplumber_parser import attach_special_offers
+        programs = [dict(p) for p in self.PROGRAMS[:2]]
+        programs[0].update(loyalty_bonus_cash=800, loyalty_bonus_cash_program={'code': '2646Z1', 'name': 'X'})
+        programs[1].update(loyalty_bonus_cash=250, loyalty_bonus_cash_program={'code': '2646Z1', 'name': 'Loyal'})
+        attach_special_offers(programs, self._offers())
+        first = {o['code']: o for o in programs[0]['special_offers']}
+        assert first['2646Z1']['amount'] == 800 and len(programs[0]['special_offers']) == 2
+        second = programs[1]['special_offers']
+        assert second[0]['code'] == '2646Z1' and second[0]['amount'] == 250 and second[0]['tax'] == 'after'

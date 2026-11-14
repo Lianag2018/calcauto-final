@@ -762,6 +762,213 @@ def read_bonus_rules(pages_text: List[str]) -> List[Dict]:
     return rules
 
 
+# ═══════════════════════════════════════════════════════════════
+# GABARIT DES PROMOTIONS DU MOIS (fidélité, conquête, liquidation ciblée,
+# vendredi fou…). Chaque page « <Nom> – <code> » du PDF qui annonce un
+# « Discount Type Before/After Tax Discount » devient une liste d'offres que
+# le vendeur coche à l'écran ; rien ici ne dépend du nom de la promotion.
+# ═══════════════════════════════════════════════════════════════
+_OFFER_TITLE = re.compile(r'^\s*(.+?)\s*[–—-]\s*(\d{4}[A-Z0-9]*)\s*$')
+_OFFER_TAX = re.compile(r'Discount Type\s+(Before|After)\s+Tax', re.I)
+_OFFER_ROW = re.compile(
+    r'^(20\d\d(?:\s*/\s*20\d\d)*)\s*(.*?)\s*\b(\d{4}[A-Z][A-Z0-9]*)\s+([1LE](?:\s*/\s*[1LE])*)\s+'
+    r'\$([\d,]+)(?:\s+\$[\d,]+)?\s+(Before|After)\s+Tax\s*$', re.I)
+_OFFER_BRANDS = ('ram', 'jeep', 'dodge', 'chrysler', 'fiat')
+# Familles déjà portées par les tableaux du PDF : 2618 (prime pour tous et
+# diesel sans frais, comptés dans les colonnes) et 2619 (rabais en % du PDSF).
+_OFFER_FAMILIES_IN_TABLES = ('2618', '2619')
+_OFFER_NOT_MODEL = re.compile(r'^(Note|NOTE|Each|EXAMPLE|Example|Dealer|•|\d+\.|\w+ 20\d\d For Internal)')
+
+
+def _starts_with_brand(line: str) -> bool:
+    return (line or '').strip().lower().startswith(_OFFER_BRANDS)
+
+
+def read_special_offers(pages_text: List[str]) -> List[Dict]:
+    """Toutes les promotions à cocher annoncées dans les pages de règles.
+
+    Une offre par ligne de tableau : code, nom, montant, avant ou après taxes,
+    années, texte des modèles admissibles (tel qu'écrit), types de vente,
+    clients admissibles, et si une liste de NIV du concessionnaire s'applique."""
+    offers = []
+    for text in pages_text:
+        lines = [l.strip() for l in (text or '').split('\n')]
+        if len(lines) < 3:
+            continue
+        title = _OFFER_TITLE.match(lines[0])
+        tax = _OFFER_TAX.search(text or '')
+        if not title or not tax:
+            continue
+        family = title.group(2)[:4]
+        if family in _OFFER_FAMILIES_IN_TABLES:
+            continue
+        short = re.sub(r'\s+Program$', '', title.group(1)).strip()
+        second = re.sub(r'\s*(Program\s+)?Elements\s*$', '', lines[1]) if re.search(r'Elements\s*$', lines[1]) else ''
+        name = second if len(second) > len(short) else short
+        lowered = (title.group(1) + ' ' + second).lower()
+        kind = 'loyalty' if 'loyalty' in lowered else 'conquest' if 'conquest' in lowered else 'other'
+        eligible = ''
+        for i, line in enumerate(lines):
+            if line.startswith('Eligible Customers'):
+                rest = line[len('Eligible Customers'):].strip()
+                around = [lines[i - 1] if i and not rest else '', rest, lines[i + 1] if not rest and i + 1 < len(lines) else '']
+                eligible = ' '.join(x for x in around if x).strip()
+                break
+        vin_list = bool(re.search(r'Manifest', text or '', re.I))
+        used = set()
+        for i, line in enumerate(lines):
+            row = _OFFER_ROW.match(line)
+            if not row:
+                continue
+            parts = [row.group(2).strip()]
+            prev = lines[i - 1] if i else ''
+            if (i - 1) not in used and _starts_with_brand(prev) and not _OFFER_ROW.match(prev):
+                parts.insert(0, prev)
+                used.add(i - 1)
+            nxt = lines[i + 1] if i + 1 < len(lines) else ''
+            joined = ' '.join(x for x in parts if x)
+            open_paren = joined.count('(') > joined.count(')')
+            continues = (open_paren or nxt.startswith(('(', '&'))
+                         or (len(parts) == 2 and not parts[1] and not _starts_with_brand(nxt)))
+            if (nxt and continues and not _OFFER_ROW.match(nxt) and not _OFFER_NOT_MODEL.match(nxt)
+                    and len(nxt) < 90):
+                parts.append(nxt)
+                used.add(i + 1)
+            models = re.sub(r'\s+', ' ', ' '.join(x for x in parts if x)).strip()
+            models = re.sub(r'^(Ram)(\d)', r'\1 \2', models)
+            offers.append({
+                'code': row.group(3).upper(),
+                'name': name,
+                'kind': kind,
+                'tax': row.group(6).lower(),
+                'amount': int(row.group(5).replace(',', '')),
+                'years': sorted({int(y) for y in re.findall(r'20\d\d', row.group(1))}),
+                'models': models,
+                'sale_types': [t.upper() for t in re.findall(r'[1LE]', row.group(4), re.I)],
+                'eligible_customers': eligible,
+                'vin_list': vin_list,
+            })
+    return offers
+
+
+_OFFER_STOP = {'models', 'model', 'with', 'and', 'the', 'excl', 'excluding', 'excludes', 'non', 'all'}
+
+
+def _trim_words(text: str) -> set:
+    return {w for w in re.findall(r'[a-z0-9]*[a-z][a-z0-9]*', (text or '').lower())
+            if len(w) >= 3 and w not in _OFFER_STOP}
+
+
+def _split_exclusions(text: str):
+    """(texte retenu, texte exclu) : ce qui suit « excl… » ou « non » dans une parenthèse est exclu."""
+    excluded = []
+
+    def take(match):
+        inner = match.group(1)
+        cut = re.search(r'\b(excl\w*|non)\b', inner, re.I)
+        if cut:
+            excluded.append(inner[cut.end():])
+            return ' ' + inner[:cut.start()] + ' '
+        return ' ' + inner + ' '
+    kept = text or ''
+    for _ in range(4):  # parenthèses imbriquées
+        newer = re.sub(r'\(([^()]*)\)', take, kept)
+        if newer == kept:
+            break
+        kept = newer
+    return kept, ' '.join(excluded)
+
+
+def offers_for_program(offers: List[Dict], program: Dict, programs: List[Dict]) -> List[Dict]:
+    """Offres du mois qui visent ce véhicule (marque, année, modèle, version).
+
+    Le texte de la ligne reste dans l'offre (« condition ») : c'est le vendeur
+    qui juge l'admissibilité et coche. Pour un même code, la ligne qui nomme la
+    version l'emporte sur la ligne générale."""
+    brand = (program.get('brand') or '').lower()
+    year = program.get('year')
+    model = (program.get('model') or '').lower()
+    if not brand or not model:
+        return []
+    same_brand = [p for p in programs if (p.get('brand') or '').lower() == brand]
+    model_names = sorted({m for p in same_brand for m in
+                          [(p.get('model') or '').lower()] + (p.get('model') or '').lower().split('/') if m},
+                         key=len, reverse=True)
+    vocabulary = set()
+    for p in same_brand:
+        vocabulary |= _trim_words(_split_exclusions(p.get('trim') or '')[0])
+    own_models = {model} | set(model.split('/'))
+    own_trim = _trim_words(_split_exclusions(program.get('trim') or '')[0]) & vocabulary
+    chosen: Dict[str, tuple] = {}
+    for offer in offers:
+        if year not in offer['years']:
+            continue
+        text = offer['models'].lower()
+        if not text.startswith(brand):
+            continue
+        kept, excluded = _split_exclusions(text[len(brand):])
+        # Modèles nommés : le plus long nom gagne (« grand cherokee » avant « cherokee »)
+        named, rest = set(), ' ' + re.sub(r'\s+', ' ', kept) + ' '
+        for name in model_names:
+            pattern = r'(?<![a-z0-9])' + re.escape(name) + r'(?![a-z0-9])'
+            if re.search(pattern, rest):
+                named.add(name)
+                rest = re.sub(pattern, ' ', rest)
+        if not (named & own_models):
+            continue
+        include = _trim_words(rest) & vocabulary
+        exclude = _trim_words(excluded) & vocabulary
+        if include and not (own_trim & include):
+            continue
+        if own_trim and own_trim <= exclude:
+            continue
+        rank = (1 if include else 0, offer['amount'])
+        if offer['code'] in chosen and rank == chosen[offer['code']][0]:
+            # Deux lignes du même programme, même montant (« Sport … » et « Rebel … ») : les deux conditions
+            if offer['models'] not in chosen[offer['code']][1]['condition']:
+                chosen[offer['code']][1]['condition'] += ' / ' + offer['models']
+            continue
+        if offer['code'] not in chosen or rank > chosen[offer['code']][0]:
+            chosen[offer['code']] = (rank, {
+                'code': offer['code'], 'name': offer['name'], 'kind': offer['kind'],
+                'tax': offer['tax'], 'amount': offer['amount'], 'condition': offer['models'],
+                'sale_types': offer['sale_types'], 'eligible_customers': offer['eligible_customers'],
+                'vin_list': offer['vin_list'],
+            })
+    return [value for _, value in chosen.values()]
+
+
+def attach_special_offers(programs: List[Dict], offers: List[Dict]) -> None:
+    """Inscrit `special_offers` sur chaque programme. La prime de fidélité lue
+    dans la colonne « Bonus Cash » du tableau fait foi pour son montant."""
+    for program in programs:
+        found = offers_for_program(offers, program, programs)
+        loyalty = program.get('loyalty_bonus_cash') or 0
+        named = program.get('loyalty_bonus_cash_program') or {}
+        if loyalty:
+            same = next((o for o in found if o['code'] == named.get('code')), None) or \
+                next((o for o in found if o['kind'] in ('loyalty', 'conquest') and o['tax'] == 'after'), None)
+            if same:
+                same['amount'] = int(loyalty)
+            else:
+                found.insert(0, {
+                    'code': named.get('code') or '', 'name': named.get('name') or 'Loyalty Bonus Cash',
+                    'kind': 'loyalty', 'tax': 'after', 'amount': int(loyalty), 'condition': '',
+                    'sale_types': ['1', 'L', 'E'], 'eligible_customers': '', 'vin_list': False,
+                })
+        program['special_offers'] = found
+
+
+def _special_offers_of(pdf_content: bytes) -> List[Dict]:
+    try:
+        with pdfplumber.open(BytesIO(pdf_content)) as pdf:
+            texts = [page.extract_text() or '' for page in pdf.pages[:18]]
+    except Exception as e:
+        logger.warning(f"[RetailParser] pages des promotions illisibles: {e}")
+        return []
+    return read_special_offers(texts)
+
+
 def _bonus_rules_of(pdf_content: bytes) -> List[Dict]:
     import hashlib
     digest = hashlib.sha256(pdf_content).hexdigest()
@@ -845,6 +1052,7 @@ def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) ->
             named = bonus_program(rules, brand, row['model_year'], bonus, loyalty)
             if named:
                 programs[-1]['loyalty_bonus_cash_program' if loyalty else 'bonus_cash_program'] = named
+    attach_special_offers(programs, _special_offers_of(pdf_content))
     logger.info(f"[RetailParser] Lecture par position : {len(programs)} programmes, "
                 f"années {sorted({p['year'] for p in programs})}")
     return programs

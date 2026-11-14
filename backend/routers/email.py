@@ -197,6 +197,11 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
             {'label': html.escape(str(r.get('label') or 'Bonus Cash')), 'amount': r.get('amount') or 0}
             for r in (calc.get('after_tax_rebates') or []) if (r.get('amount') or 0) > 0
         ] or ([{'label': 'Bonus Cash', 'amount': bonus_cash}] if bonus_cash and bonus_cash > 0 else [])
+        # Promotions avant taxes cochées par le vendeur (liquidation ciblée…), une ligne chacune
+        before_tax_rebates = [
+            {'label': html.escape(str(r.get('label') or 'Rabais')), 'amount': r.get('amount') or 0}
+            for r in (calc.get('before_tax_rebates') or []) if (r.get('amount') or 0) > 0
+        ]
         # Rabais avant taxes de l'option 2 (Alternative Consumer Cash)
         alt_consumer_cash = calc.get('alternative_consumer_cash', 0) or 0
         
@@ -355,6 +360,7 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
                         <table class="info-table">
                             <tr><td>Prix du véhicule</td><td>{fmt(request.vehicle_price)} $</td></tr>
                             {f"<tr><td>Rabais (avant taxes)</td><td style='color: #1a5f4a;'>-{fmt(consumer_cash)} $</td></tr>" if consumer_cash > 0 else ""}
+                            {"".join(f"<tr><td>{r['label']} (avant taxes)</td><td style='color: #1a5f4a;'>-{fmt(r['amount'])} $</td></tr>" for r in before_tax_rebates)}
                             {"".join(f"<tr><td>{r['label']} (après taxes)</td><td style='color: #1a5f4a;'>-{fmt(r['amount'])} $</td></tr>" for r in after_tax_rebates)}
                             {f"<tr><td>Frais dossier</td><td>{fmt2(frais_dossier)} $</td></tr>" if frais_dossier > 0 else ""}
                             {f"<tr><td>Taxe pneus</td><td>{fmt(taxe_pneus)} $</td></tr>" if taxe_pneus > 0 else ""}

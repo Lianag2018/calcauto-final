@@ -34,7 +34,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import frTranslations from '../../locales/fr.json';
 import enTranslations from '../../locales/en.json';
 // Logique de calcul extraite
-import { useCalculator, resolveBonus, getRateForTerm, formatCurrency, formatCurrencyDecimal } from '../../hooks/useCalculator';
+import { useCalculator, resolveBonus, offersOf, offerKey, checkedOffersTotal, getRateForTerm, formatCurrency, formatCurrencyDecimal } from '../../hooks/useCalculator';
 import { 
   computeLeasePayment, computeLeaseForGrid, leaseCashFor, 
   findResidualVehicle, findRateEntry, getKmAdjustment,
@@ -154,7 +154,8 @@ export default function HomeScreen() {
   // Loyalty rate toggle (from event metadata)
   const [loyaltyChecked, setLoyaltyChecked] = useState(false);
   // Prime de fidélité (après taxes) : le vendeur coche quand le client y a droit
-  const [loyaltyBonusChecked, setLoyaltyBonusChecked] = useState(false);
+  // Promotions du mois cochées pour ce client (fidélité, liquidation ciblée, vendredi fou…)
+  const [checkedOffers, setCheckedOffers] = useState<Record<string, boolean>>({});
   
   // 90 days deferred payment toggle
   const [deferredPayment, setDeferredPayment] = useState(false);
@@ -300,7 +301,16 @@ export default function HomeScreen() {
   const leaseKmOptions = [12000, 18000, 24000];
 
   // Calcul de financement (logique extraite dans useCalculator)
-  const loyaltyBonus = loyaltyBonusChecked ? (selectedProgram?.loyalty_bonus_cash || 0) : 0;
+  const specialOffers = offersOf(selectedProgram);
+  // Après taxes : déduit du solde, à part du comptant. Avant taxes : réduit le prix taxable.
+  const loyaltyBonus = checkedOffersTotal(specialOffers, checkedOffers, 'after', 'E');
+  const offersBeforeTax = checkedOffersTotal(specialOffers, checkedOffers, 'before', 'E');
+  const leaseOffersAfterTax = checkedOffersTotal(specialOffers, checkedOffers, 'after', 'L');
+  const leaseOffersBeforeTax = checkedOffersTotal(specialOffers, checkedOffers, 'before', 'L');
+  const offerLabel = (o: any) => `${o.name}${o.code ? ` — ${o.code}` : ''}`;
+  const beforeTaxRebates: { label: string; amount: number }[] = specialOffers
+    .filter((o: any) => o.tax === 'before' && checkedOffers[offerKey(o)])
+    .map((o: any) => ({ label: offerLabel(o), amount: o.amount }));
   // Rabais après taxes, un par programme : inscrits à part du comptant réel du client,
   // avec le nom et le code du programme (« … Loyalty Bonus Cash — 2646G1 »).
   const rebateName = (fallback: string, program?: { code: string; name: string } | null) =>
@@ -310,10 +320,9 @@ export default function HomeScreen() {
   const bonusIsTyped = programBonus !== (selectedProgram?.bonus_cash || 0);
   const afterTaxRebates: { label: string; amount: number }[] = [
     ...(programBonus > 0 ? [{ label: bonusIsTyped ? (lang === 'fr' ? 'Bonus Cash (montant saisi)' : 'Bonus Cash (entered amount)') : rebateName('Bonus Cash', selectedProgram?.bonus_cash_program), amount: programBonus }] : []),
-    ...(loyaltyBonus > 0 ? [{
-      label: rebateName(lang === 'fr' ? 'Prime de fidélité' : 'Loyalty bonus', selectedProgram?.loyalty_bonus_cash_program),
-      amount: loyaltyBonus,
-    }] : []),
+    ...specialOffers
+      .filter((o: any) => o.tax === 'after' && checkedOffers[offerKey(o)])
+      .map((o: any) => ({ label: offerLabel(o), amount: o.amount })),
   ];
   const activeLoyaltyRate = loyaltyChecked && programMeta?.loyalty_rate ? programMeta.loyalty_rate : 0;
   const { localResult } = useCalculator({
@@ -331,6 +340,7 @@ export default function HomeScreen() {
     rabaisConcess: leaseRabaisConcess,
     loyaltyRate: activeLoyaltyRate,
     loyaltyBonus,
+    offersBeforeTax,
     deferredPayment,
     soldeReporteLocation,
   });
@@ -499,7 +509,7 @@ export default function HomeScreen() {
         
         // Restore all calculator fields
         if (s.selectedProgram) setSelectedProgram(s.selectedProgram);
-        setLoyaltyBonusChecked(!!s.loyaltyBonusChecked);
+        setCheckedOffers(s.checkedOffers && typeof s.checkedOffers === 'object' ? s.checkedOffers : {});
         if (s.vehiclePrice !== undefined) setVehiclePrice(s.vehiclePrice);
         if (s.selectedTerm) setSelectedTerm(s.selectedTerm);
         if (s.selectedOption) setSelectedOption(s.selectedOption);
@@ -573,8 +583,9 @@ export default function HomeScreen() {
     const termKey = String(leaseTerm);
     const standardRate = rateEntry?.standard_rates?.[termKey] ?? null;
     const alternativeRate = rateEntry?.alternative_rates?.[termKey] ?? null;
-    const leaseCashVal = leaseCashFor(rateEntry, 'standard');
-    const altLeaseCashVal = leaseCashFor(rateEntry, 'alternative');
+    // Les promotions avant taxes cochées s'ajoutent au Lease Cash des deux options
+    const leaseCashVal = leaseCashFor(rateEntry, 'standard') + leaseOffersBeforeTax;
+    const altLeaseCashVal = leaseCashFor(rateEntry, 'alternative') + leaseOffersBeforeTax;
 
     // km adjustment + residual
     const kmAdj = leaseResiduals.km_adjustments?.adjustments;
@@ -583,7 +594,7 @@ export default function HomeScreen() {
     const pdsf = parseFloat(leasePdsf) || parseFloat(vehiclePrice);
 
     // Shared inputs for both options
-    const bonusCash = programBonus + loyaltyBonus;
+    const bonusCash = programBonus + leaseOffersAfterTax;
     const comptant = parseFloat(comptantTxInclus) || 0;
     const tradeVal = parseFloat(prixEchange) || 0;
     const tradeOwed = parseFloat(montantDuEchange) || 0;
@@ -685,7 +696,7 @@ export default function HomeScreen() {
     setBestLeaseOption(bestOption);
     setLeaseAnalysisGrid(grid);
   }, [showLease, selectedProgram, vehiclePrice, leaseTerm, leaseKmPerYear, leaseResiduals, leaseRates, residualVehicle, 
-      programBonus, loyaltyBonus, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, leasePdsf, leaseSoldeReporte, leaseRabaisConcess, selectedInventory?.body_style]);
+      programBonus, leaseOffersAfterTax, leaseOffersBeforeTax, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, leasePdsf, leaseSoldeReporte, leaseRabaisConcess, selectedInventory?.body_style]);
 
   // Filter programs when year or brand changes
   useEffect(() => {
@@ -732,13 +743,13 @@ export default function HomeScreen() {
   const selectProgram = (program: VehicleProgram) => {
     setSelectedProgram(program);
     // La prime de fidélité se recoche pour chaque véhicule : jamais reportée d'un client à l'autre.
-    setLoyaltyBonusChecked(false);
+    setCheckedOffers({});
     setResults(null);
   };
 
   const clearSelection = () => {
     setSelectedProgram(null);
-    setLoyaltyBonusChecked(false);
+    setCheckedOffers({});
     setResults(null);
     // localResult se réinitialise automatiquement via useCalculator quand selectedProgram = null
   };
@@ -927,6 +938,7 @@ export default function HomeScreen() {
               <table style="width:100%;font-size:12px;border-collapse:collapse;">
                 <tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Prix</td><td style="padding:4px 0;text-align:right;font-weight:600;">${fmt(price)} $</td></tr>
                 ${consumerCash > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Rabais</td><td style="padding:4px 0;text-align:right;color:#1a5f4a;font-weight:600;">-${fmt(consumerCash)} $</td></tr>` : ''}
+                ${beforeTaxRebates.map(r => `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">${r.label} ${lang === 'fr' ? '(avant taxes)' : '(before tax)'}</td><td style="padding:4px 0;text-align:right;color:#1a5f4a;font-weight:600;">-${fmt(r.amount)} $</td></tr>`).join('')}
                 ${afterTaxRebates.map(r => `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">${r.label} ${lang === 'fr' ? '(après taxes)' : '(after tax)'}</td><td style="padding:4px 0;text-align:right;color:#1a5f4a;font-weight:600;">-${fmt(r.amount)} $</td></tr>`).join('')}
                 ${dossier > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Frais dossier</td><td style="padding:4px 0;text-align:right;">${fmt(dossier)} $</td></tr>` : ''}
                 ${pneus > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Taxe pneus</td><td style="padding:4px 0;text-align:right;">${fmt(pneus)} $</td></tr>` : ''}
@@ -1336,6 +1348,7 @@ export default function HomeScreen() {
               <table class="info-table">
                 <tr><td>${lang === 'fr' ? 'Prix du véhicule' : 'Vehicle price'}</td><td>${fmt(price)} $</td></tr>
                 ${consumerCash > 0 ? `<tr><td>${lang === 'fr' ? 'Rabais (avant taxes)' : 'Rebate (before tax)'}</td><td style="color:#2E7D32;">-${fmt(consumerCash)} $</td></tr>` : ''}
+                ${beforeTaxRebates.map(r => `<tr><td>${r.label} ${lang === 'fr' ? '(avant taxes)' : '(before tax)'}</td><td style="color:#2E7D32;">-${fmt(r.amount)} $</td></tr>`).join('')}
                 ${afterTaxRebates.map(r => `<tr><td>${r.label} ${lang === 'fr' ? '(après taxes)' : '(after tax)'}</td><td style="color:#2E7D32;">-${fmt(r.amount)} $</td></tr>`).join('')}
                 ${dossier > 0 ? `<tr><td>${lang === 'fr' ? 'Frais dossier' : 'Admin fees'}</td><td>${fmt2(dossier)} $</td></tr>` : ''}
                 ${pneus > 0 ? `<tr><td>${lang === 'fr' ? 'Taxe pneus' : 'Tire tax'}</td><td>${fmt(pneus)} $</td></tr>` : ''}
@@ -1919,19 +1932,31 @@ export default function HomeScreen() {
                       <Text style={styles.rebateValueBonus}>{formatCurrency(selectedProgram.bonus_cash)}</Text>
                     </View>
                   )}
-                  {(selectedProgram.loyalty_bonus_cash || 0) > 0 && (
-                    <TouchableOpacity
-                      style={styles.rebateItem}
-                      onPress={() => setLoyaltyBonusChecked(prev => !prev)}
-                      testID="loyalty-bonus-toggle"
-                    >
-                      <Ionicons name={loyaltyBonusChecked ? 'checkbox' : 'square-outline'} size={18} color="#FFD700" />
-                      <Text style={styles.rebateLabelBonus}>
-                        {rebateName(lang === 'fr' ? 'Client fidèle — prime' : 'Loyalty bonus', selectedProgram.loyalty_bonus_cash_program)} ({t.results.afterTax}):
-                      </Text>
-                      <Text style={styles.rebateValueBonus}>{formatCurrency(selectedProgram.loyalty_bonus_cash || 0)}</Text>
-                    </TouchableOpacity>
-                  )}
+                  {specialOffers.map((offer: any) => {
+                    const key = offerKey(offer);
+                    const isChecked = !!checkedOffers[key];
+                    return (
+                      <TouchableOpacity
+                        key={key}
+                        style={styles.rebateItem}
+                        onPress={() => setCheckedOffers(prev => ({ ...prev, [key]: !prev[key] }))}
+                        testID={offer.kind === 'loyalty' ? 'loyalty-bonus-toggle' : `offer-toggle-${offer.code}`}
+                      >
+                        <Ionicons name={isChecked ? 'checkbox' : 'square-outline'} size={18} color="#FFD700" />
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.rebateLabelBonus}>
+                            {offerLabel(offer)} ({offer.tax === 'before' ? t.results.beforeTax : t.results.afterTax}):
+                          </Text>
+                          {(offer.condition || offer.vin_list) ? (
+                            <Text style={{ color: '#999', fontSize: 11 }}>
+                              {offer.condition}{offer.vin_list ? (lang === 'fr' ? ' · véhicule sur la liste de NIV' : ' · VIN on the manifest list') : ''}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <Text style={styles.rebateValueBonus}>{formatCurrency(offer.amount)}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </View>
             )}
@@ -2603,6 +2628,15 @@ export default function HomeScreen() {
                 </View>
               </View>
 
+              {/* Promotions avant taxes cochées */}
+              {beforeTaxRebates.map(rebate => (
+                <View key={rebate.label} style={styles.bonusCashNote}>
+                  <Ionicons name="information-circle" size={16} color="#FFD700" />
+                  <Text style={styles.bonusCashNoteText}>
+                    {rebate.label} : {formatCurrency(rebate.amount)} {lang === 'fr' ? 'déduit avant taxes' : 'deducted before tax'}
+                  </Text>
+                </View>
+              ))}
               {/* Bonus Cash Note */}
               {afterTaxRebates.map(rebate => (
                 <View key={rebate.label} style={styles.bonusCashNote}>
@@ -3537,6 +3571,7 @@ export default function HomeScreen() {
                             consumer_cash: selectedProgram.consumer_cash,
                             bonus_cash: programBonus + loyaltyBonus,
                             after_tax_rebates: afterTaxRebates,
+                            before_tax_rebates: beforeTaxRebates,
                             alternative_consumer_cash: selectedProgram.alternative_consumer_cash || 0,
                             comparisons: [{
                               term_months: selectedTerm,
@@ -3714,7 +3749,7 @@ export default function HomeScreen() {
                                 manualVin,
                                 selectedYear,
                                 selectedBrand,
-                                loyaltyBonusChecked,
+                                checkedOffers,
                                 selectedInventory: selectedInventory ? {
                                   id: selectedInventory.id,
                                   vin: selectedInventory.vin,

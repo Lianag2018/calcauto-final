@@ -59,3 +59,32 @@ describe('Ligne de location d\'un programme d\'achat', () => {
     expect(findRateEntry(rows, 'Ram', 'Chassis Cab', '')).toBeNull();
   });
 });
+
+describe('promotions du mois à cocher', () => {
+  const { offersOf, offerKey, checkedOffersTotal } = require('../hooks/useCalculator');
+  const offers = [
+    { code: '2646Z1', name: 'Loyalty', tax: 'after', amount: 700, sale_types: ['1', 'L', 'E'] },
+    { code: '2634Z1', name: 'Targeted', tax: 'before', amount: 600, sale_types: ['1', 'L', 'E'] },
+    { code: '2699Z2', name: 'Lease only', tax: 'after', amount: 450, sale_types: ['L'] },
+  ];
+  const all = Object.fromEntries(offers.map(o => [offerKey(o), true]));
+
+  test('rien de coché : rien de déduit', () => {
+    expect(checkedOffersTotal(offers, {}, 'after', 'E')).toBe(0);
+    expect(checkedOffersTotal(offers, {}, 'before', 'L')).toBe(0);
+  });
+
+  test('chaque promotion va à sa place : avant ou après taxes, achat ou location', () => {
+    expect(checkedOffersTotal(offers, all, 'after', 'E')).toBe(700);
+    expect(checkedOffersTotal(offers, all, 'before', 'E')).toBe(600);
+    expect(checkedOffersTotal(offers, all, 'after', 'L')).toBe(1150);
+    expect(checkedOffersTotal(offers, all, 'before', 'L')).toBe(600);
+  });
+
+  test('anciennes données : la prime de fidélité seule devient une case', () => {
+    const legacy = offersOf({ loyalty_bonus_cash: 1500, loyalty_bonus_cash_program: { code: '2646M1', name: 'Loyal' } });
+    expect(legacy).toHaveLength(1);
+    expect(legacy[0]).toMatchObject({ code: '2646M1', tax: 'after', amount: 1500 });
+    expect(offersOf({ special_offers: [], loyalty_bonus_cash: 1500 })).toEqual([]);
+  });
+});
