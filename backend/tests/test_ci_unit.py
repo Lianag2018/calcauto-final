@@ -903,7 +903,9 @@ class TestAlternativeConsumerCash:
         assert source.count('"alternative_consumer_cash": prog.get("alt_consumer_cash", 0) or 0') == 2
         assert '"alt_consumer_cash": prog.get(' not in source
         # Le crédit de livraison n'est jamais accordé : il n'est pas enregistré.
-        assert '"delivery_credit"' not in source
+        assert '"delivery_credit": prog.get(' not in source
+        # L'étape « Enregistrer » de l'assistant reçoit les lignes du lecteur : même renommage.
+        assert 'legacy_alt = prog_data.pop("alt_consumer_cash", None)' in source
 
     def test_location_sans_credit_de_livraison(self, monkeypatch):
         from services.pdfplumber_parser import parse_sci_lease
@@ -931,3 +933,18 @@ class TestAlternativeConsumerCash:
         # Une prime sous condition ne prend pas le nom du programme pour tous.
         assert bonus_program(rules, "Jeep", 2026, 1850, False) is None
         assert bonus_program(rules, "Jeep", 2026, 0, True) is None
+
+    def test_code_de_programme_d_une_autre_annee(self):
+        from services.pdfplumber_parser import read_bonus_rules
+        (rule,) = read_bonus_rules(["Loyalty Bonus Cash – 2746\nJeep Loyalty Bonus Cash Program Elements\n"
+                                    "2027 Jeep Wrangler 2746A1 1/L/E $1,850 After Tax"])
+        assert (rule["code"], rule["kind"], rule["amount"]) == ("2746A1", "loyalty", 1850)
+        assert rule["name"] == "Jeep Loyalty Bonus Cash"
+
+    def test_ancien_document_relu_avec_le_bon_nom(self):
+        pytest.importorskip("fastapi")
+        pytest.importorskip("motor")
+        from routers.programs import _with_alternative_cash
+        assert _with_alternative_cash({"alt_consumer_cash": 2000})["alternative_consumer_cash"] == 2000
+        # Une correction volontaire à 0 n'est pas écrasée par l'ancien champ.
+        assert _with_alternative_cash({"alt_consumer_cash": 2000, "alternative_consumer_cash": 0})["alternative_consumer_cash"] == 0

@@ -1658,6 +1658,12 @@ async def save_programs(request: SaveProgramsRequest):
     default_rates = {"rate_36": 4.99, "rate_48": 4.99, "rate_60": 4.99, "rate_72": 4.99, "rate_84": 4.99, "rate_96": 4.99}
     
     for prog_data in request.programs:
+        # Les lignes du lecteur portent « alt_consumer_cash » ; le modèle lit
+        # « alternative_consumer_cash » (rabais avant taxes de l'option 2).
+        legacy_alt = prog_data.pop("alt_consumer_cash", None)
+        if not prog_data.get("alternative_consumer_cash") and legacy_alt:
+            prog_data["alternative_consumer_cash"] = legacy_alt
+        prog_data.pop("delivery_credit", None)  # jamais accordé
         # Skip invalid entries (missing brand/model)
         if not prog_data.get("brand") or not prog_data.get("model"):
             skipped += 1

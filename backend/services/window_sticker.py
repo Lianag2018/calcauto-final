@@ -145,7 +145,7 @@ def generate_lease_email_html(lease_data, freq, freq_label, fmt, fmt2):
         alt_card = f"""
         <div style="flex:1; border:2px solid #ddd; border-radius:8px; padding:15px; background:#fafafa; {alt_winner}">
             <div style="font-size:15px; font-weight:bold; color:#0277BD; margin-bottom:8px;">Taux Alternatif {alt_badge}</div>
-            <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span style="color:#666;">Lease Cash:</span><span>$0</span></div>
+            <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span style="color:#666;">Lease Cash:</span><span>{('-' + fmt(round(alternative.get('lease_cash') or 0)) + ' $') if (alternative.get('lease_cash') or 0) > 0 else '$0'}</span></div>
             <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;"><span style="color:#666;">Taux:</span><span style="color:#0277BD; font-weight:600;">{alternative.get('rate', 0)}%</span></div>
             <div style="background:#f0f7ff; border-radius:6px; padding:12px; text-align:center; margin-top:10px; border-top:3px solid #0277BD;">
                 <div style="font-size:12px; color:#666;">{freq_label}</div>
