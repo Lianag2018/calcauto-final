@@ -723,6 +723,67 @@ def _finance_rates(rates: Optional[Dict]) -> Optional[Dict]:
     return {f'rate_{term}': rates.get(str(term)) for term in (36, 48, 60, 72, 84, 96)}
 
 
+_BONUS_RULES_TITLE = re.compile(r'\s*((?:[A-Za-z]+ )?)Bonus Cash Program\s*[–-]\s*(\d{4})')
+_BONUS_RULES_ROW = re.compile(
+    r'^(20\d\d(?:\s*/\s*20\d\d)*)\s+(.*?)\s*\b(26\d\d[A-Z0-9]+)\s+\S+\s+\$([\d,]+)')
+_BONUS_RULES_CACHE: Dict[str, List[Dict]] = {}
+
+
+def read_bonus_rules(pages_text: List[str]) -> List[Dict]:
+    """Pages de règles « Bonus Cash Program – 2618 » (pour tous les clients) et
+    « Loyalty / Conquest Bonus Cash Program – 2646 » (sous condition).
+
+    Les deux programmes partagent la même colonne « Bonus Cash » des tableaux ;
+    seules ces pages disent à qui la prime s'adresse."""
+    rules = []
+    for text in pages_text:
+        title = _BONUS_RULES_TITLE.match(text or '')
+        if not title:
+            continue
+        kind = title.group(1).strip().lower() or 'all'
+        for line in text.split('\n'):
+            row = _BONUS_RULES_ROW.match(line.strip())
+            if row:
+                rules.append({
+                    'kind': kind,
+                    'program': title.group(2),
+                    'years': {int(y) for y in re.findall(r'20\d\d', row.group(1))},
+                    'models': row.group(2).strip().lower(),
+                    'amount': int(row.group(4).replace(',', '')),
+                })
+    return rules
+
+
+def _bonus_rules_of(pdf_content: bytes) -> List[Dict]:
+    import hashlib
+    digest = hashlib.sha256(pdf_content).hexdigest()
+    if digest not in _BONUS_RULES_CACHE:
+        try:
+            with pdfplumber.open(BytesIO(pdf_content)) as pdf:
+                texts = [page.extract_text() or '' for page in pdf.pages[:16]]
+        except Exception as e:
+            # Sans pages de règles lisibles, les primes restent telles que lues
+            logger.warning(f"[RetailParser] pages de règles des primes illisibles: {e}")
+            texts = []
+        _BONUS_RULES_CACHE.clear()
+        _BONUS_RULES_CACHE[digest] = read_bonus_rules(texts)
+    return _BONUS_RULES_CACHE[digest]
+
+
+def bonus_condition(rules: List[Dict], brand: str, year: int, amount: float) -> str:
+    """'' si la prime vaut pour tous ; sinon 'loyalty', 'conquest'… quand seule
+    une page de règles sous condition annonce ce montant pour cette marque."""
+    if not amount or not rules:
+        return ''
+
+    def announced(rule):
+        return (rule['amount'] == int(amount) and year in rule['years']
+                and (not rule['models'] or (brand or '').lower() in rule['models']))
+    if any(rule['kind'] == 'all' and announced(rule) for rule in rules):
+        return ''
+    return next((rule['kind'] for rule in rules if rule['kind'] != 'all' and announced(rule)), '')
+
+
 def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) -> List[Dict]:
     """Programmes d'achat (Finance Prime), toutes années-modèles.
 
@@ -734,12 +795,15 @@ def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) ->
         return _parse_retail_programs_tables(pdf_content, start_page, end_page)
 
     programs = []
+    rules = _bonus_rules_of(pdf_content)
     for page in result['finance']:
         for row in page['rows']:
             brand = _brand_of(row['name'])
             model, trim = split_model_trim(brand, row['name'])
             bonus = row.get('bonus_cash', 0) or 0
-            loyalty = bool(row.get('loyalty_bonus'))
+            condition = 'loyalty' if row.get('loyalty_bonus') else bonus_condition(
+                rules, brand, row['model_year'], bonus)
+            loyalty = bool(condition)
             programs.append({
                 'brand': brand,
                 'model': model,
@@ -755,7 +819,9 @@ def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) ->
                 'option1_rates': _finance_rates(row['standard_rates']),
                 'option2_rates': _finance_rates(row['alternative_rates']),
                 # Remarques écrites dans les cases (« MSRP % Off Discount … »)
-                'notes': row.get('notes') or {},
+                'notes': dict(row.get('notes') or {},
+                              **({'loyalty_bonus_cash': f'Prime sous condition ({condition})'}
+                                 if loyalty else {})),
             })
     logger.info(f"[RetailParser] Lecture par position : {len(programs)} programmes, "
                 f"années {sorted({p['year'] for p in programs})}")
@@ -771,11 +837,13 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
         return _parse_sci_lease_tables(pdf_content, start_page, end_page)
 
     lease: Dict[str, list] = {'vehicles_2026': [], 'vehicles_2025': []}
+    rules = _bonus_rules_of(pdf_content)
     for page in result['lease']:
         target = lease.setdefault(f"vehicles_{page['model_year']}", [])
         for row in page['rows']:
             bonus = row.get('bonus_cash', 0) or 0
-            loyalty = bool(row.get('loyalty_bonus'))
+            loyalty = bool(row.get('loyalty_bonus')) or bool(bonus_condition(
+                rules, _brand_of(row['name']), page['model_year'], bonus))
             vehicle = {
                 'model': row['name'],
                 'brand': _brand_of(row['name']),

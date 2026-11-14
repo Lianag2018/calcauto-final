@@ -23,6 +23,8 @@ EXPECTED = {
     "January_2026": ({2026: 29, 2025: 47, 2024: 14}, {2026: 26, 2025: 45, 2024: 12}),
     "February_2026": ({2026: 34, 2025: 47, 2024: 14}, {2026: 29, 2025: 45}),
     "March_2026": ({2026: 36, 2025: 43, 2024: 14}, {2026: 33, 2025: 41}),
+    "June_2026": ({2027: 2, 2026: 39, 2025: 21, 2024: 4}, {2027: 2, 2026: 38, 2025: 20}),
+    "July_2026": ({2027: 2, 2026: 40, 2025: 20, 2024: 4}, {2027: 2, 2026: 39, 2025: 19}),
     "September_2026": ({2027: 12, 2026: 41, 2025: 20, 2024: 4}, {2027: 7, 2026: 40, 2025: 19}),
     "November_2026": ({2027: 25, 2026: 40}, {2027: 23, 2026: 39}),
 }
@@ -82,3 +84,25 @@ def test_prime_de_fidelite_de_novembre():
     loyal = [p for p in programs if p["loyalty_bonus_cash"]]
     assert len(loyal) == 19
     assert all(p["bonus_cash"] == 0 for p in loyal)
+
+
+def test_juillet_prime_de_fidelite_jeep_pas_pour_tous():
+    """En juillet 2026, la colonne « Bonus Cash » mêle le programme 2618 (pour
+    tous : 5 000 $ sur le Fiat 500e 2025) et le 2646 (fidélité Jeep : 1 850 $).
+    Seules les pages de règles les distinguent."""
+    from services.pdfplumber_parser import parse_retail_programs, parse_sci_lease
+
+    path = next((p for p in PDFS if "July_2026" in p), None)
+    if not path:
+        pytest.skip("PDF de juillet 2026 absent")
+    with open(path, "rb") as handle:
+        content = handle.read()
+    programs = parse_retail_programs(content, 1, 99)
+    jeep = [p for p in programs if p["brand"] == "Jeep" and (p["bonus_cash"] or p["loyalty_bonus_cash"])]
+    assert len(jeep) == 32
+    assert all(p["bonus_cash"] == 0 and p["loyalty_bonus_cash"] == 1850 for p in jeep)
+    fiat = [p for p in programs if p["brand"] == "Fiat" and p["year"] == 2025]
+    assert [(p["bonus_cash"], p["loyalty_bonus_cash"]) for p in fiat] == [(5000, 0)]
+    lease = parse_sci_lease(content, 1, 99)
+    assert not any(v.get("bonus_cash") for v in lease["vehicles_2026"])
+    assert sum(1 for v in lease["vehicles_2026"] if v.get("loyalty_bonus_cash") == 1850) > 0
