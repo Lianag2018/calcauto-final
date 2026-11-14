@@ -1893,6 +1893,10 @@ async def scan_and_save_invoice(request: InvoiceScanRequest, authorization: Opti
         "updated_at": datetime.utcnow()
     }
     
+    if (vehicle_data.get("model_code") or "").strip():
+        # Le code de produit départage les lignes de programme (DT6H91, exclusions)
+        vehicle_doc["model_code"] = vehicle_data["model_code"].upper().strip()
+
     if existing:
         # Update existing
         await db.inventory.update_one(

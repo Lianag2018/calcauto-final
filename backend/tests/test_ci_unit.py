@@ -487,3 +487,169 @@ class TestParserUsesLandscapeReader:
         with pytest.raises(LandscapeControlError) as error:
             parse_retail_programs(b"pdf", 1, 1)
         assert "24 lignes lues pour 25" in str(error.value)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Association véhicule -> ligne de programme (codes de produit, exclusions, CPOS)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _line(trim, model='1500', brand='Ram', year=2026, cash=0):
+    return {'id': f'{brand}|{model}|{trim}|{year}', 'brand': brand, 'model': model,
+            'trim': trim, 'year': year, 'consumer_cash': cash}
+
+
+def _match(programs, **vehicle):
+    from services.program_matching import describe_vehicle, match_program
+    return match_program(describe_vehicle(**vehicle), programs)
+
+
+class TestProgramMatching:
+    RAM_1500 = [
+        _line('Tradesman, Express, Warlock', cash=6500),
+        _line('Big Horn (DT6H91)', cash=0),
+        _line('Big Horn (excludes DT6H91)', cash=6000),
+        _line('Sport, Rebel', cash=8250),
+        _line('Laramie, Limited, Longhorn, Tungsten', cash=11500),
+    ]
+    GRAND_CHEROKEE = [
+        _line('Grand Cherokee L Laredo/Laredo X (CPOS 22L/22P)', 'Grand Cherokee', 'Jeep'),
+        _line('Grand Cherokee L Altitude (CPOS 2B5)', 'Grand Cherokee', 'Jeep'),
+        _line('Grand Cherokee L Limited/85th Anniversary (CPOS 2C6/2C7)', 'Grand Cherokee', 'Jeep'),
+        _line('Grand Cherokee L Limited Reserve (CPOS 2C1)', 'Grand Cherokee', 'Jeep'),
+        _line('Summit (WLJH75 CPOS 2C3)', 'Grand Cherokee L', 'Jeep'),
+        _line('Summit (WLJH74 CPOS 2C3)', 'Grand Cherokee', 'Jeep'),
+    ]
+    GRAND_CHEROKEE_2025 = [
+        _line('Laredo (WLJH74 2*A) (WL)', 'Grand Cherokee', 'Jeep', 2025),
+        _line('Altitude (WLJH74 2*B) (WL)', 'Grand Cherokee', 'Jeep', 2025),
+        _line('Summit (WLJT74 23S) (WL)', 'Grand Cherokee', 'Jeep', 2025),
+        _line('4xe (WL)', 'Grand Cherokee', 'Jeep', 2025),
+        _line('(WL) (excludes Laredo (WLJH74 2*A & 2*B), Summit (WLJT74 23S), and 4xe)',
+              'Grand Cherokee', 'Jeep', 2025),
+    ]
+    RAM_HD = [
+        _line('Power Wagon Crew Cab (DJ7X91 2UP)', '2500'),
+        _line('Gas Models (excl 2500 Power Wagon Crew Cab (DJ7X91 2UP), Chassis Cab Models)',
+              '2500/3500'),
+        _line('Diesel Models (excl Chassis Cab Models)', '2500/3500'),
+    ]
+
+    def test_included_code_gets_its_own_line(self):
+        r = _match(self.RAM_1500, brand='Ram', model='1500', trim='Big Horn', year=2026,
+                   code='DT6H91')
+        assert r['certain'] and r['program']['trim'] == 'Big Horn (DT6H91)'
+        assert r['program']['consumer_cash'] == 0
+
+    def test_excluded_code_never_gets_the_other_line(self):
+        r = _match(self.RAM_1500, brand='Ram', model='Ram 1500', trim='Bighorn', year=2026,
+                   code='DT6H98')
+        assert r['certain'] and r['program']['trim'] == 'Big Horn (excludes DT6H91)'
+        assert r['program']['consumer_cash'] == 6000
+
+    def test_unknown_code_is_not_guessed(self):
+        r = _match(self.RAM_1500, brand='Ram', model='1500', trim='Big Horn', year=2026)
+        assert r['program'] is None and not r['certain']
+        assert [c['trim'] for c in r['candidates']] == [
+            'Big Horn (DT6H91)', 'Big Horn (excludes DT6H91)']
+        assert 'code de produit' in r['reason']
+
+    def test_line_without_code_matches_by_trim(self):
+        r = _match(self.RAM_1500, brand='Ram', model='1500', trim='Rebel', year=2026)
+        assert r['certain'] and r['program']['trim'] == 'Sport, Rebel'
+
+    def test_year_and_brand_must_match(self):
+        assert _match(self.RAM_1500, brand='Ram', model='1500', trim='Rebel',
+                      year=2025)['candidates'] == []
+        assert _match(self.RAM_1500, brand='Jeep', model='1500', trim='Rebel',
+                      year=2026)['candidates'] == []
+
+    def test_only_excluded_code_falls_in_catch_all(self):
+        lines = [_line('(JTJL98)', 'Gladiator', 'Jeep'),
+                 _line('(excluding all JTJL98 models)', 'Gladiator', 'Jeep')]
+        hit = _match(lines, brand='Jeep', model='Gladiator', trim='Sport', year=2026, code='JTJL98')
+        other = _match(lines, brand='Jeep', model='Gladiator', trim='Rubicon', year=2026,
+                       code='JTJS98')
+        assert hit['program']['trim'] == '(JTJL98)'
+        assert other['program']['trim'] == '(excluding all JTJL98 models)'
+
+    def test_nested_exclusion_with_trim_name(self):
+        lines = [_line('Base (KMJL74)', 'Cherokee', 'Jeep'),
+                 _line('(excluding Base (KMJL74))', 'Cherokee', 'Jeep')]
+        assert _match(lines, brand='Jeep', model='Cherokee', trim='', year=2026,
+                      code='KMJL74')['program']['trim'] == 'Base (KMJL74)'
+        assert _match(lines, brand='Jeep', model='Cherokee', trim='Limited', year=2026,
+                      code='KMJP74')['program']['trim'] == '(excluding Base (KMJL74))'
+
+    def test_cpos_package_decides_between_lines(self):
+        r = _match(self.GRAND_CHEROKEE, brand='Jeep', model='Grand Cherokee L', trim='',
+                   year=2026, code='WLJH75', options=['2B5', 'PW7'])
+        assert r['program']['trim'] == 'Grand Cherokee L Altitude (CPOS 2B5)'
+        r = _match(self.GRAND_CHEROKEE, brand='Jeep', model='Grand Cherokee', trim='',
+                   year=2026, code='WLJH74', options=['2C3'])
+        assert r['program']['trim'] == 'Summit (WLJH74 CPOS 2C3)'
+        r = _match(self.GRAND_CHEROKEE, brand='Jeep', model='Grand Cherokee L', trim='',
+                   year=2026, code='WLJH75', options=['2C3'])
+        assert r['program']['trim'] == 'Summit (WLJH75 CPOS 2C3)'
+
+    def test_unknown_options_and_trim_are_not_guessed(self):
+        r = _match(self.GRAND_CHEROKEE, brand='Jeep', model='Grand Cherokee', trim='',
+                   year=2026, code='WLJH74')
+        assert r['program'] is None and len(r['candidates']) == 5
+
+    def test_trim_name_decides_when_options_unknown(self):
+        r = _match(self.GRAND_CHEROKEE, brand='Jeep', model='Grand Cherokee',
+                   trim='Limited Reserve', year=2026, code='WLJH74')
+        assert r['program']['trim'] == 'Grand Cherokee L Limited Reserve (CPOS 2C1)'
+
+    def test_wildcard_package(self):
+        g = self.GRAND_CHEROKEE_2025
+        common = dict(brand='Jeep', model='Grand Cherokee', year=2025)
+        assert _match(g, trim='Laredo', code='WLJH74', options=['2BA'],
+                      **common)['program']['trim'] == 'Laredo (WLJH74 2*A) (WL)'
+        assert _match(g, trim='Altitude', code='WLJH74', options=['2BB'],
+                      **common)['program']['trim'] == 'Altitude (WLJH74 2*B) (WL)'
+        assert _match(g, trim='Limited', code='WLJH74', options=['2BH'],
+                      **common)['program']['trim'].startswith('(WL) (excludes')
+        assert _match(g, trim='Summit', code='WLJT74', options=['23S'],
+                      **common)['program']['trim'] == 'Summit (WLJT74 23S) (WL)'
+        assert _match(g, trim='4xe', code='WLXH74', **common)['program']['trim'] == '4xe (WL)'
+
+    def test_code_with_package_and_model_alternatives(self):
+        common = dict(brand='Ram', year=2026)
+        r = _match(self.RAM_HD, model='2500', trim='Power Wagon', code='DJ7X91',
+                   options=['2UP'], **common)
+        assert r['program']['trim'] == 'Power Wagon Crew Cab (DJ7X91 2UP)'
+        r = _match(self.RAM_HD, model='2500', trim='Rebel', code='DJ7X91', options=['2UR'],
+                   option_text='6.4L HEMI V8 ENGINE', **common)
+        assert r['program']['trim'].startswith('Gas Models')
+        r = _match(self.RAM_HD, model='3500', trim='Big Horn', code='D28H91', options=['ETM'],
+                   option_text='6.7L CUMMINS TURBO DIESEL ENGINE', **common)
+        assert r['program']['trim'].startswith('Diesel Models')
+
+    def test_unknown_engine_is_not_guessed(self):
+        r = _match(self.RAM_HD, brand='Ram', model='3500', trim='Big Horn', year=2026,
+                   code='D28H91')
+        assert r['program'] is None and len(r['candidates']) == 2
+        assert 'motorisation' in r['reason']
+
+    def test_excluded_body_gets_no_line(self):
+        r = _match(self.RAM_HD, brand='Ram', model='3500', trim='Chassis Cab SLT', year=2026,
+                   code='DD8L63', option_text='6.4L HEMI')
+        assert r['candidates'] == []
+
+    def test_engine_number_is_not_a_package(self):
+        from services.program_matching import parse_conditions
+        c = parse_conditions('4-Door (excludes JLJL74 models, Rubicon w/ 2.0L (JLJS74 22R), '
+                             '392 (JLJX74) and 4xe Models)')
+        assert c['targets'] == []
+        assert [i['targets'] for i in c['exclusions']] == [
+            [('JLJL74', ())], [('JLJS74', ('22R',))], [('JLJX74', ())], []]
+        assert c['doors'] == {'4'}
+
+    def test_signature_separates_lookalike_lines(self):
+        from services.program_matching import condition_signature
+        with_code = condition_signature('Big Horn (DT6H91)')
+        without = condition_signature('Big Horn (excludes DT6H91)')
+        assert with_code != without
+        assert condition_signature('Big Horn') not in (with_code, without)
+        assert condition_signature('Sport, Rebel (DT)') == condition_signature('Sport, Rebel')

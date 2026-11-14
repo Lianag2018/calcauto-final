@@ -235,6 +235,7 @@ class InventoryVehicle(BaseModel):
     trim: str = ""
     body_style: str = ""
     year: int
+    model_code: str = ""  # code de produit Stellantis (DT6H91, WLJH74...)
     type: str = "neuf"
     pdco: float = 0
     ep_cost: float = 0
@@ -265,6 +266,9 @@ class InventoryCreate(BaseModel):
     asking_price: float = 0
     km: int = 0
     color: str = ""
+    model_code: str = ""
+    # Options de la facture (code + description) : le forfait CPOS en fait partie
+    options: List[Dict[str, Any]] = []
 
 class InventoryUpdate(BaseModel):
     vin: Optional[str] = None
@@ -283,6 +287,7 @@ class InventoryUpdate(BaseModel):
     status: Optional[str] = None
     km: Optional[int] = None
     color: Optional[str] = None
+    model_code: Optional[str] = None
 
 class VehicleOption(BaseModel):
     """Option/equipement d'un vehicule"""
