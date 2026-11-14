@@ -11,8 +11,114 @@ from models import (
 from dependencies import get_current_user, require_admin
 from services.window_sticker import fetch_window_sticker, save_window_sticker_to_db
 from routers.invoice import get_full_vehicle_info, _CODE_PROGRAM_MAPPING
+from product_code_lookup import lookup_product_code
+from services.program_matching import describe_vehicle, match_program, is_model_code
 
 router = APIRouter()
+
+
+# ============ Association véhicule -> ligne de programme ============
+
+async def _latest_programs() -> List[Dict[str, Any]]:
+    """Programmes de la période la plus récente (celle que l'écran affiche)."""
+    latest = await db.programs.find_one(sort=[("program_year", -1), ("program_month", -1)])
+    if not latest:
+        return []
+    query = {"program_month": latest.get("program_month"),
+             "program_year": latest.get("program_year")}
+    return await db.programs.find(query, {"_id": 0}).to_list(2000)
+
+
+async def _options_by_stock(stock_numbers: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+    grouped: Dict[str, List[Dict[str, Any]]] = {}
+    if not stock_numbers:
+        return grouped
+    cursor = db.vehicle_options.find({"stock_no": {"$in": stock_numbers}}, {"_id": 0}).sort("order", 1)
+    async for option in cursor:
+        grouped.setdefault(option.get("stock_no"), []).append(option)
+    return grouped
+
+
+def _vehicle_for_matching(vehicle: Dict[str, Any], options: List[Dict[str, Any]]) -> Dict[str, Any]:
+    code = (vehicle.get("model_code") or "").upper().strip()
+    codes = [str(o.get("product_code") or "").upper().strip() for o in options]
+    if not code:
+        # Sur la facture, la première ligne d'options est le code de produit
+        code = next((c for c in codes[:1] if is_model_code(c)), "")
+    master = lookup_product_code(code) if code else None
+    return describe_vehicle(
+        brand=vehicle.get("brand") or (master or {}).get("brand", ""),
+        model=vehicle.get("model") or (master or {}).get("model", ""),
+        trim=vehicle.get("trim") or (master or {}).get("trim", ""),
+        year=vehicle.get("year"),
+        body_style=vehicle.get("body_style", ""),
+        code=code,
+        options=[c for c in codes if c and c != code],
+        option_text=" ; ".join(str(o.get("description") or "") for o in options),
+    )
+
+
+def _match_summary(result: Dict[str, Any], programs: List[Dict[str, Any]]) -> Dict[str, Any]:
+    period = programs[0] if programs else {}
+    return {
+        "program_id": (result["program"] or {}).get("id"),
+        "candidate_ids": [c.get("id") for c in result["candidates"]],
+        "certain": result["certain"],
+        "reason": result["reason"],
+        "program_month": period.get("program_month"),
+        "program_year": period.get("program_year"),
+    }
+
+
+async def _attach_program_matches(vehicles: List[Dict[str, Any]]) -> None:
+    """Ajoute à chaque véhicule la ligne de programme qui s'applique à lui,
+    en respectant les codes de produit et les exclusions de la ligne."""
+    programs = await _latest_programs()
+    if not programs or not vehicles:
+        return
+    options = await _options_by_stock([v.get("stock_no") for v in vehicles if v.get("stock_no")])
+    for vehicle in vehicles:
+        described = _vehicle_for_matching(vehicle, options.get(vehicle.get("stock_no"), []))
+        vehicle["program_match"] = _match_summary(match_program(described, programs), programs)
+
+
+async def _save_options(stock_no: str, options: List[Dict[str, Any]]) -> None:
+    if not options:
+        return
+    await db.vehicle_options.delete_many({"stock_no": stock_no})
+    for index, option in enumerate(options):
+        await db.vehicle_options.insert_one({
+            "id": str(uuid.uuid4()),
+            "stock_no": stock_no,
+            "product_code": str(option.get("product_code", option.get("code", "")) or ""),
+            "order": index,
+            "description": str(option.get("description", "") or ""),
+            "amount": option.get("amount", 0) or 0,
+        })
+
+
+def _rates_by_term(rates: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    terms = ("36", "48", "60", "72", "84", "96")
+    rates = rates or {}
+    return {t: rates.get(f"rate_{t}", rates.get(t)) for t in terms}
+
+
+def _financing_from_program(program: Dict[str, Any]) -> Dict[str, Any]:
+    months = ["", "janvier", "février", "mars", "avril", "mai", "juin", "juillet",
+              "août", "septembre", "octobre", "novembre", "décembre"]
+    month = program.get("program_month") or 0
+    period = f"{months[month] if 0 < month < 13 else month} {program.get('program_year', '')}".strip()
+    line = " ".join(str(x) for x in (program.get("model"), program.get("trim")) if x)
+    return {
+        "consumer_cash": program.get("consumer_cash", 0) or 0,
+        "bonus_cash": program.get("bonus_cash", 0) or 0,
+        "option1_rates": _rates_by_term(program.get("option1_rates")),
+        "option2_rates": _rates_by_term(program.get("option2_rates")),
+        "programme_model": program.get("model"),
+        "programme_trim": program.get("trim"),
+        "program_id": program.get("id"),
+        "programme_source": f"Programme {period} — {line}",
+    }
 
 # ============ Inventory Endpoints ============
 
@@ -40,7 +146,12 @@ async def get_inventory(
     vehicles = []
     async for vehicle in db.inventory.find(query, {"_id": 0}).sort("stock_no", 1):
         vehicles.append(vehicle)
-    
+
+    try:
+        await _attach_program_matches(vehicles)
+    except Exception as e:
+        logger.warning(f"Association inventaire -> programme impossible: {e}")
+
     return vehicles
 
 @router.get("/inventory/{stock_no}")
@@ -114,10 +225,12 @@ async def create_inventory_vehicle(vehicle: InventoryCreate, authorization: Opti
         msrp=vehicle.msrp,
         asking_price=vehicle.asking_price,
         km=vehicle.km,
-        color=vehicle.color
+        color=vehicle.color,
+        model_code=(vehicle.model_code or "").upper().strip()
     )
     
     await db.inventory.insert_one(vehicle_data.dict())
+    await _save_options(vehicle.stock_no, vehicle.options)
     return {
         "success": True, 
         "vehicle": vehicle_data.dict(), 
@@ -164,6 +277,9 @@ async def create_inventory_bulk(vehicles: List[InventoryCreate], authorization: 
                 "updated_at": datetime.utcnow()
             }
             
+            if (vehicle.model_code or "").strip():
+                vehicle_data["model_code"] = vehicle.model_code.upper().strip()
+
             # Upsert: update if exists, insert if not
             result = await db.inventory.update_one(
                 {"stock_no": vehicle.stock_no, "owner_id": user["id"]},
@@ -193,6 +309,8 @@ async def update_inventory_vehicle(stock_no: str, update: InventoryUpdate, autho
     user = await get_current_user(authorization)
     
     update_data = {k: v for k, v in update.dict().items() if v is not None}
+    if "model_code" in update_data:
+        update_data["model_code"] = update_data["model_code"].upper().strip()
     update_data["updated_at"] = datetime.utcnow()
     
     # Recalculate net_cost if ep_cost changed
@@ -345,14 +463,50 @@ async def add_product_code(code: ProductCode, authorization: Optional[str] = Hea
     return {"success": True, "message": f"Code {code.code} ajouté"}
 
 @router.get("/product-codes/{code}/financing")
-async def get_product_code_financing(code: str):
+async def get_product_code_financing(
+    code: str,
+    year: Optional[int] = None,
+    brand: Optional[str] = None,
+    model: Optional[str] = None,
+    trim: Optional[str] = None,
+    stock_no: Optional[str] = None,
+):
     """
-    Récupère les informations de financement pour un code produit.
-    Retourne: consumer cash, bonus cash, taux Option 1 et Option 2.
+    Promotions qui s'appliquent à un code de produit, lues dans le programme
+    du mois en cours (codes inclus, codes exclus et forfaits CPOS respectés).
+    Si plusieurs lignes restent possibles, aucune promotion n'est retournée
+    et les lignes candidates sont listées.
     """
     code = code.upper().strip()
-    
-    # Obtenir les infos complètes (véhicule + financement)
+
+    programs = await _latest_programs()
+    if programs:
+        master = lookup_product_code(code) or {}
+        options = (await _options_by_stock([stock_no])).get(stock_no, []) if stock_no else []
+        vehicle = _vehicle_for_matching({
+            "model_code": code,
+            "brand": brand or master.get("brand", ""),
+            "model": model or master.get("model", ""),
+            "trim": trim if trim is not None else master.get("trim", ""),
+            "year": year or master.get("year"),
+        }, options)
+        result = match_program(vehicle, programs)
+        financing = _financing_from_program(result["program"]) if result["program"] else None
+        return {
+            "success": True,
+            "code": code,
+            "vehicle": {k: master.get(k, "") for k in ("brand", "model", "trim", "year", "cab", "drive")},
+            "financing": financing,
+            "has_financing": financing is not None,
+            "certain": result["certain"],
+            "reason": result["reason"],
+            "candidates": [
+                {"id": c.get("id"), "model": c.get("model"), "trim": c.get("trim"),
+                 "consumer_cash": c.get("consumer_cash", 0)} for c in result["candidates"]
+            ],
+        }
+
+    # Aucun programme en base : ancien fichier figé (février 2026)
     full_info = get_full_vehicle_info(code)
     
     if not full_info:

@@ -36,6 +36,7 @@ MODEL_TO_BRAND = [
     ('Gladiator', 'Jeep'),
     ('Wrangler', 'Jeep'),
     ('Compass', 'Jeep'),
+    ('Recon', 'Jeep'),
     ('Cherokee', 'Jeep'),
     ('Grand Caravan', 'Chrysler'),
     ('Pacifica', 'Chrysler'),
@@ -64,7 +65,7 @@ MODELS_BY_BRAND = {
     'Chrysler': ['Grand Caravan', 'Pacifica'],
     'Jeep': [
         'Grand Wagoneer', 'Grand Cherokee L', 'Grand Cherokee',
-        'Wagoneer S', 'Wagoneer', 'Gladiator', 'Wrangler', 'Compass', 'Cherokee',
+        'Wagoneer S', 'Wagoneer', 'Gladiator', 'Wrangler', 'Compass', 'Cherokee', 'Recon',
     ],
     'Dodge': ['Durango', 'Charger', 'Hornet'],
     'Ram': ['ProMaster', 'Promaster', 'Chassis Cab', '2500/3500', '1500', '2500', '3500', '4500', '5500'],
@@ -240,7 +241,7 @@ def _has_rate_data(row: list, start_col: int) -> bool:
     return False
 
 
-def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) -> List[Dict]:
+def _parse_retail_programs_tables(pdf_content: bytes, start_page: int, end_page: int) -> List[Dict]:
     """
     Parse retail financing programs from PDF using pdfplumber.
     Handles two layouts:
@@ -502,7 +503,7 @@ def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) ->
 # SCI LEASE PARSER
 # ═══════════════════════════════════════════════════════════════
 
-def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
+def _parse_sci_lease_tables(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
     """
     Parse SCI Lease rates. Returns {vehicles_2026: [...], vehicles_2025: [...]}.
 
@@ -674,6 +675,125 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
 
     logger.info(f"[SCIParser] Total: {len(vehicles_2026)} v2026 + {len(vehicles_2025)} v2025")
     return {'vehicles_2026': vehicles_2026, 'vehicles_2025': vehicles_2025}
+
+
+# ═══════════════════════════════════════════════════════════════
+# LECTURE PAR POSITION (services/landscape_reader.py)
+# ═══════════════════════════════════════════════════════════════
+
+class LandscapeControlError(ValueError):
+    """Le PDF a été lu, mais le contrôle a trouvé une page douteuse.
+
+    Rien ne doit être enregistré : mieux vaut un import refusé qu'un mois
+    de programmes faux dans le calculateur.
+    """
+
+
+_NAME_PREFIX_RE = re.compile(r'^(all[- ]new|new)\s+', re.IGNORECASE)
+
+
+def _brand_of(name: str) -> str:
+    return (detect_brand_from_model(name)
+            or detect_brand_from_model(_NAME_PREFIX_RE.sub('', name))
+            or 'Unknown')
+
+
+def _read_landscapes_checked(pdf_content: bytes) -> Optional[Dict]:
+    """Lit les pages Landscape ; None si le PDF n'en contient aucune
+    (ancien format : on retombe sur la lecture par tableaux)."""
+    from services.landscape_reader import read_landscapes
+
+    result = read_landscapes(pdf_content)
+    if not result['finance'] and not result['lease']:
+        return None
+    errors = list(result['control']['errors'])
+    for page in result['finance'] + result['lease']:
+        for row in page['rows']:
+            if _brand_of(row['name']) == 'Unknown':
+                errors.append(f"page {page['page']} : marque inconnue pour « {row['name']} »")
+    if errors:
+        raise LandscapeControlError(
+            'Lecture du PDF refusée, ' + str(len(errors)) + ' problème(s) : ' + ' ; '.join(errors[:12]))
+    return result
+
+
+def _finance_rates(rates: Optional[Dict]) -> Optional[Dict]:
+    if not rates:
+        return None
+    return {f'rate_{term}': rates.get(str(term)) for term in (36, 48, 60, 72, 84, 96)}
+
+
+def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) -> List[Dict]:
+    """Programmes d'achat (Finance Prime), toutes années-modèles.
+
+    Les pages sont reconnues par leur contenu ; `start_page` et `end_page`
+    ne servent plus qu'à l'ancien format de PDF.
+    """
+    result = _read_landscapes_checked(pdf_content)
+    if result is None or not result['finance']:
+        return _parse_retail_programs_tables(pdf_content, start_page, end_page)
+
+    programs = []
+    for page in result['finance']:
+        for row in page['rows']:
+            brand = _brand_of(row['name'])
+            model, trim = split_model_trim(brand, row['name'])
+            bonus = row.get('bonus_cash', 0) or 0
+            loyalty = bool(row.get('loyalty_bonus'))
+            programs.append({
+                'brand': brand,
+                'model': model,
+                'trim': trim,
+                'year': row['model_year'],
+                'consumer_cash': row.get('consumer_cash', 0) or 0,
+                'alt_consumer_cash': row.get('alt_consumer_cash', 0) or 0,
+                # Une prime « (Loyalty) » ne vaut que pour un client fidèle :
+                # elle n'est pas additionnée au rabais de tout le monde.
+                'bonus_cash': 0 if loyalty else bonus,
+                'loyalty_bonus_cash': bonus if loyalty else 0,
+                'delivery_credit': row.get('delivery_credit', 0) or 0,
+                'option1_rates': _finance_rates(row['standard_rates']),
+                'option2_rates': _finance_rates(row['alternative_rates']),
+                # Remarques écrites dans les cases (« MSRP % Off Discount … »)
+                'notes': row.get('notes') or {},
+            })
+    logger.info(f"[RetailParser] Lecture par position : {len(programs)} programmes, "
+                f"années {sorted({p['year'] for p in programs})}")
+    return programs
+
+
+def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
+    """Taux de location SCI : {'vehicles_<année>': [...]} pour chaque
+    année-modèle du PDF. 'vehicles_2026' et 'vehicles_2025' sont toujours
+    présents (le reste de l'application les attend)."""
+    result = _read_landscapes_checked(pdf_content)
+    if result is None or not result['lease']:
+        return _parse_sci_lease_tables(pdf_content, start_page, end_page)
+
+    lease: Dict[str, list] = {'vehicles_2026': [], 'vehicles_2025': []}
+    for page in result['lease']:
+        target = lease.setdefault(f"vehicles_{page['model_year']}", [])
+        for row in page['rows']:
+            bonus = row.get('bonus_cash', 0) or 0
+            loyalty = bool(row.get('loyalty_bonus'))
+            vehicle = {
+                'model': row['name'],
+                'brand': _brand_of(row['name']),
+                'lease_cash': row.get('lease_cash', 0) or 0,
+                'standard_rates': row['standard_rates'],
+                'alternative_rates': row['alternative_rates'],
+            }
+            for key, value in (('standard_rate_lease_cash', row.get('standard_rate_lease_cash', 0)),
+                               ('alt_lease_cash', row.get('alt_lease_cash', 0)),
+                               ('bonus_cash', 0 if loyalty else bonus),
+                               ('loyalty_bonus_cash', bonus if loyalty else 0),
+                               ('delivery_credit', row.get('delivery_credit', 0))):
+                if value:
+                    vehicle[key] = value
+            target.append(vehicle)
+    logger.info("[SCIParser] Lecture par position : "
+                + ", ".join(f"{key}={len(value)}" for key, value in sorted(lease.items())))
+    return lease
 
 
 # ═══════════════════════════════════════════════════════════════

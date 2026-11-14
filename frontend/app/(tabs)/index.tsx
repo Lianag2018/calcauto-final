@@ -174,6 +174,15 @@ export default function HomeScreen() {
   // Intelligent inventory-to-program matching
   const matchesInventoryToProgram = useCallback((vehicle: any, program: any) => {
     if (!vehicle || !program) return false;
+    // Le serveur associe chaque véhicule à sa ligne en respectant les codes de
+    // produit et les exclusions (DT6H91, CPOS...). On s'y fie pour la période
+    // qu'il a calculée ; sinon, ancienne association par nom de version.
+    const match = vehicle.program_match;
+    if (match && program.id && match.program_month === program.program_month
+        && match.program_year === program.program_year) {
+      if (match.program_id) return match.program_id === program.id;
+      return (match.candidate_ids || []).includes(program.id);
+    }
     // Brand must match
     if (vehicle.brand?.toLowerCase() !== program.brand?.toLowerCase()) return false;
     // Year must match
@@ -419,7 +428,14 @@ export default function HomeScreen() {
       
       try {
         const response = await axios.get(
-          `${API_URL}/api/product-codes/${selectedInventory.model_code}/financing`
+          `${API_URL}/api/product-codes/${selectedInventory.model_code}/financing`,
+          { params: {
+            year: selectedInventory.year,
+            brand: selectedInventory.brand,
+            model: selectedInventory.model,
+            trim: selectedInventory.trim || '',
+            stock_no: selectedInventory.stock_no,
+          } }
         );
         
         if (response.data.success && response.data.financing) {

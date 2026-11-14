@@ -355,6 +355,7 @@ export default function InventoryScreen() {
             msrp: vehicle.msrp || 0,
             asking_price: vehicle.asking_price || vehicle.msrp || 0,
             color: vehicle.color || '',
+            model_code: vehicle.model_code || '',
             options: vehicle.options || [],
             parse_method: response.data.parse_method || 'unknown',
             blocking_errors: response.data.blocking_errors || [],
@@ -433,6 +434,7 @@ export default function InventoryScreen() {
           msrp: vehicle.msrp || 0,
           asking_price: vehicle.asking_price || vehicle.msrp || 0,
           color: vehicle.color || '',
+          model_code: vehicle.model_code || '',
           options: vehicle.options || [],
           parse_method: response.data.parse_method || 'unknown',
           blocking_errors: blockingErrors  // Garder pour affichage dans le modal
@@ -484,6 +486,10 @@ export default function InventoryScreen() {
         asking_price: parseFloat(reviewData.asking_price) || 0,
         km: 0,
         color: reviewData.color,
+        // Code de produit et options de la facture : ils départagent les lignes
+        // de programme (ex. « Big Horn (DT6H91) » et « Big Horn (excludes DT6H91) »)
+        model_code: reviewData.model_code || '',
+        options: reviewData.options || [],
       }, { headers: { Authorization: `Bearer ${token}` } });
 
       // Vérifier s'il y a d'autres véhicules dans la file d'attente

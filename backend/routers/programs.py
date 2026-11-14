@@ -23,6 +23,8 @@ except ImportError:
 
 router = APIRouter()
 
+from services.program_matching import condition_signature
+
 
 def normalize_str(s: str) -> str:
     """Normalise une chaine pour matching flexible.
@@ -75,6 +77,13 @@ def find_best_match(brand: str, model: str, trim: str, year: int, all_before: di
     # Strategie 3: Match normalise (modele + trim)
     norm_model = normalize_model(model)
     norm_trim = normalize_str(trim)
+    # Les codes de produit inclus ou exclus départagent des lignes au nom
+    # semblable : « Big Horn (DT6H91) » n'est pas « Big Horn (excludes DT6H91) »
+    signature = condition_signature(trim)
+    all_before = {
+        k: v for k, v in all_before.items()
+        if len(k.split("|")) != 4 or condition_signature(k.split("|")[2]) == signature
+    }
 
     for db_key, prog in all_before.items():
         parts = db_key.split("|")
