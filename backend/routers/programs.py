@@ -519,6 +519,7 @@ async def import_programs_excel(file: UploadFile = File(...), password: str = Fo
                     {"brand": brand, "model": model, "trim": trim, "year": year},
                     {"$set": {
                         "brand": brand, "model": model, "trim": trim, "year": year,
+                        "program_month": import_month, "program_year": import_year or year,
                         "corrected_values": {
                             "consumer_cash": consumer_cash,
                             "alternative_consumer_cash": alternative_consumer_cash,

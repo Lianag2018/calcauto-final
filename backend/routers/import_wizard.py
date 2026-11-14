@@ -182,11 +182,21 @@ def normalize_correction_model(model: str) -> str:
     m = re_module.sub(r'\s+', ' ', m).strip()
     return m
 
-async def find_best_correction(brand: str, model: str, trim: str, year: int) -> dict:
-    """Cherche la meilleure correction memorisee avec matching flexible."""
+async def find_best_correction(brand: str, model: str, trim: str, year: int,
+                               program_month: int = None, program_year: int = None) -> dict:
+    """Cherche la meilleure correction memorisee avec matching flexible.
+
+    Une correction ne vaut que pour le mois de programme ou elle a ete faite :
+    reappliquee aux mois suivants, elle ecraserait les montants du nouveau PDF
+    (ex. un rabais corrige en mars remplacait encore celui de novembre).
+    Les anciennes corrections, sans mois, ne sont donc plus appliquees.
+    """
+    if not program_month or not program_year:
+        return None
+    period = {"program_month": program_month, "program_year": program_year}
     # Strategie 1: Match exact
     correction = await db.program_corrections.find_one(
-        {"brand": brand, "model": model, "trim": trim, "year": year},
+        {"brand": brand, "model": model, "trim": trim, "year": year, **period},
         {"_id": 0}
     )
     if correction:
@@ -197,7 +207,7 @@ async def find_best_correction(brand: str, model: str, trim: str, year: int) -> 
     norm_trim = normalize_correction_str(trim)
 
     all_corrections = await db.program_corrections.find(
-        {"year": year},
+        {"year": year, **period},
         {"_id": 0}
     ).to_list(500)
 
@@ -1694,7 +1704,9 @@ async def save_programs(request: SaveProgramsRequest):
             prog_data.get("brand", ""),
             prog_data.get("model", ""),
             prog_data.get("trim", ""),
-            prog_data.get("year", 2026)
+            prog_data.get("year", 2026),
+            request.program_month,
+            request.program_year,
         )
         correction_applied = False
         correction_details = {}
