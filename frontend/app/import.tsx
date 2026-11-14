@@ -59,6 +59,19 @@ const months = [
 // Steps for the import wizard
 type Step = 'login' | 'choose-type' | 'upload' | 'select-pages' | 'preview' | 'email-sent' | 'excel-correction' | 'success' | 'residual-upload' | 'residual-processing' | 'residual-success';
 
+/** Sections trouvées par le serveur : `sections`, ou l'ancienne forme `detected_sections`. */
+const SECTION_NAMES: Record<string, string> = {
+  retail_prime: 'Finance Prime Rate Landscapes',
+  non_prime: 'Finance Non-Prime Rate Landscapes',
+  lease: 'Lease Landscapes',
+};
+function sectionsOf(scan: any): { name: string; pages: string }[] {
+  if (scan?.sections?.length) return scan.sections;
+  return (scan?.detected_sections || []).map((item: any) => ({
+    name: SECTION_NAMES[item.type] || String(item.type || 'Section'), pages: item.pages,
+  }));
+}
+
 export default function ImportScreen() {
   const router = useRouter();
   const { isDemoUser } = useAuth();
@@ -192,6 +205,8 @@ export default function ImportScreen() {
         const d = scanResponse.data;
         setTotalPages(d.total_pages);
         setDetectedSections(d);
+        // Toutes les sections trouvées sont cochées d'avance
+        setSelectedSectionIndices(new Set(sectionsOf(d).map((_: any, i: number) => i)));
         
         // Auto-fill page ranges from detection
         if (d.retail_start) setPageStart(String(d.retail_start));
@@ -794,7 +809,7 @@ export default function ImportScreen() {
     return { icon: 'document', color: '#888', badge: 'Info' };
   };
 
-  const tocSections = detectedSections?.sections || [];
+  const tocSections = sectionsOf(detectedSections);
   const allSelected = tocSections.length > 0 && selectedSectionIndices.size === tocSections.length;
 
   const toggleSection = (idx: number) => {
@@ -866,9 +881,9 @@ export default function ImportScreen() {
 
       {/* Extract Button */}
       <TouchableOpacity
-        style={[styles.extractButton, (extracting || selectedSectionIndices.size === 0) && styles.buttonDisabled]}
+        style={[styles.extractButton, (extracting || (tocSections.length > 0 && selectedSectionIndices.size === 0)) && styles.buttonDisabled]}
         onPress={handleExtractPages}
-        disabled={extracting || selectedSectionIndices.size === 0}
+        disabled={extracting || (tocSections.length > 0 && selectedSectionIndices.size === 0)}
         data-testid="extract-sections-btn"
       >
         {extracting ? (
@@ -882,7 +897,7 @@ export default function ImportScreen() {
           <>
             <Ionicons name="analytics" size={24} color="#fff" />
             <Text style={styles.extractButtonText}>
-              Extraire {selectedSectionIndices.size} section{selectedSectionIndices.size > 1 ? 's' : ''}
+              {tocSections.length === 0 ? 'Extraire (détection automatique)' : `Extraire ${selectedSectionIndices.size} section${selectedSectionIndices.size > 1 ? 's' : ''}`}
             </Text>
           </>
         )}
