@@ -106,3 +106,56 @@ def test_juillet_prime_de_fidelite_jeep_pas_pour_tous():
     lease = parse_sci_lease(content, 1, 99)
     assert not any(v.get("bonus_cash") for v in lease["vehicles_2026"])
     assert sum(1 for v in lease["vehicles_2026"] if v.get("loyalty_bonus_cash") == 1850) > 0
+
+
+def _offers_by_code(path):
+    from services.pdfplumber_parser import parse_retail_programs
+    with open(path, "rb") as handle:
+        programs = parse_retail_programs(handle.read(), 1, 99)
+    found = {}
+    for program in programs:
+        for offer in program.get("special_offers") or []:
+            found.setdefault(offer["code"], []).append((program, offer))
+    return programs, found
+
+
+def test_promotions_de_novembre_a_cocher():
+    """Novembre 2026 : fidélité (après taxes), liquidation ciblée (avant taxes),
+    vendredi fou (après taxes) — chacune sur ses véhicules."""
+    path = next((p for p in PDFS if _month(p) == "November_2026"), None)
+    if not path:
+        pytest.skip("PDF de novembre 2026 non fourni")
+    programs, found = _offers_by_code(path)
+    assert set(found) == {"2646M1", "2634M1", "2634M2"}
+    assert len(found["2646M1"]) == 19 and all(o["tax"] == "after" for _, o in found["2646M1"])
+    assert all(o["amount"] == p["loyalty_bonus_cash"] for p, o in found["2646M1"])
+    targeted = found["2634M1"]
+    assert [(p["model"], p["trim"]) for p, _ in targeted] == [("1500", "Sport, Rebel")]
+    assert targeted[0][1]["tax"] == "before" and targeted[0][1]["amount"] == 1500 and targeted[0][1]["vin_list"]
+    friday = found["2634M2"]
+    assert all(o["tax"] == "after" and o["amount"] == 3000 and p["year"] == 2026 for p, o in friday)
+    assert {p["model"] for p, _ in friday} == {"1500", "Gladiator", "Grand Cherokee", "Grand Cherokee L",
+                                               "Wrangler", "Grand Wagoneer", "Charger"}
+    assert [p["trim"] for p, _ in friday if p["model"] == "1500"] == ["Tradesman, Express, Warlock"]
+
+
+def test_promotions_de_septembre_conquete_et_liquidation():
+    path = next((p for p in PDFS if "September_2026" in p), None)
+    if not path:
+        pytest.skip("PDF de septembre 2026 absent")
+    programs, found = _offers_by_code(path)
+    assert set(found) == {"2646J1", "2634J1"}
+    assert all(o["kind"] == "conquest" and o["tax"] == "after" for _, o in found["2646J1"])
+    wrangler = [o["amount"] for p, o in found["2646J1"] if p["model"] == "Wrangler"]
+    assert wrangler and set(wrangler) == {1250}
+    assert {(p["model"], o["amount"]) for p, o in found["2634J1"] if p["model"] == "Grand Caravan"} == {("Grand Caravan", 1250)}
+    assert all(o["tax"] == "before" for _, o in found["2634J1"])
+
+
+def test_mois_sans_promotion_a_cocher():
+    for month in ("January_2026", "February_2026", "June_2026"):
+        path = next((p for p in PDFS if month in p), None)
+        if not path:
+            continue
+        programs, found = _offers_by_code(path)
+        assert found == {} and all(p["special_offers"] == [] for p in programs)

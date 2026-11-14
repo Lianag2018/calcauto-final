@@ -25,6 +25,8 @@ export interface VehicleProgram {
   /** Code et nom du programme de chaque prime, tels qu'écrits dans le PDF. */
   bonus_cash_program?: { code: string; name: string } | null;
   loyalty_bonus_cash_program?: { code: string; name: string } | null;
+  /** Promotions du mois à cocher (fidélité, liquidation ciblée, vendredi fou…), lues dans le PDF. */
+  special_offers?: SpecialOffer[] | null;
   program_month: number;
   program_year: number;
   sort_order: number;
@@ -87,3 +89,20 @@ export interface ProgramPeriod {
 
 export type PaymentFrequency = 'monthly' | 'biweekly' | 'weekly';
 export type Language = 'fr' | 'en';
+
+/** Une promotion du mois que le vendeur coche quand le client ou le véhicule y a droit. */
+export interface SpecialOffer {
+  code: string;
+  name: string;
+  kind?: string;
+  /** 'before' : réduit le prix avant taxes ; 'after' : déduit après taxes, à part du comptant. */
+  tax: 'before' | 'after';
+  amount: number;
+  /** Modèles admissibles tels qu'écrits dans le PDF. */
+  condition?: string;
+  /** Types de vente : '1' comptant, 'L' location, 'E' financement. */
+  sale_types?: string[];
+  eligible_customers?: string;
+  /** Vrai quand le véhicule doit figurer sur la liste de NIV du concessionnaire. */
+  vin_list?: boolean;
+}

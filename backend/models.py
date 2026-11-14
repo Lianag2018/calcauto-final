@@ -47,6 +47,9 @@ class VehicleProgram(BaseModel):
     # Code et nom du programme de chaque prime ({"code": "2646G1", "name": "…"})
     bonus_cash_program: Optional[Dict[str, Any]] = None
     loyalty_bonus_cash_program: Optional[Dict[str, Any]] = None
+    # Promotions du mois à cocher : [{code, name, kind, tax: 'before'|'after', amount,
+    # condition, sale_types, eligible_customers, vin_list}]
+    special_offers: Optional[List[Dict[str, Any]]] = None
     
     # Ordre d'affichage (logique par trim, pas alphabetique)
     sort_order: int = 0

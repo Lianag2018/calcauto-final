@@ -68,6 +68,8 @@ interface CalculatorInputs {
   loyaltyRate?: number;
   /** Prime de fidélité (après taxes) quand le vendeur a coché que le client y a droit. */
   loyaltyBonus?: number;
+  /** Promotions cochées qui réduisent le prix AVANT taxes (les deux options). */
+  offersBeforeTax?: number;
   deferredPayment?: boolean;
   soldeReporteLocation?: string;
 }
@@ -82,6 +84,31 @@ export function resolveBonus(typed: string, programBonus: number): number {
   return (typed || '').trim() !== '' && !isNaN(value) && value >= 0 ? value : programBonus;
 }
 
+/** Promotions à cocher d'un programme. Les anciennes données n'ont que la prime de fidélité. */
+export function offersOf(program: any): any[] {
+  if (!program) return [];
+  if (Array.isArray(program.special_offers)) return program.special_offers.filter((o: any) => o && o.amount > 0);
+  const loyalty = program.loyalty_bonus_cash || 0;
+  return loyalty > 0 ? [{
+    code: program.loyalty_bonus_cash_program?.code || 'loyalty',
+    name: program.loyalty_bonus_cash_program?.name || 'Loyalty Bonus Cash',
+    kind: 'loyalty', tax: 'after', amount: loyalty, sale_types: ['1', 'L', 'E'],
+  }] : [];
+}
+
+/** Clé d'une promotion à l'écran : un code peut servir à deux promotions d'un même mois. */
+export function offerKey(offer: any): string {
+  return `${offer.code}|${offer.tax}|${offer.amount}`;
+}
+
+/** Total des promotions cochées d'un type de taxe, pour l'achat ('E') ou la location ('L'). */
+export function checkedOffersTotal(offers: any[], checked: Record<string, boolean>, tax: 'before' | 'after', sale: 'E' | 'L'): number {
+  return offers
+    .filter(o => o.tax === tax && checked[offerKey(o)])
+    .filter(o => !o.sale_types?.length || o.sale_types.includes(sale) || (sale === 'E' && o.sale_types.includes('1')))
+    .reduce((sum, o) => sum + (o.amount || 0), 0);
+}
+
 export function useCalculator(inputs: CalculatorInputs) {
   const [localResult, setLocalResult] = useState<LocalResult | null>(null);
 
@@ -91,6 +118,7 @@ export function useCalculator(inputs: CalculatorInputs) {
     prixEchange, montantDuEchange, accessories, rabaisConcess,
     loyaltyRate = 0,
     loyaltyBonus = 0,
+    offersBeforeTax = 0,
     deferredPayment = false,
     soldeReporteLocation = '',
   } = inputs;
@@ -130,7 +158,7 @@ export function useCalculator(inputs: CalculatorInputs) {
     const soldeReporte = parseFloat(soldeReporteLocation) || 0;
 
     // Option 1: Prix + Accessoires + Solde reporté - Consumer Cash - Rabais concess. - valeur echange + frais + dette echange + taxes - comptant - bonus cash
-    const montantAvantTaxesO1 = price + totalAccessoires + soldeReporte - consumerCash - rabais - valeurEchange + fraisTaxables;
+    const montantAvantTaxesO1 = price + totalAccessoires + soldeReporte - consumerCash - offersBeforeTax - rabais - valeurEchange + fraisTaxables;
     const taxesO1 = montantAvantTaxesO1 * TAUX_TAXE;
     const principalOption1Brut = montantAvantTaxesO1 + taxesO1 + detteSurEchange;
     const principalOption1 = principalOption1Brut - comptant - bonusCash;
@@ -159,7 +187,7 @@ export function useCalculator(inputs: CalculatorInputs) {
 
     // Option 2: Prix + Solde reporté - Alternative Consumer Cash - Rabais concess. - valeur echange + frais + dette echange + taxes - comptant - bonus cash
     const altConsumerCash = selectedProgram.alternative_consumer_cash || 0;
-    const montantAvantTaxesO2 = price + totalAccessoires + soldeReporte - altConsumerCash - rabais - valeurEchange + fraisTaxables;
+    const montantAvantTaxesO2 = price + totalAccessoires + soldeReporte - altConsumerCash - offersBeforeTax - rabais - valeurEchange + fraisTaxables;
     const taxesO2 = montantAvantTaxesO2 * TAUX_TAXE;
     const principalOption2Brut = montantAvantTaxesO2 + taxesO2 + detteSurEchange;
     // La prime (Bonus Cash, après taxes) se combine aussi avec l'option 2.
@@ -215,7 +243,7 @@ export function useCalculator(inputs: CalculatorInputs) {
       deferredActive: canDefer,
       soldeReporte,
     });
-  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, rabaisConcess, loyaltyRate, loyaltyBonus, deferredPayment, soldeReporteLocation]);
+  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, rabaisConcess, loyaltyRate, loyaltyBonus, offersBeforeTax, deferredPayment, soldeReporteLocation]);
 
   useEffect(() => {
     calculateForTerm();

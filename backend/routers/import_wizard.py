@@ -830,6 +830,8 @@ async def extract_pdf(
                     # Code et nom du programme de chaque prime, pour la soumission
                     "bonus_cash_program": prog.get("bonus_cash_program"),
                     "loyalty_bonus_cash_program": prog.get("loyalty_bonus_cash_program"),
+                    # Promotions du mois à cocher (fidélité, liquidation ciblée, vendredi fou…)
+                    "special_offers": prog.get("special_offers") or [],
                     "notes": prog.get("notes") or {},
                     "option1_rates": opt1,
                     "option2_rates": prog.get("option2_rates"),
@@ -982,6 +984,8 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
                     # Code et nom du programme de chaque prime, pour la soumission
                     "bonus_cash_program": prog.get("bonus_cash_program"),
                     "loyalty_bonus_cash_program": prog.get("loyalty_bonus_cash_program"),
+                    # Promotions du mois à cocher (fidélité, liquidation ciblée, vendredi fou…)
+                    "special_offers": prog.get("special_offers") or [],
                     "notes": prog.get("notes") or {},
                     "option1_rates": opt1,
                     "option2_rates": prog.get("option2_rates"),
