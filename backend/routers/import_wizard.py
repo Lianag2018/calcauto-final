@@ -827,6 +827,9 @@ async def extract_pdf(
                     # Nom lu par le modèle et par l'écran (rabais avant taxes de l'option 2).
                     "alternative_consumer_cash": prog.get("alt_consumer_cash", 0) or 0,
                     "loyalty_bonus_cash": prog.get("loyalty_bonus_cash", 0) or 0,
+                    # Code et nom du programme de chaque prime, pour la soumission
+                    "bonus_cash_program": prog.get("bonus_cash_program"),
+                    "loyalty_bonus_cash_program": prog.get("loyalty_bonus_cash_program"),
                     "notes": prog.get("notes") or {},
                     "option1_rates": opt1,
                     "option2_rates": prog.get("option2_rates"),
@@ -976,6 +979,9 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
                     # Nom lu par le modèle et par l'écran (rabais avant taxes de l'option 2).
                     "alternative_consumer_cash": prog.get("alt_consumer_cash", 0) or 0,
                     "loyalty_bonus_cash": prog.get("loyalty_bonus_cash", 0) or 0,
+                    # Code et nom du programme de chaque prime, pour la soumission
+                    "bonus_cash_program": prog.get("bonus_cash_program"),
+                    "loyalty_bonus_cash_program": prog.get("loyalty_bonus_cash_program"),
                     "notes": prog.get("notes") or {},
                     "option1_rates": opt1,
                     "option2_rates": prog.get("option2_rates"),

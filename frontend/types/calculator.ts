@@ -22,6 +22,9 @@ export interface VehicleProgram {
   bonus_cash: number;
   /** Prime sous condition (fidélité, conquête), après taxes : appliquée seulement si cochée. */
   loyalty_bonus_cash?: number;
+  /** Code et nom du programme de chaque prime, tels qu'écrits dans le PDF. */
+  bonus_cash_program?: { code: string; name: string } | null;
+  loyalty_bonus_cash_program?: { code: string; name: string } | null;
   program_month: number;
   program_year: number;
   sort_order: number;

@@ -301,6 +301,18 @@ export default function HomeScreen() {
 
   // Calcul de financement (logique extraite dans useCalculator)
   const loyaltyBonus = loyaltyBonusChecked ? (selectedProgram?.loyalty_bonus_cash || 0) : 0;
+  // Rabais après taxes, un par programme : inscrits à part du comptant réel du client,
+  // avec le nom et le code du programme (« … Loyalty Bonus Cash — 2646G1 »).
+  const rebateName = (fallback: string, program?: { code: string; name: string } | null) =>
+    program?.name ? `${program.name}${program.code ? ` — ${program.code}` : ''}` : fallback;
+  const programBonus = parseFloat(customBonusCash) || selectedProgram?.bonus_cash || 0;
+  const afterTaxRebates: { label: string; amount: number }[] = [
+    ...(programBonus > 0 ? [{ label: rebateName('Bonus Cash', selectedProgram?.bonus_cash_program), amount: programBonus }] : []),
+    ...(loyaltyBonus > 0 ? [{
+      label: rebateName(lang === 'fr' ? 'Prime de fidélité' : 'Loyalty bonus', selectedProgram?.loyalty_bonus_cash_program),
+      amount: loyaltyBonus,
+    }] : []),
+  ];
   const activeLoyaltyRate = loyaltyChecked && programMeta?.loyalty_rate ? programMeta.loyalty_rate : 0;
   const { localResult } = useCalculator({
     selectedProgram,
@@ -911,7 +923,7 @@ export default function HomeScreen() {
               <table style="width:100%;font-size:12px;border-collapse:collapse;">
                 <tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Prix</td><td style="padding:4px 0;text-align:right;font-weight:600;">${fmt(price)} $</td></tr>
                 ${consumerCash > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Rabais</td><td style="padding:4px 0;text-align:right;color:#1a5f4a;font-weight:600;">-${fmt(consumerCash)} $</td></tr>` : ''}
-                ${bonusCash2 > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Bonus Cash</td><td style="padding:4px 0;text-align:right;color:#1a5f4a;font-weight:600;">-${fmt(bonusCash2)} $</td></tr>` : ''}
+                ${afterTaxRebates.map(r => `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">${r.label} ${lang === 'fr' ? '(après taxes)' : '(after tax)'}</td><td style="padding:4px 0;text-align:right;color:#1a5f4a;font-weight:600;">-${fmt(r.amount)} $</td></tr>`).join('')}
                 ${dossier > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Frais dossier</td><td style="padding:4px 0;text-align:right;">${fmt(dossier)} $</td></tr>` : ''}
                 ${pneus > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Taxe pneus</td><td style="padding:4px 0;text-align:right;">${fmt(pneus)} $</td></tr>` : ''}
                 ${rdprm > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Frais RDPRM</td><td style="padding:4px 0;text-align:right;">${fmt(rdprm)} $</td></tr>` : ''}
@@ -1321,7 +1333,7 @@ export default function HomeScreen() {
               <table class="info-table">
                 <tr><td>${lang === 'fr' ? 'Prix du véhicule' : 'Vehicle price'}</td><td>${fmt(price)} $</td></tr>
                 ${consumerCash > 0 ? `<tr><td>${lang === 'fr' ? 'Rabais (avant taxes)' : 'Rebate (before tax)'}</td><td style="color:#2E7D32;">-${fmt(consumerCash)} $</td></tr>` : ''}
-                ${bonusCash > 0 ? `<tr><td>Bonus Cash ${lang === 'fr' ? '(après taxes)' : '(after tax)'}</td><td style="color:#2E7D32;">-${fmt(bonusCash)} $</td></tr>` : ''}
+                ${afterTaxRebates.map(r => `<tr><td>${r.label} ${lang === 'fr' ? '(après taxes)' : '(after tax)'}</td><td style="color:#2E7D32;">-${fmt(r.amount)} $</td></tr>`).join('')}
                 ${dossier > 0 ? `<tr><td>${lang === 'fr' ? 'Frais dossier' : 'Admin fees'}</td><td>${fmt2(dossier)} $</td></tr>` : ''}
                 ${pneus > 0 ? `<tr><td>${lang === 'fr' ? 'Taxe pneus' : 'Tire tax'}</td><td>${fmt(pneus)} $</td></tr>` : ''}
                 ${rdprm > 0 ? `<tr><td>RDPRM</td><td>${fmt(rdprm)} $</td></tr>` : ''}
@@ -1380,7 +1392,7 @@ export default function HomeScreen() {
               </div>
             </div>
             
-            ${bonusCash > 0 ? `<div class="bonus-note">Bonus Cash de ${fmt(bonusCash)} $ ${lang === 'fr' ? 'sera déduit après taxes (au comptant)' : 'will be deducted after tax (as cash)'}</div>` : ''}
+            ${afterTaxRebates.map(r => `<div class="bonus-note">${r.label} : ${fmt(r.amount)} $ ${lang === 'fr' ? 'déduit après taxes, à part du comptant du client' : 'deducted after tax, separate from the customer\'s cash down'}</div>`).join('')}
             
             ${showLease && leaseResult && (leaseResult.standard || leaseResult.alternative) ? `
             <!-- LOCATION SCI -->
@@ -1900,7 +1912,7 @@ export default function HomeScreen() {
                   {selectedProgram.bonus_cash > 0 && (
                     <View style={styles.rebateItem}>
                       <Ionicons name="gift-outline" size={14} color="#FFD700" />
-                      <Text style={styles.rebateLabelBonus}>{t.results.bonusCash} ({t.results.afterTax}):</Text>
+                      <Text style={styles.rebateLabelBonus}>{rebateName(t.results.bonusCash, selectedProgram.bonus_cash_program)} ({t.results.afterTax}):</Text>
                       <Text style={styles.rebateValueBonus}>{formatCurrency(selectedProgram.bonus_cash)}</Text>
                     </View>
                   )}
@@ -1912,7 +1924,7 @@ export default function HomeScreen() {
                     >
                       <Ionicons name={loyaltyBonusChecked ? 'checkbox' : 'square-outline'} size={18} color="#FFD700" />
                       <Text style={styles.rebateLabelBonus}>
-                        {lang === 'fr' ? 'Client fidèle — prime' : 'Loyalty bonus'} ({t.results.afterTax}):
+                        {rebateName(lang === 'fr' ? 'Client fidèle — prime' : 'Loyalty bonus', selectedProgram.loyalty_bonus_cash_program)} ({t.results.afterTax}):
                       </Text>
                       <Text style={styles.rebateValueBonus}>{formatCurrency(selectedProgram.loyalty_bonus_cash || 0)}</Text>
                     </TouchableOpacity>
@@ -2589,14 +2601,14 @@ export default function HomeScreen() {
               </View>
 
               {/* Bonus Cash Note */}
-              {(parseFloat(customBonusCash) > 0 || selectedProgram.bonus_cash > 0 || loyaltyBonus > 0) && (
-                <View style={styles.bonusCashNote}>
+              {afterTaxRebates.map(rebate => (
+                <View key={rebate.label} style={styles.bonusCashNote}>
                   <Ionicons name="information-circle" size={16} color="#FFD700" />
                   <Text style={styles.bonusCashNoteText}>
-                    {t.results.bonusCash} de {formatCurrency((parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0) + loyaltyBonus)} sera déduit après taxes (au comptant)
+                    {rebate.label} : {formatCurrency(rebate.amount)} {lang === 'fr' ? 'déduit après taxes, à part du comptant du client' : 'deducted after tax, separate from the cash down'}
                   </Text>
                 </View>
-              )}
+              ))}
               
               {/* Send by Email Button */}
               <TouchableOpacity
@@ -3521,6 +3533,7 @@ export default function HomeScreen() {
                           calculation_results: {
                             consumer_cash: selectedProgram.consumer_cash,
                             bonus_cash: (parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0) + loyaltyBonus,
+                            after_tax_rebates: afterTaxRebates,
                             comparisons: [{
                               term_months: selectedTerm,
                               option1_rate: localResult.option1Rate,

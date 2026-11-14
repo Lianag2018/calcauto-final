@@ -920,3 +920,14 @@ class TestAlternativeConsumerCash:
                                  option1_rates=rates, bonus_cash=0, loyalty_bonus_cash=1850)
         # Elle reste à part de la prime pour tous : l'écran ne l'applique que si elle est cochée.
         assert program.bonus_cash == 0 and program.loyalty_bonus_cash == 1850
+
+    def test_code_et_nom_du_programme_de_prime(self):
+        from services.pdfplumber_parser import read_bonus_rules, bonus_program
+        rules = read_bonus_rules(TestBonusRules.PAGES)
+        assert bonus_program(rules, "Fiat", 2025, 5000, False) == {
+            "code": "2618B7", "name": "Bonus Cash"}
+        named = bonus_program(rules, "Jeep", 2026, 1850, True)
+        assert named["code"] == "2646G1" and "85th Anniversary Jeep Loyalty Bonus" in named["name"]
+        # Une prime sous condition ne prend pas le nom du programme pour tous.
+        assert bonus_program(rules, "Jeep", 2026, 1850, False) is None
+        assert bonus_program(rules, "Jeep", 2026, 0, True) is None
