@@ -66,6 +66,8 @@ interface CalculatorInputs {
   accessories: Array<{ description: string; price: string }>;
   rabaisConcess: string;
   loyaltyRate?: number;
+  /** Prime de fidélité (après taxes) quand le vendeur a coché que le client y a droit. */
+  loyaltyBonus?: number;
   deferredPayment?: boolean;
   soldeReporteLocation?: string;
 }
@@ -82,6 +84,7 @@ export function useCalculator(inputs: CalculatorInputs) {
     comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM,
     prixEchange, montantDuEchange, accessories, rabaisConcess,
     loyaltyRate = 0,
+    loyaltyBonus = 0,
     deferredPayment = false,
     soldeReporteLocation = '',
   } = inputs;
@@ -98,7 +101,7 @@ export function useCalculator(inputs: CalculatorInputs) {
       return;
     }
 
-    const bonusCash = parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0;
+    const bonusCash = (parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0) + loyaltyBonus;
     const consumerCash = selectedProgram.consumer_cash;
     const comptant = parseFloat(comptantTxInclus) || 0;
     const rabais = parseFloat(rabaisConcess) || 0;
@@ -206,7 +209,7 @@ export function useCalculator(inputs: CalculatorInputs) {
       deferredActive: canDefer,
       soldeReporte,
     });
-  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, rabaisConcess, loyaltyRate, deferredPayment, soldeReporteLocation]);
+  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, rabaisConcess, loyaltyRate, loyaltyBonus, deferredPayment, soldeReporteLocation]);
 
   useEffect(() => {
     calculateForTerm();

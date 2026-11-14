@@ -911,3 +911,12 @@ class TestAlternativeConsumerCash:
         lease = parse_sci_lease(b"pdf", 1, 1)
         (vehicle,) = lease["vehicles_2027"]
         assert vehicle["lease_cash"] == 3000 and "delivery_credit" not in vehicle
+
+    def test_prime_de_fidelite_servie_avec_le_programme(self):
+        pytest.importorskip("pydantic")
+        from models import VehicleProgram
+        rates = {"rate_36": 4.99, "rate_48": 4.99, "rate_60": 4.99, "rate_72": 4.99, "rate_84": 4.99, "rate_96": 4.99}
+        program = VehicleProgram(brand="Jeep", model="Compass", trim="Sport", year=2026,
+                                 option1_rates=rates, bonus_cash=0, loyalty_bonus_cash=1850)
+        # Elle reste à part de la prime pour tous : l'écran ne l'applique que si elle est cochée.
+        assert program.bonus_cash == 0 and program.loyalty_bonus_cash == 1850
