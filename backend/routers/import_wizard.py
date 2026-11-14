@@ -1294,71 +1294,29 @@ async def upload_residual_guide(
             tmp.write(content)
             tmp_path = tmp.name
         
-        import fitz
-        TERMS = ["24", "27", "36", "39", "42", "48", "51", "54", "60"]
-        BODY_STYLES = [
-            "4D Wagon AWD", "4D Wagon", "3D Hatchback",
-            "2D Coupe AWD", "4D Sedan AWD",
-            "4D Utility 4WD", "4D Utility AWD", "4D Utility",
-            "2D Utility 4WD", "2D Utility AWD", "2D Utility",
-            "Crew Cab LWB 2WD", "Crew Cab LWB 4WD",
-            "Crew Cab SWB 2WD", "Crew Cab SWB 4WD",
-            "Crew Cab 4WD",
-            "Quad Cab SWB 4WD", "Quad Cab SWB 2WD",
-            "Mega Cab 4WD", "Mega Cab 2WD",
-            "Reg Cab LWB 2WD", "Reg Cab LWB 4WD",
-            "Reg Cab 2WD", "Reg Cab 4WD",
-        ]
-        
-        # ── Auto-detect month/year from PDF content ──
-        MONTH_MAP_EN = {"january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6,
-                        "july": 7, "august": 8, "september": 9, "october": 10, "november": 11, "december": 12}
-        MONTH_NAMES_UPPER = {m.upper(): n for m, n in MONTH_MAP_EN.items()}
-        MONTH_ABBREV_MAP = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
-                            "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12}
-        
-        # Detect the effective date range (e.g., "Effective: Mar 01, 2026 - Apr 30, 2026")
-        effective_end_month = None
-        effective_end_year = None
-        
-        if not effective_month or not effective_year:
-            doc_detect = fitz.open(tmp_path)
-            for pg_idx in range(min(3, doc_detect.page_count)):
-                pg_text = doc_detect[pg_idx].get_text()
-                
-                # Try to detect full effective range first
-                range_pattern = r'Effective:\s*(\w+)\s+\d+,?\s*(\d{4})\s*[-–]\s*(\w+)\s+\d+,?\s*(\d{4})'
-                range_match = re_local.search(range_pattern, pg_text, re_local.IGNORECASE)
-                if range_match:
-                    start_abbrev = range_match.group(1).lower()[:3]
-                    end_abbrev = range_match.group(3).lower()[:3]
-                    effective_month = MONTH_ABBREV_MAP.get(start_abbrev)
-                    effective_year = int(range_match.group(2))
-                    effective_end_month = MONTH_ABBREV_MAP.get(end_abbrev)
-                    effective_end_year = int(range_match.group(4))
-                    logger.info(f"[ResidualGuide] Detected range: month {effective_month}/{effective_year} → {effective_end_month}/{effective_end_year}")
-                    break
-                
-                # Fallback: detect single month
-                for month_name, month_num in MONTH_NAMES_UPPER.items():
-                    pattern = rf'{month_name}\s+(20\d{{2}})'
-                    m = re_local.search(pattern, pg_text)
-                    if m:
-                        effective_month = effective_month or month_num
-                        effective_year = effective_year or int(m.group(1))
-                        logger.info(f"[ResidualGuide] Auto-detected: {month_name} {m.group(1)}")
-                        break
-                if effective_month and effective_year:
-                    break
-            doc_detect.close()
-        
-        if not effective_month or not effective_year:
-            raise HTTPException(status_code=400, detail="Impossible de détecter le mois/année du PDF. Vérifiez le document.")
-        
-        logger.info(f"[ResidualGuide] Processing for month={effective_month}, year={effective_year}")
-        
-        # ── Load previous data for comparison ──
+        from services.residual_reader import read_residual_guide, ResidualGuideError, TERMS
         from routers.sci import _get_latest_data_file
+
+        # ── Lecture par position, guide anglais ou français, avec contrôle ──
+        try:
+            guide = read_residual_guide(content)
+        except ResidualGuideError as e:
+            # Rien n'est enregistré si une seule ligne ne se lit pas
+            raise HTTPException(status_code=422, detail=str(e))
+
+        all_vehicles = guide["vehicles"]
+        km_adjustments_extracted = guide["km_adjustments"]
+        effective_end_month = guide["end_month"]
+        effective_end_year = guide["end_year"]
+        if not effective_month or not effective_year:
+            effective_month, effective_year = guide["month"], guide["year"]
+        elif (effective_month, effective_year) != (guide["month"], guide["year"]):
+            # Mois imposé par le formulaire : on ne recopie pas vers d'autres mois
+            effective_end_month = effective_end_year = None
+        logger.info(f"[ResidualGuide] {len(all_vehicles)} véhicules, mois {effective_month}/{effective_year}"
+                    f" (fin {effective_end_month}/{effective_end_year})")
+
+        # ── Load previous data for comparison ──
         prev_data = {}
         prev_path = _get_latest_data_file("sci_residuals")
         if prev_path:
@@ -1366,205 +1324,11 @@ async def upload_residual_guide(
                 with open(prev_path, 'r') as f:
                     prev_json = json.load(f)
                 for v in prev_json.get("vehicles", []):
-                    key = f"{v.get('brand')}|{v.get('model_name')}|{v.get('trim')}|{v.get('body_style')}"
+                    key = f"{v.get('brand')}|{v.get('model_year')}|{v.get('model_name')}|{v.get('trim')}|{v.get('body_style')}"
                     prev_data[key] = v.get("residual_percentages", {})
                 logger.info(f"[ResidualGuide] Loaded {len(prev_data)} previous vehicles for comparison from {prev_path}")
             except Exception:
                 pass
-        
-        def is_number(s):
-            try:
-                int(s)
-                return True
-            except:
-                return False
-        
-        def is_body_style(s):
-            return s in BODY_STYLES
-        
-        # ── Build month header filter (any month/year line) ──
-        month_header_pattern = re_local.compile(r'^(?:JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+20\d{2}$')
-        
-        doc = fitz.open(tmp_path)
-        all_vehicles = []
-        
-        # ── Also extract km adjustments from the last page ──
-        km_adjustments_extracted = None
-        last_page_text = doc[-1].get_text() if doc.page_count > 0 else ""
-        if "kilomet" in last_page_text.lower() or "18,000" in last_page_text:
-            km_lines = [l.strip() for l in last_page_text.split('\n') if l.strip()]
-            km_adj_18k = {}
-            km_adj_12k = {}
-            term_groups = [["24","27"], ["36","39","42"], ["48","51","54"], ["60"]]
-            
-            # Parse line-by-line: "18,000 Kilometers per year" followed by values
-            i = 0
-            while i < len(km_lines):
-                line = km_lines[i]
-                if '18,000' in line and 'kilom' in line.lower():
-                    # Collect next 4 values
-                    vals = []
-                    for j in range(1, 5):
-                        if i + j < len(km_lines):
-                            m = re_local.search(r'\+?(\d+)%?', km_lines[i + j])
-                            if m:
-                                vals.append(int(m.group(1)))
-                    if len(vals) == 4:
-                        for terms, val in zip(term_groups, vals):
-                            for t in terms:
-                                km_adj_18k[t] = val
-                        logger.info(f"[ResidualGuide] KM 18k extracted: {vals}")
-                    i += 5
-                    continue
-                elif '12,000' in line and 'kilom' in line.lower():
-                    vals = []
-                    for j in range(1, 5):
-                        if i + j < len(km_lines):
-                            m = re_local.search(r'\+?(\d+)%?', km_lines[i + j])
-                            if m:
-                                vals.append(int(m.group(1)))
-                    if len(vals) == 4:
-                        for terms, val in zip(term_groups, vals):
-                            for t in terms:
-                                km_adj_12k[t] = val
-                        logger.info(f"[ResidualGuide] KM 12k extracted: {vals}")
-                    i += 5
-                    continue
-                i += 1
-            
-            if km_adj_18k and km_adj_12k:
-                km_adjustments_extracted = {
-                    "standard_km": 24000,
-                    "max_km_per_year": 36000,
-                    "adjustments": {"18000": km_adj_18k, "12000": km_adj_12k},
-                    "source": "residual_guide"
-                }
-                logger.info(f"[ResidualGuide] KM adjustments: 18k={km_adj_18k}, 12k={km_adj_12k}")
-        
-        for page_num in range(doc.page_count):
-            page = doc[page_num]
-            text = page.get_text()
-            lines_raw = [l.strip() for l in text.split('\n') if l.strip()]
-            
-            clean = []
-            for l in lines_raw:
-                if '675 Cochrane' in l or 'scileasecorp' in l or 'T: 1-888' in l or 'F: 1-866' in l:
-                    continue
-                if l in ('LEASE RESIDUAL VALUES', 'STANDARD', 'RESIDUAL VALUE GUIDE') or l.startswith('Effective:'):
-                    continue
-                if month_header_pattern.match(l):
-                    continue
-                clean.append(l)
-            
-            current_brand = None
-            current_model = None
-            current_year = None
-            
-            i = 0
-            while i < len(clean):
-                line = clean[i]
-                
-                if line in ('CHRYSLER', 'DODGE', 'JEEP', 'RAM', 'FIAT'):
-                    current_brand = line.title()
-                    i += 1
-                    if i < len(clean) and (clean[i] == '24' or clean[i].startswith('24 27')):
-                        if clean[i] == '24':
-                            skip = 0
-                            while i + skip < len(clean) and clean[i + skip] in TERMS:
-                                skip += 1
-                            i += skip
-                        else:
-                            i += 1
-                    continue
-                
-                if line.startswith('MODEL YEAR'):
-                    i += 1
-                    continue
-                
-                year_match = re_local.match(r'^(20\d{2})\s+(.+)$', line)
-                if year_match:
-                    current_year = int(year_match.group(1))
-                    model_raw = year_match.group(2).strip()
-                    
-                    if i + 1 < len(clean):
-                        next_line = clean[i + 1]
-                        if (not is_body_style(next_line) and not is_number(next_line) and
-                            not re_local.match(r'^(20\d{2})\s+', next_line) and
-                            next_line not in ('CHRYSLER', 'DODGE', 'JEEP', 'RAM', 'FIAT') and
-                            next_line not in TERMS and not next_line.startswith('24 27')):
-                            if i + 2 < len(clean) and (is_body_style(clean[i + 2]) or is_number(clean[i + 2])):
-                                current_model = model_raw
-                            else:
-                                current_model = model_raw + ' ' + next_line
-                                i += 1
-                        else:
-                            current_model = model_raw
-                    else:
-                        current_model = model_raw
-                    
-                    i += 1
-                    continue
-                
-                if current_brand and current_model and current_year:
-                    trim = line
-                    
-                    if i + 1 < len(clean):
-                        next_line = clean[i + 1]
-                        
-                        if is_body_style(next_line):
-                            body_style = next_line
-                            vals = []
-                            j = i + 2
-                            while j < len(clean) and len(vals) < 9:
-                                if is_number(clean[j]):
-                                    vals.append(int(clean[j]))
-                                    j += 1
-                                else:
-                                    break
-                            
-                            if len(vals) == 9:
-                                all_vehicles.append({
-                                    "brand": current_brand,
-                                    "model_year": current_year,
-                                    "model_name": current_model,
-                                    "trim": trim,
-                                    "body_style": body_style,
-                                    "residual_percentages": dict(zip(TERMS, vals))
-                                })
-                                i = j
-                                continue
-                        
-                        if not is_body_style(next_line) and not is_number(next_line):
-                            combined_trim = trim + ' ' + next_line
-                            if i + 2 < len(clean) and is_body_style(clean[i + 2]):
-                                body_style = clean[i + 2]
-                                vals = []
-                                j = i + 3
-                                while j < len(clean) and len(vals) < 9:
-                                    if is_number(clean[j]):
-                                        vals.append(int(clean[j]))
-                                        j += 1
-                                    else:
-                                        break
-                                
-                                if len(vals) == 9:
-                                    all_vehicles.append({
-                                        "brand": current_brand,
-                                        "model_year": current_year,
-                                        "model_name": current_model,
-                                        "trim": combined_trim,
-                                        "body_style": body_style,
-                                        "residual_percentages": dict(zip(TERMS, vals))
-                                    })
-                                    i = j
-                                    continue
-                
-                i += 1
-        
-        doc.close()
-        
-        if len(all_vehicles) == 0:
-            raise HTTPException(status_code=400, detail="Aucun véhicule trouvé dans le PDF. Vérifiez le format du document.")
         
         # ── Comparison: detect changes from previous data ──
         changes_summary = {
@@ -1575,7 +1339,7 @@ async def upload_residual_guide(
         }
         new_keys = set()
         for v in all_vehicles:
-            key = f"{v.get('brand')}|{v.get('model_name')}|{v.get('trim')}|{v.get('body_style')}"
+            key = f"{v.get('brand')}|{v.get('model_year')}|{v.get('model_name')}|{v.get('trim')}|{v.get('body_style')}"
             new_keys.add(key)
             new_res = v.get("residual_percentages", {})
             if key in prev_data:
@@ -1683,6 +1447,16 @@ async def upload_residual_guide(
                 extra_month_lower = month_names[m].lower()
                 extra_filename = f"sci_residuals_{extra_month_lower}{y}.json"
                 extra_path = ROOT_DIR / "data" / extra_filename
+                if extra_path.exists():
+                    try:
+                        with open(extra_path, 'r') as f:
+                            existing_source = json.load(f).get("source", "")
+                    except Exception:
+                        existing_source = ""
+                    if "copié de" not in existing_source:
+                        # Ce mois a déjà son propre guide : on ne l'écrase pas
+                        logger.info(f"[ResidualGuide] {extra_filename} conservé (guide propre à ce mois)")
+                        continue
                 extra_result = dict(result)
                 extra_result["effective_from"] = f"{y}-{m:02d}-01"
                 extra_result["source"] = f"SCI Lease Corp Stellantis Residual Guide - {month_names[m]} {y} (copié de {month_names[effective_month]} {effective_year})"
@@ -1802,6 +1576,13 @@ CalcAuto AiPro"""
             except Exception as e:
                 logger.error(f"Error sending residual email: {str(e)}")
         
+        # Copie en base tout de suite : le disque de Render ne survit pas à un redémarrage
+        try:
+            from services import data_store
+            await data_store.save_changed_files(db, ROOT_DIR / "data")
+        except Exception as e:
+            logger.warning(f"[ResidualGuide] copie en base impossible: {e}")
+
         # Count by brand for response
         brands_count = {}
         for v in all_vehicles:

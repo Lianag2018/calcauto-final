@@ -72,6 +72,23 @@ async def shutdown_db_client():
 
 
 @app.on_event("startup")
+async def keep_imported_data_files():
+    """Les fichiers écrits par les imports survivent aux redémarrages : ils
+    sont relus depuis la base au démarrage, puis recopiés en base à mesure."""
+    import asyncio
+    from database import ROOT_DIR
+    from services import data_store
+    data_dir = ROOT_DIR / "data"
+    try:
+        restored = await data_store.restore_files(db, data_dir)
+        logger.info(f"[DataStore] {restored} fichier(s) de données relu(s) depuis la base")
+    except Exception as e:
+        logger.warning(f"[DataStore] relecture depuis la base impossible: {e}")
+    data_store.snapshot(data_dir)
+    app.state.data_store_task = asyncio.create_task(data_store.watch(db, data_dir, logger))
+
+
+@app.on_event("startup")
 async def run_data_migration():
     """Migration automatique: corrige les donnees 2025 erronees au demarrage"""
     try:

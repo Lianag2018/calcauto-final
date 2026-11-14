@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -513,6 +513,24 @@ export default function HomeScreen() {
     checkForRestore();
   }, []);
 
+  // Résiduel du véhicule choisi. Le guide contient plusieurs années-modèles
+  // (2025, 2026, 2027) avec des pourcentages différents : on ne cherche que
+  // dans l'année du programme, et le calcul et le tableau du kilométrage
+  // utilisent la même ligne.
+  const residualVehicle = useMemo(() => {
+    if (!selectedProgram || !leaseResiduals?.vehicles) return null;
+    const sameYear = leaseResiduals.vehicles.filter(
+      (v: any) => String(v.model_year) === String(selectedProgram.year)
+    );
+    return findResidualVehicle(
+      sameYear,
+      selectedProgram.brand,
+      selectedProgram.model,
+      selectedProgram.trim || '',
+      selectedInventory?.body_style
+    );
+  }, [selectedProgram, leaseResiduals, selectedInventory?.body_style]);
+
   // Calculate lease when parameters change
   useEffect(() => {
     if (!showLease || !selectedProgram || !vehiclePrice || !leaseResiduals || !leaseRates) {
@@ -523,14 +541,6 @@ export default function HomeScreen() {
     const price = parseFloat(vehiclePrice);
     if (isNaN(price) || price <= 0) return;
 
-    // Find matching residual vehicle
-    const residualVehicle = findResidualVehicle(
-      leaseResiduals.vehicles || [],
-      selectedProgram.brand,
-      selectedProgram.model,
-      selectedProgram.trim || '',
-      selectedInventory?.body_style
-    );
     if (!residualVehicle) { setLeaseResult(null); return; }
 
     const residualPct = residualVehicle.residual_percentages?.[String(leaseTerm)] || 0;
@@ -538,7 +548,8 @@ export default function HomeScreen() {
 
     // Find matching rate entry
     const year = selectedProgram.year;
-    const vehicleList = year === 2025 ? leaseRates.vehicles_2025 : leaseRates.vehicles_2026;
+    // Taux de l'année-modèle du programme (2027 compris), jamais ceux d'une autre année
+    const vehicleList = leaseRates[`vehicles_${year}`];
     const rateEntry = findRateEntry(vehicleList || [], selectedProgram.brand, selectedProgram.model, selectedProgram.trim || '');
 
     const termKey = String(leaseTerm);
@@ -654,7 +665,7 @@ export default function HomeScreen() {
 
     setBestLeaseOption(bestOption);
     setLeaseAnalysisGrid(grid);
-  }, [showLease, selectedProgram, vehiclePrice, leaseTerm, leaseKmPerYear, leaseResiduals, leaseRates, 
+  }, [showLease, selectedProgram, vehiclePrice, leaseTerm, leaseKmPerYear, leaseResiduals, leaseRates, residualVehicle, 
       customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, leasePdsf, leaseSoldeReporte, leaseRabaisConcess, selectedInventory?.body_style]);
 
   // Filter programs when year or brand changes
@@ -2710,28 +2721,8 @@ export default function HomeScreen() {
                   {/* Residual by km/year table */}
                   {(() => {
                     if (!selectedProgram || !leaseResiduals?.vehicles) return null;
-                    const brandL = selectedProgram.brand.toLowerCase();
-                    const modelL = selectedProgram.model.toLowerCase();
-                    const trimL = (selectedProgram.trim || '').toLowerCase();
-                    const bodyL = (selectedInventory?.body_style || '').toLowerCase();
-                    // Priority: match with body_style, fallback without
-                    let rv = bodyL ? leaseResiduals.vehicles?.find((v: any) => {
-                      const vB = v.brand.toLowerCase();
-                      const vM = v.model_name.toLowerCase();
-                      const vT = (v.trim || '').toLowerCase();
-                      const vBS = (v.body_style || '').toLowerCase();
-                      return vB === brandL && (vM.includes(modelL) || modelL.includes(vM)) &&
-                        (vT.includes(trimL) || trimL.includes(vT) || !trimL) && vBS === bodyL;
-                    }) : null;
-                    if (!rv) {
-                      rv = leaseResiduals.vehicles?.find((v: any) => {
-                        const vB = v.brand.toLowerCase();
-                        const vM = v.model_name.toLowerCase();
-                        const vT = (v.trim || '').toLowerCase();
-                        return vB === brandL && (vM.includes(modelL) || modelL.includes(vM)) &&
-                          (vT.includes(trimL) || trimL.includes(vT) || !trimL);
-                      });
-                    }
+                    // Même ligne du guide que celle utilisée pour le calcul du paiement
+                    const rv = residualVehicle;
                     if (!rv) return null;
                     const basePct = rv.residual_percentages?.[String(leaseTerm)] || 0;
                     if (basePct === 0) return null;
