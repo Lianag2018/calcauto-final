@@ -14,7 +14,9 @@ from models import (
     SaveProgramsRequest, FinancingRates, VehicleProgram
 )
 from dependencies import get_current_user
-from services.email_service import send_email
+from services.email_service import send_email, SMTP_TIMEOUT
+
+_background_tasks = set()   # garde une référence aux tâches lancées sans attente
 
 try:
     import openpyxl
@@ -686,7 +688,7 @@ CalcAuto AiPro
     
     # Send email
     try:
-        server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+        server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT)
         server.starttls()
         server.login(SMTP_EMAIL, SMTP_PASSWORD)
         server.send_message(msg)
@@ -897,7 +899,7 @@ async def extract_pdf(
         if EXCEL_AVAILABLE and valid_programs and SMTP_EMAIL:
             try:
                 excel_data = generate_excel_from_programs(valid_programs, program_month, program_year, sci_lease_data=sci_data_for_excel)
-                excel_sent = send_excel_email(excel_data, SMTP_EMAIL, program_month, program_year, len(valid_programs))
+                excel_sent = await asyncio.to_thread(send_excel_email, excel_data, SMTP_EMAIL, program_month, program_year, len(valid_programs))
             except Exception as excel_error:
                 logger.error(f"[Sync] Excel email error: {str(excel_error)}")
 
@@ -1174,7 +1176,7 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
                     {"$set": {"status": "sending_email", "message": "Génération Excel et envoi par email..."}}
                 )
                 excel_data = generate_excel_from_programs(valid_programs, program_month, program_year, sci_lease_data=sci_lease_data_for_excel)
-                excel_sent = send_excel_email(excel_data, SMTP_EMAIL, program_month, program_year, len(valid_programs))
+                excel_sent = await asyncio.to_thread(send_excel_email, excel_data, SMTP_EMAIL, program_month, program_year, len(valid_programs))
                 logger.info(f"[Async] Excel sent: {excel_sent}")
             except Exception as excel_error:
                 logger.error(f"[Async] Excel email error: {str(excel_error)}")
@@ -1576,7 +1578,7 @@ CalcAuto AiPro"""
                 attachment.add_header('Content-Disposition', f'attachment; filename={att_filename}')
                 msg.attach(attachment)
                 
-                server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+                server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT)
                 server.starttls()
                 server.login(SMTP_EMAIL, SMTP_PASSWORD)
                 server.send_message(msg)
@@ -1754,18 +1756,22 @@ async def save_programs(request: SaveProgramsRequest):
             brands_summary[brand] = 0
         brands_summary[brand] += 1
     
-    # Send automatic email report
-    try:
-        await send_import_report_email(
-            programs_count=inserted,
-            program_month=request.program_month,
-            program_year=request.program_year,
-            brands_summary=brands_summary,
-            skipped_count=skipped
-        )
-        logger.info(f"Import report email sent to {SMTP_EMAIL}")
-    except Exception as e:
-        logger.warning(f"Failed to send import report email: {str(e)}")
+    # Rapport par courriel, en arrière-plan : la sauvegarde est faite, la réponse
+    # ne doit pas attendre un serveur de courriel lent ou injoignable.
+    async def _report():
+        try:
+            await send_import_report_email(
+                programs_count=inserted,
+                program_month=request.program_month,
+                program_year=request.program_year,
+                brands_summary=brands_summary,
+                skipped_count=skipped
+            )
+            logger.info(f"Import report email sent to {SMTP_EMAIL}")
+        except Exception as e:
+            logger.warning(f"Failed to send import report email: {str(e)}")
+    _background_tasks.add(task := asyncio.create_task(_report()))
+    task.add_done_callback(_background_tasks.discard)
     
     # Force logout all users after data change
     await db.tokens.delete_many({})
@@ -1907,7 +1913,7 @@ async def send_import_report_email(programs_count: int, program_month: int, prog
     
     subject = f"✅ Import {month_name} {program_year} - {programs_count} programmes"
     
-    send_email(SMTP_EMAIL, subject, html_body)
+    await asyncio.to_thread(send_email, SMTP_EMAIL, subject, html_body)
 
 async def cleanup_old_programs():
     """Supprime les programmes de plus de 6 mois"""
