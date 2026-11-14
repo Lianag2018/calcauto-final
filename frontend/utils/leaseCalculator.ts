@@ -82,10 +82,11 @@ export function computeNetCapCost(inputs: LeaseInputs): number {
  * Rabais de location (tous avant taxes) selon le taux choisi :
  * taux standard = Lease Cash + Lease Cash du taux standard ; taux alternatif = Alternative Lease Cash.
  */
-export function leaseCashFor(rateEntry: any, option: 'standard' | 'alternative'): number {
+export function leaseCashFor(rateEntry: any, option: 'standard' | 'alternative', withStandardRateCash = true): number {
   if (!rateEntry) return 0;
   if (option === 'alternative') return rateEntry.alt_lease_cash || rateEntry.alternative_lease_cash || 0;
-  return (rateEntry.lease_cash || 0) + (rateEntry.standard_rate_lease_cash || 0);
+  // Le Lease Cash du taux standard (261QLB) ne s'ajoute que si le vendeur l'a coché.
+  return (rateEntry.lease_cash || 0) + (withStandardRateCash ? (rateEntry.standard_rate_lease_cash || 0) : 0);
 }
 
 /** 4. Valeur résiduelle = PDSF × (% résiduel ajusté / 100) */

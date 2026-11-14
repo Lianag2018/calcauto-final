@@ -302,6 +302,14 @@ export default function HomeScreen() {
 
   // Calcul de financement (logique extraite dans useCalculator)
   const specialOffers = offersOf(selectedProgram);
+  // Lease Cash du taux standard (colonne 261QLB du PDF) : offert en case à cocher,
+  // seulement pour la location au taux standard, jamais ajouté d'office.
+  const leaseRateEntry = useMemo(() => (selectedProgram && leaseRates)
+    ? findRateEntry(leaseRates[`vehicles_${selectedProgram.year}`] || [], selectedProgram.brand, selectedProgram.model, selectedProgram.trim || '')
+    : null, [selectedProgram, leaseRates]);
+  const STD_RATE_CASH_KEY = 'standard-rate-lease-cash';
+  const stdRateLeaseCash = leaseRateEntry?.standard_rate_lease_cash || 0;
+  const stdRateCashChecked = !!checkedOffers[STD_RATE_CASH_KEY];
   // Après taxes : déduit du solde, à part du comptant. Avant taxes : réduit le prix taxable.
   const loyaltyBonus = checkedOffersTotal(specialOffers, checkedOffers, 'after', 'E');
   const offersBeforeTax = checkedOffersTotal(specialOffers, checkedOffers, 'before', 'E');
@@ -584,7 +592,7 @@ export default function HomeScreen() {
     const standardRate = rateEntry?.standard_rates?.[termKey] ?? null;
     const alternativeRate = rateEntry?.alternative_rates?.[termKey] ?? null;
     // Les promotions avant taxes cochées s'ajoutent au Lease Cash des deux options
-    const leaseCashVal = leaseCashFor(rateEntry, 'standard') + leaseOffersBeforeTax;
+    const leaseCashVal = leaseCashFor(rateEntry, 'standard', stdRateCashChecked) + leaseOffersBeforeTax;
     const altLeaseCashVal = leaseCashFor(rateEntry, 'alternative') + leaseOffersBeforeTax;
 
     // km adjustment + residual
@@ -696,7 +704,7 @@ export default function HomeScreen() {
     setBestLeaseOption(bestOption);
     setLeaseAnalysisGrid(grid);
   }, [showLease, selectedProgram, vehiclePrice, leaseTerm, leaseKmPerYear, leaseResiduals, leaseRates, residualVehicle, 
-      programBonus, leaseOffersAfterTax, leaseOffersBeforeTax, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, leasePdsf, leaseSoldeReporte, leaseRabaisConcess, selectedInventory?.body_style]);
+      programBonus, leaseOffersAfterTax, leaseOffersBeforeTax, stdRateCashChecked, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, leasePdsf, leaseSoldeReporte, leaseRabaisConcess, selectedInventory?.body_style]);
 
   // Filter programs when year or brand changes
   useEffect(() => {
@@ -1931,6 +1939,22 @@ export default function HomeScreen() {
                       <Text style={styles.rebateLabelBonus}>{rebateName(t.results.bonusCash, selectedProgram.bonus_cash_program)} ({t.results.afterTax}):</Text>
                       <Text style={styles.rebateValueBonus}>{formatCurrency(selectedProgram.bonus_cash)}</Text>
                     </View>
+                  )}
+                  {stdRateLeaseCash > 0 && (
+                    <TouchableOpacity
+                      style={styles.rebateItem}
+                      onPress={() => setCheckedOffers(prev => ({ ...prev, [STD_RATE_CASH_KEY]: !prev[STD_RATE_CASH_KEY] }))}
+                      testID="offer-toggle-standard-rate-lease-cash"
+                    >
+                      <Ionicons name={stdRateCashChecked ? 'checkbox' : 'square-outline'} size={18} color="#FFD700" />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.rebateLabelBonus}>SCI Standard Rate Lease Cash — 261QLB ({t.results.beforeTax}):</Text>
+                        <Text style={{ color: '#999', fontSize: 11 }}>
+                          {lang === 'fr' ? 'Location au taux standard seulement, s\'ajoute au Lease Cash' : 'Standard-rate lease only, stacks with Lease Cash'}
+                        </Text>
+                      </View>
+                      <Text style={styles.rebateValueBonus}>{formatCurrency(stdRateLeaseCash)}</Text>
+                    </TouchableOpacity>
                   )}
                   {specialOffers.map((offer: any) => {
                     const key = offerKey(offer);

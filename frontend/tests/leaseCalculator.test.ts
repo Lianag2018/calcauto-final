@@ -88,3 +88,12 @@ describe('promotions du mois à cocher', () => {
     expect(offersOf({ special_offers: [], loyalty_bonus_cash: 1500 })).toEqual([]);
   });
 });
+
+describe('Lease Cash du taux standard (261QLB)', () => {
+  const entry = { lease_cash: 4000, standard_rate_lease_cash: 3000, alt_lease_cash: 0 };
+  test('ajouté seulement quand il est coché', () => {
+    expect(leaseCashFor(entry, 'standard', false)).toBe(4000);
+    expect(leaseCashFor(entry, 'standard', true)).toBe(7000);
+    expect(leaseCashFor(entry, 'alternative', true)).toBe(0);
+  });
+});
