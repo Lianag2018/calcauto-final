@@ -834,3 +834,55 @@ class TestDataStore:
         assert asyncio.run(data_store.restore_files(db, tmp_path)) == 2
         assert (tmp_path / "sci_residuals_novembre2026.json").read_text() == '{"from": "import"}'
         assert asyncio.run(data_store.restore_files(db, tmp_path)) == 0
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Primes : pour tous (programme 2618) ou sous condition (programme 2646)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestBonusRules:
+    PAGES = [
+        "Bonus Cash Program – 2618\nBonus Cash Program Elements\nEligible Customers All\n"
+        "2025 FIAT 500e 2618B7 1/L/E $5,000 After Tax\nJuly 2026 For Internal Use Only 8",
+        "Loyalty Bonus Cash Program – 2646\nJuly Only - 85th Anniversary Jeep Loyalty Bonus\n"
+        "2025 Jeep Grand Cherokee 4xe 2646G1 1/L/E $1,850 After Tax\n"
+        "2025/2026 Jeep Compass 2646G1 1/L/E $1,850 After Tax\n"
+        "2026 Jeep Wrangler 2646G1 1/L/E $1,850 After Tax",
+        "Finance Prime\nRate Landscapes",
+    ]
+
+    def _rules(self):
+        from services.pdfplumber_parser import read_bonus_rules
+        return read_bonus_rules(self.PAGES)
+
+    def test_rules_pages_are_read(self):
+        rules = self._rules()
+        assert [(r['kind'], r['program'], r['amount']) for r in rules] == [
+            ('all', '2618', 5000), ('loyalty', '2646', 1850), ('loyalty', '2646', 1850),
+            ('loyalty', '2646', 1850)]
+        assert rules[2]['years'] == {2025, 2026} and 'compass' in rules[2]['models']
+
+    def test_loyalty_amount_is_conditional(self):
+        from services.pdfplumber_parser import bonus_condition
+        assert bonus_condition(self._rules(), 'Jeep', 2026, 1850) == 'loyalty'
+        assert bonus_condition(self._rules(), 'Jeep', 2025, 1850) == 'loyalty'
+
+    def test_bonus_for_everyone_stays_for_everyone(self):
+        from services.pdfplumber_parser import bonus_condition
+        assert bonus_condition(self._rules(), 'Fiat', 2025, 5000) == ''
+
+    def test_unannounced_amount_is_left_alone(self):
+        from services.pdfplumber_parser import bonus_condition
+        # autre marque, autre montant, autre année, ou PDF sans page de règles
+        assert bonus_condition(self._rules(), 'Ram', 2026, 1850) == ''
+        assert bonus_condition(self._rules(), 'Jeep', 2026, 1000) == ''
+        assert bonus_condition(self._rules(), 'Jeep', 2027, 1850) == ''
+        assert bonus_condition([], 'Jeep', 2026, 1850) == ''
+        assert bonus_condition(self._rules(), 'Jeep', 2026, 0) == ''
+
+    def test_conquest_program_is_conditional_too(self):
+        from services.pdfplumber_parser import read_bonus_rules, bonus_condition
+        rules = read_bonus_rules([
+            "Conquest Bonus Cash Program – 2646\nJeep Conquest Bonus Cash Program Elements\n"
+            "2026 Jeep Wrangler 2646J1 1/L/E $1,250 After Tax"])
+        assert bonus_condition(rules, 'Jeep', 2026, 1250) == 'conquest'
