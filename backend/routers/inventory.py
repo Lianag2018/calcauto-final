@@ -16,6 +16,29 @@ from services.program_matching import describe_vehicle, match_program, is_model_
 
 router = APIRouter()
 
+# Inventaire Kennebec partagé : Kenbot le recopie du site kennebecdodge.ca
+# (véhicules neufs et d'occasion) dans la même collection, sous ce propriétaire.
+SHARED_OWNER = "SHARED_KENNEBEC"
+
+
+def _owners(user: Dict[str, Any]) -> Dict[str, Any]:
+    """Véhicules de l'utilisateur + inventaire Kennebec partagé."""
+    return {"$in": [user["id"], SHARED_OWNER]}
+
+
+def _dedupe_by_stock(vehicles: List[Dict[str, Any]], user_id: str) -> List[Dict[str, Any]]:
+    """Un même numéro de stock peut exister en version partagée et en version
+    personnelle (facture numérisée) : la version personnelle, plus complète, gagne."""
+    by_stock: Dict[str, Dict[str, Any]] = {}
+    for vehicle in vehicles:
+        stock = vehicle.get("stock_no") or ""
+        if not stock:
+            continue
+        kept = by_stock.get(stock)
+        if kept is None or (kept.get("owner_id") == SHARED_OWNER and vehicle.get("owner_id") == user_id):
+            by_stock[stock] = vehicle
+    return list(by_stock.values())
+
 
 # ============ Association véhicule -> ligne de programme ============
 
@@ -130,10 +153,10 @@ async def get_inventory(
     year: Optional[int] = None,
     brand: Optional[str] = None
 ):
-    """Récupère l'inventaire de l'utilisateur avec filtres optionnels"""
+    """Inventaire de l'utilisateur + inventaire Kennebec partagé (neuf et occasion)."""
     user = await get_current_user(authorization)
     
-    query = {"owner_id": user["id"]}
+    query = {"owner_id": _owners(user)}
     if type:
         query["type"] = type
     if status:
@@ -146,6 +169,9 @@ async def get_inventory(
     vehicles = []
     async for vehicle in db.inventory.find(query, {"_id": 0}).sort("stock_no", 1):
         vehicles.append(vehicle)
+    vehicles = _dedupe_by_stock(vehicles, user["id"])
+    for vehicle in vehicles:
+        vehicle["shared"] = vehicle.get("owner_id") == SHARED_OWNER
 
     try:
         await _attach_program_matches(vehicles)
@@ -159,13 +185,16 @@ async def get_inventory_vehicle(stock_no: str, authorization: Optional[str] = He
     """Récupère un véhicule par numéro de stock"""
     user = await get_current_user(authorization)
     
-    vehicle = await db.inventory.find_one(
-        {"stock_no": stock_no, "owner_id": user["id"]},
+    found = await db.inventory.find(
+        {"stock_no": stock_no, "owner_id": _owners(user)},
         {"_id": 0}
-    )
+    ).to_list(10)
+    found = _dedupe_by_stock(found, user["id"])
+    vehicle = found[0] if found else None
     
     if not vehicle:
         raise HTTPException(status_code=404, detail="Véhicule non trouvé")
+    vehicle["shared"] = vehicle.get("owner_id") == SHARED_OWNER
     
     # Get options for this vehicle
     options = []
@@ -387,20 +416,18 @@ async def get_inventory_stats(authorization: Optional[str] = Header(None)):
     """Statistiques d'inventaire"""
     user = await get_current_user(authorization)
     
-    total = await db.inventory.count_documents({"owner_id": user["id"]})
-    disponible = await db.inventory.count_documents({"owner_id": user["id"], "status": "disponible"})
-    reserve = await db.inventory.count_documents({"owner_id": user["id"], "status": "réservé"})
-    vendu = await db.inventory.count_documents({"owner_id": user["id"], "status": "vendu"})
-    neuf = await db.inventory.count_documents({"owner_id": user["id"], "type": "neuf"})
-    occasion = await db.inventory.count_documents({"owner_id": user["id"], "type": "occasion"})
-    
-    # Calculate total value
-    pipeline = [
-        {"$match": {"owner_id": user["id"], "status": "disponible"}},
-        {"$group": {"_id": None, "total_msrp": {"$sum": "$msrp"}, "total_cost": {"$sum": "$net_cost"}}}
-    ]
-    result = await db.inventory.aggregate(pipeline).to_list(1)
-    totals = result[0] if result else {"total_msrp": 0, "total_cost": 0}
+    vehicles = _dedupe_by_stock(
+        await db.inventory.find({"owner_id": _owners(user)}, {"_id": 0}).to_list(10000), user["id"])
+    count = lambda key, value: sum(1 for v in vehicles if v.get(key) == value)
+    total = len(vehicles)
+    disponible = count("status", "disponible")
+    reserve = count("status", "réservé")
+    vendu = count("status", "vendu")
+    neuf = count("type", "neuf")
+    occasion = count("type", "occasion")
+    available = [v for v in vehicles if v.get("status") == "disponible"]
+    totals = {"total_msrp": sum(v.get("msrp") or 0 for v in available),
+              "total_cost": sum(v.get("net_cost") or 0 for v in available)}
     
     return {
         "total": total,
@@ -413,6 +440,67 @@ async def get_inventory_stats(authorization: Optional[str] = Header(None)):
         "total_cost": totals.get("total_cost", 0),
         "potential_profit": totals.get("total_msrp", 0) - totals.get("total_cost", 0)
     }
+
+@router.get("/programs/{program_id}/model-codes")
+async def get_program_model_codes(program_id: str, authorization: Optional[str] = Header(None)):
+    """Codes de modèle qu'une ligne de programme couvre, pour la liste de choix
+    du calculateur : codes des véhicules en inventaire associés à cette ligne,
+    complétés par le référentiel des codes de produit."""
+    user = await get_current_user(authorization)
+    program = await db.programs.find_one({"id": program_id}, {"_id": 0})
+    if not program:
+        raise HTTPException(status_code=404, detail="Programme non trouvé")
+    programs = await db.programs.find(
+        {"program_month": program.get("program_month"), "program_year": program.get("program_year")},
+        {"_id": 0}).to_list(2000)
+
+    def covers(described: Dict[str, Any]) -> bool:
+        result = match_program(described, programs)
+        if result["program"]:
+            return result["program"].get("id") == program_id
+        return program_id in [c.get("id") for c in result["candidates"]]
+
+    codes: Dict[str, Dict[str, Any]] = {}
+
+    # 1. Véhicules en inventaire (personnel + Kennebec partagé)
+    query = {"owner_id": _owners(user), "status": "disponible", "type": "neuf",
+             "year": program.get("year")}
+    vehicles = _dedupe_by_stock(await db.inventory.find(query, {"_id": 0}).to_list(5000), user["id"])
+    options = await _options_by_stock([v.get("stock_no") for v in vehicles])
+    for vehicle in vehicles:
+        described = _vehicle_for_matching(vehicle, options.get(vehicle.get("stock_no"), []))
+        code = (described.get("code") or "").upper()
+        if not code or not covers(described):
+            continue
+        entry = codes.setdefault(code, {"code": code, "description": "", "in_stock": 0})
+        entry["in_stock"] += 1
+        if not entry["description"]:
+            entry["description"] = " ".join(
+                str(x) for x in (vehicle.get("model"), vehicle.get("trim"), vehicle.get("body_style")) if x)
+
+    # 2. Référentiel des codes de produit
+    try:
+        with open('data/master_product_codes.json', 'r') as f:
+            master = json.load(f)
+    except Exception:
+        master = {}
+    for code, info in master.items():
+        code = code.upper()
+        if str(info.get("year") or "") != str(program.get("year")):
+            continue
+        if (info.get("brand") or "").lower() != (program.get("brand") or "").lower():
+            continue
+        described = describe_vehicle(brand=info.get("brand", ""), model=info.get("model", ""),
+                                     trim=info.get("trim", ""), year=program.get("year"),
+                                     body_style=info.get("cab", ""), code=code, options=[], option_text="")
+        if not covers(described):
+            continue
+        entry = codes.setdefault(code, {"code": code, "description": "", "in_stock": 0})
+        if info.get("full_description"):
+            entry["description"] = info["full_description"]
+
+    return sorted(codes.values(), key=lambda c: (-c["in_stock"], c["code"]))
+
 
 # Product codes reference
 @router.get("/product-codes")
