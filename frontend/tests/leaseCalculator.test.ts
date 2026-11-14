@@ -97,3 +97,44 @@ describe('Lease Cash du taux standard (261QLB)', () => {
     expect(leaseCashFor(entry, 'alternative', true)).toBe(0);
   });
 });
+
+describe('Versions possibles pour le résiduel', () => {
+  const { residualCandidates } = require('../utils/leaseCalculator');
+  const v = (model_name: string, trim: string, body_style = '4D Utility', brand = 'Zed') => ({ brand, model_name, trim, body_style });
+  const guide = [
+    v('Rover', 'Base'), v('Rover', 'Trail'), v('Rover', 'Summit'),
+    v('Rover', 'Base', '2D Utility'), v('Rover', 'Trail', '2D Utility'),
+    v('Rover L', 'Base'), v('Rover L', 'Summit'),
+    v('Rover', 'Base', '4D Utility', 'Autre'),
+  ];
+  const trims = (rows: any[]) => rows.map(r => `${r.model_name} ${r.trim} ${r.body_style[0]}`).sort();
+
+  test('plusieurs versions nommées : toutes sont proposées, pas une seule supposée', () => {
+    expect(trims(residualCandidates(guide, 'Zed', 'Rover', '4-Door Trail, Summit'))).toEqual(['Rover Summit 4', 'Rover Trail 4']);
+  });
+
+  test('carrosserie seule : toutes les versions de cette carrosserie', () => {
+    expect(trims(residualCandidates(guide, 'Zed', 'Rover', '2-Door'))).toEqual(['Rover Base 2', 'Rover Trail 2']);
+  });
+
+  test('une version exclue est retirée', () => {
+    expect(trims(residualCandidates(guide, 'Zed', 'Rover', '4-Door (non Summit models)'))).toEqual(['Rover Base 4', 'Rover Trail 4']);
+  });
+
+  test('le modèle long n\'est pas mêlé au modèle court', () => {
+    expect(trims(residualCandidates(guide, 'Zed', 'Rover L', 'Summit'))).toEqual(['Rover L Summit 4']);
+    expect(residualCandidates(guide, 'Zed', 'Rover', 'Summit').every((r: any) => r.model_name === 'Rover')).toBe(true);
+  });
+
+  test('modèle absent du guide : aucune ligne', () => {
+    expect(residualCandidates(guide, 'Zed', 'Cargo', '')).toEqual([]);
+  });
+});
+
+describe('Option 1 absente du programme', () => {
+  const { getRateForTerm } = require('../hooks/useCalculator');
+  test('aucun taux inventé', () => {
+    expect(getRateForTerm(null, 60)).toBe(0);
+    expect(getRateForTerm({ rate_36: 1, rate_48: 2, rate_60: 3, rate_72: 4, rate_84: 5, rate_96: 6 }, 60)).toBe(3);
+  });
+});

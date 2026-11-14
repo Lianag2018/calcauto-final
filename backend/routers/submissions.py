@@ -318,7 +318,7 @@ async def compare_programs_with_submissions(authorization: Optional[str] = Heade
             new_cc = float(new_program.get("consumer_cash", 0))
             new_bonus = float(new_program.get("bonus_cash", 0))
             new_alt_cc = float(new_program.get("alternative_consumer_cash", new_program.get("alt_consumer_cash", 0)) or 0)
-            opt1_rates = new_program.get("option1_rates", {})
+            opt1_rates = new_program.get("option1_rates") or {}
             opt2_rates = new_program.get("option2_rates")
             
             rate_key = f"rate_{term}"
@@ -352,7 +352,7 @@ async def compare_programs_with_submissions(authorization: Optional[str] = Heade
                 
                 # Old theoretical for this term
                 if old_program:
-                    old_t_rate = float(old_program.get("option1_rates", {}).get(rk, old_rate))
+                    old_t_rate = float((old_program.get("option1_rates") or {}).get(rk, old_rate))
                 else:
                     old_t_rate = old_rate
                 old_t_theo = _calc_payment(old_principal, old_t_rate, t)

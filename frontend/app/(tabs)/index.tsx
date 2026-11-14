@@ -37,7 +37,7 @@ import enTranslations from '../../locales/en.json';
 import { useCalculator, resolveBonus, offersOf, offerKey, checkedOffersTotal, getRateForTerm, formatCurrency, formatCurrencyDecimal } from '../../hooks/useCalculator';
 import { 
   computeLeasePayment, computeLeaseForGrid, leaseCashFor, 
-  findResidualVehicle, findRateEntry, getKmAdjustment,
+  findResidualVehicle, findRateEntry, getKmAdjustment, residualCandidates,
   LeaseInputs 
 } from '../../utils/leaseCalculator';
 import type { FinancingRates, VehicleProgram, PaymentComparison, CalculationResult, LocalResult, ProgramPeriod, PaymentFrequency } from '../../types/calculator';
@@ -156,6 +156,8 @@ export default function HomeScreen() {
   // Prime de fidélité (après taxes) : le vendeur coche quand le client y a droit
   // Promotions du mois cochées pour ce client (fidélité, liquidation ciblée, vendredi fou…)
   const [checkedOffers, setCheckedOffers] = useState<Record<string, boolean>>({});
+  // Version et carrosserie choisies pour le résiduel de location (rien = à confirmer)
+  const [residualPick, setResidualPick] = useState<{ version?: string; body?: string }>({});
   
   // 90 days deferred payment toggle
   const [deferredPayment, setDeferredPayment] = useState(false);
@@ -302,6 +304,8 @@ export default function HomeScreen() {
 
   // Calcul de financement (logique extraite dans useCalculator)
   const specialOffers = offersOf(selectedProgram);
+  // Certains véhicules n'ont pas d'option 1 dans le PDF : elle n'est alors pas offerte.
+  const hasOption1 = !selectedProgram || !!selectedProgram.option1_rates;
   // Lease Cash du taux standard (colonne 261QLB du PDF) : offert en case à cocher,
   // seulement pour la location au taux standard, jamais ajouté d'office.
   const leaseRateEntry = useMemo(() => (selectedProgram && leaseRates)
@@ -553,19 +557,40 @@ export default function HomeScreen() {
   // (2025, 2026, 2027) avec des pourcentages différents : on ne cherche que
   // dans l'année du programme, et le calcul et le tableau du kilométrage
   // utilisent la même ligne.
-  const residualVehicle = useMemo(() => {
-    if (!selectedProgram || !leaseResiduals?.vehicles) return null;
+  // Un programme couvre souvent plusieurs versions et carrosseries dont le
+  // résiduel diffère : on les liste toutes, et la ligne retenue est celle du
+  // véhicule d'inventaire, sinon celle que le vendeur choisit.
+  const residualOptions = useMemo(() => {
+    if (!selectedProgram || !leaseResiduals?.vehicles) return [];
     const sameYear = leaseResiduals.vehicles.filter(
       (v: any) => String(v.model_year) === String(selectedProgram.year)
     );
+    return residualCandidates(sameYear, selectedProgram.brand, selectedProgram.model, selectedProgram.trim || '');
+  }, [selectedProgram, leaseResiduals]);
+
+  const residualVersionOf = (v: any) =>
+    residualOptions.some((o: any) => o.model_name !== v.model_name) ? `${v.model_name} ${v.trim}` : v.trim;
+
+  const residualVehicle = useMemo(() => {
+    if (!selectedProgram || residualOptions.length === 0) return null;
+    let pool = residualOptions;
+    const narrow = (test: (v: any) => boolean) => {
+      const found = pool.filter(test);
+      if (found.length) pool = found;
+    };
+    const invTrim = (selectedInventory?.trim || '').toLowerCase().trim();
+    if (residualPick.version) narrow((v: any) => residualVersionOf(v) === residualPick.version);
+    else if (invTrim) narrow((v: any) => (v.trim || '').toLowerCase() === invTrim);
+    const body = (residualPick.body || selectedInventory?.body_style || '').toLowerCase();
+    if (body) narrow((v: any) => (v.body_style || '').toLowerCase() === body);
     return findResidualVehicle(
-      sameYear,
+      pool,
       selectedProgram.brand,
       selectedProgram.model,
       selectedProgram.trim || '',
       selectedInventory?.body_style
-    );
-  }, [selectedProgram, leaseResiduals, selectedInventory?.body_style]);
+    ) || pool[0];
+  }, [selectedProgram, residualOptions, residualPick, selectedInventory?.body_style, selectedInventory?.trim]);
 
   // Calculate lease when parameters change
   useEffect(() => {
@@ -629,6 +654,8 @@ export default function HomeScreen() {
       residualPct: adjustedResidualPct,
       residualValue: pdsf * (adjustedResidualPct / 100),
       kmAdjustment,
+      // Promotions avant taxes cochées : comprises dans le montant déduit, affichées à part
+      offersBeforeTax: leaseOffersBeforeTax,
       term: leaseTerm,
       kmPerYear: leaseKmPerYear,
     };
@@ -752,12 +779,14 @@ export default function HomeScreen() {
     setSelectedProgram(program);
     // La prime de fidélité se recoche pour chaque véhicule : jamais reportée d'un client à l'autre.
     setCheckedOffers({});
+    setResidualPick({});
     setResults(null);
   };
 
   const clearSelection = () => {
     setSelectedProgram(null);
     setCheckedOffers({});
+    setResidualPick({});
     setResults(null);
     // localResult se réinitialise automatiquement via useCalculator quand selectedProgram = null
   };
@@ -767,7 +796,7 @@ export default function HomeScreen() {
     if (!selectedProgram || !localResult || !vehiclePrice) return '';
     
     const vehicle = `${selectedProgram.brand} ${selectedProgram.model} ${selectedProgram.trim || ''} ${selectedProgram.year}`.trim();
-    const option = selectedOption === '2' ? '2' : '1';
+    const option = selectedOption === '2' || !hasOption1 ? '2' : '1';
     const rate = option === '1' ? localResult.option1Rate : localResult.option2Rate;
     
     let payment: number;
@@ -921,7 +950,7 @@ export default function HomeScreen() {
                 <thead>
                   <tr style="background:#1a1a2e;color:#fff;">
                     <th style="padding:6px 8px;text-align:left;">Terme</th>
-                    <th style="padding:6px 8px;text-align:center;">Option 1</th>
+                    ${hasOption1 ? '<th style="padding:6px 8px;text-align:center;">Option 1</th>' : ''}
                     ${hasOption2 ? '<th style="padding:6px 8px;text-align:center;">Option 2</th>' : ''}
                   </tr>
                 </thead>
@@ -932,7 +961,7 @@ export default function HomeScreen() {
                     const isSelected = t === selectedTerm;
                     return `<tr style="background:${isSelected ? '#e8f5e9' : (t % 2 === 0 ? '#f8f9fa' : '#fff')};${isSelected ? 'font-weight:700;' : ''}">
                       <td style="padding:5px 8px;">${t} mois</td>
-                      <td style="padding:5px 8px;text-align:center;color:#c0392b;">${opt1 != null ? String(opt1).replace('.', ',') + '%' : '-'}</td>
+                      ${hasOption1 ? `<td style="padding:5px 8px;text-align:center;color:#c0392b;">${opt1 != null ? String(opt1).replace('.', ',') + '%' : '-'}</td>` : ''}
                       ${hasOption2 ? `<td style="padding:5px 8px;text-align:center;color:#1565C0;">${opt2 != null ? String(opt2).replace('.', ',') + '%' : '-'}</td>` : ''}
                     </tr>`;
                   }).join('')}
@@ -960,7 +989,7 @@ export default function HomeScreen() {
             <!-- OPTIONS COMPARISON -->
             <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Comparaison</div>
             <div style="display:flex;gap:8px;margin-bottom:14px;">
-              <div style="flex:1;border:2px solid ${localResult.bestOption === '1' ? '#4CAF50' : '#ddd'};border-radius:10px;padding:12px;">
+              <div style="flex:1;border:2px solid ${localResult.bestOption === '1' ? '#4CAF50' : '#ddd'};border-radius:10px;padding:12px;${hasOption1 ? '' : 'display:none;'}">
                 <div style="font-size:14px;font-weight:700;color:#c0392b;margin-bottom:6px;">Option 1 ${localResult.bestOption === '1' ? '<span style="background:#4CAF50;color:#fff;font-size:10px;padding:2px 6px;border-radius:8px;">✓</span>' : ''}</div>
                 <div style="font-size:11px;color:#666;margin-bottom:4px;">${lang === 'fr' ? 'Rabais:' : 'Rebate:'} ${consumerCash > 0 ? '-' + fmt(consumerCash) + ' $' : '$0'}</div>
                 <div style="font-size:11px;color:#666;margin-bottom:4px;">${lang === 'fr' ? 'Capital:' : 'Principal:'} ${fmt(localResult.principalOption1)} $</div>
@@ -1074,8 +1103,12 @@ export default function HomeScreen() {
       
       // Build text message with sticker link
       let shareText = `${vehicle} - ${fmt(price)} $\n`;
-      shareText += `${payLabel}: Option 1 = ${fmt2(o1Pay)} $ (${selectedTerm}m)`;
-      if (hasOption2) shareText += ` | Option 2 = ${fmt2(o2Pay)} $`;
+      if (hasOption1) {
+        shareText += `${payLabel}: Option 1 = ${fmt2(o1Pay)} $ (${selectedTerm}m)`;
+        if (hasOption2) shareText += ` | Option 2 = ${fmt2(o2Pay)} $`;
+      } else if (hasOption2) {
+        shareText += `${payLabel}: Option 2 = ${fmt2(o2Pay)} $ (${selectedTerm}m)`;
+      }
       if (showLease && leaseResult) {
         const bestLease = leaseResult.bestLease === 'standard' ? leaseResult.standard : leaseResult.alternative;
         if (bestLease) {
@@ -1174,7 +1207,7 @@ export default function HomeScreen() {
     }
 
     const vehicle = `${selectedProgram.brand} ${selectedProgram.model} ${selectedProgram.trim || ''} ${selectedProgram.year}`.trim();
-    const option = selectedOption === '2' ? '2' : '1';
+    const option = selectedOption === '2' || !hasOption1 ? '2' : '1';
     const rate = option === '1' ? localResult.option1Rate : localResult.option2Rate;
     
     let payment: number;
@@ -1210,12 +1243,12 @@ export default function HomeScreen() {
     // Build rates table rows
     const terms = [36, 48, 60, 72, 84, 96];
     const ratesRows = terms.map(t => {
-      const r1 = getRateForTerm(selectedProgram.option1_rates, t);
+      const r1 = hasOption1 ? getRateForTerm(selectedProgram.option1_rates, t) : 0;
       const r2 = selectedProgram.option2_rates ? getRateForTerm(selectedProgram.option2_rates, t) : null;
       const isSelected = t === selectedTerm;
       return `<tr style="${isSelected ? 'background:#e8f5e9; font-weight:bold;' : ''}">
         <td style="text-align:left; padding:8px; border-bottom:1px solid #eee;">${t} ${lang === 'fr' ? 'mois' : 'mo'}${isSelected ? ' ✓' : ''}</td>
-        <td style="text-align:center; padding:8px; border-bottom:1px solid #eee; color:#c0392b;">${r1.toFixed(2)}%</td>
+        ${hasOption1 ? `<td style="text-align:center; padding:8px; border-bottom:1px solid #eee; color:#c0392b;">${r1.toFixed(2)}%</td>` : ''}
         ${hasOption2 ? `<td style="text-align:center; padding:8px; border-bottom:1px solid #eee; color:#1565C0;">${r2 !== null ? r2.toFixed(2) + '%' : '-'}</td>` : ''}
       </tr>`;
     }).join('');
@@ -1342,7 +1375,7 @@ export default function HomeScreen() {
                 <thead>
                   <tr>
                     <th style="text-align:left;">${lang === 'fr' ? 'Terme' : 'Term'}</th>
-                    <th>Option 1</th>
+                    ${hasOption1 ? '<th>Option 1</th>' : ''}
                     ${hasOption2 ? '<th>Option 2</th>' : ''}
                   </tr>
                 </thead>
@@ -1380,7 +1413,7 @@ export default function HomeScreen() {
               <div class="section-title">${lang === 'fr' ? 'Comparaison des options' : 'Options Comparison'}</div>
               <div class="options-grid">
                 <!-- OPTION 1 -->
-                <div class="option-card ${bestOpt === '1' ? 'winner' : ''}">
+                <div class="option-card ${bestOpt === '1' ? 'winner' : ''}" style="${hasOption1 ? '' : 'display:none;'}">
                   <div class="option-title opt1">Option 1 ${bestOpt === '1' ? '<span class="winner-badge">✓</span>' : ''}</div>
                   <div style="font-size:11px; color:#666; margin-bottom:8px;">${lang === 'fr' ? 'Rabais + Taux standard' : 'Rebate + Standard rate'}</div>
                   <div class="option-detail"><span>${lang === 'fr' ? 'Rabais:' : 'Rebate:'}</span><span style="color:#2E7D32; font-weight:600;">${consumerCash > 0 ? '-' + fmt(consumerCash) + ' $' : '$0'}</span></div>
@@ -1444,7 +1477,8 @@ export default function HomeScreen() {
                 ${leaseResult.standard ? `
                 <div class="option-card ${leaseResult.bestLease === 'standard' ? 'winner' : ''}">
                   <div class="option-title" style="color:#E65100;">Std + Lease Cash ${leaseResult.bestLease === 'standard' ? '<span class="winner-badge" style="background:#FFD700;color:#000;">✓</span>' : ''}</div>
-                  ${leaseResult.standard.leaseCash > 0 ? `<div class="option-detail"><span>Lease Cash:</span><span style="color:#2E7D32; font-weight:600;">-${fmt(leaseResult.standard.leaseCash)} $</span></div>` : ''}
+                  ${leaseResult.standard.leaseCash - leaseResult.offersBeforeTax > 0 ? `<div class="option-detail"><span>Lease Cash:</span><span style="color:#2E7D32; font-weight:600;">-${fmt(leaseResult.standard.leaseCash - leaseResult.offersBeforeTax)} $</span></div>` : ''}
+                  ${leaseResult.offersBeforeTax > 0 ? `<div class="option-detail"><span>${lang === 'fr' ? 'Promos avant taxes:' : 'Before-tax offers:'}</span><span style="color:#2E7D32; font-weight:600;">-${fmt(leaseResult.offersBeforeTax)} $</span></div>` : ''}
                   <div class="option-detail"><span>${lang === 'fr' ? 'Taux:' : 'Rate:'}</span><span style="color:#E65100;">${leaseResult.standard.rate}%</span></div>
                   <div class="payment-box" style="border-top:3px solid #E65100;">
                     <div class="payment-label">${paymentLabel}</div>
@@ -1459,7 +1493,8 @@ export default function HomeScreen() {
                 ${leaseResult.alternative ? `
                 <div class="option-card ${leaseResult.bestLease === 'alternative' ? 'winner' : ''}">
                   <div class="option-title" style="color:#0277BD;">${lang === 'fr' ? 'Taux Alternatif' : 'Alt. Rate'} ${leaseResult.bestLease === 'alternative' ? '<span class="winner-badge" style="background:#FFD700;color:#000;">✓</span>' : ''}</div>
-                  <div class="option-detail"><span>Lease Cash:</span><span>${leaseResult.alternative.leaseCash > 0 ? `-${fmt(leaseResult.alternative.leaseCash)} $` : '$0'}</span></div>
+                  <div class="option-detail"><span>Lease Cash:</span><span>${leaseResult.alternative.leaseCash - leaseResult.offersBeforeTax > 0 ? `-${fmt(leaseResult.alternative.leaseCash - leaseResult.offersBeforeTax)} $` : '$0'}</span></div>
+                  ${leaseResult.offersBeforeTax > 0 ? `<div class="option-detail"><span>${lang === 'fr' ? 'Promos avant taxes:' : 'Before-tax offers:'}</span><span style="color:#2E7D32; font-weight:600;">-${fmt(leaseResult.offersBeforeTax)} $</span></div>` : ''}
                   <div class="option-detail"><span>${lang === 'fr' ? 'Taux:' : 'Rate:'}</span><span style="color:#0277BD;">${leaseResult.alternative.rate}%</span></div>
                   <div class="payment-box" style="border-top:3px solid #0277BD;">
                     <div class="payment-label">${paymentLabel}</div>
@@ -1908,7 +1943,7 @@ export default function HomeScreen() {
                         {term} {t.term.months}
                       </Text>
                       <Text style={[styles.ratesCell, styles.ratesCellOption1, selectedTerm === term && styles.ratesCellSelected]}>
-                        {getRateForTerm(selectedProgram.option1_rates, term)}%
+                        {hasOption1 ? `${getRateForTerm(selectedProgram.option1_rates, term)}%` : '-'}
                       </Text>
                       {selectedProgram.option2_rates && (
                         <Text style={[styles.ratesCell, styles.ratesCellOption2, selectedTerm === term && styles.ratesCellSelected]}>
@@ -2459,11 +2494,18 @@ export default function HomeScreen() {
               <View style={styles.termSection}>
                 <Text style={styles.inputLabel}>{t.options.chooseOption}</Text>
                 <View style={styles.optionButtons}>
+                  {!hasOption1 && (
+                    <View style={[styles.optionButton, styles.optionButtonDisabled]} data-testid="option1-not-available">
+                      <Text style={styles.optionButtonTextDisabled}>{t.options.option1}</Text>
+                      <Text style={styles.optionButtonTextDisabled}>{t.options.notAvailable}</Text>
+                    </View>
+                  )}
                   <TouchableOpacity
                     style={[
                       styles.optionButton,
                       styles.optionButton1,
-                      selectedOption === '1' && styles.optionButtonActive1
+                      selectedOption === '1' && styles.optionButtonActive1,
+                      !hasOption1 && { display: 'none' }
                     ]}
                     onPress={() => setSelectedOption(selectedOption === '1' ? null : '1')}
                   >
@@ -2532,7 +2574,7 @@ export default function HomeScreen() {
               </View>
 
               {/* Best Option Banner */}
-              {localResult.bestOption && (
+              {localResult.bestOption && hasOption1 && (
                 <View style={[
                   styles.bestOptionBanner,
                   localResult.bestOption === '1' ? styles.bestOptionBanner1 : styles.bestOptionBanner2
@@ -2555,7 +2597,8 @@ export default function HomeScreen() {
                 <View style={[
                   styles.optionCard,
                   styles.optionCard1,
-                  localResult.bestOption === '1' && styles.optionCardBest
+                  localResult.bestOption === '1' && styles.optionCardBest,
+                  !hasOption1 && { display: 'none' }
                 ]}>
                   <View style={styles.optionHeader}>
                     <Text style={styles.optionCardTitle}>{t.options.option1}</Text>
@@ -2820,11 +2863,68 @@ export default function HomeScreen() {
                     const kmAdj = leaseResiduals.km_adjustments?.adjustments || {};
                     const pdsf = parseFloat(leasePdsf) || parseFloat(vehiclePrice) || 0;
                     
+                    // Versions et carrosseries possibles : le résiduel change de l'une à l'autre
+                    const term = String(leaseTerm);
+                    const versions = Array.from(new Set(residualOptions.map(residualVersionOf)));
+                    const bodies = Array.from(new Set(residualOptions
+                      .filter((o: any) => residualVersionOf(o) === residualVersionOf(rv))
+                      .map((o: any) => o.body_style).filter(Boolean)));
+                    const pcts = residualOptions.map((o: any) => o.residual_percentages?.[term] || 0).filter((x: number) => x > 0);
+                    const spread = pcts.length ? [Math.min(...pcts), Math.max(...pcts)] : [0, 0];
+                    const confirmed = !!selectedInventory || !!residualPick.version || versions.length <= 1;
+                    const chip = (label: string, active: boolean, onPress: () => void, testID: string) => (
+                      <TouchableOpacity
+                        key={testID}
+                        onPress={onPress}
+                        data-testid={testID}
+                        style={{
+                          paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, marginRight: 6, marginBottom: 6,
+                          backgroundColor: active ? '#4ECDC4' : '#2d3d54',
+                        }}
+                      >
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: active ? '#1a1a2e' : '#cfd8e3' }}>{label}</Text>
+                      </TouchableOpacity>
+                    );
+
                     return (
                       <View style={styles.residualKmTable} data-testid="residual-km-table">
+                        {(versions.length > 1 || bodies.length > 1) && (
+                          <View style={{ marginBottom: 10 }} data-testid="residual-version-picker">
+                            <Text style={styles.residualKmTitle}>
+                              {lang === 'fr' ? 'Version exacte du véhicule' : 'Exact vehicle version'}
+                            </Text>
+                            {!confirmed && spread[0] !== spread[1] && (
+                              <Text style={{ fontSize: 12, color: '#FFB347', marginBottom: 8 }} data-testid="residual-version-warning">
+                                {lang === 'fr'
+                                  ? `À confirmer : le résiduel va de ${spread[0]} % à ${spread[1]} % selon la version. Calcul fait avec « ${residualVersionOf(rv)} ».`
+                                  : `To confirm: residual ranges from ${spread[0]}% to ${spread[1]}% by version. Calculated with "${residualVersionOf(rv)}".`}
+                              </Text>
+                            )}
+                            {versions.length > 1 && (
+                              <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                                {versions.map((name: string) => chip(
+                                  name,
+                                  residualVersionOf(rv) === name,
+                                  () => setResidualPick({ version: name }),
+                                  `residual-version-${name}`
+                                ))}
+                              </View>
+                            )}
+                            {bodies.length > 1 && (
+                              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 }}>
+                                {bodies.map((name: string) => chip(
+                                  name,
+                                  rv.body_style === name,
+                                  () => setResidualPick({ version: residualVersionOf(rv), body: name }),
+                                  `residual-body-${name}`
+                                ))}
+                              </View>
+                            )}
+                          </View>
+                        )}
                         <Text style={styles.residualKmTitle}>
                           {lang === 'fr' ? 'Résiduel selon kilométrage' : 'Residual by mileage'}
-                          {rv.body_style ? ` — ${rv.body_style}` : ''}
+                          {` — ${residualVersionOf(rv)}`}{rv.body_style ? ` ${rv.body_style}` : ''}
                         </Text>
                         <View style={styles.residualKmRow}>
                           <View style={styles.residualKmHeader}>
@@ -2946,10 +3046,16 @@ export default function HomeScreen() {
                                 <Ionicons name="checkmark-circle" size={16} color="#4ECDC4" />
                               )}
                             </View>
-                            {leaseResult.standard.leaseCash > 0 && (
+                            {leaseResult.standard.leaseCash - leaseResult.offersBeforeTax > 0 && (
                               <View style={styles.leaseCardDetail}>
                                 <Text style={styles.leaseCardDetailLabel}>Lease Cash:</Text>
-                                <Text style={styles.leaseCardDetailValue}>{formatCurrency(leaseResult.standard.leaseCash)}</Text>
+                                <Text style={styles.leaseCardDetailValue}>{formatCurrency(leaseResult.standard.leaseCash - leaseResult.offersBeforeTax)}</Text>
+                              </View>
+                            )}
+                            {leaseResult.offersBeforeTax > 0 && (
+                              <View style={styles.leaseCardDetail} data-testid="lease-offers-before-tax">
+                                <Text style={styles.leaseCardDetailLabel}>{lang === 'fr' ? 'Promos avant taxes:' : 'Before-tax offers:'}</Text>
+                                <Text style={styles.leaseCardDetailValue}>{formatCurrency(leaseResult.offersBeforeTax)}</Text>
                               </View>
                             )}
                             <View style={styles.leaseCardDetail}>
@@ -3016,8 +3122,14 @@ export default function HomeScreen() {
                             </View>
                             <View style={styles.leaseCardDetail}>
                               <Text style={styles.leaseCardDetailLabel}>Lease Cash:</Text>
-                              <Text style={styles.leaseCardDetailValue}>{formatCurrency(leaseResult.alternative.leaseCash)}</Text>
+                              <Text style={styles.leaseCardDetailValue}>{formatCurrency(leaseResult.alternative.leaseCash - leaseResult.offersBeforeTax)}</Text>
                             </View>
+                            {leaseResult.offersBeforeTax > 0 && (
+                              <View style={styles.leaseCardDetail} data-testid="lease-offers-before-tax">
+                                <Text style={styles.leaseCardDetailLabel}>{lang === 'fr' ? 'Promos avant taxes:' : 'Before-tax offers:'}</Text>
+                                <Text style={styles.leaseCardDetailValue}>{formatCurrency(leaseResult.offersBeforeTax)}</Text>
+                              </View>
+                            )}
                             <View style={styles.leaseCardDetail}>
                               <Text style={styles.leaseCardDetailLabel}>{lang === 'fr' ? 'Taux' : 'Rate'}:</Text>
                               <Text style={styles.leaseCardRateValue}>{leaseResult.alternative.rate}%</Text>
@@ -3205,10 +3317,16 @@ export default function HomeScreen() {
                               <Text style={styles.bestLeaseLabel}>{lang === 'fr' ? 'Taux:' : 'Rate:'}</Text>
                               <Text style={styles.bestLeaseValue}>{bestLeaseOption.rate}%</Text>
                             </View>
-                            {bestLeaseOption.leaseCash > 0 && (
+                            {bestLeaseOption.leaseCash - (leaseResult?.offersBeforeTax || 0) > 0 && (
                               <View style={styles.bestLeaseRow}>
                                 <Text style={styles.bestLeaseLabel}>Lease Cash:</Text>
-                                <Text style={styles.bestLeaseValue}>{formatCurrency(bestLeaseOption.leaseCash)}</Text>
+                                <Text style={styles.bestLeaseValue}>{formatCurrency(bestLeaseOption.leaseCash - (leaseResult?.offersBeforeTax || 0))}</Text>
+                              </View>
+                            )}
+                            {(leaseResult?.offersBeforeTax || 0) > 0 && (
+                              <View style={styles.bestLeaseRow}>
+                                <Text style={styles.bestLeaseLabel}>{lang === 'fr' ? 'Promos avant taxes:' : 'Pre-tax offers:'}</Text>
+                                <Text style={styles.bestLeaseValue}>{formatCurrency(leaseResult.offersBeforeTax)}</Text>
                               </View>
                             )}
                             <View style={styles.bestLeaseRow}>

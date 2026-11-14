@@ -72,6 +72,9 @@ export default function TabsLayout() {
           href: isAdmin ? '/admin' : null,
         }}
       />
+      {/* Fichiers du dossier qui ne sont pas des écrans : pas d'onglet */}
+      <Tabs.Screen name="index_legacy" options={{ href: null }} />
+      <Tabs.Screen name="styles/homeStyles" options={{ href: null }} />
     </Tabs>
   );
 }

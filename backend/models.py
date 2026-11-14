@@ -33,7 +33,8 @@ class VehicleProgram(BaseModel):
     
     # Option 1: Consumer Cash (rabais AVANT taxes) + taux Consumer Cash
     consumer_cash: float = 0
-    option1_rates: FinancingRates
+    # Absent quand le PDF ne donne pas de taux d'option 1 pour ce véhicule
+    option1_rates: Optional[FinancingRates] = None
     
     # Option 2: Alternative Consumer Cash (rabais AVANT taxes Option 2) + taux reduits
     alternative_consumer_cash: float = 0

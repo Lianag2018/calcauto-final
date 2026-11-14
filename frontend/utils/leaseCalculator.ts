@@ -165,6 +165,91 @@ export function computeLeasePayment(inputs: LeaseInputs): LeaseResult {
   };
 }
 
+/** Mots d'une version, en minuscules, « R/T » gardé en un seul mot. */
+function versionWords(text: string): string[] {
+  return (text || '').toLowerCase().replace(/r\/t/g, 'rt').split(/[^a-z0-9]+/).filter(Boolean);
+}
+
+function sameWord(a: string, b: string): boolean {
+  return a === b || (Math.min(a.length, b.length) >= 4 && (a.startsWith(b) || b.startsWith(a)));
+}
+
+/**
+ * Lignes du guide résiduel qu'un programme peut couvrir.
+ *
+ * Un programme nomme souvent plusieurs versions (« Big Horn, Sport, Rebel »),
+ * en exclut (« (Excluding Sport) », « (non Rubicon models) ») ou ne précise
+ * que la carrosserie (« 4-Door »). Le résiduel change d'une version à l'autre :
+ * on renvoie toutes les lignes possibles, pour que la version exacte soit choisie
+ * plutôt que supposée.
+ */
+export function residualCandidates(vehicles: any[], brand: string, model: string, trim: string): any[] {
+  const plain = (t: string) => (t || '').toLowerCase().replace(/[^a-z0-9/]+/g, ' ').trim();
+  const brandLower = (brand || '').toLowerCase();
+  const text = (trim || '').toLowerCase();
+  const models = plain(model).split('/').map(m => m.trim()).filter(Boolean);
+  const ofBrand = (vehicles || []).filter((v: any) => (v.brand || '').toLowerCase() === brandLower);
+
+  // Modèle : « Grand Cherokee » couvre aussi « Grand Cherokee L » seulement si la
+  // version le nomme ; nommé avec une version à la suite, il ne reste que lui.
+  let ofModel: any[] = [];
+  let longName = '';
+  for (const m of models) {
+    const exact = ofBrand.filter((v: any) => plain(v.model_name) === m);
+    const longer = ofBrand.filter((v: any) => plain(v.model_name).startsWith(m + ' '));
+    const named = longer.filter((v: any) => {
+      const first = plain(v.model_name).split(' ').slice(0, m.split(' ').length + 1).join(' ');
+      if (!plain(text).startsWith(first)) return false;
+      longName = first;
+      return true;
+    });
+    if (named.length) {
+      const alone = plain(text.replace(/\([^)]*\)/g, ' ')) === longName;
+      ofModel = ofModel.concat(alone ? exact.concat(named) : named);
+    } else {
+      ofModel = ofModel.concat(exact.length ? exact : longer);
+    }
+  }
+  if (ofModel.length === 0) return [];
+
+  const filler = new Set(['models', 'model', 'all', 'and', 'with', 'the', 'door', 'engine', 'package', 'w', 'v']);
+  const names = (t: string) => versionWords(t)
+    .filter(w => (/^[a-z]+$/.test(w) || /^\d{3}$/.test(w) || w === '85th') && !filler.has(w));
+
+  // Versions exclues : « excluding … », « excludes … », « excl … », « non … ».
+  // « Rubicon w/ 2.0L » n'exclut qu'un moteur : la version reste possible.
+  const at = text.search(/\b(?:excluding|excludes|excl\.?|non)\s/);
+  const excluded = at < 0 ? [] : text.slice(at).replace(/^\S+\s/, '').split(',')
+    .filter(part => !part.includes('w/')).flatMap(part => names(part.replace(/\([^)]*\)?/g, ' ')));
+  const included = (at < 0 ? text : text.slice(0, at)).replace(longName, ' ');
+  let kept = ofModel.filter((v: any) => !names(v.trim).some(w => excluded.includes(w)));
+
+  // Carrosserie : « 2-Door » ou « 4-Door » (les deux nommés = pas de filtre)
+  const doors = Array.from(new Set((included.match(/\b([24])-door\b/g) || []).map(d => d[0])));
+  if (doors.length === 1) {
+    const byDoors = kept.filter((v: any) => (v.body_style || '').toLowerCase().startsWith(doors[0] + 'd'));
+    if (byDoors.length) kept = byDoors;
+  }
+
+  // Versions nommées, séparées par des virgules, des barres obliques ou « & »
+  const variants = included.replace(/r\/t/g, 'rt').replace(/\([^)]*\)?/g, ' ').replace(/\b[24]-door\b/g, ' ')
+    .split(/[,/&]/).map(names).filter(words => words.length > 0);
+  const matched = new Set<any>();
+  for (const words of variants) {
+    const has = (v: any, w: string) => names(v.trim).some(x => sameWord(w, x));
+    const tiers = [
+      (v: any) => names(v.trim).length === words.length && words.every(w => has(v, w)),
+      (v: any) => words.every(w => has(v, w)),
+      (v: any) => words.some(w => has(v, w)),
+    ];
+    for (const tier of tiers) {
+      const found = kept.filter(tier);
+      if (found.length) { found.forEach(v => matched.add(v)); break; }
+    }
+  }
+  return matched.size ? kept.filter(v => matched.has(v)) : kept;
+}
+
 /** Calcul simplifié pour la grille meilleur choix (même formule, retour réduit) */
 export function computeLeaseForGrid(inputs: LeaseInputs): {
   monthly: number;
