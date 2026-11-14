@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header
 from typing import Optional, Dict, Any
 from datetime import datetime
+import html
 import base64
 import json
 from database import db, ROOT_DIR, SMTP_EMAIL, logger
@@ -191,6 +192,13 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
         
         consumer_cash = calc.get('consumer_cash', 0)
         bonus_cash = calc.get('bonus_cash', 0)
+        # Rabais après taxes, un par programme (nom et code), à part du comptant du client
+        after_tax_rebates = [
+            {'label': html.escape(str(r.get('label') or 'Bonus Cash')), 'amount': r.get('amount') or 0}
+            for r in (calc.get('after_tax_rebates') or []) if (r.get('amount') or 0) > 0
+        ] or ([{'label': 'Bonus Cash', 'amount': bonus_cash}] if bonus_cash and bonus_cash > 0 else [])
+        # Rabais avant taxes de l'option 2 (Alternative Consumer Cash)
+        alt_consumer_cash = calc.get('alternative_consumer_cash', 0) or 0
         
         option1_rate = comparison.get('option1_rate', 0)
         option2_rate = comparison.get('option2_rate', 0)
@@ -347,7 +355,7 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
                         <table class="info-table">
                             <tr><td>Prix du véhicule</td><td>{fmt(request.vehicle_price)} $</td></tr>
                             {f"<tr><td>Rabais (avant taxes)</td><td style='color: #1a5f4a;'>-{fmt(consumer_cash)} $</td></tr>" if consumer_cash > 0 else ""}
-                            {f"<tr><td>Bonus Cash (après taxes)</td><td style='color: #1a5f4a;'>-{fmt(bonus_cash)} $</td></tr>" if bonus_cash > 0 else ""}
+                            {"".join(f"<tr><td>{r['label']} (après taxes)</td><td style='color: #1a5f4a;'>-{fmt(r['amount'])} $</td></tr>" for r in after_tax_rebates)}
                             {f"<tr><td>Frais dossier</td><td>{fmt2(frais_dossier)} $</td></tr>" if frais_dossier > 0 else ""}
                             {f"<tr><td>Taxe pneus</td><td>{fmt(taxe_pneus)} $</td></tr>" if taxe_pneus > 0 else ""}
                             {f"<tr><td>Frais RDPRM</td><td>{fmt(frais_rdprm)} $</td></tr>" if frais_rdprm > 0 else ""}
@@ -378,12 +386,12 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
                                     </div>
                                 </td>
                                 
-                                {"<td style='width: 50%; vertical-align: top; border: 2px solid " + ("#1a5f4a" if best_option == "2" else "#ddd") + "; border-radius: 8px; padding: 15px; background: " + ("#f0fff4" if best_option == "2" else "#fafafa") + ";'><div class='option-title opt2'>Option 2 " + ("<span class='winner-badge'>✓ MEILLEUR</span>" if best_option == "2" else "") + "</div><div style='font-size: 12px; color: #666; margin-bottom: 10px;'>$0 rabais + Taux réduit</div><div class='option-detail'><span>Rabais:</span><span>$0</span></div><div class='option-detail'><span>Capital financé:</span><span>" + fmt(principal_option2) + " $</span></div><div class='option-detail'><span>Taux:</span><span class='rate-opt2'>" + str(option2_rate) + "%</span></div><div class='payment-highlight opt2'><div class='payment-label'>" + freq_label + "</div><div class='payment-amount opt2'>" + fmt2(option2_payment) + " $</div><div class='payment-total'>Total (" + str(term) + " mois): <strong>" + fmt(total_option2) + " $</strong></div></div></td>" if has_option2 else "<td style='width: 50%; vertical-align: top; border: 2px solid #ddd; border-radius: 8px; padding: 15px; background: #f5f5f5; text-align: center; color: #999;'><div class='option-title' style='color: #999;'>Option 2</div><div style='padding: 30px 0;'>Non disponible<br>pour ce véhicule</div></td>"}
+                                {"<td style='width: 50%; vertical-align: top; border: 2px solid " + ("#1a5f4a" if best_option == "2" else "#ddd") + "; border-radius: 8px; padding: 15px; background: " + ("#f0fff4" if best_option == "2" else "#fafafa") + ";'><div class='option-title opt2'>Option 2 " + ("<span class='winner-badge'>✓ MEILLEUR</span>" if best_option == "2" else "") + "</div><div style='font-size: 12px; color: #666; margin-bottom: 10px;'>" + ("Rabais + Taux réduit" if alt_consumer_cash > 0 else "$0 rabais + Taux réduit") + "</div><div class='option-detail'><span>Rabais:</span><span>" + ("-" + fmt(alt_consumer_cash) + " $" if alt_consumer_cash > 0 else "$0") + "</span></div><div class='option-detail'><span>Capital financé:</span><span>" + fmt(principal_option2) + " $</span></div><div class='option-detail'><span>Taux:</span><span class='rate-opt2'>" + str(option2_rate) + "%</span></div><div class='payment-highlight opt2'><div class='payment-label'>" + freq_label + "</div><div class='payment-amount opt2'>" + fmt2(option2_payment) + " $</div><div class='payment-total'>Total (" + str(term) + " mois): <strong>" + fmt(total_option2) + " $</strong></div></div></td>" if has_option2 else "<td style='width: 50%; vertical-align: top; border: 2px solid #ddd; border-radius: 8px; padding: 15px; background: #f5f5f5; text-align: center; color: #999;'><div class='option-title' style='color: #999;'>Option 2</div><div style='padding: 30px 0;'>Non disponible<br>pour ce véhicule</div></td>"}
                             </tr>
                         </table>
                     </div>
                     
-                    {f"<div style='background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-top: 15px;'><span style='color: #856404;'>ℹ️ Bonus Cash de {fmt(bonus_cash)} $ sera déduit après taxes (au comptant)</span></div>" if bonus_cash > 0 else ""}
+                    {"".join(f"<div style='background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-top: 15px;'><span style='color: #856404;'>ℹ️ {r['label']} : {fmt(r['amount'])} $ déduit après taxes, à part du comptant du client</span></div>" for r in after_tax_rebates)}
                     
                     {generate_lease_email_html(request.lease_data, freq, freq_label, fmt, fmt2)}
                     

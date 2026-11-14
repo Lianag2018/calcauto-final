@@ -629,6 +629,14 @@ async def create_program(program: VehicleProgramCreate):
     await db.programs.insert_one(program_obj.dict())
     return program_obj
 
+def _with_alternative_cash(program: dict) -> dict:
+    """Les anciens imports PDF ont rangé le rabais de l'option 2 sous
+    « alt_consumer_cash » ; le modèle et l'écran lisent « alternative_consumer_cash »."""
+    if not program.get("alternative_consumer_cash") and program.get("alt_consumer_cash"):
+        program = {**program, "alternative_consumer_cash": program["alt_consumer_cash"]}
+    return program
+
+
 @router.get("/programs", response_model=List[VehicleProgram])
 async def get_programs(month: Optional[int] = None, year: Optional[int] = None):
     """
@@ -647,14 +655,14 @@ async def get_programs(month: Optional[int] = None, year: Optional[int] = None):
             query = {}
     
     programs = await db.programs.find(query).sort([("sort_order", 1), ("year", -1), ("model", 1), ("trim", 1)]).to_list(1000)
-    return [VehicleProgram(**p) for p in programs]
+    return [VehicleProgram(**_with_alternative_cash(p)) for p in programs]
 
 @router.get("/programs/{program_id}", response_model=VehicleProgram)
 async def get_program(program_id: str):
     program = await db.programs.find_one({"id": program_id})
     if not program:
         raise HTTPException(status_code=404, detail="Program not found")
-    return VehicleProgram(**program)
+    return VehicleProgram(**_with_alternative_cash(program))
 
 @router.put("/programs/{program_id}", response_model=VehicleProgram)
 async def update_program(program_id: str, update: VehicleProgramUpdate):

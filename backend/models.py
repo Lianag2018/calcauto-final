@@ -41,6 +41,12 @@ class VehicleProgram(BaseModel):
     
     # Bonus Cash: Rabais APRES taxes (combinable avec Option 1 ou 2)
     bonus_cash: float = 0
+    # Prime sous condition (fidélité, conquête) : APRES taxes, appliquée seulement
+    # quand le vendeur coche que le client y a droit.
+    loyalty_bonus_cash: float = 0
+    # Code et nom du programme de chaque prime ({"code": "2646G1", "name": "…"})
+    bonus_cash_program: Optional[Dict[str, str]] = None
+    loyalty_bonus_cash_program: Optional[Dict[str, str]] = None
     
     # Ordre d'affichage (logique par trim, pas alphabetique)
     sort_order: int = 0

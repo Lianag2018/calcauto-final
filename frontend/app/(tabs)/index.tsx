@@ -36,7 +36,7 @@ import enTranslations from '../../locales/en.json';
 // Logique de calcul extraite
 import { useCalculator, getRateForTerm, formatCurrency, formatCurrencyDecimal } from '../../hooks/useCalculator';
 import { 
-  computeLeasePayment, computeLeaseForGrid, 
+  computeLeasePayment, computeLeaseForGrid, leaseCashFor, 
   findResidualVehicle, findRateEntry, getKmAdjustment,
   LeaseInputs 
 } from '../../utils/leaseCalculator';
@@ -153,6 +153,8 @@ export default function HomeScreen() {
   
   // Loyalty rate toggle (from event metadata)
   const [loyaltyChecked, setLoyaltyChecked] = useState(false);
+  // Prime de fidélité (après taxes) : le vendeur coche quand le client y a droit
+  const [loyaltyBonusChecked, setLoyaltyBonusChecked] = useState(false);
   
   // 90 days deferred payment toggle
   const [deferredPayment, setDeferredPayment] = useState(false);
@@ -298,6 +300,19 @@ export default function HomeScreen() {
   const leaseKmOptions = [12000, 18000, 24000];
 
   // Calcul de financement (logique extraite dans useCalculator)
+  const loyaltyBonus = loyaltyBonusChecked ? (selectedProgram?.loyalty_bonus_cash || 0) : 0;
+  // Rabais après taxes, un par programme : inscrits à part du comptant réel du client,
+  // avec le nom et le code du programme (« … Loyalty Bonus Cash — 2646G1 »).
+  const rebateName = (fallback: string, program?: { code: string; name: string } | null) =>
+    program?.name ? `${program.name}${program.code ? ` — ${program.code}` : ''}` : fallback;
+  const programBonus = parseFloat(customBonusCash) || selectedProgram?.bonus_cash || 0;
+  const afterTaxRebates: { label: string; amount: number }[] = [
+    ...(programBonus > 0 ? [{ label: rebateName('Bonus Cash', selectedProgram?.bonus_cash_program), amount: programBonus }] : []),
+    ...(loyaltyBonus > 0 ? [{
+      label: rebateName(lang === 'fr' ? 'Prime de fidélité' : 'Loyalty bonus', selectedProgram?.loyalty_bonus_cash_program),
+      amount: loyaltyBonus,
+    }] : []),
+  ];
   const activeLoyaltyRate = loyaltyChecked && programMeta?.loyalty_rate ? programMeta.loyalty_rate : 0;
   const { localResult } = useCalculator({
     selectedProgram,
@@ -313,6 +328,7 @@ export default function HomeScreen() {
     accessories,
     rabaisConcess: leaseRabaisConcess,
     loyaltyRate: activeLoyaltyRate,
+    loyaltyBonus,
     deferredPayment,
     soldeReporteLocation,
   });
@@ -481,6 +497,7 @@ export default function HomeScreen() {
         
         // Restore all calculator fields
         if (s.selectedProgram) setSelectedProgram(s.selectedProgram);
+        setLoyaltyBonusChecked(!!s.loyaltyBonusChecked);
         if (s.vehiclePrice !== undefined) setVehiclePrice(s.vehiclePrice);
         if (s.selectedTerm) setSelectedTerm(s.selectedTerm);
         if (s.selectedOption) setSelectedOption(s.selectedOption);
@@ -502,7 +519,6 @@ export default function HomeScreen() {
         if (s.manualVin !== undefined) setManualVin(s.manualVin);
         if (s.selectedYear) setSelectedYear(s.selectedYear);
         if (s.selectedBrand) setSelectedBrand(s.selectedBrand);
-        if (s.selectedModel) setSelectedModel(s.selectedModel);
         if (s.selectedInventory) setSelectedInventory(s.selectedInventory);
         
         console.log('Calculator state restored from submission');
@@ -555,7 +571,8 @@ export default function HomeScreen() {
     const termKey = String(leaseTerm);
     const standardRate = rateEntry?.standard_rates?.[termKey] ?? null;
     const alternativeRate = rateEntry?.alternative_rates?.[termKey] ?? null;
-    const leaseCashVal = rateEntry?.lease_cash || 0;
+    const leaseCashVal = leaseCashFor(rateEntry, 'standard');
+    const altLeaseCashVal = leaseCashFor(rateEntry, 'alternative');
 
     // km adjustment + residual
     const kmAdj = leaseResiduals.km_adjustments?.adjustments;
@@ -564,7 +581,7 @@ export default function HomeScreen() {
     const pdsf = parseFloat(leasePdsf) || parseFloat(vehiclePrice);
 
     // Shared inputs for both options
-    const bonusCash = parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0;
+    const bonusCash = (parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0) + loyaltyBonus;
     const comptant = parseFloat(comptantTxInclus) || 0;
     const tradeVal = parseFloat(prixEchange) || 0;
     const tradeOwed = parseFloat(montantDuEchange) || 0;
@@ -599,9 +616,9 @@ export default function HomeScreen() {
     if (standardRate !== null) {
       results.standard = computeLeasePayment({ ...baseInputs, rate: standardRate, leaseCash: leaseCashVal });
     }
-    // Alternative option (lower rate, no lease cash)
+    // Alternative option (lower rate, Alternative Lease Cash when the program has one)
     if (alternativeRate !== null) {
-      results.alternative = computeLeasePayment({ ...baseInputs, rate: alternativeRate, leaseCash: 0 });
+      results.alternative = computeLeasePayment({ ...baseInputs, rate: alternativeRate, leaseCash: altLeaseCashVal });
     }
 
     // Determine best lease option
@@ -645,7 +662,7 @@ export default function HomeScreen() {
         };
 
         if (altRate !== null) {
-          const r = computeLeaseForGrid({ ...gridInputs, rate: altRate, leaseCash: 0, term: t, residualPct: adjResPct });
+          const r = computeLeaseForGrid({ ...gridInputs, rate: altRate, leaseCash: altLeaseCashVal, term: t, residualPct: adjResPct });
           const entry = { ...r, kmPerYear: km, option: 'alt', optionLabel: 'Alt' };
           grid.push(entry);
           if (!bestOption || r.monthly < bestOption.monthly) {
@@ -666,7 +683,7 @@ export default function HomeScreen() {
     setBestLeaseOption(bestOption);
     setLeaseAnalysisGrid(grid);
   }, [showLease, selectedProgram, vehiclePrice, leaseTerm, leaseKmPerYear, leaseResiduals, leaseRates, residualVehicle, 
-      customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, leasePdsf, leaseSoldeReporte, leaseRabaisConcess, selectedInventory?.body_style]);
+      customBonusCash, loyaltyBonus, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, leasePdsf, leaseSoldeReporte, leaseRabaisConcess, selectedInventory?.body_style]);
 
   // Filter programs when year or brand changes
   useEffect(() => {
@@ -712,11 +729,14 @@ export default function HomeScreen() {
 
   const selectProgram = (program: VehicleProgram) => {
     setSelectedProgram(program);
+    // La prime de fidélité se recoche pour chaque véhicule : jamais reportée d'un client à l'autre.
+    setLoyaltyBonusChecked(false);
     setResults(null);
   };
 
   const clearSelection = () => {
     setSelectedProgram(null);
+    setLoyaltyBonusChecked(false);
     setResults(null);
     // localResult se réinitialise automatiquement via useCalculator quand selectedProgram = null
   };
@@ -847,7 +867,7 @@ export default function HomeScreen() {
 
       // 3. Build full HTML for screenshot capture
       const consumerCash = selectedProgram.consumer_cash || 0;
-      const bonusCash2 = parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0;
+      const bonusCash2 = (parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0) + loyaltyBonus;
       const dossier = parseFloat(fraisDossier) || 0;
       const pneus = parseFloat(taxePneus) || 0;
       const rdprm = parseFloat(fraisRDPRM) || 0;
@@ -906,7 +926,7 @@ export default function HomeScreen() {
               <table style="width:100%;font-size:12px;border-collapse:collapse;">
                 <tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Prix</td><td style="padding:4px 0;text-align:right;font-weight:600;">${fmt(price)} $</td></tr>
                 ${consumerCash > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Rabais</td><td style="padding:4px 0;text-align:right;color:#1a5f4a;font-weight:600;">-${fmt(consumerCash)} $</td></tr>` : ''}
-                ${bonusCash2 > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Bonus Cash</td><td style="padding:4px 0;text-align:right;color:#1a5f4a;font-weight:600;">-${fmt(bonusCash2)} $</td></tr>` : ''}
+                ${afterTaxRebates.map(r => `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">${r.label} ${lang === 'fr' ? '(après taxes)' : '(after tax)'}</td><td style="padding:4px 0;text-align:right;color:#1a5f4a;font-weight:600;">-${fmt(r.amount)} $</td></tr>`).join('')}
                 ${dossier > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Frais dossier</td><td style="padding:4px 0;text-align:right;">${fmt(dossier)} $</td></tr>` : ''}
                 ${pneus > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Taxe pneus</td><td style="padding:4px 0;text-align:right;">${fmt(pneus)} $</td></tr>` : ''}
                 ${rdprm > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Frais RDPRM</td><td style="padding:4px 0;text-align:right;">${fmt(rdprm)} $</td></tr>` : ''}
@@ -963,7 +983,7 @@ export default function HomeScreen() {
                 ${leaseResult.alternative ? `
                 <div style="flex:1;border:2px solid ${leaseResult.bestLease === 'alternative' ? '#FFD700' : '#ddd'};border-radius:10px;padding:10px;">
                   <div style="font-size:12px;font-weight:700;color:#0277BD;">Taux Alternatif ${leaseResult.bestLease === 'alternative' ? '<span style="background:#FFD700;color:#000;font-size:9px;padding:1px 5px;border-radius:6px;">✓</span>' : ''}</div>
-                  <div style="font-size:10px;color:#666;">Taux: ${leaseResult.alternative.rate}% | Cash: $0</div>
+                  <div style="font-size:10px;color:#666;">Taux: ${leaseResult.alternative.rate}% | Cash: -${fmt(leaseResult.alternative.leaseCash)} $</div>
                   <div style="background:#e3f2fd;border-radius:6px;padding:8px;text-align:center;margin-top:6px;">
                     <div style="font-size:10px;color:#666;">Avant taxes: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.alternative.weeklyBeforeTax : paymentFrequency === 'biweekly' ? leaseResult.alternative.biweeklyBeforeTax : leaseResult.alternative.monthlyBeforeTax)} $</div>
                     <div style="font-size:10px;color:#666;">TPS: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.alternative.tpsOnPayment * 12/52 : paymentFrequency === 'biweekly' ? leaseResult.alternative.tpsOnPayment * 12/26 : leaseResult.alternative.tpsOnPayment)} $ | TVQ: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.alternative.tvqOnPayment * 12/52 : paymentFrequency === 'biweekly' ? leaseResult.alternative.tvqOnPayment * 12/26 : leaseResult.alternative.tvqOnPayment)} $</div>
@@ -1151,7 +1171,7 @@ export default function HomeScreen() {
     
     const vin = selectedInventory?.vin || (manualVin && manualVin.length === 17 ? manualVin : '');
     const consumerCash = selectedProgram.consumer_cash;
-    const bonusCash = parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0;
+    const bonusCash = (parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0) + loyaltyBonus;
     const price = parseFloat(vehiclePrice) || 0;
     const dossier = parseFloat(fraisDossier) || 0;
     const pneus = parseFloat(taxePneus) || 0;
@@ -1316,7 +1336,7 @@ export default function HomeScreen() {
               <table class="info-table">
                 <tr><td>${lang === 'fr' ? 'Prix du véhicule' : 'Vehicle price'}</td><td>${fmt(price)} $</td></tr>
                 ${consumerCash > 0 ? `<tr><td>${lang === 'fr' ? 'Rabais (avant taxes)' : 'Rebate (before tax)'}</td><td style="color:#2E7D32;">-${fmt(consumerCash)} $</td></tr>` : ''}
-                ${bonusCash > 0 ? `<tr><td>Bonus Cash ${lang === 'fr' ? '(après taxes)' : '(after tax)'}</td><td style="color:#2E7D32;">-${fmt(bonusCash)} $</td></tr>` : ''}
+                ${afterTaxRebates.map(r => `<tr><td>${r.label} ${lang === 'fr' ? '(après taxes)' : '(after tax)'}</td><td style="color:#2E7D32;">-${fmt(r.amount)} $</td></tr>`).join('')}
                 ${dossier > 0 ? `<tr><td>${lang === 'fr' ? 'Frais dossier' : 'Admin fees'}</td><td>${fmt2(dossier)} $</td></tr>` : ''}
                 ${pneus > 0 ? `<tr><td>${lang === 'fr' ? 'Taxe pneus' : 'Tire tax'}</td><td>${fmt(pneus)} $</td></tr>` : ''}
                 ${rdprm > 0 ? `<tr><td>RDPRM</td><td>${fmt(rdprm)} $</td></tr>` : ''}
@@ -1375,7 +1395,7 @@ export default function HomeScreen() {
               </div>
             </div>
             
-            ${bonusCash > 0 ? `<div class="bonus-note">Bonus Cash de ${fmt(bonusCash)} $ ${lang === 'fr' ? 'sera déduit après taxes (au comptant)' : 'will be deducted after tax (as cash)'}</div>` : ''}
+            ${afterTaxRebates.map(r => `<div class="bonus-note">${r.label} : ${fmt(r.amount)} $ ${lang === 'fr' ? 'déduit après taxes, à part du comptant du client' : 'deducted after tax, separate from the customer\'s cash down'}</div>`).join('')}
             
             ${showLease && leaseResult && (leaseResult.standard || leaseResult.alternative) ? `
             <!-- LOCATION SCI -->
@@ -1418,7 +1438,7 @@ export default function HomeScreen() {
                 ${leaseResult.alternative ? `
                 <div class="option-card ${leaseResult.bestLease === 'alternative' ? 'winner' : ''}">
                   <div class="option-title" style="color:#0277BD;">${lang === 'fr' ? 'Taux Alternatif' : 'Alt. Rate'} ${leaseResult.bestLease === 'alternative' ? '<span class="winner-badge" style="background:#FFD700;color:#000;">✓</span>' : ''}</div>
-                  <div class="option-detail"><span>Lease Cash:</span><span>$0</span></div>
+                  <div class="option-detail"><span>Lease Cash:</span><span>${leaseResult.alternative.leaseCash > 0 ? `-${fmt(leaseResult.alternative.leaseCash)} $` : '$0'}</span></div>
                   <div class="option-detail"><span>${lang === 'fr' ? 'Taux:' : 'Rate:'}</span><span style="color:#0277BD;">${leaseResult.alternative.rate}%</span></div>
                   <div class="payment-box" style="border-top:3px solid #0277BD;">
                     <div class="payment-label">${paymentLabel}</div>
@@ -1895,9 +1915,22 @@ export default function HomeScreen() {
                   {selectedProgram.bonus_cash > 0 && (
                     <View style={styles.rebateItem}>
                       <Ionicons name="gift-outline" size={14} color="#FFD700" />
-                      <Text style={styles.rebateLabelBonus}>{t.results.bonusCash} ({t.results.afterTax}):</Text>
+                      <Text style={styles.rebateLabelBonus}>{rebateName(t.results.bonusCash, selectedProgram.bonus_cash_program)} ({t.results.afterTax}):</Text>
                       <Text style={styles.rebateValueBonus}>{formatCurrency(selectedProgram.bonus_cash)}</Text>
                     </View>
+                  )}
+                  {(selectedProgram.loyalty_bonus_cash || 0) > 0 && (
+                    <TouchableOpacity
+                      style={styles.rebateItem}
+                      onPress={() => setLoyaltyBonusChecked(prev => !prev)}
+                      testID="loyalty-bonus-toggle"
+                    >
+                      <Ionicons name={loyaltyBonusChecked ? 'checkbox' : 'square-outline'} size={18} color="#FFD700" />
+                      <Text style={styles.rebateLabelBonus}>
+                        {rebateName(lang === 'fr' ? 'Client fidèle — prime' : 'Loyalty bonus', selectedProgram.loyalty_bonus_cash_program)} ({t.results.afterTax}):
+                      </Text>
+                      <Text style={styles.rebateValueBonus}>{formatCurrency(selectedProgram.loyalty_bonus_cash || 0)}</Text>
+                    </TouchableOpacity>
                   )}
                 </View>
               </View>
@@ -2571,14 +2604,14 @@ export default function HomeScreen() {
               </View>
 
               {/* Bonus Cash Note */}
-              {(parseFloat(customBonusCash) > 0 || selectedProgram.bonus_cash > 0) && (
-                <View style={styles.bonusCashNote}>
+              {afterTaxRebates.map(rebate => (
+                <View key={rebate.label} style={styles.bonusCashNote}>
                   <Ionicons name="information-circle" size={16} color="#FFD700" />
                   <Text style={styles.bonusCashNoteText}>
-                    {t.results.bonusCash} de {formatCurrency(parseFloat(customBonusCash) || selectedProgram.bonus_cash)} sera déduit après taxes (au comptant)
+                    {rebate.label} : {formatCurrency(rebate.amount)} {lang === 'fr' ? 'déduit après taxes, à part du comptant du client' : 'deducted after tax, separate from the cash down'}
                   </Text>
                 </View>
-              )}
+              ))}
               
               {/* Send by Email Button */}
               <TouchableOpacity
@@ -2925,7 +2958,7 @@ export default function HomeScreen() {
                             </View>
                             <View style={styles.leaseCardDetail}>
                               <Text style={styles.leaseCardDetailLabel}>Lease Cash:</Text>
-                              <Text style={styles.leaseCardDetailValue}>$0</Text>
+                              <Text style={styles.leaseCardDetailValue}>{formatCurrency(leaseResult.alternative.leaseCash)}</Text>
                             </View>
                             <View style={styles.leaseCardDetail}>
                               <Text style={styles.leaseCardDetailLabel}>{lang === 'fr' ? 'Taux' : 'Rate'}:</Text>
@@ -3502,7 +3535,9 @@ export default function HomeScreen() {
                           },
                           calculation_results: {
                             consumer_cash: selectedProgram.consumer_cash,
-                            bonus_cash: parseFloat(customBonusCash) || selectedProgram.bonus_cash,
+                            bonus_cash: (parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0) + loyaltyBonus,
+                            after_tax_rebates: afterTaxRebates,
+                            alternative_consumer_cash: selectedProgram.alternative_consumer_cash || 0,
                             comparisons: [{
                               term_months: selectedTerm,
                               option1_rate: localResult.option1Rate,
@@ -3678,7 +3713,7 @@ export default function HomeScreen() {
                                 manualVin,
                                 selectedYear,
                                 selectedBrand,
-                                selectedModel,
+                                loyaltyBonusChecked,
                                 selectedInventory: selectedInventory ? {
                                   id: selectedInventory.id,
                                   vin: selectedInventory.vin,

@@ -741,12 +741,18 @@ def read_bonus_rules(pages_text: List[str]) -> List[Dict]:
         if not title:
             continue
         kind = title.group(1).strip().lower() or 'all'
-        for line in text.split('\n'):
+        lines = text.split('\n')
+        # 2e ligne : nom de l'événement (« 85th Anniversary Jeep Loyalty Bonus Cash Program Elements »)
+        name = re.sub(r'\s*(Program\s+)?Elements\s*$', '', lines[1].strip()) if len(lines) > 1 else ''
+        name = name or f"{title.group(1)}Bonus Cash".strip()
+        for line in lines:
             row = _BONUS_RULES_ROW.match(line.strip())
             if row:
                 rules.append({
                     'kind': kind,
                     'program': title.group(2),
+                    'code': row.group(3),
+                    'name': name,
                     'years': {int(y) for y in re.findall(r'20\d\d', row.group(1))},
                     'models': row.group(2).strip().lower(),
                     'amount': int(row.group(4).replace(',', '')),
@@ -784,6 +790,18 @@ def bonus_condition(rules: List[Dict], brand: str, year: int, amount: float) -> 
     return next((rule['kind'] for rule in rules if rule['kind'] != 'all' and announced(rule)), '')
 
 
+def bonus_program(rules: List[Dict], brand: str, year: int, amount: float, conditional: bool) -> Optional[Dict]:
+    """Code et nom du programme qui annonce cette prime (« 2646G1 », « 85th
+    Anniversary Jeep Loyalty Bonus Cash »), pour l'inscrire à part sur la soumission."""
+    if not amount:
+        return None
+    for rule in rules or []:
+        if ((rule['kind'] != 'all') == conditional and rule['amount'] == int(amount) and year in rule['years']
+                and (not rule['models'] or (brand or '').lower() in rule['models'])):
+            return {'code': rule.get('code', ''), 'name': rule.get('name', '')}
+    return None
+
+
 def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) -> List[Dict]:
     """Programmes d'achat (Finance Prime), toutes années-modèles.
 
@@ -815,7 +833,6 @@ def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) ->
                 # elle n'est pas additionnée au rabais de tout le monde.
                 'bonus_cash': 0 if loyalty else bonus,
                 'loyalty_bonus_cash': bonus if loyalty else 0,
-                'delivery_credit': row.get('delivery_credit', 0) or 0,
                 'option1_rates': _finance_rates(row['standard_rates']),
                 'option2_rates': _finance_rates(row['alternative_rates']),
                 # Remarques écrites dans les cases (« MSRP % Off Discount … »)
@@ -823,6 +840,9 @@ def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) ->
                               **({'loyalty_bonus_cash': f'Prime sous condition ({condition})'}
                                  if loyalty else {})),
             })
+            named = bonus_program(rules, brand, row['model_year'], bonus, loyalty)
+            if named:
+                programs[-1]['loyalty_bonus_cash_program' if loyalty else 'bonus_cash_program'] = named
     logger.info(f"[RetailParser] Lecture par position : {len(programs)} programmes, "
                 f"années {sorted({p['year'] for p in programs})}")
     return programs
@@ -854,10 +874,12 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
             for key, value in (('standard_rate_lease_cash', row.get('standard_rate_lease_cash', 0)),
                                ('alt_lease_cash', row.get('alt_lease_cash', 0)),
                                ('bonus_cash', 0 if loyalty else bonus),
-                               ('loyalty_bonus_cash', bonus if loyalty else 0),
-                               ('delivery_credit', row.get('delivery_credit', 0))):
+                               ('loyalty_bonus_cash', bonus if loyalty else 0)):
                 if value:
                     vehicle[key] = value
+            named = bonus_program(rules, _brand_of(row['name']), page['model_year'], bonus, loyalty)
+            if named:
+                vehicle['loyalty_bonus_cash_program' if loyalty else 'bonus_cash_program'] = named
             target.append(vehicle)
     logger.info("[SCIParser] Lecture par position : "
                 + ", ".join(f"{key}={len(value)}" for key, value in sorted(lease.items())))
