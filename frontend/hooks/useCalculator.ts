@@ -140,7 +140,6 @@ export function useCalculator(inputs: CalculatorInputs) {
     const weekly1 = monthly1 * 12 / 52;
     const total1 = monthly1 * selectedTerm;
 
-    // Option 2: Prix complet - Rabais concess. - valeur echange + frais + dette echange + taxes - comptant (pas de Consumer Cash ni Bonus)
     let monthly2: number | null = null;
     let biweekly2: number | null = null;
     let weekly2: number | null = null;
@@ -149,12 +148,13 @@ export function useCalculator(inputs: CalculatorInputs) {
     let bestOption: string | null = null;
     let savings = 0;
 
-    // Option 2: Prix + Solde reporté - Alternative Consumer Cash - Rabais concess. - valeur echange + frais + dette echange + taxes - comptant
+    // Option 2: Prix + Solde reporté - Alternative Consumer Cash - Rabais concess. - valeur echange + frais + dette echange + taxes - comptant - bonus cash
     const altConsumerCash = selectedProgram.alternative_consumer_cash || 0;
     const montantAvantTaxesO2 = price + totalAccessoires + soldeReporte - altConsumerCash - rabais - valeurEchange + fraisTaxables;
     const taxesO2 = montantAvantTaxesO2 * TAUX_TAXE;
     const principalOption2Brut = montantAvantTaxesO2 + taxesO2 + detteSurEchange;
-    const principalOption2 = principalOption2Brut - comptant;
+    // La prime (Bonus Cash, après taxes) se combine aussi avec l'option 2.
+    const principalOption2 = principalOption2Brut - comptant - bonusCash;
 
     if (selectedProgram.option2_rates) {
       rate2 = Math.max(0, getRateForTerm(selectedProgram.option2_rates, selectedTerm) - loyaltyRate);

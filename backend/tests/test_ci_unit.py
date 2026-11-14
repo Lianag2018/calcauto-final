@@ -455,6 +455,7 @@ class TestParserUsesLandscapeReader:
                "standard_rates": {"36": 4.99, "48": 4.99, "60": 5.49, "72": 5.99, "84": 6.49, "96": None},
                "alternative_rates": None, "notes": {"bonus_cash": "(Loyalty)"}}
         lease_row = {"name": "Ram 1500 Big Horn, Sport, Rebel", "model_year": 2027, "lease_cash": 3000,
+                     "delivery_credit": 500,
                      "standard_rates": {"24": 8.99}, "alternative_rates": None, "notes": {}}
         result = {"finance": [{"page": 19, "kind": "finance", "model_year": 2027, "rows": [row]}],
                   "lease": [{"page": 25, "kind": "lease", "model_year": 2027, "rows": [lease_row]}],
@@ -469,7 +470,9 @@ class TestParserUsesLandscapeReader:
         assert program["option1_rates"] == {"rate_36": 4.99, "rate_48": 4.99, "rate_60": 5.49,
                                             "rate_72": 5.99, "rate_84": 6.49, "rate_96": None}
         assert program["option2_rates"] is None
-        assert program["alt_consumer_cash"] == 2000 and program["delivery_credit"] == 1000
+        assert program["alt_consumer_cash"] == 2000
+        # Le crédit de livraison n'est jamais accordé : il ne sort pas du lecteur.
+        assert "delivery_credit" not in program
         # La prime de fidélité n'est pas donnée à tous les clients.
         assert program["bonus_cash"] == 0 and program["loyalty_bonus_cash"] == 1500
 
@@ -886,3 +889,25 @@ class TestBonusRules:
             "Conquest Bonus Cash Program – 2646\nJeep Conquest Bonus Cash Program Elements\n"
             "2026 Jeep Wrangler 2646J1 1/L/E $1,250 After Tax"])
         assert bonus_condition(rules, 'Jeep', 2026, 1250) == 'conquest'
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Rabais avant taxes de l'option 2 : même nom à l'import, en base et à l'écran
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestAlternativeConsumerCash:
+    def test_import_pdf_ecrit_le_nom_lu_par_l_ecran(self):
+        here = os.path.dirname(os.path.abspath(__file__))
+        with open(os.path.join(here, "..", "routers", "import_wizard.py"), encoding="utf-8") as handle:
+            source = handle.read()
+        assert source.count('"alternative_consumer_cash": prog.get("alt_consumer_cash", 0) or 0') == 2
+        assert '"alt_consumer_cash": prog.get(' not in source
+        # Le crédit de livraison n'est jamais accordé : il n'est pas enregistré.
+        assert '"delivery_credit"' not in source
+
+    def test_location_sans_credit_de_livraison(self, monkeypatch):
+        from services.pdfplumber_parser import parse_sci_lease
+        TestParserUsesLandscapeReader()._patch(monkeypatch)
+        lease = parse_sci_lease(b"pdf", 1, 1)
+        (vehicle,) = lease["vehicles_2027"]
+        assert vehicle["lease_cash"] == 3000 and "delivery_credit" not in vehicle

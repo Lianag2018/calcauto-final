@@ -36,7 +36,7 @@ import enTranslations from '../../locales/en.json';
 // Logique de calcul extraite
 import { useCalculator, getRateForTerm, formatCurrency, formatCurrencyDecimal } from '../../hooks/useCalculator';
 import { 
-  computeLeasePayment, computeLeaseForGrid, 
+  computeLeasePayment, computeLeaseForGrid, leaseCashFor, 
   findResidualVehicle, findRateEntry, getKmAdjustment,
   LeaseInputs 
 } from '../../utils/leaseCalculator';
@@ -555,7 +555,8 @@ export default function HomeScreen() {
     const termKey = String(leaseTerm);
     const standardRate = rateEntry?.standard_rates?.[termKey] ?? null;
     const alternativeRate = rateEntry?.alternative_rates?.[termKey] ?? null;
-    const leaseCashVal = rateEntry?.lease_cash || 0;
+    const leaseCashVal = leaseCashFor(rateEntry, 'standard');
+    const altLeaseCashVal = leaseCashFor(rateEntry, 'alternative');
 
     // km adjustment + residual
     const kmAdj = leaseResiduals.km_adjustments?.adjustments;
@@ -599,9 +600,9 @@ export default function HomeScreen() {
     if (standardRate !== null) {
       results.standard = computeLeasePayment({ ...baseInputs, rate: standardRate, leaseCash: leaseCashVal });
     }
-    // Alternative option (lower rate, no lease cash)
+    // Alternative option (lower rate, Alternative Lease Cash when the program has one)
     if (alternativeRate !== null) {
-      results.alternative = computeLeasePayment({ ...baseInputs, rate: alternativeRate, leaseCash: 0 });
+      results.alternative = computeLeasePayment({ ...baseInputs, rate: alternativeRate, leaseCash: altLeaseCashVal });
     }
 
     // Determine best lease option
@@ -645,7 +646,7 @@ export default function HomeScreen() {
         };
 
         if (altRate !== null) {
-          const r = computeLeaseForGrid({ ...gridInputs, rate: altRate, leaseCash: 0, term: t, residualPct: adjResPct });
+          const r = computeLeaseForGrid({ ...gridInputs, rate: altRate, leaseCash: altLeaseCashVal, term: t, residualPct: adjResPct });
           const entry = { ...r, kmPerYear: km, option: 'alt', optionLabel: 'Alt' };
           grid.push(entry);
           if (!bestOption || r.monthly < bestOption.monthly) {
@@ -963,7 +964,7 @@ export default function HomeScreen() {
                 ${leaseResult.alternative ? `
                 <div style="flex:1;border:2px solid ${leaseResult.bestLease === 'alternative' ? '#FFD700' : '#ddd'};border-radius:10px;padding:10px;">
                   <div style="font-size:12px;font-weight:700;color:#0277BD;">Taux Alternatif ${leaseResult.bestLease === 'alternative' ? '<span style="background:#FFD700;color:#000;font-size:9px;padding:1px 5px;border-radius:6px;">✓</span>' : ''}</div>
-                  <div style="font-size:10px;color:#666;">Taux: ${leaseResult.alternative.rate}% | Cash: $0</div>
+                  <div style="font-size:10px;color:#666;">Taux: ${leaseResult.alternative.rate}% | Cash: -${fmt(leaseResult.alternative.leaseCash)} $</div>
                   <div style="background:#e3f2fd;border-radius:6px;padding:8px;text-align:center;margin-top:6px;">
                     <div style="font-size:10px;color:#666;">Avant taxes: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.alternative.weeklyBeforeTax : paymentFrequency === 'biweekly' ? leaseResult.alternative.biweeklyBeforeTax : leaseResult.alternative.monthlyBeforeTax)} $</div>
                     <div style="font-size:10px;color:#666;">TPS: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.alternative.tpsOnPayment * 12/52 : paymentFrequency === 'biweekly' ? leaseResult.alternative.tpsOnPayment * 12/26 : leaseResult.alternative.tpsOnPayment)} $ | TVQ: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.alternative.tvqOnPayment * 12/52 : paymentFrequency === 'biweekly' ? leaseResult.alternative.tvqOnPayment * 12/26 : leaseResult.alternative.tvqOnPayment)} $</div>
@@ -2925,7 +2926,7 @@ export default function HomeScreen() {
                             </View>
                             <View style={styles.leaseCardDetail}>
                               <Text style={styles.leaseCardDetailLabel}>Lease Cash:</Text>
-                              <Text style={styles.leaseCardDetailValue}>$0</Text>
+                              <Text style={styles.leaseCardDetailValue}>{formatCurrency(leaseResult.alternative.leaseCash)}</Text>
                             </View>
                             <View style={styles.leaseCardDetail}>
                               <Text style={styles.leaseCardDetailLabel}>{lang === 'fr' ? 'Taux' : 'Rate'}:</Text>

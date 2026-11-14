@@ -25,7 +25,7 @@ export interface LeaseInputs {
   tradeValue: number;       // Valeur échange
   tradeOwed: number;        // Montant dû sur échange
   comptant: number;         // Comptant taxes incluses
-  bonusCash: number;        // Bonus cash
+  bonusCash: number;        // Bonus cash (après taxes, taxes incluses)
 }
 
 export interface LeaseResult {
@@ -66,11 +66,26 @@ export function computeSoldeNet(soldeReporte: number): number {
   return 0;
 }
 
-/** 3. Net cap cost = cap + solde + dû échange - valeur échange - comptant - bonus */
+/** Part avant taxes d'un rabais après taxes (Bonus Cash) : le montant annoncé inclut les taxes. */
+export function bonusBeforeTax(bonusCash: number): number {
+  return bonusCash / (1 + TAUX_TAXE);
+}
+
+/** 3. Net cap cost = cap + solde + dû échange - valeur échange - comptant - bonus (ramené avant taxes) */
 export function computeNetCapCost(inputs: LeaseInputs): number {
   const capCost = computeCapCost(inputs);
   const soldeNet = computeSoldeNet(inputs.soldeReporte);
-  return capCost + soldeNet + inputs.tradeOwed - inputs.tradeValue - inputs.comptant - inputs.bonusCash;
+  return capCost + soldeNet + inputs.tradeOwed - inputs.tradeValue - inputs.comptant - bonusBeforeTax(inputs.bonusCash);
+}
+
+/**
+ * Rabais de location (tous avant taxes) selon le taux choisi :
+ * taux standard = Lease Cash + Lease Cash du taux standard ; taux alternatif = Alternative Lease Cash.
+ */
+export function leaseCashFor(rateEntry: any, option: 'standard' | 'alternative'): number {
+  if (!rateEntry) return 0;
+  if (option === 'alternative') return rateEntry.alt_lease_cash || rateEntry.alternative_lease_cash || 0;
+  return (rateEntry.lease_cash || 0) + (rateEntry.standard_rate_lease_cash || 0);
 }
 
 /** 4. Valeur résiduelle = PDSF × (% résiduel ajusté / 100) */

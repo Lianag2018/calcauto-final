@@ -815,7 +815,6 @@ def parse_retail_programs(pdf_content: bytes, start_page: int, end_page: int) ->
                 # elle n'est pas additionnée au rabais de tout le monde.
                 'bonus_cash': 0 if loyalty else bonus,
                 'loyalty_bonus_cash': bonus if loyalty else 0,
-                'delivery_credit': row.get('delivery_credit', 0) or 0,
                 'option1_rates': _finance_rates(row['standard_rates']),
                 'option2_rates': _finance_rates(row['alternative_rates']),
                 # Remarques écrites dans les cases (« MSRP % Off Discount … »)
@@ -854,8 +853,7 @@ def parse_sci_lease(pdf_content: bytes, start_page: int, end_page: int) -> Dict:
             for key, value in (('standard_rate_lease_cash', row.get('standard_rate_lease_cash', 0)),
                                ('alt_lease_cash', row.get('alt_lease_cash', 0)),
                                ('bonus_cash', 0 if loyalty else bonus),
-                               ('loyalty_bonus_cash', bonus if loyalty else 0),
-                               ('delivery_credit', row.get('delivery_credit', 0))):
+                               ('loyalty_bonus_cash', bonus if loyalty else 0)):
                 if value:
                     vehicle[key] = value
             target.append(vehicle)
