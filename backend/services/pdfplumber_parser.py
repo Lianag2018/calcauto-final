@@ -1547,6 +1547,7 @@ def auto_detect_pages(pdf_content: bytes) -> Dict:
         'key_incentive_pages': [3, 4],
         'total_pages': 0,
         'detected_sections': [],
+        'sections': [],
     }
 
     with pdfplumber.open(BytesIO(pdf_content)) as pdf:
@@ -1606,6 +1607,12 @@ def auto_detect_pages(pdf_content: bytes) -> Dict:
         result['detected_sections'].append({
             'type': 'lease', 'pages': f"{lease[0]}-{lease[1]}", 'source': 'TOC'
         })
+
+    # L'écran d'import liste `sections` (nom + pages) et laisse cocher celles à extraire.
+    names = {'retail_prime': 'Finance Prime Rate Landscapes', 'non_prime': 'Finance Non-Prime Rate Landscapes',
+             'lease': 'Lease Landscapes'}
+    result['sections'] = [{'name': names[item['type']], 'type': item['type'], 'pages': item['pages']}
+                          for item in result['detected_sections']]
 
     logger.info(
         f"[AutoDetect] TOC-based: Retail={result['retail_start']}-{result['retail_end']}, "

@@ -159,3 +159,15 @@ def test_mois_sans_promotion_a_cocher():
             continue
         programs, found = _offers_by_code(path)
         assert found == {} and all(p["special_offers"] == [] for p in programs)
+
+
+@pytest.mark.parametrize("path", PDFS, ids=[_month(p) for p in PDFS])
+def test_assistant_d_import_trouve_les_sections(path):
+    """L'écran d'import liste `sections` : sans elles il affiche « 0 sections trouvées »
+    et le bouton d'extraction reste grisé."""
+    from services.pdfplumber_parser import auto_detect_pages
+    with open(path, "rb") as handle:
+        found = auto_detect_pages(handle.read())
+    names = [s["name"] for s in found["sections"]]
+    assert "Finance Prime Rate Landscapes" in names and "Lease Landscapes" in names
+    assert all(re.fullmatch(r"\d+-\d+", s["pages"]) for s in found["sections"])
