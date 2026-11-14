@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Print from 'expo-print';
@@ -437,6 +437,29 @@ export default function HomeScreen() {
   useEffect(() => {
     loadPrograms();
   }, [loadPrograms]);
+
+  // Au retour sur l'écran (après un import, ou depuis un autre onglet) : si la liste
+  // des périodes a changé, on recharge. Sans cela, un mois fraîchement importé
+  // n'apparaît qu'après un rechargement complet de la page.
+  // Retour de l'écran d'import : toujours recharger (même mois réimporté).
+  const { refresh: refreshParam } = useLocalSearchParams<{ refresh?: string }>();
+  useEffect(() => {
+    if (refreshParam) loadPrograms();
+  }, [refreshParam, loadPrograms]);
+  const knownPeriods = useRef<string | null>(null);
+  useEffect(() => {
+    if (availablePeriods.length) knownPeriods.current = JSON.stringify(availablePeriods);
+  }, [availablePeriods]);
+  const firstFocus = useRef(true);
+  useFocusEffect(useCallback(() => {
+    if (firstFocus.current) { firstFocus.current = false; return; }
+    let cancelled = false;
+    axios.get(`${API_URL}/api/periods`).then(res => {
+      if (cancelled || JSON.stringify(res.data) === knownPeriods.current) return;
+      loadPrograms();
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [loadPrograms]));
 
   // Load inventory separately when user is authenticated
   useEffect(() => {

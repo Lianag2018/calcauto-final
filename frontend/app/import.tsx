@@ -1140,7 +1140,7 @@ export default function ImportScreen() {
 
       <TouchableOpacity
         style={[styles.secondaryButton, { marginTop: 10 }]}
-        onPress={() => router.replace('/')}
+        onPress={() => router.replace({ pathname: '/', params: { refresh: String(Date.now()) } })}
       >
         <Ionicons name="home" size={20} color="#4ECDC4" />
         <Text style={styles.secondaryButtonText}>Retour à l'accueil</Text>
@@ -1382,7 +1382,7 @@ export default function ImportScreen() {
 
       <TouchableOpacity
         style={[styles.primaryButton, { backgroundColor: '#2d2d44' }]}
-        onPress={() => router.replace('/')}
+        onPress={() => router.replace({ pathname: '/', params: { refresh: String(Date.now()) } })}
       >
         <Ionicons name="home" size={20} color="#fff" />
         <Text style={[styles.primaryButtonText, { color: '#fff' }]}>Retour a l'accueil</Text>
