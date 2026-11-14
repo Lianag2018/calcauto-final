@@ -6,6 +6,11 @@ from email.mime.image import MIMEImage
 from email import encoders
 from database import SMTP_EMAIL, SMTP_PASSWORD, SMTP_HOST, SMTP_PORT
 
+# Secondes accordées au serveur de courriel : sans limite, un serveur injoignable
+# gèle tout le service pendant qu'on attend.
+SMTP_TIMEOUT = 10
+
+
 def send_email(to_email: str, subject: str, html_body: str, attachment_data: bytes = None, attachment_name: str = None, inline_images: list = None, cc_email: str = None):
     """
     Envoie un email via Gmail SMTP avec support pour images inline (CID).
@@ -61,7 +66,7 @@ def send_email(to_email: str, subject: str, html_body: str, attachment_data: byt
         recipients.append(cc_email)
     
     # Connexion SMTP
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT) as server:
         server.starttls()
         server.login(SMTP_EMAIL, SMTP_PASSWORD)
         server.send_message(msg, to_addrs=recipients)
