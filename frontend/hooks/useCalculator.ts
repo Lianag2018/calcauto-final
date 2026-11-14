@@ -76,6 +76,12 @@ interface CalculatorInputs {
  * Hook principal de calcul de financement
  * Extrait la logique pure de calcul de index.tsx
  */
+/** Prime utilisée par le calcul : le montant tapé à la main s'il y en a un (0 compris), sinon celle du programme. */
+export function resolveBonus(typed: string, programBonus: number): number {
+  const value = parseFloat(typed);
+  return (typed || '').trim() !== '' && !isNaN(value) && value >= 0 ? value : programBonus;
+}
+
 export function useCalculator(inputs: CalculatorInputs) {
   const [localResult, setLocalResult] = useState<LocalResult | null>(null);
 
@@ -101,7 +107,7 @@ export function useCalculator(inputs: CalculatorInputs) {
       return;
     }
 
-    const bonusCash = (parseFloat(customBonusCash) || selectedProgram.bonus_cash || 0) + loyaltyBonus;
+    const bonusCash = resolveBonus(customBonusCash, selectedProgram.bonus_cash || 0) + loyaltyBonus;
     const consumerCash = selectedProgram.consumer_cash;
     const comptant = parseFloat(comptantTxInclus) || 0;
     const rabais = parseFloat(rabaisConcess) || 0;

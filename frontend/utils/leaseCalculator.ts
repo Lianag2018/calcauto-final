@@ -346,22 +346,121 @@ export function findResidualVehicle(
   ) || null;
 }
 
+// === Association programme d'achat -> ligne de location ===
+
+const RATE_STOPWORDS = new Set(['models', 'model', 'all', 'and', 'with', 'w', 'the', 'engine', 'cpos', 'jl', 'new']);
+
+function rateTokens(text: string): string[] {
+  return text.toLowerCase().replace(/[()\/,&]/g, ' ').split(/\s+/)
+    .filter(t => t && !RATE_STOPWORDS.has(t));
+}
+
+/** Sépare ce qu'une ligne couvre de ce qu'elle exclut : « (excludes X, Y) », « (excl …) », « (non …) ». */
+function rateConditions(text: string): { positive: Set<string>; excluded: string[][]; positiveText: string } {
+  let positive = '';
+  const excluded: string[][] = [];
+  let i = 0;
+  while (i < text.length) {
+    if (text[i] === '(') {
+      let depth = 1;
+      let j = i + 1;
+      while (j < text.length && depth > 0) {
+        if (text[j] === '(') depth++;
+        else if (text[j] === ')') depth--;
+        j++;
+      }
+      const inner = text.slice(i + 1, depth === 0 ? j - 1 : j);
+      const keyword = inner.match(/^\s*(excludes|excluding|excl\.?|non)\s+/i);
+      if (keyword) {
+        // Éléments séparés par une virgule ou « and », hors parenthèses imbriquées
+        const items: string[] = [];
+        let level = 0;
+        let current = '';
+        const body = inner.slice(keyword[0].length);
+        for (let k = 0; k < body.length; k++) {
+          const ch = body[k];
+          if (ch === '(') level++;
+          if (ch === ')') level--;
+          const isAnd = level === 0 && body.slice(k, k + 5).toLowerCase() === ' and ';
+          if (level === 0 && (ch === ',' || isAnd)) {
+            items.push(current);
+            current = '';
+            if (isAnd) k += 4;
+          } else {
+            current += ch;
+          }
+        }
+        items.push(current);
+        items.map(rateTokens).filter(tokens => tokens.length > 0).forEach(tokens => excluded.push(tokens));
+      } else {
+        positive += '(' + inner + ')';
+      }
+      i = j;
+    } else {
+      positive += text[i];
+      i++;
+    }
+  }
+  return { positive: new Set(rateTokens(positive)), excluded, positiveText: positive.replace(/\s+/g, ' ').trim() };
+}
+
+const rateKey = (text: string) => text.toLowerCase().replace(/[^a-z0-9*]/g, '');
+
+/**
+ * Ligne de location d'un programme d'achat, en respectant les exclusions écrites
+ * dans les deux noms. null si rien de sûr : l'appelant retombe sur l'ancienne règle.
+ */
+export function matchRateEntry(vehicleList: any[], brand: string, model: string, trim: string): any | null {
+  const brandLower = brand.toLowerCase();
+  const stripBrand = (name: string) => name.toLowerCase().startsWith(brandLower + ' ') ? name.slice(brandLower.length + 1) : name;
+  const rows = (vehicleList || []).filter((v: any) => (v.brand || '').toLowerCase() === brandLower);
+  const wanted = `${stripBrand(model)} ${trim || ''}`;
+
+  // 1. Même nom, à la ponctuation près
+  const exact = rows.find((v: any) => rateKey(stripBrand(v.model || '')) === rateKey(wanted));
+  if (exact) return exact;
+
+  // 2. Meilleur recoupement de mots, sans jamais prendre une ligne exclue
+  const program = rateConditions(wanted);
+  const modelTokens = rateTokens(stripBrand(model));
+  const covers = (item: string[], positive: Set<string>) => item.every(token => positive.has(token));
+  let best: any = null;
+  let bestScore = 0;
+  for (const row of rows) {
+    const candidate = rateConditions(stripBrand(row.model || ''));
+    if (!modelTokens.every(token => candidate.positive.has(token))) continue;
+    if (program.excluded.some(item => covers(item, candidate.positive))) continue;
+    if (candidate.excluded.some(item => covers(item, program.positive))) continue;
+    let shared = 0;
+    program.positive.forEach(token => { if (candidate.positive.has(token)) shared++; });
+    const score = shared - candidate.positive.size * 0.01;
+    if (score > bestScore) {
+      best = row;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
 export function findRateEntry(
   vehicleList: any[],
   brand: string,
   model: string,
   trim: string
 ): any | null {
+  const matched = matchRateEntry(vehicleList, brand, model, trim);
+  if (matched) return matched;
+
   const brandLower = brand.toLowerCase();
   const modelLower = model.toLowerCase();
   const trimLower = (trim || '').toLowerCase();
 
   // Priorité: match modèle + trim
   let entry = vehicleList?.find((v: any) => {
-    const vModel = v.model.toLowerCase();
+    const vModel = rateConditions(v.model || '').positiveText.toLowerCase();  // sans les exclusions
     const vBrand = v.brand.toLowerCase();
     if (vBrand !== brandLower) return false;
-    const hasModel = vModel.includes(modelLower) || modelLower.includes(vModel);
+    const hasModel = vModel.includes(modelLower) || modelLower.includes(v.model.toLowerCase());
     if (!hasModel) return false;
     if (!trimLower) return true;
     return vModel.includes(trimLower) || trimLower.split(',').some((t: string) => vModel.includes(t.trim()));
@@ -370,10 +469,10 @@ export function findRateEntry(
   // Fallback: match modèle seul
   if (!entry) {
     entry = vehicleList?.find((v: any) => {
-      const vModel = v.model.toLowerCase();
+      const vModel = rateConditions(v.model || '').positiveText.toLowerCase();  // sans les exclusions
       const vBrand = v.brand.toLowerCase();
       if (vBrand !== brandLower) return false;
-      return vModel.includes(modelLower) || modelLower.includes(vModel);
+      return vModel.includes(modelLower) || modelLower.includes(v.model.toLowerCase());
     });
   }
 

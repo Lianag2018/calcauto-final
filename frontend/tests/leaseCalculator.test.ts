@@ -1,7 +1,7 @@
 /**
  * Rabais de location : avant taxes (Lease Cash) et après taxes (Bonus Cash).
  */
-import { bonusBeforeTax, computeNetCapCost, leaseCashFor, LeaseInputs } from '../utils/leaseCalculator';
+import { bonusBeforeTax, computeNetCapCost, findRateEntry, leaseCashFor, LeaseInputs } from '../utils/leaseCalculator';
 
 const base: LeaseInputs = {
   price: 50000, pdsf: 52000, leaseCash: 0, rate: 5.99, term: 48, residualPct: 50,
@@ -29,5 +29,33 @@ describe('Rabais de location', () => {
     expect(leaseCashFor(entry, 'alternative')).toBe(8000);
     expect(leaseCashFor({ lease_cash: 3500 }, 'alternative')).toBe(0);
     expect(leaseCashFor(null, 'standard')).toBe(0);
+  });
+});
+
+describe('Ligne de location d\'un programme d\'achat', () => {
+  const row = (model: string, brand = 'Jeep') => ({ brand, model });
+  const rows = [
+    row('Wrangler 2-Door (JL) (JLJL72) (non Rubicon models)'),
+    row('Wrangler 4-Door Sport, Sport S (JLJL74 2*B, 2*S)'),
+    row('Wrangler 4-Door Willys (JLJL74 2*W), Sahara'),
+    row('Wrangler 4-Door Rubicon/Rubicon X (JLJS74) (excludes Rubicon w/ 2.0L (JLJS74 22R))'),
+    row('Wrangler 4-Door 392 (JLJX74)'),
+    row('Ram 1500 Big Horn (DT6H91)', 'Ram'),
+    row('Ram 1500 Big Horn (excludes DT6H91)', 'Ram'),
+    row('Ram 2500/3500 Gas Models (excl Chassis Cab Models)', 'Ram'),
+  ];
+
+  test('une version exclue ne prend pas la ligne d\'un autre modèle', () => {
+    const entry = findRateEntry(rows, 'Jeep', 'Wrangler', '4-Door (JL) (JLJL74) (non Sahara, Rubicon, 392 models)');
+    expect(entry.model).toBe('Wrangler 4-Door Sport, Sport S (JLJL74 2*B, 2*S)');
+  });
+
+  test('même nom : la ligne avec le code, pas celle qui l\'exclut', () => {
+    expect(findRateEntry(rows, 'Ram', '1500', 'Big Horn (DT6H91)').model).toBe('Ram 1500 Big Horn (DT6H91)');
+    expect(findRateEntry(rows, 'Ram', '1500', 'Big Horn (excludes DT6H91)').model).toBe('Ram 1500 Big Horn (excludes DT6H91)');
+  });
+
+  test('un modèle nommé seulement dans une exclusion n\'a pas de ligne', () => {
+    expect(findRateEntry(rows, 'Ram', 'Chassis Cab', '')).toBeNull();
   });
 });

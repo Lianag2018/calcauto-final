@@ -201,7 +201,8 @@ async def calculate_lease(payload: dict):
             solde_net = solde_reporte
         
         # 4. Net cap cost
-        net_cap_cost = cap_cost + solde_net + trade_owed - trade_value - cash_down - bonus_cash
+        # La prime (après taxes) est annoncée taxes incluses : seule sa part avant taxes réduit le montant financé.
+        net_cap_cost = cap_cost + solde_net + trade_owed - trade_value - cash_down - bonus_cash / (1 + TAUX_TAXE)
         
         # 5. PMT en avance (formule SCI exacte)
         monthly_rate = annual_rate / 100 / 12
@@ -334,7 +335,7 @@ async def export_sci_lease_excel():
             row = [v.get("brand", ""), v.get("model", ""), v.get("lease_cash", 0) or 0]
             for t in terms:
                 row.append(std.get(str(t)))
-            row.append(v.get("alternative_lease_cash", 0) or 0)
+            row.append(v.get("alt_lease_cash") or v.get("alternative_lease_cash") or 0)
             for t in terms:
                 row.append(alt.get(str(t)))
 
@@ -459,7 +460,9 @@ async def import_sci_lease_excel(file: UploadFile = File(...), password: str = F
             v["standard_rates"] = std if has_std else None
 
             alt_cash_idx = 3 + len(terms)
+            # Les deux noms : « alt_lease_cash » est celui que l'import PDF écrit et que l'écran lit.
             v["alternative_lease_cash"] = float(row[alt_cash_idx]) if row[alt_cash_idx] is not None else 0
+            v["alt_lease_cash"] = v["alternative_lease_cash"]
 
             alt = {}
             has_alt = False
@@ -474,8 +477,9 @@ async def import_sci_lease_excel(file: UploadFile = File(...), password: str = F
             changes = {}
             if (old_v.get("lease_cash") or 0) != v["lease_cash"]:
                 changes["lease_cash"] = {"avant": old_v.get("lease_cash", 0) or 0, "apres": v["lease_cash"]}
-            if (old_v.get("alternative_lease_cash") or 0) != v.get("alternative_lease_cash", 0):
-                changes["alternative_lease_cash"] = {"avant": old_v.get("alternative_lease_cash", 0) or 0, "apres": v.get("alternative_lease_cash", 0)}
+            old_alt_cash = old_v.get("alt_lease_cash") or old_v.get("alternative_lease_cash") or 0
+            if old_alt_cash != v.get("alternative_lease_cash", 0):
+                changes["alternative_lease_cash"] = {"avant": old_alt_cash, "apres": v.get("alternative_lease_cash", 0)}
             if old_v.get("standard_rates") != v.get("standard_rates"):
                 changes["standard_rates"] = {"avant": old_v.get("standard_rates"), "apres": v.get("standard_rates")}
             if old_v.get("alternative_rates") != v.get("alternative_rates"):

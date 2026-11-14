@@ -723,9 +723,9 @@ def _finance_rates(rates: Optional[Dict]) -> Optional[Dict]:
     return {f'rate_{term}': rates.get(str(term)) for term in (36, 48, 60, 72, 84, 96)}
 
 
-_BONUS_RULES_TITLE = re.compile(r'\s*((?:[A-Za-z]+ )?)Bonus Cash Program\s*[–-]\s*(\d{4})')
+_BONUS_RULES_TITLE = re.compile(r'\s*((?:[A-Za-z]+ )?)Bonus Cash(?: Program)?\s*[–-]\s*(\d{4})')
 _BONUS_RULES_ROW = re.compile(
-    r'^(20\d\d(?:\s*/\s*20\d\d)*)\s+(.*?)\s*\b(26\d\d[A-Z0-9]+)\s+\S+\s+\$([\d,]+)')
+    r'^(20\d\d(?:\s*/\s*20\d\d)*)\s+(.*?)\s*\b(\d{4}[A-Z][A-Z0-9]*)\s+\S+\s+\$([\d,]+)')
 _BONUS_RULES_CACHE: Dict[str, List[Dict]] = {}
 
 
@@ -743,7 +743,9 @@ def read_bonus_rules(pages_text: List[str]) -> List[Dict]:
         kind = title.group(1).strip().lower() or 'all'
         lines = text.split('\n')
         # 2e ligne : nom de l'événement (« 85th Anniversary Jeep Loyalty Bonus Cash Program Elements »)
-        name = re.sub(r'\s*(Program\s+)?Elements\s*$', '', lines[1].strip()) if len(lines) > 1 else ''
+        # Seulement si la 2e ligne est bien le titre de l'événement (« … Program Elements »)
+        second = lines[1].strip() if len(lines) > 1 else ''
+        name = re.sub(r'\s*(Program\s+)?Elements\s*$', '', second) if re.search(r'Elements\s*$|Bonus', second) else ''
         name = name or f"{title.group(1)}Bonus Cash".strip()
         for line in lines:
             row = _BONUS_RULES_ROW.match(line.strip())

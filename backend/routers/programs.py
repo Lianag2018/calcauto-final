@@ -266,7 +266,7 @@ async def export_programs_excel(month: Optional[int] = None, year: Optional[int]
             prog.get("bonus_cash", 0) or 0,
             o1.get("rate_36"), o1.get("rate_48"), o1.get("rate_60"),
             o1.get("rate_72"), o1.get("rate_84"), o1.get("rate_96"),
-            prog.get("alternative_consumer_cash", 0) or 0,
+            _with_alternative_cash(prog).get("alternative_consumer_cash", 0) or 0,
             o2.get("rate_36") if o2 else None, o2.get("rate_48") if o2 else None,
             o2.get("rate_60") if o2 else None, o2.get("rate_72") if o2 else None,
             o2.get("rate_84") if o2 else None, o2.get("rate_96") if o2 else None,
@@ -632,7 +632,7 @@ async def create_program(program: VehicleProgramCreate):
 def _with_alternative_cash(program: dict) -> dict:
     """Les anciens imports PDF ont rangé le rabais de l'option 2 sous
     « alt_consumer_cash » ; le modèle et l'écran lisent « alternative_consumer_cash »."""
-    if not program.get("alternative_consumer_cash") and program.get("alt_consumer_cash"):
+    if program.get("alternative_consumer_cash") is None and program.get("alt_consumer_cash"):
         program = {**program, "alternative_consumer_cash": program["alt_consumer_cash"]}
     return program
 
@@ -685,7 +685,7 @@ async def update_program(program_id: str, update: VehicleProgramUpdate):
     
     await db.programs.update_one({"id": program_id}, update_ops)
     updated = await db.programs.find_one({"id": program_id})
-    return VehicleProgram(**updated)
+    return VehicleProgram(**_with_alternative_cash(updated))
 
 @router.delete("/programs/{program_id}")
 async def delete_program(program_id: str):
