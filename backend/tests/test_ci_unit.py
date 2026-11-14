@@ -653,3 +653,184 @@ class TestProgramMatching:
         assert with_code != without
         assert condition_signature('Big Horn') not in (with_code, without)
         assert condition_signature('Sport, Rebel (DT)') == condition_signature('Sport, Rebel')
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Guide des valeurs résiduelles (lecture par position, kilométrage, période)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_RES_TERMS = ["24", "27", "36", "39", "42", "48", "51", "54", "60"]
+_RES_X = [214 + 17 * i for i in range(9)]
+
+
+def _residual_page(lines):
+    """lines : ('brand', 'DODGE') | ('model', '2025 Charger') | ('more', 'Daytona')
+    | ('row', 'R/T', '2D Coupe AWD', [9 valeurs]) | ('wrap', 'Hammerhead')."""
+    words, top = [], 93.0
+
+    def put(text, x):
+        for piece in text.split():
+            words.append(_word(piece, x, top))
+            x += len(piece) * 4.0 + 2
+    for line in lines:
+        kind = line[0]
+        if kind == "brand":
+            put(line[1], 58)
+            words.extend(_word(t, x, top, centered=True) for t, x in zip(_RES_TERMS, _RES_X))
+        elif kind in ("model", "more"):
+            put(line[1], 58)
+        elif kind == "wrap":
+            put(line[1], 63)
+        else:
+            put(line[1], 63)
+            put(line[2], 141)
+            xs = line[4] if len(line) > 4 else _RES_X
+            words.extend(_word(str(v), x, top, centered=True) for v, x in zip(line[3], xs))
+        top += 13
+    return _FakePage(words, [])
+
+
+_VALUES = [49, 48, 42, 40, 37, 33, 31, 29, 27]
+
+
+class TestResidualReader:
+    def _read(self, lines):
+        from services.residual_reader import read_table_page
+        return read_table_page(_residual_page(lines))
+
+    def test_row_is_read_with_year_model_trim_body(self):
+        vehicles, problems = self._read([
+            ("brand", "DODGE"), ("model", "2025 Durango"),
+            ("row", "R/T Plus", "4D Utility AWD", _VALUES)])
+        assert problems == []
+        assert vehicles == [{
+            "brand": "Dodge", "model_year": 2025, "model_name": "Durango", "trim": "R/T Plus",
+            "body_style": "4D Utility AWD",
+            "residual_percentages": dict(zip(_RES_TERMS, _VALUES))}]
+
+    def test_wrapped_model_and_trim_names(self):
+        vehicles, problems = self._read([
+            ("brand", "DODGE"), ("model", "2025 Charger"), ("more", "Daytona"),
+            ("row", "SRT Hellcat", "2D Coupe AWD", _VALUES), ("wrap", "Hammerhead"),
+            ("row", "Scat Pack", "2D Coupe AWD", _VALUES)])
+        assert problems == []
+        assert [(v["model_name"], v["trim"]) for v in vehicles] == [
+            ("Charger Daytona", "SRT Hellcat Hammerhead"), ("Charger Daytona", "Scat Pack")]
+
+    def test_each_model_year_keeps_its_own_values(self):
+        newer = [56, 54, 48, 47, 44, 40, 39, 37, 33]
+        vehicles, _ = self._read([
+            ("brand", "RAM"), ("model", "2027 1500"),
+            ("row", "Big Horn", "Crew Cab SWB 4WD", newer),
+            ("model", "2026 1500"), ("row", "Big Horn", "Crew Cab SWB 4WD", _VALUES)])
+        assert [(v["model_year"], v["residual_percentages"]["24"]) for v in vehicles] == [
+            (2027, 56), (2026, 49)]
+        assert vehicles[0]["body_style"] == "Crew Cab SWB 4WD"
+
+    def test_value_is_attached_to_the_term_above_it(self):
+        # Une valeur manquante ne décale pas les autres : la ligne est refusée
+        vehicles, problems = self._read([
+            ("brand", "JEEP"), ("model", "2026 Compass"),
+            ("row", "North", "4D Utility 4WD", _VALUES[:8], _RES_X[1:])])
+        assert vehicles == []
+        assert problems and "8 pourcentages" in problems[0]
+
+    def test_increasing_values_are_refused(self):
+        vehicles, problems = self._read([
+            ("brand", "JEEP"), ("model", "2026 Compass"),
+            ("row", "North", "4D Utility 4WD", [40, 48, 42, 40, 37, 33, 31, 29, 27])])
+        assert vehicles == [] and "incohérents" in problems[0]
+
+    def test_unknown_line_is_reported(self):
+        _, problems = self._read([
+            ("brand", "JEEP"), ("model", "2026 Compass"),
+            ("row", "North", "Wagon", _VALUES)])
+        assert problems and "carrosserie introuvable" in problems[0]
+
+    def test_km_table_french_and_english(self):
+        from services.residual_reader import read_km_adjustments
+        french = ("Kilométrage et coûts:\n"
+                  "L' augmentation 24-27 mois 36-42 mois 48-54 mois 60 mois\n"
+                  "24,000 Kilomètres par an +0% +0% +0% +0%\n"
+                  "18,000 Kilomètres par an +1% +2% +3% +4%\n"
+                  "12,000 Kilomètres par an +2% +3% +4% +5%\n"
+                  "* Le kilométrage total NE DOIT PAS dépasser 36,000 km par an.")
+        english = (french.replace("mois", "months").replace("Kilomètres par an", "Kilometers per year")
+                   .replace("36,000 km par an", "36,000/year"))
+        for text in (french, english):
+            km = read_km_adjustments(text)
+            assert km["adjustments"]["18000"] == {
+                "24": 1, "27": 1, "36": 2, "39": 2, "42": 2, "48": 3, "51": 3, "54": 3, "60": 4}
+            assert km["adjustments"]["12000"]["24"] == 2 and km["adjustments"]["12000"]["60"] == 5
+            assert km["standard_km"] == 24000 and km["max_km_per_year"] == 36000
+
+    def test_incomplete_km_table_is_not_accepted(self):
+        from services.residual_reader import read_km_adjustments
+        assert read_km_adjustments(
+            "Adjustment 24-27 months 36-42 months 48-54 months 60 months\n"
+            "24,000 Kilometers per year +0% +0% +0% +0%\n"
+            "18,000 Kilometers per year +1% +2% +3%\n"
+            "12,000 Kilometers per year +2% +3% +4% +5%") is None
+
+    def test_period_french_and_english(self):
+        from services.residual_reader import read_period
+        assert read_period("NOVEMBRE 2026\nEn vigueur: 3 novembre 2026 jusqu'au 30 novembre\n2026") == {
+            "month": 11, "year": 2026, "end_month": 11, "end_year": 2026}
+        assert read_period("OCTOBRE 2026 En vigueur: 1 octobre 2026 jusqu'au 2 novembre 2026") == {
+            "month": 10, "year": 2026, "end_month": 11, "end_year": 2026}
+        assert read_period("MARCH 2026\nEffective: Mar 01, 2026 - Apr 30, 2026") == {
+            "month": 3, "year": 2026, "end_month": 4, "end_year": 2026}
+        assert read_period("RESIDUAL VALUE GUIDE FEBRUARY 2026")["month"] == 2
+        assert read_period("rien ici")["month"] is None
+
+
+class TestDataStore:
+    """Les fichiers importés sont gardés en base et relus au démarrage."""
+
+    class _Collection:
+        def __init__(self):
+            self.docs = {}
+
+        async def update_one(self, query, update, upsert=False):
+            self.docs[query["name"]] = dict(update["$set"])
+
+        def find(self, *_):
+            docs = list(self.docs.values())
+
+            class _Cursor:
+                def __aiter__(self):
+                    self._items = iter(docs)
+                    return self
+
+                async def __anext__(self):
+                    try:
+                        return next(self._items)
+                    except StopIteration:
+                        raise StopAsyncIteration
+            return _Cursor()
+
+    def test_import_survives_a_wiped_disk(self, tmp_path):
+        import asyncio
+        from services import data_store
+        collection = self._Collection()
+        db = {data_store.COLLECTION: collection}
+        (tmp_path / "sci_residuals_avril2026.json").write_text('{"from": "repo"}')
+        data_store.snapshot(tmp_path)
+
+        # Rien n'a changé : rien n'est copié
+        assert asyncio.run(data_store.save_changed_files(db, tmp_path)) == 0
+        # Un import écrit deux fichiers ; un fichier étranger est ignoré
+        (tmp_path / "sci_residuals_novembre2026.json").write_text('{"from": "import"}')
+        (tmp_path / "km_adjustments_nov2026.json").write_text('{"km": 1}')
+        (tmp_path / "master_product_codes.json").write_text('{}')
+        assert asyncio.run(data_store.save_changed_files(db, tmp_path)) == 2
+        assert sorted(collection.docs) == ["km_adjustments_nov2026.json",
+                                           "sci_residuals_novembre2026.json"]
+        assert asyncio.run(data_store.save_changed_files(db, tmp_path)) == 0
+
+        # Redémarrage : le disque ne contient plus que les fichiers du dépôt
+        (tmp_path / "sci_residuals_novembre2026.json").unlink()
+        (tmp_path / "km_adjustments_nov2026.json").unlink()
+        assert asyncio.run(data_store.restore_files(db, tmp_path)) == 2
+        assert (tmp_path / "sci_residuals_novembre2026.json").read_text() == '{"from": "import"}'
+        assert asyncio.run(data_store.restore_files(db, tmp_path)) == 0
