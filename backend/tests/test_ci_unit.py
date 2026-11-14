@@ -301,3 +301,189 @@ class TestMetadataFileStructure:
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])
+
+
+# ═══════════════════════════════════════════════════
+# Lecture par position des pages Landscape (services/landscape_reader.py)
+# Pages fabriquées : aucun PDF de Stellantis n'est nécessaire.
+# ═══════════════════════════════════════════════════
+
+class _FakePage:
+    """Imite ce que le lecteur demande à une page pdfplumber."""
+
+    def __init__(self, words, rects, width=800, height=600):
+        self.words, self.rects, self.width, self.height = words, rects, width, height
+
+    def extract_words(self, **_):
+        return [dict(w) for w in self.words]
+
+    def extract_text(self):
+        return " ".join(w["text"] for w in self.words)
+
+    def filter(self, _):
+        return self
+
+    def within_bbox(self, box):
+        x0, top, x1, _ = box
+        return _FakePage([w for w in self.words if w["x0"] >= x0 and w["x1"] <= x1 and w["top"] >= top],
+                         self.rects, self.width, self.height)
+
+
+def _word(text, x0, top, centered=False):
+    width = len(text) * 4.0
+    if centered:
+        x0 -= width / 2.0
+    return {"text": text, "x0": x0, "x1": x0 + width, "top": top, "bottom": top + 3.5,
+            "upright": True, "fontname": "Arial"}
+
+
+def _landscape_page(year, rows, kind="finance", skip_rates_for=()):
+    """rows : (nom ou [lignes du nom], comptant, taux std, comptant alt, taux alt, prime)."""
+    terms = [36, 48, 60, 72, 84, 96] if kind == "finance" else [24, 27, 36, 39, 42, 48, 51, 54, 60]
+    std_x = [250 + 14 * i for i in range(len(terms))]
+    alt_x = [480 + 14 * i for i in range(len(terms))]
+    words = [_word(str(year), 300, 20), _word("MODELS", 322, 20), _word("Bonus", 700, 30)]
+    for xs in (std_x, alt_x):
+        words += [_word(f"{t}M", x, 50, centered=True) for t, x in zip(terms, xs)]
+    words += [_word("BEFORE", 180, 60), _word("BEFORE", 410, 60), _word("AFTER", 700, 60)]
+    rects = []
+    top = 80.0
+    for index, (name, cash, std, alt_cash, alt, bonus) in enumerate(rows):
+        lines = [name] if isinstance(name, str) else name
+        rects.append({"x0": 45, "x1": 170, "top": top - 4, "height": 0.3, "width": 125})
+        for offset, line in enumerate(lines):
+            x = 50
+            for piece in line.split():
+                words.append(_word(piece, x, top + 4.5 * offset))
+                x += len(piece) * 4.0 + 1
+        if cash:
+            words.append(_word(cash, 180, top))
+        if alt_cash:
+            words.append(_word(alt_cash, 410, top))
+        if bonus:
+            x = 700
+            for piece in bonus.split():
+                words.append(_word(piece, x, top))
+                x += len(piece) * 4.0 + 1
+        if index not in skip_rates_for:
+            for values, xs in ((std, std_x), (alt, alt_x)):
+                values = values or ["-"] * len(terms)
+                words += [_word(v, x, top, centered=True) for v, x in zip(values, xs)]
+        top += 4.5 * len(lines) + 6
+    rects.append({"x0": 45, "x1": 170, "top": top - 4, "height": 0.3, "width": 125})
+    return _FakePage(words, rects)
+
+
+_STD = ["4.99%", "4.99%", "5.49%", "5.99%", "6.49%", "6.99%"]
+_ALT = ["0.00%", "0.00%", "0.99%", "1.99%", "2.99%", "3.99%"]
+
+
+class TestLandscapeReader:
+    """Chaque valeur est rangée selon sa position, pour toute année-modèle."""
+
+    def _page(self, **kw):
+        from services.landscape_reader import read_landscape_page
+        rows = [
+            ("Grand Caravan SXT", "$1,000", _STD, None, _ALT, None),
+            ("Compass Sport", None, _STD, "$2,500", None, "$1,500 (Loyalty)"),
+            (["Wrangler 4-Door (excludes Rubicon", "and 4xe Models)"], "$3,000", None, "$750", _ALT, "$500"),
+        ]
+        return read_landscape_page(_landscape_page(2027, rows, **kw))
+
+    def test_annee_modele_lue_dans_l_entete(self):
+        page = self._page()
+        assert page["kind"] == "finance"
+        assert page["model_year"] == 2027
+        assert [r["model_year"] for r in page["rows"]] == [2027, 2027, 2027]
+
+    def test_taux_ranges_sous_leur_terme(self):
+        rows = self._page()["rows"]
+        assert rows[0]["standard_rates"] == {"36": 4.99, "48": 4.99, "60": 5.49, "72": 5.99, "84": 6.49, "96": 6.99}
+        assert rows[0]["alternative_rates"]["96"] == 3.99
+
+    def test_case_vide_ne_decale_rien(self):
+        rows = self._page()["rows"]
+        # Pas de comptant standard : le comptant alternatif reste dans sa colonne.
+        assert rows[1]["consumer_cash"] == 0
+        assert rows[1]["alt_consumer_cash"] == 2500
+        assert rows[1]["alternative_rates"] is None
+        # Pas de taux standard : les taux alternatifs ne glissent pas à gauche.
+        assert rows[2]["standard_rates"] is None
+        assert rows[2]["alternative_rates"]["36"] == 0.0
+
+    def test_nom_sur_deux_lignes_reste_dans_sa_case(self):
+        page = self._page()
+        assert [r["name"] for r in page["rows"]] == [
+            "Grand Caravan SXT", "Compass Sport",
+            "Wrangler 4-Door (excludes Rubicon and 4xe Models)"]
+        assert page["expected_rows"] == 3
+
+    def test_prime_de_fidelite_reconnue(self):
+        rows = self._page()["rows"]
+        assert rows[1]["bonus_cash"] == 1500 and rows[1]["loyalty_bonus"] is True
+        assert rows[2]["bonus_cash"] == 500 and rows[2]["loyalty_bonus"] is False
+
+    def test_page_de_location_reconnue(self):
+        from services.landscape_reader import read_landscape_page
+        rates = ["8.99%"] * 9
+        page = read_landscape_page(_landscape_page(2028, [("Pacifica", "$500", rates, None, None, None)], kind="lease"))
+        assert page["kind"] == "lease" and page["model_year"] == 2028
+        assert page["rows"][0]["lease_cash"] == 500
+        assert page["rows"][0]["standard_rates"]["60"] == 8.99
+
+    def test_controle_refuse_une_ligne_perdue(self):
+        from services.landscape_reader import control_report
+        page = self._page(skip_rates_for=(1,))
+        page["page"] = 20
+        assert len(page["rows"]) == 2 and page["expected_rows"] == 3
+        report = control_report([page])
+        assert report["ok"] is False
+        assert any("2 lignes lues pour 3" in e for e in report["errors"])
+
+    def test_page_ordinaire_n_est_pas_une_page_de_taux(self):
+        from services.landscape_reader import read_landscape_page
+        assert read_landscape_page(_FakePage([_word("General", 50, 50), _word("Rules", 90, 50)], [])) is None
+
+
+class TestParserUsesLandscapeReader:
+    """parse_retail_programs / parse_sci_lease : format inchangé, toute année-modèle."""
+
+    def _patch(self, monkeypatch, errors=()):
+        from services import landscape_reader
+        row = {"name": "All-New Cherokee Laredo", "model_year": 2027, "consumer_cash": 0,
+               "alt_consumer_cash": 2000, "bonus_cash": 1500, "loyalty_bonus": True, "delivery_credit": 1000,
+               "standard_rates": {"36": 4.99, "48": 4.99, "60": 5.49, "72": 5.99, "84": 6.49, "96": None},
+               "alternative_rates": None, "notes": {"bonus_cash": "(Loyalty)"}}
+        lease_row = {"name": "Ram 1500 Big Horn, Sport, Rebel", "model_year": 2027, "lease_cash": 3000,
+                     "standard_rates": {"24": 8.99}, "alternative_rates": None, "notes": {}}
+        result = {"finance": [{"page": 19, "kind": "finance", "model_year": 2027, "rows": [row]}],
+                  "lease": [{"page": 25, "kind": "lease", "model_year": 2027, "rows": [lease_row]}],
+                  "control": {"ok": not errors, "errors": list(errors)}}
+        monkeypatch.setattr(landscape_reader, "read_landscapes", lambda content, pages=None: result)
+
+    def test_programme_d_achat_2027(self, monkeypatch):
+        from services.pdfplumber_parser import parse_retail_programs
+        self._patch(monkeypatch)
+        (program,) = parse_retail_programs(b"pdf", 1, 1)
+        assert (program["brand"], program["model"], program["trim"], program["year"]) == ("Jeep", "Cherokee", "Laredo", 2027)
+        assert program["option1_rates"] == {"rate_36": 4.99, "rate_48": 4.99, "rate_60": 5.49,
+                                            "rate_72": 5.99, "rate_84": 6.49, "rate_96": None}
+        assert program["option2_rates"] is None
+        assert program["alt_consumer_cash"] == 2000 and program["delivery_credit"] == 1000
+        # La prime de fidélité n'est pas donnée à tous les clients.
+        assert program["bonus_cash"] == 0 and program["loyalty_bonus_cash"] == 1500
+
+    def test_location_2027_et_cles_attendues(self, monkeypatch):
+        from services.pdfplumber_parser import parse_sci_lease
+        self._patch(monkeypatch)
+        lease = parse_sci_lease(b"pdf", 1, 1)
+        assert lease["vehicles_2026"] == [] and lease["vehicles_2025"] == []
+        (vehicle,) = lease["vehicles_2027"]
+        assert vehicle["brand"] == "Ram" and vehicle["lease_cash"] == 3000
+
+    def test_controle_en_echec_bloque_l_import(self, monkeypatch):
+        from services.pdfplumber_parser import parse_retail_programs, LandscapeControlError
+        self._patch(monkeypatch, errors=["page 19 (finance, 2027) : 24 lignes lues pour 25 sur la page"])
+        with pytest.raises(LandscapeControlError) as error:
+            parse_retail_programs(b"pdf", 1, 1)
+        assert "24 lignes lues pour 25" in str(error.value)

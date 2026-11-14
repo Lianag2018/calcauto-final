@@ -825,6 +825,9 @@ async def extract_pdf(
                     "consumer_cash": prog.get("consumer_cash", 0) or 0,
                     "bonus_cash": prog.get("bonus_cash", 0) or 0,
                     "alt_consumer_cash": prog.get("alt_consumer_cash", 0) or 0,
+                    "loyalty_bonus_cash": prog.get("loyalty_bonus_cash", 0) or 0,
+                    "delivery_credit": prog.get("delivery_credit", 0) or 0,
+                    "notes": prog.get("notes") or {},
                     "option1_rates": opt1,
                     "option2_rates": prog.get("option2_rates"),
                     "program_month": program_month,
@@ -845,7 +848,10 @@ async def extract_pdf(
                 lease_data = parse_sci_lease(pdf_content, lease_start_page, lease_end_page)
                 vehicles_2026 = lease_data.get("vehicles_2026", [])
                 vehicles_2025 = lease_data.get("vehicles_2025", [])
-                sci_lease_count = len(vehicles_2026) + len(vehicles_2025)
+                # Toutes les années-modèles lues (2027, 2024…), pas seulement 2026 et 2025.
+                other_years = {key: value for key, value in lease_data.items()
+                               if key.startswith("vehicles_") and key not in ("vehicles_2026", "vehicles_2025")}
+                sci_lease_count = len(vehicles_2026) + len(vehicles_2025) + sum(len(v) for v in other_years.values())
 
                 if sci_lease_count > 0:
                     _merge_previous_sci_rates(vehicles_2026, vehicles_2025, program_month, program_year)
@@ -858,7 +864,8 @@ async def extract_pdf(
                         "source": "FCA Canada QBC Retail Lease Incentive Program",
                         "terms": [24, 27, 36, 39, 42, 48, 51, 54, 60],
                         "vehicles_2026": vehicles_2026,
-                        "vehicles_2025": vehicles_2025
+                        "vehicles_2025": vehicles_2025,
+                        **other_years
                     }
                     sci_filename = f"sci_lease_rates_{en_month_abbrev[program_month]}{program_year}.json"
                     sci_path = ROOT_DIR / "data" / sci_filename
@@ -967,6 +974,9 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
                     "consumer_cash": prog.get("consumer_cash", 0) or 0,
                     "bonus_cash": prog.get("bonus_cash", 0) or 0,
                     "alt_consumer_cash": prog.get("alt_consumer_cash", 0) or 0,
+                    "loyalty_bonus_cash": prog.get("loyalty_bonus_cash", 0) or 0,
+                    "delivery_credit": prog.get("delivery_credit", 0) or 0,
+                    "notes": prog.get("notes") or {},
                     "option1_rates": opt1,
                     "option2_rates": prog.get("option2_rates"),
                     "program_month": program_month,
@@ -1044,7 +1054,10 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
                 lease_data = parse_sci_lease(pdf_content, lease_start_page, lease_end_page)
                 vehicles_2026 = lease_data.get("vehicles_2026", [])
                 vehicles_2025 = lease_data.get("vehicles_2025", [])
-                sci_lease_count = len(vehicles_2026) + len(vehicles_2025)
+                # Toutes les années-modèles lues (2027, 2024…), pas seulement 2026 et 2025.
+                other_years = {key: value for key, value in lease_data.items()
+                               if key.startswith("vehicles_") and key not in ("vehicles_2026", "vehicles_2025")}
+                sci_lease_count = len(vehicles_2026) + len(vehicles_2025) + sum(len(v) for v in other_years.values())
 
                 if sci_lease_count > 0:
                     _merge_previous_sci_rates(vehicles_2026, vehicles_2025, program_month, program_year)
@@ -1058,7 +1071,8 @@ async def _run_extraction_task(task_id: str, pdf_content: bytes, password: str,
                         "source": "FCA Canada QBC Retail Lease Incentive Program",
                         "terms": [24, 27, 36, 39, 42, 48, 51, 54, 60],
                         "vehicles_2026": vehicles_2026,
-                        "vehicles_2025": vehicles_2025
+                        "vehicles_2025": vehicles_2025,
+                        **other_years
                     }
                     sci_filename = f"sci_lease_rates_{en_month_abbrev[program_month]}{program_year}.json"
                     sci_path = ROOT_DIR / "data" / sci_filename
