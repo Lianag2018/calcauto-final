@@ -546,8 +546,33 @@ export default function HomeScreen() {
   const programInventory = useMemo(() => inventoryList.filter((v: any) =>
     v.type !== 'occasion'
     && matchesInventoryToProgram(v, selectedProgram)
-    && (!pickedCode || (v.model_code || '').toUpperCase() === pickedCode)
+    // Un véhicule sans code reste visible : le code choisi lui sera donné
+    && (!pickedCode || !v.model_code || (v.model_code || '').toUpperCase() === pickedCode)
   ), [inventoryList, selectedProgram, pickedCode, matchesInventoryToProgram]);
+
+  // Le conseiller choisit un code pour un véhicule dont la fiche n'en a pas :
+  // on l'inscrit sur la fiche, pour les prochains calculs de tout le monde.
+  const [codeSavedFor, setCodeSavedFor] = useState<string>('');
+  useEffect(() => {
+    const vehicle = selectedInventory;
+    if (!vehicle?.stock_no || vehicle.model_code || !pickedCode) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        await axios.put(`${API_URL}/api/inventory/${encodeURIComponent(vehicle.stock_no)}`,
+          { model_code: pickedCode }, { headers: { Authorization: `Bearer ${token}` } });
+        if (cancelled) return;
+        setInventoryList(list => list.map((v: any) => v.stock_no === vehicle.stock_no ? { ...v, model_code: pickedCode } : v));
+        setSelectedInventory((v: any) => v && v.stock_no === vehicle.stock_no ? { ...v, model_code: pickedCode } : v);
+        setCodeSavedFor(`${vehicle.stock_no} · ${pickedCode}`);
+      } catch (e) {
+        console.log('Could not save model code on vehicle');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedInventory?.stock_no, selectedInventory?.model_code, pickedCode]);
 
   // Load SCI lease data
   useEffect(() => {
@@ -2179,7 +2204,7 @@ export default function HomeScreen() {
                           onPress={() => {
                             setPickedCode(item.code);
                             setShowCodeList(false);
-                            if (item.code && selectedInventory && (selectedInventory.model_code || '').toUpperCase() !== item.code) {
+                            if (item.code && selectedInventory?.model_code && selectedInventory.model_code.toUpperCase() !== item.code) {
                               setSelectedInventory(null);
                             }
                           }}
@@ -2203,6 +2228,18 @@ export default function HomeScreen() {
                   )}
                 </View>
               )}
+              {codeSavedFor ? (
+                <Text style={{ color: '#4ECDC4', fontSize: 12, marginBottom: 8 }} data-testid="model-code-saved">
+                  {lang === 'fr' ? `Code inscrit sur la fiche #${codeSavedFor}` : `Code saved on vehicle #${codeSavedFor}`}
+                </Text>
+              ) : null}
+              {selectedInventory && !selectedInventory.model_code && !pickedCode && modelCodes.length > 0 ? (
+                <Text style={{ color: '#FFB347', fontSize: 12, marginBottom: 8 }} data-testid="model-code-missing">
+                  {lang === 'fr'
+                    ? `La fiche #${selectedInventory.stock_no} n'a pas de code : choisis-le dans la liste, il sera retenu.`
+                    : `Vehicle #${selectedInventory.stock_no} has no code: pick it in the list, it will be kept.`}
+                </Text>
+              ) : null}
               {inventoryList.length > 0 ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.inventoryScroll}>
                   {programInventory

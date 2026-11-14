@@ -26,6 +26,29 @@ def _owners(user: Dict[str, Any]) -> Dict[str, Any]:
     return {"$in": [user["id"], SHARED_OWNER]}
 
 
+# Champs descriptifs qu'on peut corriger sur une fiche partagée. Kenbot réécrit
+# la fiche à chaque synchronisation du site : la correction est donc gardée à
+# part (inventory_overrides) et réappliquée à la lecture.
+SHARED_EDITABLE = ("model_code", "trim", "body_style", "color")
+
+
+async def _apply_overrides(vehicles: List[Dict[str, Any]]) -> None:
+    stocks = [v.get("stock_no") for v in vehicles if v.get("owner_id") == SHARED_OWNER and v.get("stock_no")]
+    if not stocks:
+        return
+    overrides = {o["stock_no"]: o async for o in db.inventory_overrides.find({"stock_no": {"$in": stocks}}, {"_id": 0})}
+    for vehicle in vehicles:
+        override = overrides.get(vehicle.get("stock_no")) if vehicle.get("owner_id") == SHARED_OWNER else None
+        if not override:
+            continue
+        # Même numéro de stock réattribué à un autre véhicule : la correction ne vaut plus
+        if override.get("vin") and vehicle.get("vin") and override["vin"] != vehicle["vin"]:
+            continue
+        for field, value in (override.get("fields") or {}).items():
+            if field in SHARED_EDITABLE and value:
+                vehicle[field] = value
+
+
 def _dedupe_by_stock(vehicles: List[Dict[str, Any]], user_id: str) -> List[Dict[str, Any]]:
     """Un même numéro de stock peut exister en version partagée et en version
     personnelle (facture numérisée) : la version personnelle, plus complète, gagne."""
@@ -170,6 +193,7 @@ async def get_inventory(
     async for vehicle in db.inventory.find(query, {"_id": 0}).sort("stock_no", 1):
         vehicles.append(vehicle)
     vehicles = _dedupe_by_stock(vehicles, user["id"])
+    await _apply_overrides(vehicles)
     for vehicle in vehicles:
         vehicle["shared"] = vehicle.get("owner_id") == SHARED_OWNER
 
@@ -190,6 +214,7 @@ async def get_inventory_vehicle(stock_no: str, authorization: Optional[str] = He
         {"_id": 0}
     ).to_list(10)
     found = _dedupe_by_stock(found, user["id"])
+    await _apply_overrides(found)
     vehicle = found[0] if found else None
     
     if not vehicle:
@@ -353,7 +378,22 @@ async def update_inventory_vehicle(stock_no: str, update: InventoryUpdate, autho
     )
     
     if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Véhicule non trouvé")
+        # Fiche de l'inventaire Kennebec partagé : seuls le code de modèle, la
+        # version, la carrosserie et la couleur se corrigent, pour tout le monde.
+        shared = await db.inventory.find_one({"stock_no": stock_no, "owner_id": SHARED_OWNER})
+        if not shared:
+            raise HTTPException(status_code=404, detail="Véhicule non trouvé")
+        fields = {k: v for k, v in update_data.items() if k in SHARED_EDITABLE and v}
+        if not fields:
+            raise HTTPException(status_code=400, detail="Sur une fiche partagée, seuls le code de modèle, la version, la carrosserie et la couleur se modifient")
+        await db.inventory.update_one({"stock_no": stock_no, "owner_id": SHARED_OWNER},
+                                      {"$set": {**fields, "updated_at": datetime.utcnow()}})
+        await db.inventory_overrides.update_one(
+            {"stock_no": stock_no},
+            {"$set": {"stock_no": stock_no, "vin": shared.get("vin") or "",
+                      **{f"fields.{k}": v for k, v in fields.items()},
+                      "updated_by": user.get("email") or user["id"], "updated_at": datetime.utcnow()}},
+            upsert=True)
     
     return {"success": True, "message": f"Véhicule {stock_no} mis à jour"}
 
@@ -466,6 +506,7 @@ async def get_program_model_codes(program_id: str, authorization: Optional[str] 
     query = {"owner_id": _owners(user), "status": "disponible", "type": "neuf",
              "year": program.get("year")}
     vehicles = _dedupe_by_stock(await db.inventory.find(query, {"_id": 0}).to_list(5000), user["id"])
+    await _apply_overrides(vehicles)
     options = await _options_by_stock([v.get("stock_no") for v in vehicles])
     for vehicle in vehicles:
         described = _vehicle_for_matching(vehicle, options.get(vehicle.get("stock_no"), []))
