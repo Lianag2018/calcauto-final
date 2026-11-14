@@ -17,7 +17,7 @@ export interface VehicleProgram {
   year: number;
   consumer_cash: number;
   alternative_consumer_cash: number;
-  option1_rates: FinancingRates;
+  option1_rates: FinancingRates | null;
   option2_rates: FinancingRates | null;
   bonus_cash: number;
   /** Prime sous condition (fidélité, conquête), après taxes : appliquée seulement si cochée. */

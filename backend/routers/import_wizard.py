@@ -1661,8 +1661,7 @@ async def save_programs(request: SaveProgramsRequest):
     inserted = 0
     skipped = 0
     corrections_applied = []
-    default_rates = {"rate_36": 4.99, "rate_48": 4.99, "rate_60": 4.99, "rate_72": 4.99, "rate_84": 4.99, "rate_96": 4.99}
-    
+
     for prog_data in request.programs:
         # Les lignes du lecteur portent « alt_consumer_cash » ; le modèle lit
         # « alternative_consumer_cash » (rabais avant taxes de l'option 2).
@@ -1675,9 +1674,9 @@ async def save_programs(request: SaveProgramsRequest):
             skipped += 1
             continue
             
-        # Ensure option1_rates has a default value if missing
+        # Pas de taux d'option 1 dans le PDF : l'option n'est pas offerte (aucun taux inventé)
         if not prog_data.get("option1_rates"):
-            prog_data["option1_rates"] = default_rates.copy()
+            prog_data["option1_rates"] = None
         elif isinstance(prog_data["option1_rates"], dict):
             prog_data["option1_rates"] = FinancingRates(**prog_data["option1_rates"]).dict()
             

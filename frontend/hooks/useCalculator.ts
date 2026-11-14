@@ -17,7 +17,8 @@ export function calculateMonthlyPayment(principal: number, annualRate: number, m
 /**
  * Obtenir le taux pour un terme donné
  */
-export function getRateForTerm(rates: FinancingRates, term: number): number {
+export function getRateForTerm(rates: FinancingRates | null | undefined, term: number): number {
+  if (!rates) return 0;
   const rateMap: { [key: number]: number } = {
     36: rates.rate_36,
     48: rates.rate_48,
@@ -26,7 +27,7 @@ export function getRateForTerm(rates: FinancingRates, term: number): number {
     84: rates.rate_84,
     96: rates.rate_96,
   };
-  return rateMap[term] ?? 4.99;
+  return rateMap[term] ?? 0;
 }
 
 /**
@@ -215,6 +216,11 @@ export function useCalculator(inputs: CalculatorInputs) {
         savings = total1 - total2;
       } else {
         bestOption = '1';
+        savings = 0;
+      }
+      // Pas d'option 1 dans le programme : il n'y a rien à comparer
+      if (!selectedProgram.option1_rates) {
+        bestOption = '2';
         savings = 0;
       }
     }

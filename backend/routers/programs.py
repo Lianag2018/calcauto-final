@@ -464,7 +464,7 @@ async def import_programs_excel(file: UploadFile = File(...), password: str = Fo
                     "consumer_cash": consumer_cash,
                     "bonus_cash": bonus_cash,
                     "alternative_consumer_cash": alternative_consumer_cash,
-                    "option1_rates": o1_rates if has_o1 else {"rate_36": 4.99, "rate_48": 4.99, "rate_60": 4.99, "rate_72": 4.99, "rate_84": 4.99, "rate_96": 4.99},
+                    "option1_rates": o1_rates if has_o1 else None,
                     "option2_rates": o2_rates,
                     "program_month": import_month,
                     "program_year": import_year or year,
@@ -768,10 +768,15 @@ async def calculate_financing(request: CalculationRequest):
     
     for term in terms:
         # Option 1: Avec Consumer Cash (rabais avant taxes) + taux Option 1
-        option1_rate = get_rate_for_term(program_obj.option1_rates, term)
-        principal1 = vehicle_price - consumer_cash  # Rabais avant taxes
-        monthly1 = calculate_monthly_payment(principal1, option1_rate, term)
-        total1 = round(monthly1 * term, 2)
+        has_option1 = program_obj.option1_rates is not None
+        if has_option1:
+            option1_rate = get_rate_for_term(program_obj.option1_rates, term)
+            principal1 = vehicle_price - consumer_cash  # Rabais avant taxes
+            monthly1 = calculate_monthly_payment(principal1, option1_rate, term)
+            total1 = round(monthly1 * term, 2)
+        else:
+            # Option 1 non offerte pour ce véhicule : aucun taux inventé
+            option1_rate = monthly1 = total1 = 0
         
         comparison = PaymentComparison(
             term_months=term,
@@ -793,7 +798,10 @@ async def calculate_financing(request: CalculationRequest):
             comparison.option2_total = total2
             
             # Déterminer la meilleure option (coût total le plus bas)
-            if total1 < total2:
+            if not has_option1:
+                comparison.best_option = "2"
+                comparison.savings = 0
+            elif total1 < total2:
                 comparison.best_option = "1"
                 comparison.savings = round(total2 - total1, 2)
             elif total2 < total1:
