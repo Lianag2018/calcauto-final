@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   },
   filterLabel: {
     fontSize: 12,
-    color: '#888',
+    color: '#9aa3b1',
     marginBottom: 8,
     marginLeft: 4,
   },
@@ -109,20 +109,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   filterChip: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
   },
   filterChipActive: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
   },
   filterChipText: {
     fontSize: 12,
-    color: '#aaa',
+    color: '#b9c0cc',
     fontWeight: '500',
   },
   filterChipTextActive: {
-    color: '#1a1a2e',
+    color: '#07090e',
   },
 });

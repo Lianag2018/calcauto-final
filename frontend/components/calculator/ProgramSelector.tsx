@@ -148,11 +148,11 @@ export const ProgramSelector: React.FC<Props> = ({
           onPress={() => setShowPeriodModal(true)}
           data-testid="period-selector-btn"
         >
-          <Ionicons name="calendar-outline" size={18} color="#4ECDC4" />
+          <Ionicons name="calendar-outline" size={18} color="#e6c65a" />
           <Text style={styles.periodText}>
             {monthNames[currentPeriod.month - 1]} {currentPeriod.year}
           </Text>
-          <Ionicons name="chevron-down" size={16} color="#888" />
+          <Ionicons name="chevron-down" size={16} color="#9aa3b1" />
         </TouchableOpacity>
       )}
 
@@ -209,18 +209,18 @@ export const ProgramSelector: React.FC<Props> = ({
 
       {/* Search input */}
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={18} color="#888" />
+        <Ionicons name="search" size={18} color="#9aa3b1" />
         <TextInput
           style={styles.searchInput}
           placeholder={labels.searchPlaceholder}
-          placeholderTextColor="#666"
+          placeholderTextColor="#8a93a1"
           value={searchText}
           onChangeText={setSearchText}
           data-testid="program-search-input"
         />
         {searchText.length > 0 && (
           <TouchableOpacity onPress={() => setSearchText('')}>
-            <Ionicons name="close-circle" size={18} color="#888" />
+            <Ionicons name="close-circle" size={18} color="#9aa3b1" />
           </TouchableOpacity>
         )}
       </View>
@@ -251,7 +251,7 @@ export const ProgramSelector: React.FC<Props> = ({
                 {formatCurrency(program.consumer_cash)}
               </Text>
             )}
-            <Ionicons name="chevron-forward" size={18} color="#666" />
+            <Ionicons name="chevron-forward" size={18} color="#8a93a1" />
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'center',
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   periodText: {
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -333,14 +333,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     marginRight: 8,
   },
   filterChipActive: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
   },
   filterChipText: {
-    color: '#888',
+    color: '#9aa3b1',
     fontSize: 13,
   },
   filterChipTextActive: {
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -359,11 +359,11 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 14,
   },
   programsCount: {
-    color: '#666',
+    color: '#8a93a1',
     fontSize: 12,
     marginBottom: 8,
   },
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   programItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 10,
     padding: 14,
     marginBottom: 8,
@@ -382,27 +382,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   programBrand: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontSize: 12,
     fontWeight: '600',
   },
   programModel: {
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 14,
   },
   programCash: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontSize: 14,
     fontWeight: '600',
     marginRight: 8,
   },
   // Selected card
   selectedCard: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#4ECDC4',
+    borderColor: '#e6c65a',
   },
   selectedHeader: {
     flexDirection: 'row',
@@ -411,12 +411,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   selectedBrand: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontSize: 12,
     fontWeight: '600',
   },
   selectedModel: {
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 18,
     fontWeight: '600',
   },
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   cashBadge: {
-    backgroundColor: 'rgba(78, 205, 196, 0.15)',
+    backgroundColor: 'rgba(230, 198, 90, 0.15)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -437,11 +437,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 107, 107, 0.15)',
   },
   cashLabel: {
-    color: '#888',
+    color: '#9aa3b1',
     fontSize: 10,
   },
   cashValue: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -454,14 +454,14 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 16,
     padding: 20,
     width: '100%',
     maxHeight: '80%',
   },
   modalTitle: {
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 16,
@@ -477,23 +477,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 10,
     marginBottom: 8,
-    backgroundColor: '#252542',
+    backgroundColor: '#111722',
   },
   periodItemActive: {
-    backgroundColor: 'rgba(78, 205, 196, 0.2)',
+    backgroundColor: 'rgba(230, 198, 90, 0.2)',
     borderWidth: 1,
-    borderColor: '#4ECDC4',
+    borderColor: '#e6c65a',
   },
   periodItemText: {
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 15,
   },
   periodItemCount: {
-    color: '#888',
+    color: '#9aa3b1',
     fontSize: 13,
   },
   modalCloseBtn: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     paddingVertical: 14,
     borderRadius: 10,
     marginTop: 16,

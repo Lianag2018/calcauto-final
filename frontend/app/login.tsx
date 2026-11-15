@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
+import { GaugeMark } from '../components/GaugeMark';
 
 export default function LoginScreen() {
   const { login, register } = useAuth();
@@ -89,9 +90,12 @@ export default function LoginScreen() {
         >
           <View style={styles.header}>
             <View style={styles.logoContainer}>
-              <Text style={styles.logoText}>CalcAuto</Text>
-              <Text style={styles.logoSubText}>AiPro</Text>
+              <GaugeMark size={104} motion="once" />
             </View>
+            <Text style={styles.logoText}>
+              Calc<Text style={styles.logoTextGold}>Auto</Text>
+            </Text>
+            <Text style={styles.logoSubText}>par eTradeValue</Text>
             <Text style={styles.subtitle}>
               {isLogin ? 'Connexion' : 'Créer un compte'}
             </Text>
@@ -110,11 +114,11 @@ export default function LoginScreen() {
           <View style={styles.form}>
             {!isLogin && (
               <View style={styles.inputContainer}>
-                <Ionicons name="person-outline" size={20} color="#888" style={styles.inputIcon} />
+                <Ionicons name="person-outline" size={20} color="#9aa3b1" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Nom complet"
-                  placeholderTextColor="#666"
+                  placeholderTextColor="#8a93a1"
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
@@ -123,11 +127,11 @@ export default function LoginScreen() {
             )}
 
             <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
+              <Ionicons name="mail-outline" size={20} color="#9aa3b1" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Email"
-                placeholderTextColor="#666"
+                placeholderTextColor="#8a93a1"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -137,27 +141,27 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
+              <Ionicons name="lock-closed-outline" size={20} color="#9aa3b1" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Mot de passe"
-                placeholderTextColor="#666"
+                placeholderTextColor="#8a93a1"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-                <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#888" />
+                <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#9aa3b1" />
               </TouchableOpacity>
             </View>
 
             {!isLogin && (
               <View style={styles.inputContainer}>
-                <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
+                <Ionicons name="lock-closed-outline" size={20} color="#9aa3b1" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Confirmer le mot de passe"
-                  placeholderTextColor="#666"
+                  placeholderTextColor="#8a93a1"
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showPassword}
@@ -171,7 +175,7 @@ export default function LoginScreen() {
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color="#1a1a2e" />
+                <ActivityIndicator color="#07090e" />
               ) : (
                 <Text style={styles.submitButtonText}>
                   {isLogin ? 'Se connecter' : "S'inscrire"}
@@ -199,7 +203,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
   },
   keyboardView: {
     flex: 1,
@@ -216,32 +220,38 @@ const styles = StyleSheet.create({
   logoContainer: {
     width: 120,
     height: 120,
-    borderRadius: 60,
-    backgroundColor: '#4ECDC4',
+    borderRadius: 27,
+    backgroundColor: '#0d1118',
+    borderWidth: 1,
+    borderColor: '#303744',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   logoText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1a1a2e',
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+    color: '#f4f1ea',
+  },
+  logoTextGold: {
+    color: '#e6c65a',
   },
   logoSubText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a2e',
-    marginTop: -2,
+    fontSize: 13,
+    color: '#b9c0cc',
+    marginTop: 2,
+    marginBottom: 24,
   },
   subtitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f4f1ea',
     marginBottom: 8,
   },
   description: {
     fontSize: 14,
-    color: '#888',
+    color: '#9aa3b1',
     textAlign: 'center',
   },
   errorContainer: {
@@ -264,7 +274,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     marginBottom: 16,
     paddingHorizontal: 16,
@@ -274,7 +284,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 16,
     paddingVertical: 16,
   },
@@ -282,7 +292,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   submitButton: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -292,7 +302,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   submitButtonText: {
-    color: '#1a1a2e',
+    color: '#07090e',
     fontSize: 18,
     fontWeight: '600',
   },
@@ -303,11 +313,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   switchText: {
-    color: '#888',
+    color: '#9aa3b1',
     fontSize: 14,
   },
   switchLink: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontSize: 14,
     fontWeight: '600',
   },

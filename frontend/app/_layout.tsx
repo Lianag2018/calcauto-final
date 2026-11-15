@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import LoginScreen from './login';
+import { GaugeMark } from '../components/GaugeMark';
 
 function RootLayoutNav() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -24,7 +25,7 @@ function RootLayoutNav() {
   if (!isClient || isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4ECDC4" />
+        <GaugeMark size={120} motion="loop" />
         {slowStart && (
           <Text style={styles.loadingText}>
             Le serveur se réveille…{'\n'}Ça peut prendre jusqu'à une minute. Ne fermez pas la page.
@@ -43,7 +44,7 @@ function RootLayoutNav() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#1a1a2e' },
+        contentStyle: { backgroundColor: '#07090e' },
         animation: 'slide_from_right',
       }}
     >
@@ -66,7 +67,7 @@ export default function RootLayout() {
 
 const styles = StyleSheet.create({
   loadingText: {
-    color: '#9ca3af',
+    color: '#b9c0cc',
     fontSize: 14,
     lineHeight: 20,
     textAlign: 'center',
@@ -77,6 +78,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
   },
 });
