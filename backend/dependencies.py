@@ -2,7 +2,7 @@ import hashlib
 import secrets
 from typing import Optional
 from fastapi import Header, HTTPException
-from database import db, ADMIN_EMAIL
+from database import db, ADMIN_EMAIL, ADMIN_PASSWORD
 
 
 def hash_password(password: str) -> str:
@@ -78,3 +78,14 @@ async def require_admin(authorization: Optional[str] = Header(None)):
     if not is_admin:
         raise HTTPException(status_code=403, detail="Acces reserve aux administrateurs")
     return user
+
+
+async def require_admin_or_password(authorization: Optional[str] = None, password: str = ""):
+    """Outils de l'onglet Admin : la session d'un administrateur suffit.
+
+    L'ancien mot de passe reste accepte pour les ecrans deja installes.
+    """
+    from services.etv_link import admin_password_matches
+    if admin_password_matches(password, ADMIN_PASSWORD):
+        return None
+    return await require_admin(authorization)

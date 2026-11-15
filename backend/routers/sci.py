@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Header
 from fastapi.responses import StreamingResponse
 from database import db, ROOT_DIR, logger
 import json
@@ -381,15 +381,15 @@ async def export_sci_lease_excel():
 
 
 @router.post("/sci/import-excel")
-async def import_sci_lease_excel(file: UploadFile = File(...), password: str = Form(""), program_month: int = Form(0), program_year: int = Form(0)):
+async def import_sci_lease_excel(file: UploadFile = File(...), password: str = Form(""), program_month: int = Form(0), program_year: int = Form(0),
+                                 authorization: str = Header(None)):
     """Importe un Excel corrigé pour les taux SCI. 
     program_month/year optionnels pour cibler un mois spécifique (sinon le plus récent)."""
-    from database import ADMIN_PASSWORD
+    from dependencies import require_admin_or_password
     import uuid
     from datetime import datetime
 
-    if password != ADMIN_PASSWORD:
-        raise HTTPException(status_code=401, detail="Mot de passe admin incorrect")
+    await require_admin_or_password(authorization, password)
 
     if not EXCEL_AVAILABLE:
         raise HTTPException(status_code=500, detail="openpyxl non disponible")

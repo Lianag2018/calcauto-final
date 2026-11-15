@@ -3,12 +3,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Platform } from 'react-native';
 import { API_URL } from '../utils/api';
+import { rememberEvalId } from '../utils/etvDossier';
 
 interface User {
   id: string;
   email: string;
   name: string;
   is_admin?: boolean;
+  // Compte ouvert à partir d'eTradeValue : concession et identité du conseiller
+  dealer_slug?: string;
+  etv_username?: string;
+  etv_role?: string;
 }
 
 interface AuthContextType {
@@ -57,8 +62,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, []);
 
+  // Arrivée à partir d'eTradeValue : l'adresse porte, après le « # », un billet
+  // signé (et parfois le numéro de l'évaluation). On l'échange contre une
+  // session au nom du conseiller, puis on efface le billet de l'adresse.
+  const loginWithEtvTicket = async (): Promise<boolean> => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.location?.hash) return false;
+    const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const ticket = fragment.get('etv');
+    if (!ticket) return false;
+    const evalId = fragment.get('eval');
+    // Le billet ne sert qu'une fois : on l'efface de l'adresse, maintenant et après
+    // que la navigation de l'application a fini de s'installer (elle peut la réécrire).
+    const clearFragment = () => {
+      try {
+        if (window.location.hash.includes('etv=')) {
+          window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
+        }
+      } catch {}
+    };
+    clearFragment();
+    setTimeout(clearFragment, 1500);
+    setTimeout(clearFragment, 5000);
+    try {
+      const response = await axios.post(`${API_URL}/api/auth/etv-login`, { ticket });
+      if (!response.data?.success) return false;
+      await storage.setItem('auth_token', response.data.token);
+      await storage.setItem('user_data', JSON.stringify(response.data.user));
+      setUser(response.data.user);
+      if (evalId) await rememberEvalId(evalId);
+      return true;
+    } catch (err) {
+      console.log('Connexion par eTradeValue refusée');
+      return false;
+    }
+  };
+
   const checkAuth = async () => {
     try {
+      if (await loginWithEtvTicket()) return;
       const token = await storage.getItem('auth_token');
       const userData = await storage.getItem('user_data');
       

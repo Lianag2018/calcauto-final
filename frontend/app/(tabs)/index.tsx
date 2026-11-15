@@ -29,6 +29,7 @@ import html2canvas from 'html2canvas';
 // Import components and i18n
 import { AnimatedSplashScreen } from '../../components/AnimatedSplashScreen';
 import { GaugeMark } from '../../components/GaugeMark';
+import { Dossier, dossierFromContact, takeQueuedDossier, takeEvalId, syncDossiers } from '../../utils/etvDossier';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { Language, saveLanguage, loadLanguage, getTranslation, TranslationKeys } from '../../utils/i18n';
 import { useAuth } from '../../contexts/AuthContext';
@@ -182,6 +183,7 @@ export default function HomeScreen() {
   
   // Inventory selection for calculator
   const [inventoryList, setInventoryList] = useState<any[]>([]);
+  const [inventoryLoaded, setInventoryLoaded] = useState(false);
   const [selectedInventory, setSelectedInventory] = useState<any>(null);
   const [showInventoryPicker, setShowInventoryPicker] = useState(false);
   // Codes de modèle couverts par le programme choisi (liste de choix)
@@ -490,6 +492,8 @@ export default function HomeScreen() {
         }
       } catch (e) {
         console.log('Could not load inventory:', e);
+      } finally {
+        setInventoryLoaded(true);
       }
     };
     loadInventory();
@@ -906,6 +910,79 @@ export default function HomeScreen() {
     setResidualPick({});
     setResults(null);
   };
+
+  // ----- Dossier d'évaluation eTradeValue -----
+  // Le CRM (bouton « Calculer ») ou l'arrivée depuis une évaluation dépose un
+  // dossier : client, reprise et véhicule convoité remplissent le calculateur.
+  const [pendingDossier, setPendingDossier] = useState<Dossier | null>(null);
+  const [dossierNote, setDossierNote] = useState('');
+
+  useFocusEffect(useCallback(() => {
+    let cancelled = false;
+    takeQueuedDossier().then(d => { if (d && !cancelled) setPendingDossier(d); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []));
+
+  useEffect(() => {
+    if (!user?.etv_username) return;
+    let cancelled = false;
+    (async () => {
+      const evalId = await takeEvalId();
+      const token = await getToken();
+      if (!token) return;
+      const headers = { Authorization: `Bearer ${token}` };
+      await syncDossiers(headers);
+      if (!evalId || cancelled) return;
+      try {
+        const res = await axios.get(`${API_URL}/api/contacts`, { headers });
+        const contact = (res.data || []).find((c: any) => c.etv_eval_id === evalId);
+        const dossier = dossierFromContact(contact);
+        if (dossier && !cancelled) setPendingDossier(dossier);
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [user?.etv_username]);
+
+  useEffect(() => {
+    if (!pendingDossier) return;
+    const wanted = pendingDossier.desired[0];
+    // Le véhicule convoité se cherche dans l'inventaire et les programmes : on attend qu'ils soient chargés.
+    if (wanted && (programsLoading || !inventoryLoaded)) return;
+    const d = pendingDossier;
+    setPendingDossier(null);
+    setClientName(d.name);
+    setClientPhone(d.phone);
+    setClientEmail(d.email);
+    setPrixEchange(d.trade?.value ? String(Math.round(d.trade.value)) : '');
+    setMontantDuEchange(d.trade?.balance_owed ? String(Math.round(d.trade.balance_owed)) : '');
+    const fr = lang === 'fr';
+    let note = fr ? `Dossier de ${d.name} chargé.` : `${d.name}'s file loaded.`;
+    if (wanted) {
+      const vehicle = inventoryList.find((v: any) => String(v.stock_no).toUpperCase() === wanted.stock.toUpperCase());
+      if (!vehicle) {
+        note += fr ? ` Le véhicule convoité #${wanted.stock} n'est plus dans l'inventaire.` : ` Wanted vehicle #${wanted.stock} is no longer in stock.`;
+      } else if (vehicle.type === 'occasion') {
+        setVehicleMode('usage');
+        setCheckedOffers({});
+        setResults(null);
+        setSelectedInventory(vehicle);
+        setManualVin('');
+        setVehiclePrice(String(vehicle.asking_price || vehicle.msrp || ''));
+      } else {
+        const program = programs.find(p => matchesInventoryToProgram(vehicle, p));
+        setVehicleMode('neuf');
+        if (program) {
+          selectProgram(program);
+          setSelectedInventory(vehicle);
+          setManualVin('');
+          setVehiclePrice(String(newVehicleBasePrice(vehicle) || ''));
+        } else {
+          note += fr ? ` Aucun programme trouvé pour le #${wanted.stock} : choisissez-le dans la liste.` : ` No program found for #${wanted.stock}: pick it from the list.`;
+        }
+      }
+    }
+    setDossierNote(note);
+  }, [pendingDossier, programsLoading, inventoryLoaded, inventoryList, programs]);
 
   // ----- Véhicule d'occasion -----
   // Pas de programme du fabricant : on fabrique une « ligne » sans rabais dont le
@@ -1983,6 +2060,18 @@ export default function HomeScreen() {
             ))}
           </View>
 
+          {!!dossierNote && (
+            <View
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, marginTop: 10, marginBottom: 8, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#e6c65a', backgroundColor: 'rgba(230, 198, 90, 0.1)' }}
+              data-testid="dossier-note"
+            >
+              <Ionicons name="person-circle-outline" size={18} color="#e6c65a" />
+              <Text style={{ flex: 1, color: '#f4f1ea', fontSize: 13, lineHeight: 18 }}>{dossierNote}</Text>
+              <TouchableOpacity onPress={() => setDossierNote('')} accessibilityLabel={lang === 'fr' ? 'Fermer' : 'Close'} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="close" size={18} color="#b9c0cc" />
+              </TouchableOpacity>
+            </View>
+          )}
           {isUsed && (
             <View style={styles.section} data-testid="used-section">
               <Text style={styles.sectionTitle}>

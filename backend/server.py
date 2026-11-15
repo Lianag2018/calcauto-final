@@ -19,6 +19,7 @@ from routers.email import router as email_router
 from routers.import_wizard import router as import_wizard_router
 from routers.sci import router as sci_router
 from routers.admin import router as admin_router
+from routers.etv import router as etv_router
 
 # Create the main app
 app = FastAPI()
@@ -52,6 +53,7 @@ api_router.include_router(email_router)
 api_router.include_router(import_wizard_router)
 api_router.include_router(sci_router)
 api_router.include_router(admin_router)
+api_router.include_router(etv_router)
 
 # Mount the API router on the app
 app.include_router(api_router)

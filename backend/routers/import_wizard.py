@@ -13,7 +13,7 @@ from models import (
     PDFExtractRequest, ProgramPreview, ExtractedDataResponse,
     SaveProgramsRequest, FinancingRates, VehicleProgram
 )
-from dependencies import get_current_user
+from dependencies import get_current_user, require_admin_or_password
 from services.email_service import send_email, SMTP_TIMEOUT
 
 _background_tasks = set()   # garde une référence aux tâches lancées sans attente
@@ -1809,19 +1809,18 @@ async def list_corrections():
 
 
 @router.delete("/corrections/{brand}/{model}/{year}")
-async def delete_correction(brand: str, model: str, year: int, password: str = ""):
+async def delete_correction(brand: str, model: str, year: int, password: str = "",
+                            authorization: Optional[str] = Header(None)):
     """Supprime une correction memorisee."""
-    if password != ADMIN_PASSWORD:
-        raise HTTPException(status_code=401, detail="Mot de passe admin incorrect")
+    await require_admin_or_password(authorization, password)
     result = await db.program_corrections.delete_many({"brand": brand, "model": model, "year": year})
     return {"deleted": result.deleted_count}
 
 
 @router.delete("/corrections/all")
-async def delete_all_corrections(password: str = ""):
+async def delete_all_corrections(password: str = "", authorization: Optional[str] = Header(None)):
     """Supprime toutes les corrections memorisees."""
-    if password != ADMIN_PASSWORD:
-        raise HTTPException(status_code=401, detail="Mot de passe admin incorrect")
+    await require_admin_or_password(authorization, password)
     result = await db.program_corrections.delete_many({})
     return {"deleted": result.deleted_count}
 
