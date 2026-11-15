@@ -1,19 +1,21 @@
 """Connexion par eTradeValue et dossiers d'évaluation (client, reprise, véhicule convoité)."""
 import asyncio
 import os
+import secrets
 import uuid
 from datetime import datetime
 from typing import Optional
 
 import httpx
 from fastapi import APIRouter, Header, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel
 
 from database import db, ADMIN_EMAIL
 from dependencies import generate_token, get_current_user, hash_password
-from services.etv_link import (LinkError, account_email, browser_key_hash, contact_from_dossier,
-                               dossiers_request, is_calcauto_admin, is_etv_only_account, link_refusal,
-                               same_browser, verify_ticket)
+from services.etv_link import (LinkError, account_email, browser_key_hash, calendar_feed, contact_from_dossier,
+                               dossiers_request, followup_plan, is_calcauto_admin, is_etv_only_account,
+                               link_refusal, owns_followups, same_browser, trade_summary, verify_ticket)
 
 router = APIRouter()
 
@@ -129,6 +131,9 @@ async def sync_dossiers(authorization: Optional[str] = Header(None)):
         key = {"owner_id": user["id"], "etv_eval_id": fields["etv_eval_id"]}
         fields["dealer_slug"] = user.get("dealer_slug") or ""
         existing = await db.contacts.find_one(key)
+        # Relances à 2, 7 et 15 jours, posées une seule fois, pour le conseiller du dossier.
+        if (not existing or "followups" not in existing) and owns_followups(user, fields.get("etv_advisor")):
+            fields["followups"] = followup_plan(fields.get("etv_created_at"), datetime.utcnow())
         if existing:
             await db.contacts.update_one(key, {"$set": fields})
             updated += 1
@@ -174,3 +179,69 @@ async def link_account(body: AccountLink, authorization: Optional[str] = Header(
     return {"success": True, "token": token,
             "user": {"id": target["id"], "name": target.get("name"), "email": target["email"],
                      "is_admin": bool(target.get("is_admin")) or target["email"] == ADMIN_EMAIL, **etv_fields}}
+
+
+def _etv_web_url() -> str:
+    return (os.environ.get("ETV_WEB_URL") or "https://app.etradevalue.ca").rstrip("/")
+
+
+async def _pending_followups(owner_id: str) -> list:
+    """Relances non faites de ce compte, de la plus proche à la plus lointaine."""
+    contacts = await db.contacts.find({"owner_id": owner_id, "source": "etradevalue"}).to_list(10000)
+    items = []
+    for contact in contacts:
+        for step in contact.get("followups") or []:
+            if not isinstance(step, dict) or step.get("done") or not isinstance(step.get("due"), datetime):
+                continue
+            items.append({"eval_id": contact.get("etv_eval_id"), "day": step.get("day"), "due": step["due"],
+                          "name": contact.get("name"), "phone": contact.get("phone"), "email": contact.get("email"),
+                          "trade": contact.get("trade"), "desired": contact.get("desired") or [],
+                          "advisor": contact.get("etv_advisor")})
+    return sorted(items, key=lambda item: item["due"])
+
+
+@router.get("/etv/followups")
+async def list_followups(authorization: Optional[str] = Header(None)):
+    """Relances d'évaluation du conseiller : celles qui sont dues et celles qui s'en viennent."""
+    user = await get_current_user(authorization)
+    now = datetime.utcnow()
+    items = [{**item, "due": item["due"].isoformat() + "Z", "overdue": item["due"] <= now,
+              "etv_eval_id": item["eval_id"], "etv_advisor": item["advisor"]}
+             for item in await _pending_followups(user["id"])]
+    return {"followups": items, "due_count": sum(1 for item in items if item["overdue"])}
+
+
+@router.put("/etv/followups/{eval_id}/{day}/done")
+async def complete_followup(eval_id: str, day: int, authorization: Optional[str] = Header(None)):
+    """Le conseiller a relancé son client : la relance sort de la liste et du calendrier."""
+    user = await get_current_user(authorization)
+    key = {"owner_id": user["id"], "etv_eval_id": eval_id}
+    contact = await db.contacts.find_one(key)
+    steps = (contact or {}).get("followups") or []
+    if not any(isinstance(step, dict) and step.get("day") == day for step in steps):
+        raise HTTPException(status_code=404, detail="Relance introuvable.")
+    steps = [{**step, "done": True} if step.get("day") == day else step for step in steps]
+    await db.contacts.update_one(key, {"$set": {"followups": steps}})
+    return {"success": True}
+
+
+@router.post("/etv/calendar-link")
+async def calendar_link(authorization: Optional[str] = Header(None)):
+    """Adresse privée du calendrier des relances, à abonner une seule fois dans le téléphone."""
+    user = await get_current_user(authorization)
+    token = user.get("calendar_token")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        await db.users.update_one({"id": user["id"]}, {"$set": {"calendar_token": token}})
+    return {"path": f"/api/etv/calendar/{token}.ics"}
+
+
+@router.get("/etv/calendar/{token}.ics")
+async def calendar_file(token: str):
+    """Calendrier des relances. L'adresse contient une clé secrète propre à la personne."""
+    user = await db.users.find_one({"calendar_token": token}) if len(token) >= 32 else None
+    if not user or user.get("is_blocked"):
+        raise HTTPException(status_code=404, detail="Calendrier introuvable.")
+    items = [{**item, "trade": trade_summary(item.get("trade"))} for item in await _pending_followups(user["id"])]
+    return Response(content=calendar_feed(items, _etv_web_url(), datetime.utcnow()),
+                    media_type="text/calendar; charset=utf-8", headers={"Cache-Control": "no-store"})

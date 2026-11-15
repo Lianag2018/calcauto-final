@@ -107,3 +107,45 @@ export const syncDossiers = async (headers: Record<string, string>): Promise<boo
     return false;
   }
 };
+
+// Relance à faire après une évaluation (2, 7 et 15 jours).
+export interface Followup {
+  etv_eval_id: string;
+  day: number;
+  due: string;
+  overdue: boolean;
+  name: string;
+  phone?: string;
+  email?: string;
+  trade?: DossierTrade | null;
+  desired?: DossierDesired[];
+  etv_advisor?: string;
+}
+
+export const fetchFollowups = async (headers: Record<string, string>): Promise<Followup[]> => {
+  try {
+    const response = await axios.get(`${API_URL}/api/etv/followups`, { headers, timeout: 40000 });
+    return Array.isArray(response.data?.followups) ? response.data.followups : [];
+  } catch {
+    return [];
+  }
+};
+
+export const completeFollowup = async (headers: Record<string, string>, followup: Followup): Promise<boolean> => {
+  try {
+    await axios.put(`${API_URL}/api/etv/followups/${encodeURIComponent(followup.etv_eval_id)}/${followup.day}/done`, null, { headers });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+// Adresse privée du calendrier des relances (à abonner une seule fois dans le téléphone).
+export const followupCalendarUrl = async (headers: Record<string, string>): Promise<string | null> => {
+  try {
+    const response = await axios.post(`${API_URL}/api/etv/calendar-link`, null, { headers });
+    return response.data?.path ? `${API_URL}${response.data.path}` : null;
+  } catch {
+    return null;
+  }
+};

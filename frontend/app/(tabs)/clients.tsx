@@ -24,7 +24,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Language, saveLanguage, loadLanguage } from '../../utils/i18n';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { useAuth } from '../../contexts/AuthContext';
-import { Dossier, dossierFromContact, tradeLabel, desiredLabel, queueDossier, syncDossiers } from '../../utils/etvDossier';
+import { Dossier, dossierFromContact, tradeLabel, desiredLabel, queueDossier, syncDossiers, Followup, fetchFollowups, completeFollowup, followupCalendarUrl } from '../../utils/etvDossier';
 
 import { API_URL } from '../../utils/api';
 
@@ -260,6 +260,37 @@ export default function ClientsScreen() {
   const { getToken, user, linkEtvAccount } = useAuth();
   // Compte provisoire créé par l'entrée eTradeValue : on propose de le relier au compte existant.
   const canLinkAccount = !!user?.etv_username && !!user?.email?.endsWith('.etradevalue');
+  // Relances d'évaluation (2, 7 et 15 jours) et leur calendrier
+  const [followups, setFollowups] = useState<Followup[]>([]);
+  const [calendarUrl, setCalendarUrl] = useState('');
+  const openFollowup = async (followup: Followup) => {
+    const dossier = dossierFromContact(followup);
+    if (!dossier) return;
+    await queueDossier(dossier);
+    router.push('/(tabs)');
+  };
+  const finishFollowup = async (followup: Followup) => {
+    const headers = await getAuthHeaders();
+    if (await completeFollowup(headers as Record<string, string>, followup)) {
+      setFollowups(prev => prev.filter(f => !(f.etv_eval_id === followup.etv_eval_id && f.day === followup.day)));
+    }
+  };
+  const subscribeCalendar = async () => {
+    const headers = await getAuthHeaders();
+    const url = await followupCalendarUrl(headers as Record<string, string>);
+    if (!url) return;
+    setCalendarUrl(url);
+    // « webcal » fait proposer l'abonnement par le calendrier du téléphone ou de l'ordinateur.
+    Linking.openURL(url.replace(/^https?:/, 'webcal:')).catch(() => {});
+  };
+  // Import de contacts : on choisit lesquels garder avant d'enregistrer
+  const [importSelection, setImportSelection] = useState<Set<number>>(new Set());
+  const [savingImport, setSavingImport] = useState(false);
+  const toggleImported = (index: number) => setImportSelection(prev => {
+    const next = new Set(prev);
+    if (next.has(index)) next.delete(index); else next.add(index);
+    return next;
+  });
   const [linkEmail, setLinkEmail] = useState('');
   const [linkPassword, setLinkPassword] = useState('');
   const [linkBusy, setLinkBusy] = useState(false);
@@ -369,7 +400,10 @@ export default function ClientsScreen() {
       }
       
       // Compte relié à eTradeValue : on recopie d'abord ses évaluations en contacts
-      if (user?.etv_username) await syncDossiers(headers as Record<string, string>);
+      if (user?.etv_username) {
+        await syncDossiers(headers as Record<string, string>);
+        setFollowups(await fetchFollowups(headers as Record<string, string>));
+      }
 
       // Load saved contacts from database
       let savedContacts: ImportedContact[] = [];
@@ -639,7 +673,27 @@ export default function ClientsScreen() {
         return;
       }
       
-      // SAVE CONTACTS TO DATABASE
+      // On montre d'abord la liste : la personne choisit lesquels importer (tous cochés au départ).
+      setImportSelection(new Set(contacts.map((_, index) => index)));
+      setImportedContacts(contacts);
+      setShowImportModal(false);
+      setShowImportedContactsModal(true);
+    } catch (err) {
+      console.error('Error importing file:', err);
+      Platform.OS === 'web'
+        ? alert(crm.importError)
+        : Alert.alert('Erreur', crm.importError);
+    } finally {
+      setImportingFile(false);
+    }
+  };
+
+  // Enregistre seulement les contacts cochés
+  const saveSelectedContacts = async () => {
+    const contacts = importedContacts.filter((_, index) => importSelection.has(index));
+    if (contacts.length === 0 || savingImport) return;
+    setSavingImport(true);
+    try {
       try {
         const headers = await getAuthHeaders();
         const contactsToSave = contacts.map(c => ({
@@ -663,20 +717,13 @@ export default function ClientsScreen() {
         
       } catch (saveErr) {
         console.error('Error saving contacts:', saveErr);
-        // Still show the contacts even if save failed
+        Platform.OS === 'web' ? alert(crm.importError) : Alert.alert('Erreur', crm.importError);
+        return;
       }
-      
-      setImportedContacts(contacts);
-      setShowImportModal(false);
-      setShowImportedContactsModal(true);
-      
-    } catch (err) {
-      console.error('Error importing file:', err);
-      Platform.OS === 'web'
-        ? alert(crm.importError)
-        : Alert.alert('Erreur', crm.importError);
+      setShowImportedContactsModal(false);
+      await loadData();
     } finally {
-      setImportingFile(false);
+      setSavingImport(false);
     }
   };
 
@@ -1073,6 +1120,46 @@ export default function ClientsScreen() {
       style={styles.tabContent}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#e6c65a" />}
     >
+      {!!user?.etv_username && (
+        <View style={styles.linkBox} data-testid="etv-followups">
+          <Text style={styles.dossierTag}>{lang === 'fr' ? 'Relances d\'évaluation (2, 7 et 15 jours)' : 'Appraisal follow-ups (2, 7 and 15 days)'}</Text>
+          {followups.length === 0 && (
+            <Text style={styles.dossierLine}>{lang === 'fr' ? 'Aucune relance à faire pour l\'instant.' : 'No follow-up due right now.'}</Text>
+          )}
+          {followups.map((followup) => (
+            <View key={`${followup.etv_eval_id}-${followup.day}`} style={styles.followupRow}>
+              <Text style={[styles.followupName, followup.overdue && { color: '#f0d879' }]}>
+                {followup.name} · {lang === 'fr' ? 'jour' : 'day'} {followup.day} · {formatDate(followup.due)}
+              </Text>
+              {!!dossierFromContact(followup) && !!tradeLabel(dossierFromContact(followup)!) && (
+                <Text style={styles.dossierLine}>{lang === 'fr' ? 'Reprise : ' : 'Trade-in: '}{tradeLabel(dossierFromContact(followup)!)}</Text>
+              )}
+              <View style={styles.importPickRow}>
+                {!!followup.phone && (
+                  <TouchableOpacity style={styles.importPickBtn} onPress={() => callContact(followup.phone!)}>
+                    <Text style={styles.importPickText}>{lang === 'fr' ? 'Appeler' : 'Call'}</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity style={styles.importPickBtn} onPress={() => openFollowup(followup)} data-testid="followup-open">
+                  <Text style={styles.importPickText}>{lang === 'fr' ? 'Calculer' : 'Calculate'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.importPickBtn} onPress={() => finishFollowup(followup)} data-testid="followup-done">
+                  <Text style={styles.importPickText}>{lang === 'fr' ? 'Fait' : 'Done'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+          <TouchableOpacity style={styles.dossierBtn} onPress={subscribeCalendar} data-testid="followup-calendar">
+            <Ionicons name="calendar" size={16} color="#11130f" />
+            <Text style={styles.dossierBtnText}>{lang === 'fr' ? 'Ajouter à mon calendrier' : 'Add to my calendar'}</Text>
+          </TouchableOpacity>
+          {!!calendarUrl && (
+            <Text style={styles.dossierLine} selectable>
+              {lang === 'fr' ? 'Adresse privée à abonner dans votre calendrier : ' : 'Private address to subscribe in your calendar: '}{calendarUrl}
+            </Text>
+          )}
+        </View>
+      )}
       {reminders.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="notifications-off-outline" size={64} color="#9aa3b1" />
@@ -1828,17 +1915,40 @@ export default function ClientsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.contactsModalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{crm.contactsImported} ({importedContacts.length})</Text>
+              <Text style={styles.modalTitle}>
+                {lang === 'fr' ? 'Choisir les contacts' : 'Choose contacts'} ({importSelection.size}/{importedContacts.length})
+              </Text>
               <TouchableOpacity onPress={() => setShowImportedContactsModal(false)}>
                 <Ionicons name="close" size={24} color="#f4f1ea" />
               </TouchableOpacity>
             </View>
+            <View style={styles.importPickRow}>
+              <TouchableOpacity style={styles.importPickBtn} onPress={() => setImportSelection(new Set(importedContacts.map((_, i) => i)))} data-testid="import-select-all">
+                <Text style={styles.importPickText}>{lang === 'fr' ? 'Tout cocher' : 'Select all'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.importPickBtn} onPress={() => setImportSelection(new Set())} data-testid="import-select-none">
+                <Text style={styles.importPickText}>{lang === 'fr' ? 'Tout décocher' : 'Select none'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.dossierBtn, { flex: 1 }, (importSelection.size === 0 || savingImport) && { opacity: 0.5 }]}
+                onPress={saveSelectedContacts}
+                disabled={importSelection.size === 0 || savingImport}
+                data-testid="import-save-selected"
+              >
+                <Text style={styles.dossierBtnText}>
+                  {savingImport ? (lang === 'fr' ? 'Un instant…' : 'One moment…') : `${lang === 'fr' ? 'Importer' : 'Import'} (${importSelection.size})`}
+                </Text>
+              </TouchableOpacity>
+            </View>
             <ScrollView style={styles.contactsList}>
               {importedContacts.map((contact, index) => (
-                <TouchableOpacity key={contact.id || index} style={styles.contactItem} onPress={() => selectImportedContact(contact)}>
-                  <View style={styles.contactAvatar}>
-                    <Text style={styles.contactAvatarText}>{contact.name.charAt(0).toUpperCase()}</Text>
-                  </View>
+                <TouchableOpacity key={contact.id || index} style={styles.contactItem} onPress={() => toggleImported(index)}>
+                  <Ionicons
+                    name={importSelection.has(index) ? 'checkbox' : 'square-outline'}
+                    size={24}
+                    color={importSelection.has(index) ? '#e6c65a' : '#9aa3b1'}
+                    style={{ marginRight: 10 }}
+                  />
                   <View style={styles.contactDetails}>
                     <Text style={styles.contactName}>{contact.name}</Text>
                     {contact.phone && <Text style={styles.contactPhone}>{contact.phone}</Text>}
@@ -2274,7 +2384,7 @@ const styles = StyleSheet.create({
   },
   dossierTag: { color: '#e6c65a', fontSize: 11, fontWeight: '700', marginBottom: 2 },
   linkBox: {
-    gap: 8, marginHorizontal: 16, marginBottom: 12, padding: 12,
+    gap: 8, marginHorizontal: 16, marginTop: 8, marginBottom: 12, padding: 12,
     borderRadius: 10, borderWidth: 1, borderColor: '#303744', backgroundColor: '#0d1118',
   },
   linkInput: {
@@ -2282,6 +2392,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 10, fontSize: 14,
   },
   linkError: { color: '#f87171', fontSize: 13 },
+  followupRow: { gap: 6, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#303744' },
+  followupName: { color: '#f4f1ea', fontSize: 14, fontWeight: '600' },
+  importPickRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingHorizontal: 0, marginBottom: 8 },
+  importPickBtn: { borderWidth: 1, borderColor: '#303744', borderRadius: 9, paddingVertical: 9, paddingHorizontal: 12 },
+  importPickText: { color: '#f4f1ea', fontSize: 13, fontWeight: '600' },
   dossierLine: { color: '#b9c0cc', fontSize: 13, lineHeight: 18 },
   dossierBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#e6c65a',
