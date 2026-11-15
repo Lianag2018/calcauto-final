@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Header
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 import json
 from database import db, logger
@@ -16,12 +16,12 @@ from services.program_matching import describe_vehicle, match_program, is_model_
 from services.model_code_suggest import (
     trim_from_title, suggest_codes, trims_of_program, known_trims, is_known_code)
 import httpx
+from services.shared_inventory import SHARED_OWNER, drop_stale_shared
 
 router = APIRouter()
 
 # Inventaire Kennebec partagé : Kenbot le recopie du site kennebecdodge.ca
 # (véhicules neufs et d'occasion) dans la même collection, sous ce propriétaire.
-SHARED_OWNER = "SHARED_KENNEBEC"
 
 
 def _owners(user: Dict[str, Any]) -> Dict[str, Any]:
@@ -50,6 +50,13 @@ async def _apply_overrides(vehicles: List[Dict[str, Any]]) -> None:
         for field, value in (override.get("fields") or {}).items():
             if field in SHARED_EDITABLE and value:
                 vehicle[field] = value
+
+
+async def _on_site_only(vehicles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    latest = await db.inventory.find_one(
+        {"owner_id": SHARED_OWNER, "last_synced_at": {"$type": "date"}},
+        {"_id": 0, "last_synced_at": 1}, sort=[("last_synced_at", -1)])
+    return drop_stale_shared(vehicles, (latest or {}).get("last_synced_at"))
 
 
 def _dedupe_by_stock(vehicles: List[Dict[str, Any]], user_id: str) -> List[Dict[str, Any]]:
@@ -241,7 +248,7 @@ async def get_inventory(
     vehicles = []
     async for vehicle in db.inventory.find(query, {"_id": 0}).sort("stock_no", 1):
         vehicles.append(vehicle)
-    vehicles = _dedupe_by_stock(vehicles, user["id"])
+    vehicles = _dedupe_by_stock(await _on_site_only(vehicles), user["id"])
     await _apply_overrides(vehicles)
     for vehicle in vehicles:
         vehicle["shared"] = vehicle.get("owner_id") == SHARED_OWNER
@@ -523,8 +530,8 @@ async def get_inventory_stats(authorization: Optional[str] = Header(None)):
     """Statistiques d'inventaire"""
     user = await get_current_user(authorization)
     
-    vehicles = _dedupe_by_stock(
-        await db.inventory.find({"owner_id": _owners(user)}, {"_id": 0}).to_list(10000), user["id"])
+    vehicles = _dedupe_by_stock(await _on_site_only(
+        await db.inventory.find({"owner_id": _owners(user)}, {"_id": 0}).to_list(10000)), user["id"])
     count = lambda key, value: sum(1 for v in vehicles if v.get(key) == value)
     total = len(vehicles)
     disponible = count("status", "disponible")
@@ -572,7 +579,8 @@ async def get_program_model_codes(program_id: str, authorization: Optional[str] 
     # 1. Véhicules en inventaire (personnel + Kennebec partagé)
     query = {"owner_id": _owners(user), "status": "disponible", "type": "neuf",
              "year": program.get("year")}
-    vehicles = _dedupe_by_stock(await db.inventory.find(query, {"_id": 0}).to_list(5000), user["id"])
+    vehicles = _dedupe_by_stock(await _on_site_only(
+        await db.inventory.find(query, {"_id": 0}).to_list(5000)), user["id"])
     await _apply_overrides(vehicles)
     options = await _options_by_stock([v.get("stock_no") for v in vehicles])
     for vehicle in vehicles:
