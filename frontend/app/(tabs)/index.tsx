@@ -168,7 +168,12 @@ export default function HomeScreen() {
   
   // Selected term for calculation
   const [selectedTerm, setSelectedTerm] = useState<number>(72);
-  const availableTerms = [36, 48, 60, 72, 84, 96];
+  // Véhicule neuf (programmes du fabricant) ou d'occasion (taux entré par le conseiller)
+  const [vehicleMode, setVehicleMode] = useState<'neuf' | 'usage'>('neuf');
+  const [usedRate, setUsedRate] = useState<string>('8.99');
+  const [usedSearch, setUsedSearch] = useState<string>('');
+  const isUsed = vehicleMode === 'usage';
+  const availableTerms = isUsed ? [24, 36, 48, 60, 72, 84, 96] : [36, 48, 60, 72, 84, 96];
   
   // Inventory selection for calculator
   const [inventoryList, setInventoryList] = useState<any[]>([]);
@@ -525,7 +530,7 @@ export default function HomeScreen() {
     setModelCodes([]);
     setPickedCode('');
     setShowCodeList(false);
-    if (!selectedProgram?.id) return;
+    if (!selectedProgram?.id || selectedProgram.id === 'used') return;
     let cancelled = false;
     (async () => {
       try {
@@ -864,6 +869,51 @@ export default function HomeScreen() {
     setResults(null);
   };
 
+  // ----- Véhicule d'occasion -----
+  // Pas de programme du fabricant : on fabrique une « ligne » sans rabais dont le
+  // taux, le même pour tous les termes, est celui que le conseiller entre.
+  const usedVehicles = useMemo(() => {
+    const words = usedSearch.toLowerCase().split(/\s+/).filter(Boolean);
+    return inventoryList.filter((v: any) => v.type === 'occasion').filter((v: any) => {
+      const text = `${v.stock_no} ${v.year} ${v.brand} ${v.model} ${v.trim || ''}`.toLowerCase();
+      return words.every(w => text.includes(w));
+    });
+  }, [inventoryList, usedSearch]);
+
+  useEffect(() => {
+    if (!isUsed) return;
+    const rate = Math.max(0, parseFloat((usedRate || '').replace(',', '.')) || 0);
+    const vehicle = selectedInventory?.type === 'occasion' ? selectedInventory : null;
+    const rates: any = {};
+    [24, 36, 48, 60, 72, 84, 96].forEach(term => { rates[`rate_${term}`] = rate; });
+    setSelectedProgram({
+      id: 'used',
+      brand: vehicle?.brand || (lang === 'fr' ? "Véhicule d'occasion" : 'Used vehicle'),
+      model: vehicle?.model || '',
+      trim: vehicle?.trim || '',
+      year: vehicle?.year || '',
+      consumer_cash: 0, alternative_consumer_cash: 0, bonus_cash: 0,
+      option1_rates: rates, option2_rates: null, special_offers: [],
+    } as any);
+  }, [isUsed, usedRate, selectedInventory, lang]);
+
+  const switchVehicleMode = (mode: 'neuf' | 'usage') => {
+    if (mode === vehicleMode) return;
+    setVehicleMode(mode);
+    setSelectedProgram(null);
+    setSelectedInventory(null);
+    setVehiclePrice('');
+    setCheckedOffers({});
+    setResidualPick({});
+    setResults(null);
+    setLoyaltyChecked(false);
+    setDeferredPayment(false);
+    setAutoFinancing(null);
+    setSelectedOption(null);
+    setShowLease(false);
+    if (mode === 'neuf' && selectedTerm === 24) setSelectedTerm(72);
+  };
+
   const clearSelection = () => {
     setSelectedProgram(null);
     setCheckedOffers({});
@@ -1036,7 +1086,7 @@ export default function HomeScreen() {
                   </tr>
                 </thead>
                 <tbody>
-                  ${[36, 48, 60, 72, 84, 96].map(t => {
+                  ${availableTerms.map(t => {
                     const opt1 = selectedProgram.option1_rates?.['rate_' + String(t)];
                     const opt2 = selectedProgram.option2_rates?.['rate_' + String(t)];
                     const isSelected = t === selectedTerm;
@@ -1322,7 +1372,7 @@ export default function HomeScreen() {
     const fmt2 = (v: number) => v.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     // Build rates table rows
-    const terms = [36, 48, 60, 72, 84, 96];
+    const terms = availableTerms;
     const ratesRows = terms.map(t => {
       const r1 = hasOption1 ? getRateForTerm(selectedProgram.option1_rates, t) : 0;
       const r2 = selectedProgram.option2_rates ? getRateForTerm(selectedProgram.option2_rates, t) : null;
@@ -1868,8 +1918,82 @@ export default function HomeScreen() {
           }
           keyboardShouldPersistTaps="handled"
         >
+          {/* Véhicule neuf ou d'occasion */}
+          <View style={{ flexDirection: 'row', gap: 10, marginHorizontal: 16, marginTop: 12 }} data-testid="vehicle-mode">
+            {(['neuf', 'usage'] as const).map(mode => (
+              <TouchableOpacity
+                key={mode}
+                onPress={() => switchVehicleMode(mode)}
+                style={{ flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', backgroundColor: vehicleMode === mode ? '#4ECDC4' : '#2d2d44' }}
+                data-testid={`vehicle-mode-${mode}`}
+              >
+                <Text style={{ color: vehicleMode === mode ? '#1a1a2e' : '#aaa', fontSize: 16, fontWeight: '700' }}>
+                  {mode === 'neuf' ? (lang === 'fr' ? 'Véhicule neuf' : 'New vehicle') : (lang === 'fr' ? "Véhicule d'occasion" : 'Used vehicle')}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {isUsed && (
+            <View style={styles.section} data-testid="used-section">
+              <Text style={styles.sectionTitle}>
+                {lang === 'fr' ? "Véhicules d'occasion en inventaire" : 'Used vehicles in stock'} ({usedVehicles.length})
+              </Text>
+              <TextInput
+                style={[styles.input, { marginBottom: 10 }]}
+                value={usedSearch}
+                onChangeText={setUsedSearch}
+                placeholder={lang === 'fr' ? 'Chercher : no de stock, marque, modèle…' : 'Search: stock #, make, model…'}
+                placeholderTextColor="#666"
+              />
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.inventoryScroll}>
+                {usedVehicles.slice(0, 60).map((vehicle: any) => (
+                  <TouchableOpacity
+                    key={vehicle.id || vehicle.stock_no}
+                    style={[styles.inventoryCard, selectedInventory?.stock_no === vehicle.stock_no && styles.inventoryCardSelected]}
+                    onPress={() => {
+                      setSelectedInventory(vehicle);
+                      setManualVin('');
+                      setVehiclePrice(String(vehicle.asking_price || vehicle.msrp || ''));
+                    }}
+                  >
+                    <Text style={styles.inventoryStock}>#{vehicle.stock_no}</Text>
+                    <Text style={styles.inventoryModel}>{vehicle.year} {vehicle.brand} {vehicle.model}</Text>
+                    <Text style={styles.inventoryTrim}>{vehicle.trim}</Text>
+                    {vehicle.km > 0 && (
+                      <Text style={styles.inventoryVin}>{Number(vehicle.km).toLocaleString('fr-CA')} km</Text>
+                    )}
+                    <Text style={styles.inventoryPrice}>{formatCurrency(vehicle.asking_price || vehicle.msrp)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              {usedVehicles.length === 0 && (
+                <Text style={styles.noInventoryText}>
+                  {lang === 'fr'
+                    ? "Aucun véhicule d'occasion trouvé. Tu peux quand même entrer un prix plus bas."
+                    : 'No used vehicle found. You can still type a price below.'}
+                </Text>
+              )}
+              <View style={[styles.inputRow, { marginTop: 14 }]}>
+                <Text style={styles.inputLabel}>{lang === 'fr' ? "Taux d'intérêt" : 'Interest rate'}</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.priceInput}
+                    placeholder="8.99"
+                    placeholderTextColor="#666"
+                    keyboardType="decimal-pad"
+                    value={usedRate}
+                    onChangeText={(v) => setUsedRate(v.replace(/[^0-9.,]/g, ''))}
+                    data-testid="used-rate-input"
+                  />
+                  <Text style={styles.currencySymbol}>%</Text>
+                </View>
+              </View>
+            </View>
+          )}
+
           {/* Event Banner - Dynamic from PDF cover page */}
-          {programMeta && programMeta.event_names?.length > 0 && programMeta.event_names[0] && (
+          {!isUsed && programMeta && programMeta.event_names?.length > 0 && programMeta.event_names[0] && (
             <EventBanner
               meta={programMeta}
               lang={lang}
@@ -1881,6 +2005,7 @@ export default function HomeScreen() {
             />
           )}
 
+          {!isUsed && (<>
           {/* Year Filter */}
           <View style={styles.filterSection}>
             <Text style={styles.filterLabel}>{t.filters.year}</Text>
@@ -1925,8 +2050,11 @@ export default function HomeScreen() {
             </ScrollView>
           </View>
 
+          </>)}
+
           {/* Vehicle Selection */}
           <View style={styles.section}>
+            {!isUsed && (<>
             <Text style={styles.sectionTitle}>
               {t.vehicle.selectVehicle} ({filteredPrograms.length})
             </Text>
@@ -2100,6 +2228,7 @@ export default function HomeScreen() {
                 </View>
               </View>
             )}
+            </>)}
             
             {/* Section Accessoires */}
             <View style={styles.section}>
@@ -2171,7 +2300,7 @@ export default function HomeScreen() {
           </View>
 
           {/* Inventory Selection - Filtered by selected brand */}
-          {selectedProgram && (
+          {selectedProgram && !isUsed && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>
                 {lang === 'fr' ? '📦 Inventaire disponible' : '📦 Available Inventory'} ({programInventory.length})
@@ -2424,7 +2553,7 @@ export default function HomeScreen() {
               </View>
               
               {/* Bonus Cash optionnel */}
-              <View style={styles.inputRow}>
+              <View style={[styles.inputRow, isUsed && { display: 'none' }]}>
                 <Text style={styles.inputLabel}>{t.results.bonusCash} ({t.results.afterTax})</Text>
                 <View style={styles.inputContainer}>
                   <Text style={styles.currencySymbol}>$</Text>
@@ -2632,7 +2761,7 @@ export default function HomeScreen() {
               </View>
 
               {/* Sélection de l'option */}
-              <View style={styles.termSection}>
+              <View style={[styles.termSection, isUsed && { display: 'none' }]}>
                 <Text style={styles.inputLabel}>{t.options.chooseOption}</Text>
                 <View style={styles.optionButtons}>
                   {!hasOption1 && (
@@ -2715,7 +2844,7 @@ export default function HomeScreen() {
               </View>
 
               {/* Best Option Banner */}
-              {localResult.bestOption && hasOption1 && (
+              {localResult.bestOption && hasOption1 && !isUsed && (
                 <View style={[
                   styles.bestOptionBanner,
                   localResult.bestOption === '1' ? styles.bestOptionBanner1 : styles.bestOptionBanner2
@@ -2742,12 +2871,12 @@ export default function HomeScreen() {
                   !hasOption1 && { display: 'none' }
                 ]}>
                   <View style={styles.optionHeader}>
-                    <Text style={styles.optionCardTitle}>{t.options.option1}</Text>
-                    {localResult.bestOption === '1' && (
+                    <Text style={styles.optionCardTitle}>{isUsed ? (lang === 'fr' ? 'Financement' : 'Financing') : t.options.option1}</Text>
+                    {localResult.bestOption === '1' && !isUsed && (
                       <Ionicons name="checkmark-circle" size={18} color="#4ECDC4" />
                     )}
                   </View>
-                  <Text style={styles.optionSubtitle}>{t.options.option1Desc}</Text>
+                  <Text style={styles.optionSubtitle}>{isUsed ? (lang === 'fr' ? "Véhicule d'occasion" : 'Used vehicle') : t.options.option1Desc}</Text>
                   
                   {selectedProgram.consumer_cash > 0 && (
                     <View style={styles.optionDetail}>
@@ -2785,7 +2914,8 @@ export default function HomeScreen() {
                 <View style={[
                   styles.optionCard,
                   styles.optionCard2,
-                  localResult.bestOption === '2' && styles.optionCardBest
+                  localResult.bestOption === '2' && styles.optionCardBest,
+                  isUsed && { display: 'none' }
                 ]}>
                   <View style={styles.optionHeader}>
                     <Text style={styles.optionCardTitle}>{t.options.option2}</Text>
@@ -2909,7 +3039,7 @@ export default function HomeScreen() {
           )}
 
           {/* ============ LOCATION SCI ============ */}
-          {selectedProgram && vehiclePrice && (
+          {selectedProgram && vehiclePrice && !isUsed && (
             <View style={styles.section} data-testid="lease-section">
               {/* Toggle Lease */}
               <TouchableOpacity

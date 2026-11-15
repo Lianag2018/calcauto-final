@@ -138,3 +138,19 @@ describe('Option 1 absente du programme', () => {
     expect(getRateForTerm({ rate_36: 1, rate_48: 2, rate_60: 3, rate_72: 4, rate_84: 5, rate_96: 6 }, 60)).toBe(3);
   });
 });
+
+describe('Véhicule d\'occasion : taux entré par le conseiller', () => {
+  const { getRateForTerm, calculateMonthlyPayment } = require('../hooks/useCalculator');
+  const rates: any = {};
+  [24, 36, 48, 60, 72, 84, 96].forEach(term => { rates[`rate_${term}`] = 7.5; });
+
+  test('le même taux pour tous les termes, 24 mois compris', () => {
+    expect(getRateForTerm(rates, 24)).toBe(7.5);
+    expect(getRateForTerm(rates, 96)).toBe(7.5);
+  });
+
+  test('paiement mensuel', () => {
+    expect(calculateMonthlyPayment(20000, 7.5, 24)).toBeCloseTo(899.99, 1);
+    expect(calculateMonthlyPayment(20000, 0, 40)).toBe(500);
+  });
+});

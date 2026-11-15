@@ -20,6 +20,7 @@ export function calculateMonthlyPayment(principal: number, annualRate: number, m
 export function getRateForTerm(rates: FinancingRates | null | undefined, term: number): number {
   if (!rates) return 0;
   const rateMap: { [key: number]: number } = {
+    24: (rates as any).rate_24,  // véhicules d'occasion seulement
     36: rates.rate_36,
     48: rates.rate_48,
     60: rates.rate_60,
