@@ -1275,3 +1275,30 @@ class TestEtvTicketReload:
         assert same_browser("", "cle-inventee-du-navigateur-0001") is False
         assert browser_key_hash("court") == ""
         assert same_browser(browser_key_hash("court"), "court") is False
+
+
+class TestEtvAccountLink:
+    """Relier l'entrée eTradeValue à un compte CalcAuto existant."""
+
+    KEY = "marie@kennebec.etradevalue"
+
+    def test_only_provisional_etv_accounts_can_start_a_link(self):
+        from services.etv_link import is_etv_only_account
+        assert is_etv_only_account({"email": self.KEY, "etv_username": "marie"}) is True
+        assert is_etv_only_account({"email": "marie@example.com", "etv_username": "marie"}) is False
+        assert is_etv_only_account({"email": self.KEY}) is False
+        assert is_etv_only_account(None) is False
+
+    def test_personal_account_can_be_linked_once(self):
+        from services.etv_link import link_refusal
+        assert link_refusal({"email": "marie@example.com"}, self.KEY) == ""
+        assert link_refusal({"email": "marie@example.com", "etv_link_key": self.KEY}, self.KEY) == ""
+
+    def test_refused_targets(self):
+        from services.etv_link import link_refusal
+        assert link_refusal({"email": "marie@example.com", "etv_link_key": "luc@kennebec.etradevalue"}, self.KEY)
+        assert link_refusal({"email": "marie@example.com", "is_blocked": True}, self.KEY)
+        assert link_refusal({"email": "demo@calcauto.ca"}, self.KEY)
+        assert link_refusal({"email": "luc@kia-essai.etradevalue"}, self.KEY)
+        assert link_refusal(None, self.KEY)
+        assert link_refusal({"email": "marie@example.com"}, "")

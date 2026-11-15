@@ -9,10 +9,11 @@ import httpx
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 
-from database import db
-from dependencies import generate_token, get_current_user
+from database import db, ADMIN_EMAIL
+from dependencies import generate_token, get_current_user, hash_password
 from services.etv_link import (LinkError, account_email, browser_key_hash, contact_from_dossier,
-                               dossiers_request, is_calcauto_admin, same_browser, verify_ticket)
+                               dossiers_request, is_calcauto_admin, is_etv_only_account, link_refusal,
+                               same_browser, verify_ticket)
 
 router = APIRouter()
 
@@ -20,6 +21,11 @@ router = APIRouter()
 class TicketLogin(BaseModel):
     ticket: str
     client: str = ""
+
+
+class AccountLink(BaseModel):
+    email: str
+    password: str
 
 
 def _etv_api_url() -> str:
@@ -40,9 +46,16 @@ async def etv_login(body: TicketLogin):
 
     email = account_email(identity["username"], identity["dealer_slug"])
     admin = is_calcauto_admin(identity["role"], identity["dealer_slug"])
-    public_user = {"name": identity["name"], "email": email, "is_admin": admin,
-                   "dealer_slug": identity["dealer_slug"], "etv_username": identity["username"],
-                   "etv_role": identity["role"]}
+    etv_fields = {"dealer_slug": identity["dealer_slug"], "etv_username": identity["username"],
+                  "etv_role": identity["role"]}
+    # Compte CalcAuto que cette personne a relié elle-même (son mot de passe à l'appui) :
+    # elle y retrouve ses contacts et ses soumissions, avec ses dossiers d'évaluation.
+    linked = await db.users.find_one({"etv_link_key": email})
+    if linked:
+        public_user = {"name": linked.get("name") or identity["name"], "email": linked["email"],
+                       "is_admin": bool(linked.get("is_admin")) or linked["email"] == ADMIN_EMAIL, **etv_fields}
+    else:
+        public_user = {"name": identity["name"], "email": email, "is_admin": admin, **etv_fields}
 
     # Un billet ne sert qu'une fois : son numéro est retenu jusqu'à son expiration.
     # Seule exception : le même navigateur qui le représente (page rechargée pendant
@@ -63,13 +76,15 @@ async def etv_login(body: TicketLogin):
                                     "expires_at": datetime.utcfromtimestamp(identity["expires"])})
     await db.etv_nonces.delete_many({"expires_at": {"$lt": datetime.utcnow()}})
 
-    profile = {"name": identity["name"], "dealer_slug": identity["dealer_slug"],
-               "etv_username": identity["username"], "etv_role": identity["role"],
-               "is_admin": admin, "last_login": datetime.utcnow()}
-    user = await db.users.find_one({"email": email})
+    profile = {"name": identity["name"], **etv_fields, "is_admin": admin, "last_login": datetime.utcnow()}
+    user = linked or await db.users.find_one({"email": email})
     if user and user.get("is_blocked"):
         raise HTTPException(status_code=403, detail="Compte bloqué.")
-    if user:
+    if linked:
+        # Le nom et les droits du compte personnel ne sont pas touchés.
+        await db.users.update_one({"id": linked["id"]}, {"$set": {**etv_fields, "last_login": datetime.utcnow()}})
+        user_id = linked["id"]
+    elif user:
         await db.users.update_one({"email": email}, {"$set": profile})
         user_id = user["id"]
     else:
@@ -122,3 +137,40 @@ async def sync_dossiers(authorization: Optional[str] = Header(None)):
                                           "created_at": datetime.utcnow(), **fields})
             created += 1
     return {"success": True, "created": created, "updated": updated, "total": created + updated}
+
+
+@router.post("/etv/link-account")
+async def link_account(body: AccountLink, authorization: Optional[str] = Header(None)):
+    """Relie l'entrée eTradeValue au compte CalcAuto existant de la personne.
+
+    Elle prouve que le compte est le sien avec son mot de passe CalcAuto. Ensuite,
+    l'entrée par eTradeValue ouvre ce compte : contacts, soumissions et dossiers
+    d'évaluation au même endroit.
+    """
+    user = await get_current_user(authorization)
+    if not is_etv_only_account(user):
+        raise HTTPException(status_code=400, detail="Ouvrez le calculateur à partir d'eTradeValue pour relier votre compte.")
+    if not body.password:
+        raise HTTPException(status_code=401, detail="Courriel ou mot de passe incorrect")
+    target = await db.users.find_one({"email": body.email.strip().lower(),
+                                      "password_hash": hash_password(body.password)})
+    if not target:
+        raise HTTPException(status_code=401, detail="Courriel ou mot de passe incorrect")
+    reason = link_refusal(target, user["email"])
+    if reason:
+        raise HTTPException(status_code=403, detail=reason)
+
+    etv_fields = {"dealer_slug": user.get("dealer_slug"), "etv_username": user.get("etv_username"),
+                  "etv_role": user.get("etv_role")}
+    await db.users.update_one({"id": target["id"]}, {"$set": {"etv_link_key": user["email"], **etv_fields,
+                                                              "last_login": datetime.utcnow()}})
+    # Les dossiers déjà recopiés suivent ; le compte provisoire ne sert plus.
+    await db.contacts.update_many({"owner_id": user["id"]}, {"$set": {"owner_id": target["id"]}})
+    await db.users.update_one({"id": user["id"]}, {"$set": {"linked_to": target["id"]}})
+    await db.tokens.delete_many({"user_id": user["id"]})
+
+    token = generate_token()
+    await db.tokens.insert_one({"user_id": target["id"], "token": token, "created_at": datetime.utcnow()})
+    return {"success": True, "token": token,
+            "user": {"id": target["id"], "name": target.get("name"), "email": target["email"],
+                     "is_admin": bool(target.get("is_admin")) or target["email"] == ADMIN_EMAIL, **etv_fields}}

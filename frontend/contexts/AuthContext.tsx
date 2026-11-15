@@ -24,6 +24,8 @@ interface AuthContextType {
   isDemoUser: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  /** Relie l'entrée eTradeValue au compte CalcAuto existant (mot de passe tapé par la personne). */
+  linkEtvAccount: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   getToken: () => Promise<string | null>;
 }
@@ -227,6 +229,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return await storage.getItem('auth_token');
   };
 
+  const linkEtvAccount = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const token = await storage.getItem('auth_token');
+      const response = await axios.post(`${API_URL}/api/etv/link-account`,
+        { email: email.toLowerCase().trim(), password },
+        { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.data?.success) return { success: false, error: 'Le lien a échoué.' };
+      await storage.setItem('auth_token', response.data.token);
+      await storage.setItem('user_data', JSON.stringify(response.data.user));
+      setUser(response.data.user);
+      return { success: true };
+    } catch (error: any) {
+      if (error.code === 'ERR_NETWORK' || !error.response) {
+        return { success: false, error: 'Impossible de joindre le serveur. Réessayez.' };
+      }
+      return { success: false, error: error.response?.data?.detail || 'Courriel ou mot de passe incorrect' };
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -236,6 +257,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isDemoUser: user?.email === 'demo@calcauto.ca',
       login,
       register,
+      linkEtvAccount,
       logout,
       getToken,
     }}>
