@@ -1092,3 +1092,27 @@ class TestModelCodeSuggest:
         from services.model_code_suggest import is_known_code
         assert is_known_code(self.MASTER, "zz6l98")
         assert not is_known_code(self.MASTER, "QQ1A11")
+
+
+# ============ Inventaire partagé : véhicules sortis du site ============
+
+class TestStaleSharedInventory:
+    def _vehicles(self):
+        from datetime import datetime, timezone
+        return [
+            {"stock_no": "A1", "owner_id": "SHARED_KENNEBEC", "last_synced_at": datetime(2026, 11, 14, 3, 30)},
+            {"stock_no": "A2", "owner_id": "SHARED_KENNEBEC", "last_synced_at": datetime(2026, 11, 13, 3, 30, tzinfo=timezone.utc)},
+            {"stock_no": "OLD", "owner_id": "SHARED_KENNEBEC", "last_synced_at": datetime(2026, 9, 1, 3, 30)},
+            {"stock_no": "NODATE", "owner_id": "SHARED_KENNEBEC"},
+            {"stock_no": "MINE", "owner_id": "user-1"},
+        ]
+
+    def test_vehicles_not_seen_by_last_sync_are_dropped(self):
+        from datetime import datetime
+        from services.shared_inventory import drop_stale_shared
+        kept = [v["stock_no"] for v in drop_stale_shared(self._vehicles(), datetime(2026, 11, 14, 3, 31))]
+        assert kept == ["A1", "A2", "MINE"]
+
+    def test_without_any_sync_date_nothing_is_dropped(self):
+        from services.shared_inventory import drop_stale_shared
+        assert len(drop_stale_shared(self._vehicles(), None)) == 5
