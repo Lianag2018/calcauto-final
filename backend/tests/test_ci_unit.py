@@ -1033,3 +1033,46 @@ class TestSpecialOffersTemplate:
         assert first['2646Z1']['amount'] == 800 and len(programs[0]['special_offers']) == 2
         second = programs[1]['special_offers']
         assert second[0]['code'] == '2646Z1' and second[0]['amount'] == 250 and second[0]['tax'] == 'after'
+
+
+# ============ Codes de modèle possibles selon la version ============
+
+class TestModelCodeSuggest:
+    MASTER = {
+        "ZZ6L98": {"brand": "Ram", "model": "1500", "trim": "Tradesman", "cab": "", "drive": "4x4", "year": "2026"},
+        "ZZ6L41": {"brand": "Ram", "model": "Ram 1500", "trim": "Tradesman", "cab": "Quad Cab", "drive": "4x4", "year": "2026"},
+        "ZZ6L92": {"brand": "Ram", "model": "1500", "trim": "Tradesman", "cab": "Crew Cab", "drive": "4x2", "year": "2026"},
+        "ZZ6H98": {"brand": "Ram", "model": "1500", "trim": "Big Horn", "cab": "Crew Cab", "drive": "4x4", "year": "2026"},
+        "YY7L98": {"brand": "Ram", "model": "2500", "trim": "Tradesman", "cab": "Crew Cab", "drive": "4x4", "year": "2026"},
+    }
+
+    def test_trim_from_title(self):
+        from services.model_code_suggest import trim_from_title
+        assert trim_from_title("Ram 1500 EXPRESS 2027", "Ram", "1500", 2027) == "EXPRESS"
+        assert trim_from_title("2027 Ram 1500 Big Horn", "Ram", "1500", 2027) == "Big Horn"
+        assert trim_from_title("Jeep Grand Cherokee L Altitude 2026", "Jeep", "Grand Cherokee L", 2026) == "Altitude"
+        assert trim_from_title(None, "Ram", "1500", 2027) == ""
+        assert trim_from_title("Ram 1500 2027", "Ram", "1500", 2027) == ""
+
+    def test_codes_for_trim_ignore_year_and_spacing(self):
+        from services.model_code_suggest import suggest_codes
+        codes = [c["code"] for c in suggest_codes(self.MASTER, "Ram", "1500", ["BIGHORN"])]
+        assert codes == ["ZZ6H98"]
+
+    def test_cab_and_drive_rank_and_filter(self):
+        from services.model_code_suggest import suggest_codes
+        codes = [c["code"] for c in suggest_codes(
+            self.MASTER, "Ram", "1500", [None, "Tradesman", "EXPRESS"], "Crew Cab", "4WD/4-Wheel Drive/4x4")]
+        # 4x2 écarté, cabine d'équipe d'abord, cabine Quad en dernier, autre modèle exclu
+        assert codes == ["ZZ6L98", "ZZ6L41"]
+
+    def test_unknown_trim_gives_nothing(self):
+        from services.model_code_suggest import suggest_codes
+        assert suggest_codes(self.MASTER, "Ram", "1500", ["Express"]) == []
+        assert suggest_codes(self.MASTER, "Ram", "1500", [None, ""]) == []
+
+    def test_trims_of_program(self):
+        from services.model_code_suggest import trims_of_program
+        assert trims_of_program({"trim": "Tradesman, Express, Warlock"}) == ["Tradesman", "Express", "Warlock"]
+        assert trims_of_program({"trim": "Big Horn (excludes DT6H91)"}) == ["Big Horn"]
+        assert trims_of_program(None) == []

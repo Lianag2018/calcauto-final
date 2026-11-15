@@ -579,6 +579,29 @@ export default function HomeScreen() {
     return () => { cancelled = true; };
   }, [selectedInventory?.stock_no, selectedInventory?.model_code, pickedCode]);
 
+  // Véhicule sans code : le serveur lit la version (fiche, annonce, NIV) et
+  // propose les codes de cette version.
+  const [codeSuggest, setCodeSuggest] = useState<any>(null);
+  useEffect(() => {
+    const vehicle = selectedInventory;
+    setCodeSuggest(null);
+    if (!vehicle?.stock_no || vehicle.model_code || vehicle.type === 'occasion') return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const res = await axios.get(
+          `${API_URL}/api/inventory/${encodeURIComponent(vehicle.stock_no)}/code-suggestions`,
+          { headers: { Authorization: `Bearer ${token}` } });
+        if (!cancelled) setCodeSuggest(res.data);
+      } catch (e) {
+        console.log('Could not load code suggestions');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedInventory?.stock_no, selectedInventory?.model_code]);
+
   // Load SCI lease data
   useEffect(() => {
     const loadLeaseData = async () => {
@@ -2362,12 +2385,44 @@ export default function HomeScreen() {
                   {lang === 'fr' ? `Code inscrit sur la fiche #${codeSavedFor}` : `Code saved on vehicle #${codeSavedFor}`}
                 </Text>
               ) : null}
-              {selectedInventory && !selectedInventory.model_code && !pickedCode && modelCodes.length > 0 ? (
-                <Text style={{ color: '#FFB347', fontSize: 12, marginBottom: 8 }} data-testid="model-code-missing">
-                  {lang === 'fr'
-                    ? `La fiche #${selectedInventory.stock_no} n'a pas de code : choisis-le dans la liste, il sera retenu.`
-                    : `Vehicle #${selectedInventory.stock_no} has no code: pick it in the list, it will be kept.`}
-                </Text>
+              {selectedInventory && !selectedInventory.model_code && !pickedCode ? (
+                <View style={{ marginBottom: 8 }} data-testid="model-code-missing">
+                  <Text style={{ color: '#FFB347', fontSize: 12 }}>
+                    {lang === 'fr'
+                      ? `La fiche #${selectedInventory.stock_no} n'a pas de code.`
+                      : `Vehicle #${selectedInventory.stock_no} has no code.`}
+                    {codeSuggest && codeSuggest.stock_no === selectedInventory.stock_no && (codeSuggest.trim || codeSuggest.cab)
+                      ? (lang === 'fr' ? ' Version décodée : ' : ' Decoded trim: ')
+                        + [codeSuggest.vin_trim || codeSuggest.trim,
+                           codeSuggest.title_trim && codeSuggest.title_trim.toLowerCase() !== (codeSuggest.vin_trim || codeSuggest.trim || '').toLowerCase() ? `(${codeSuggest.title_trim})` : '',
+                           codeSuggest.cab, /4x4|4wd/i.test(codeSuggest.drive || '') ? '4x4' : ''].filter(Boolean).join(' · ')
+                      : ''}
+                  </Text>
+                  {codeSuggest && codeSuggest.stock_no === selectedInventory.stock_no && (codeSuggest.codes || []).length > 0 ? (
+                    <View>
+                      <Text style={{ color: '#aaa', fontSize: 12, marginTop: 6 }}>
+                        {lang === 'fr' ? 'Codes possibles (touche le bon, il sera retenu sur la fiche) :' : 'Possible codes (tap the right one, it will be kept):'}
+                      </Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 }}>
+                        {codeSuggest.codes.map((c: any) => (
+                          <TouchableOpacity
+                            key={c.code}
+                            onPress={() => setPickedCode(c.code)}
+                            style={{ backgroundColor: '#2d2d44', borderColor: '#FFB347', borderWidth: 1, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 }}
+                            data-testid={`code-suggestion-${c.code}`}
+                          >
+                            <Text style={{ color: '#FFB347', fontWeight: '700', fontSize: 14 }}>{c.code}</Text>
+                            <Text style={{ color: '#ccc', fontSize: 11 }}>{c.description}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+                  ) : (
+                    <Text style={{ color: '#aaa', fontSize: 12, marginTop: 4 }}>
+                      {lang === 'fr' ? 'Choisis-le dans la liste ou entre-le sur la fiche, il sera retenu.' : 'Pick it in the list or enter it on the vehicle record; it will be kept.'}
+                    </Text>
+                  )}
+                </View>
               ) : null}
               {inventoryList.length > 0 ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.inventoryScroll}>
