@@ -35,6 +35,8 @@ export interface Dossier {
   email: string;
   trade: DossierTrade | null;
   desired: DossierDesired[];
+  /** Vrai quand le véhicule convoité a été jumelé à la main par le conseiller. */
+  paired?: boolean;
 }
 
 export const dossierFromContact = (contact: any): Dossier | null => {
@@ -47,6 +49,7 @@ export const dossierFromContact = (contact: any): Dossier | null => {
     email: contact.email || '',
     trade: contact.trade && typeof contact.trade === 'object' ? contact.trade : null,
     desired: Array.isArray(contact.desired) ? contact.desired.filter((d: any) => d && d.stock) : [],
+    paired: !!contact.desired_paired,
   };
 };
 
@@ -148,4 +151,80 @@ export const followupCalendarUrl = async (headers: Record<string, string>): Prom
   } catch {
     return null;
   }
+};
+
+// Jumelle un véhicule de l'inventaire à un contact d'évaluation (null : enlève le jumelage).
+// Renvoie les véhicules convoités à afficher, ou null si l'enregistrement a échoué.
+export const pairDesired = async (
+  headers: Record<string, string>, evalId: string, vehicle: DossierDesired | null,
+): Promise<{ desired: DossierDesired[]; paired: boolean } | null> => {
+  try {
+    const response = await axios.put(
+      `${API_URL}/api/etv/dossiers/${encodeURIComponent(evalId)}/desired`,
+      vehicle || { stock: '' }, { headers, timeout: 40000 });
+    return {
+      desired: Array.isArray(response.data?.desired) ? response.data.desired : [],
+      paired: !!response.data?.desired_paired,
+    };
+  } catch {
+    return null;
+  }
+};
+
+// Lien de la fiche du site (c'est lui qui fait apparaître la photo dans le texto). Vide si inconnu.
+export const fetchListingUrl = async (headers: Record<string, string>, stock: string): Promise<string> => {
+  if (!stock) return '';
+  try {
+    const response = await axios.get(`${API_URL}/api/etv/listing`, { headers, params: { stock }, timeout: 25000 });
+    return typeof response.data?.url === 'string' ? response.data.url : '';
+  } catch {
+    return '';
+  }
+};
+
+const cad = (value: number, digits = 0) =>
+  `${value.toLocaleString('fr-CA', { minimumFractionDigits: digits, maximumFractionDigits: digits })} $`;
+
+export interface UsedQuote {
+  vehicle: string;
+  stock?: string;
+  km?: number;
+  price: number;
+  term: number;
+  rate: number;
+  payment: number;
+  frequency: 'monthly' | 'biweekly' | 'weekly';
+  tradeValue?: number;
+  advisorName?: string;
+  listingUrl?: string;
+  lang?: 'fr' | 'en';
+}
+
+// Texto d'un calcul de véhicule d'occasion. Le lien de la fiche va en dernière
+// ligne : c'est ce qui fait apparaître l'aperçu avec la photo dans Messages.
+export const usedQuoteSms = (q: UsedQuote): string => {
+  const fr = q.lang !== 'en';
+  const every = q.frequency === 'weekly' ? (fr ? 'par semaine' : 'weekly')
+    : q.frequency === 'biweekly' ? (fr ? 'aux 2 semaines' : 'bi-weekly') : (fr ? 'par mois' : 'monthly');
+  const lines = [
+    q.vehicle,
+    q.stock ? `${fr ? 'Inventaire' : 'Stock'} #${q.stock}` : '',
+    q.km ? `${q.km.toLocaleString('fr-CA')} km` : '',
+    `${fr ? 'Prix' : 'Price'} : ${cad(q.price)}`,
+    q.tradeValue ? `${fr ? 'Votre échange' : 'Your trade-in'} : ${cad(q.tradeValue)}` : '',
+    '',
+    `${fr ? 'Paiement' : 'Payment'} ${every} : ${cad(q.payment, 2)}`,
+    `${q.term} ${fr ? 'mois à' : 'months at'} ${String(q.rate).replace('.', fr ? ',' : '.')} %`,
+    '',
+    fr ? "Montants à titre indicatif, sous réserve de l'approbation du crédit." : 'Amounts for information only, subject to credit approval.',
+    q.advisorName ? `— ${q.advisorName}` : '',
+    q.listingUrl ? `\n${fr ? 'Photos et détails' : 'Photos and details'} :\n${q.listingUrl}` : '',
+  ];
+  return lines.filter((line, i) => line !== '' || (i > 0 && lines[i - 1] !== '')).join('\n').trim();
+};
+
+// Adresse qui ouvre l'application de textos, déjà adressée au client quand son numéro est connu.
+export const smsHref = (phone: string, body: string): string => {
+  const number = (phone || '').replace(/[^0-9+]/g, '');
+  return `sms:${number}?&body=${encodeURIComponent(body)}`;
 };

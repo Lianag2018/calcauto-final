@@ -110,6 +110,41 @@ def dossiers_request(user: Dict[str, Any], now: Optional[float] = None) -> Dict[
     }
 
 
+def listing_request(user: Dict[str, Any], stock: str, now: Optional[float] = None) -> Dict[str, Any]:
+    """Appel signé qui demande à eTradeValue la fiche publique d'un véhicule."""
+    stock = str(stock or "").strip()[:40]
+    if not stock:
+        raise LinkError(400, "Numéro d'inventaire manquant.")
+    request = dossiers_request(user, now)
+    request["params"]["stock"] = stock
+    return request
+
+
+def safe_listing_url(value: Any) -> str:
+    """Lien de fiche qu'on accepte de mettre dans un texto : https, sans espace."""
+    url = str(value or "").strip()
+    if not url.lower().startswith("https://") or len(url) > 500 or any(c.isspace() for c in url):
+        return ""
+    return url if "." in url[8:].split("/")[0] else ""
+
+
+def pairing(stock: Any, label: Any = "", price: Any = None) -> Optional[Dict[str, Any]]:
+    """Véhicule que le conseiller jumelle lui-même à un dossier ; None pour l'enlever."""
+    stock = str(stock or "").strip()[:20]
+    if not stock:
+        return None
+    return {"stock": stock, "label": str(label or "").strip()[:120], "price": _amount(price)}
+
+
+def effective_desired(contact: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Véhicule convoité à utiliser : celui jumelé par le conseiller, sinon ceux de l'évaluation."""
+    local = contact.get("desired_local") if isinstance(contact, dict) else None
+    if isinstance(local, dict) and local.get("stock"):
+        return [local]
+    desired = contact.get("desired") if isinstance(contact, dict) else None
+    return desired if isinstance(desired, list) else []
+
+
 def _amount(value: Any) -> Optional[float]:
     try:
         number = float(value)

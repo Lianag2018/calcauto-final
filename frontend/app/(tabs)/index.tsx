@@ -29,7 +29,7 @@ import html2canvas from 'html2canvas';
 // Import components and i18n
 import { AnimatedSplashScreen } from '../../components/AnimatedSplashScreen';
 import { GaugeMark } from '../../components/GaugeMark';
-import { Dossier, dossierFromContact, takeQueuedDossier, takeEvalId, syncDossiers } from '../../utils/etvDossier';
+import { Dossier, dossierFromContact, takeQueuedDossier, takeEvalId, syncDossiers, fetchListingUrl, usedQuoteSms, smsHref } from '../../utils/etvDossier';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { Language, saveLanguage, loadLanguage, getTranslation, TranslationKeys } from '../../utils/i18n';
 import { useAuth } from '../../contexts/AuthContext';
@@ -672,6 +672,8 @@ export default function HomeScreen() {
         if (s.selectedYear) setSelectedYear(s.selectedYear);
         if (s.selectedBrand) setSelectedBrand(s.selectedBrand);
         if (s.selectedInventory) setSelectedInventory(s.selectedInventory);
+        if (s.vehicleMode === 'usage') setVehicleMode('usage');
+        if (s.usedRate) setUsedRate(String(s.usedRate));
         
         console.log('Calculator state restored from submission');
       } catch (e) {
@@ -1114,8 +1116,85 @@ export default function HomeScreen() {
     return text;
   };
 
+  // Un texto envoyé devient un suivi : la soumission est enregistrée au CRM,
+  // avec son rappel de relance, au nom du client du calcul.
+  const recordSmsFollowup = async (): Promise<boolean> => {
+    try {
+      const token = await getToken();
+      if (!token || !selectedProgram || !localResult || !vehiclePrice) return false;
+      const two = !isUsed && (selectedOption === '2' || !hasOption1);
+      await axios.post(`${API_URL}/api/submissions`, {
+        client_name: clientName || 'Client',
+        client_phone: clientPhone || '',
+        client_email: clientEmail || '',
+        vehicle_brand: String(selectedProgram.brand || ''),
+        vehicle_model: [selectedProgram.model, selectedProgram.trim].filter(Boolean).join(' '),
+        vehicle_year: parseInt(String(selectedProgram.year), 10) || new Date().getFullYear(),
+        vehicle_price: parseFloat(vehiclePrice) || 0,
+        term: selectedTerm,
+        payment_monthly: (two ? localResult.option2Monthly : localResult.option1Monthly) || 0,
+        payment_biweekly: (two ? localResult.option2Biweekly : localResult.option1Biweekly) || 0,
+        payment_weekly: (two ? localResult.option2Weekly : localResult.option1Weekly) || 0,
+        selected_option: two ? '2' : '1',
+        rate: (two ? localResult.option2Rate : localResult.option1Rate) || 0,
+        program_month: currentPeriod?.month || 0,
+        program_year: currentPeriod?.year || 0,
+        calculator_state: {
+          sentBy: 'sms',
+          vehicleMode,
+          usedRate,
+          ...(isUsed ? {} : { selectedProgram, checkedOffers, selectedOption, customBonusCash }),
+          vehiclePrice, selectedTerm, paymentFrequency, comptantTxInclus,
+          fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, manualVin,
+          selectedInventory: selectedInventory ? {
+            id: selectedInventory.id, stock_no: selectedInventory.stock_no, vin: selectedInventory.vin,
+            type: selectedInventory.type, brand: selectedInventory.brand, model: selectedInventory.model,
+            trim: selectedInventory.trim, year: selectedInventory.year, km: selectedInventory.km,
+            asking_price: selectedInventory.asking_price, msrp: selectedInventory.msrp,
+          } : null,
+        },
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  // Texto d'un calcul d'occasion : le texte du paiement, puis le lien de la fiche
+  // du site en dernière ligne (Messages en tire l'aperçu avec la photo principale).
+  const handleUsedSms = async () => {
+    if (!localResult || !vehiclePrice) return;
+    setSmsPreviewText(lang === 'fr' ? 'Préparation du message…' : 'Preparing the message…');
+    setShowSmsPreview(true);
+    const vehicle = selectedInventory?.type === 'occasion' ? selectedInventory : null;
+    let listingUrl = '';
+    if (vehicle?.stock_no) {
+      const token = await getToken();
+      if (token) listingUrl = await fetchListingUrl({ Authorization: `Bearer ${token}` }, String(vehicle.stock_no));
+    }
+    const payment = paymentFrequency === 'biweekly' ? localResult.option1Biweekly
+      : paymentFrequency === 'weekly' ? localResult.option1Weekly : localResult.option1Monthly;
+    setSmsPreviewText(usedQuoteSms({
+      vehicle: vehicle
+        ? `${vehicle.year} ${vehicle.brand} ${vehicle.model} ${vehicle.trim || ''}`.replace(/\s+/g, ' ').trim()
+        : (lang === 'fr' ? "Véhicule d'occasion" : 'Used vehicle'),
+      stock: vehicle?.stock_no ? String(vehicle.stock_no) : undefined,
+      km: vehicle?.km || undefined,
+      price: parseFloat(vehiclePrice) || 0,
+      term: selectedTerm,
+      rate: localResult.option1Rate,
+      payment: payment || 0,
+      frequency: paymentFrequency,
+      tradeValue: parseFloat(prixEchange) || undefined,
+      advisorName: user?.name || undefined,
+      listingUrl,
+      lang,
+    }));
+  };
+
   // Handle Share via SMS - Open preview modal
   const handleShareSMS = async () => {
+    if (isUsed) return handleUsedSms();
     if (!selectedProgram || !localResult || !vehiclePrice) {
       if (Platform.OS === 'web') {
         alert(lang === 'fr' ? 'Aucune soumission à partager' : 'No submission to share');
@@ -1373,6 +1452,7 @@ export default function HomeScreen() {
           text: shareText,
           files: filesToShare,
         });
+        recordSmsFollowup();
       } else {
         // Fallback: download image + copy text
         const url = URL.createObjectURL(blob);
@@ -1404,6 +1484,18 @@ export default function HomeScreen() {
   // Send the SMS message after preview
   const handleSendSms = async () => {
     try {
+      if (isUsed) {
+        // Occasion : l'application de textos s'ouvre, déjà adressée au client.
+        const href = smsHref(clientPhone, smsPreviewText);
+        if (Platform.OS === 'web') window.location.href = href;
+        else await Linking.openURL(href);
+        const saved = await recordSmsFollowup();
+        setShowSmsPreview(false);
+        setDossierNote(saved
+          ? (lang === 'fr' ? 'Texto préparé. Le calcul est dans vos suivis, avec un rappel de relance demain.' : 'Text ready. The quote is in your follow-ups, with a reminder tomorrow.')
+          : (lang === 'fr' ? "Texto préparé, mais le suivi n'a pas pu être enregistré." : 'Text ready, but the follow-up could not be saved.'));
+        return;
+      }
       if (Platform.OS === 'web') {
         // On web, use the Web Share API if available, otherwise copy to clipboard
         if (navigator.share) {
@@ -1428,6 +1520,7 @@ export default function HomeScreen() {
           }
         }
       }
+      recordSmsFollowup();
       setShowSmsPreview(false);
     } catch (error: any) {
       console.error('Share error:', error);
