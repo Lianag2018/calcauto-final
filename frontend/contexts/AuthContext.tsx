@@ -54,6 +54,21 @@ const storage = {
   }
 };
 
+// Clé propre à cet onglet du navigateur, jointe au billet d'eTradeValue.
+const etvBrowserKey = (): string => {
+  try {
+    const existing = window.sessionStorage.getItem('calcauto_etv_client');
+    if (existing) return existing;
+    const bytes = new Uint8Array(24);
+    window.crypto.getRandomValues(bytes);
+    const key = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    window.sessionStorage.setItem('calcauto_etv_client', key);
+    return key;
+  } catch {
+    return '';
+  }
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,11 +95,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch {}
     };
-    clearFragment();
-    setTimeout(clearFragment, 1500);
-    setTimeout(clearFragment, 5000);
+    // Tant que le serveur n'a pas répondu, le billet reste dans l'adresse : si la
+    // page est rechargée pendant son réveil, le même navigateur le représente
+    // (avec sa clé) et retrouve la même session au lieu de retomber sur l'ancienne.
+    const clearSoon = () => {
+      clearFragment();
+      setTimeout(clearFragment, 1500);
+      setTimeout(clearFragment, 5000);
+    };
     try {
-      const response = await axios.post(`${API_URL}/api/auth/etv-login`, { ticket });
+      const response = await axios.post(`${API_URL}/api/auth/etv-login`, { ticket, client: etvBrowserKey() }, { timeout: 110000 });
+      clearSoon();
       if (!response.data?.success) return false;
       await storage.setItem('auth_token', response.data.token);
       await storage.setItem('user_data', JSON.stringify(response.data.user));
@@ -92,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (evalId) await rememberEvalId(evalId);
       return true;
     } catch (err) {
+      clearSoon();
       console.log('Connexion par eTradeValue refusée');
       return false;
     }
