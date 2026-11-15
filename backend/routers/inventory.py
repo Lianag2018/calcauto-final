@@ -13,7 +13,8 @@ from services.window_sticker import fetch_window_sticker, save_window_sticker_to
 from routers.invoice import get_full_vehicle_info, _CODE_PROGRAM_MAPPING
 from product_code_lookup import lookup_product_code
 from services.program_matching import describe_vehicle, match_program, is_model_code
-from services.model_code_suggest import trim_from_title, suggest_codes, trims_of_program
+from services.model_code_suggest import (
+    trim_from_title, suggest_codes, trims_of_program, known_trims, is_known_code)
 import httpx
 
 router = APIRouter()
@@ -85,6 +86,46 @@ async def _options_by_stock(stock_numbers: List[str]) -> Dict[str, List[Dict[str
     async for option in cursor:
         grouped.setdefault(option.get("stock_no"), []).append(option)
     return grouped
+
+
+async def _reference_codes() -> Dict[str, Dict[str, Any]]:
+    """Référentiel des codes de produit : le fichier de base, complété par les
+    codes que les utilisateurs ont entrés une fois pour une version inconnue."""
+    try:
+        with open('data/master_product_codes.json', 'r') as f:
+            reference = json.load(f)
+    except Exception:
+        reference = {}
+    async for learned in db.learned_model_codes.find({}, {"_id": 0}):
+        code = (learned.get("code") or "").upper()
+        if code and code not in reference:
+            reference[code] = learned
+    return reference
+
+
+async def _learn_code(vehicle: Dict[str, Any], code: str, user: Dict[str, Any]) -> bool:
+    """Un code entré à la main pour une version que le référentiel ne connaît
+    pas est retenu : il sera proposé pour les prochains véhicules de cette version."""
+    code = (code or "").upper().strip()
+    if not is_model_code(code) or not vehicle.get("brand") or not vehicle.get("model"):
+        return False
+    reference = await _reference_codes()
+    if is_known_code(reference, code):
+        return False
+    decoded = await _decode_vin(vehicle.get("vin"))
+    trim = vehicle.get("trim") or decoded.get("trim") or _title_trim(vehicle)
+    if not trim:
+        return False
+    cab = vehicle.get("body_style") or decoded.get("cab") or ""
+    drive = "4x4" if any(k in (decoded.get("drive") or "").lower() for k in ("4x4", "4wd", "awd")) else ""
+    await db.learned_model_codes.update_one({"code": code}, {"$set": {
+        "code": code, "brand": vehicle.get("brand"), "model": vehicle.get("model"), "trim": trim,
+        "cab": cab, "drive": drive, "year": str(vehicle.get("year") or ""),
+        "full_description": " ".join(str(x) for x in (vehicle.get("brand"), vehicle.get("model"), trim, cab, drive) if x),
+        "added_by": user.get("email") or user.get("id"), "added_from_stock": vehicle.get("stock_no"),
+        "created_at": datetime.utcnow(),
+    }}, upsert=True)
+    return True
 
 
 def _title_trim(vehicle: Dict[str, Any]) -> str:
@@ -404,8 +445,24 @@ async def update_inventory_vehicle(stock_no: str, update: InventoryUpdate, autho
                       **{f"fields.{k}": v for k, v in fields.items()},
                       "updated_by": user.get("email") or user["id"], "updated_at": datetime.utcnow()}},
             upsert=True)
-    
-    return {"success": True, "message": f"Véhicule {stock_no} mis à jour"}
+
+    # Le code ou la version vient de changer : on renvoie la ligne de programme
+    # qui s'applique maintenant, pour que le calculateur prenne les bons rabais.
+    response: Dict[str, Any] = {"success": True, "message": f"Véhicule {stock_no} mis à jour"}
+    try:
+        current = _dedupe_by_stock(await db.inventory.find(
+            {"stock_no": stock_no, "owner_id": _owners(user)}, {"_id": 0}).to_list(10), user["id"])
+        await _apply_overrides(current)
+        if current:
+            if update_data.get("model_code"):
+                response["code_learned"] = await _learn_code(current[0], update_data["model_code"], user)
+            await _attach_program_matches(current)
+            response["program_match"] = current[0].get("program_match")
+            response["model_code"] = current[0].get("model_code")
+            response["trim"] = current[0].get("trim") or _title_trim(current[0])
+    except Exception as e:
+        logger.warning(f"Jumelage après mise à jour impossible: {e}")
+    return response
 
 @router.delete("/inventory/{stock_no}")
 async def delete_inventory_vehicle(stock_no: str, authorization: Optional[str] = Header(None)):
@@ -530,11 +587,7 @@ async def get_program_model_codes(program_id: str, authorization: Optional[str] 
                 str(x) for x in (vehicle.get("model"), vehicle.get("trim"), vehicle.get("body_style")) if x)
 
     # 2. Référentiel des codes de produit
-    try:
-        with open('data/master_product_codes.json', 'r') as f:
-            master = json.load(f)
-    except Exception:
-        master = {}
+    master = await _reference_codes()
     # Le référentiel n'a pas toujours l'année du programme (2027) : les codes
     # se reportent d'une année à l'autre, on prend alors toutes les années.
     brand_low = (program.get("brand") or "").lower()
@@ -587,10 +640,13 @@ async def _decode_vin(vin: str) -> Dict[str, str]:
 
 
 @router.get("/inventory/{stock_no}/code-suggestions")
-async def get_code_suggestions(stock_no: str, authorization: Optional[str] = Header(None)):
-    """Codes de modèle possibles pour un véhicule sans code : version lue sur
-    la fiche, dans le titre de l'annonce et dans le NIV, puis codes de cette
-    version dans le référentiel."""
+async def get_code_suggestions(stock_no: str, trim: Optional[str] = None,
+                               authorization: Optional[str] = Header(None)):
+    """Codes de modèle possibles pour un véhicule, toutes marques : version lue
+    sur la fiche, dans le titre de l'annonce et dans le NIV (ou `trim`, la
+    version que l'utilisateur vient de choisir), puis codes de cette version
+    dans le référentiel. `needs_code` : aucune possibilité connue, le code est
+    à entrer une fois et sera retenu."""
     user = await get_current_user(authorization)
     found = _dedupe_by_stock(await db.inventory.find(
         {"stock_no": stock_no, "owner_id": _owners(user)}, {"_id": 0}).to_list(10), user["id"])
@@ -600,21 +656,19 @@ async def get_code_suggestions(stock_no: str, authorization: Optional[str] = Hea
     vehicle = found[0]
     decoded = await _decode_vin(vehicle.get("vin"))
     title_trim = _title_trim(vehicle)
-    try:
-        with open('data/master_product_codes.json', 'r') as f:
-            master = json.load(f)
-    except Exception:
-        master = {}
+    master = await _reference_codes()
+    programs = await _latest_programs()
     cab = vehicle.get("body_style") or decoded.get("cab") or ""
     drive = decoded.get("drive") or ""
-    trims = [vehicle.get("trim"), decoded.get("trim"), title_trim]
+    chosen = (trim or "").strip()
+    trims = [chosen] if chosen else [vehicle.get("trim"), decoded.get("trim"), title_trim]
     codes = suggest_codes(master, vehicle.get("brand"), vehicle.get("model"), trims, cab, drive)
     source = "version"
     if not codes:
         # Version absente du référentiel (Express, Warlock...) : codes des
         # versions de la même ligne de programme.
-        programs = await _latest_programs()
-        result = match_program(_vehicle_for_matching(vehicle, []), programs)
+        described = dict(vehicle, trim=chosen) if chosen else vehicle
+        result = match_program(_vehicle_for_matching(described, []), programs)
         line = result["program"] or (result["candidates"][0] if len(result["candidates"]) == 1 else None)
         if line:
             codes = suggest_codes(master, vehicle.get("brand"), vehicle.get("model"),
@@ -622,13 +676,15 @@ async def get_code_suggestions(stock_no: str, authorization: Optional[str] = Hea
             source = "programme"
     return {
         "stock_no": stock_no,
-        "trim": vehicle.get("trim") or decoded.get("trim") or title_trim,
+        "trim": chosen or vehicle.get("trim") or decoded.get("trim") or title_trim,
         "title_trim": title_trim,
         "vin_trim": decoded.get("trim") or "",
         "cab": decoded.get("cab") or vehicle.get("body_style") or "",
         "drive": drive,
         "source": source,
         "codes": [{"code": c["code"], "description": c["description"]} for c in codes],
+        "needs_code": not codes,
+        "known_trims": known_trims(master, vehicle.get("brand"), vehicle.get("model"), programs),
     }
 
 

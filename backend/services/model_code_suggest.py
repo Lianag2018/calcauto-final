@@ -102,3 +102,31 @@ def trims_of_program(program: Optional[Dict[str, Any]]) -> List[str]:
     """'Tradesman, Express, Warlock' -> ['Tradesman', 'Express', 'Warlock']."""
     text = re.sub(r'\([^)]*\)', ' ', (program or {}).get('trim') or '')
     return [t.strip() for t in re.split(r'[,/]', text) if t.strip()]
+
+
+def known_trims(master: Dict[str, Dict[str, Any]], brand: Any, model: Any,
+                programs: Iterable[Dict[str, Any]] = ()) -> List[str]:
+    """Versions connues pour ce modèle : celles du référentiel, puis celles des
+    lignes de programme. Sert au choix de la version sur la fiche."""
+    want_brand, want_model = _norm(brand), _norm_model(model)
+    seen: Dict[str, str] = {}
+    for info in (master or {}).values():
+        info = info or {}
+        if _norm(info.get('brand')) == want_brand and _norm_model(info.get('model')) == want_model:
+            trim = str(info.get('trim') or '').strip()
+            if trim:
+                seen.setdefault(_norm(trim), trim)
+    for program in programs or ():
+        if _norm(program.get('brand')) != want_brand:
+            continue
+        models = {_norm_model(m) for m in str(program.get('model') or '').split('/')}
+        if want_model not in models:
+            continue
+        for trim in trims_of_program(program):
+            if len(trim) <= 24 and not re.search(r'excl|models|only|\d{3,}', trim, flags=re.IGNORECASE):
+                seen.setdefault(_norm(trim), trim)
+    return sorted(seen.values(), key=str.lower)
+
+
+def is_known_code(master: Dict[str, Dict[str, Any]], code: Any) -> bool:
+    return str(code or '').upper().strip() in {str(c).upper() for c in (master or {})}

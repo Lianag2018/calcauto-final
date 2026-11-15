@@ -566,12 +566,21 @@ export default function HomeScreen() {
       try {
         const token = await getToken();
         if (!token) return;
-        await axios.put(`${API_URL}/api/inventory/${encodeURIComponent(vehicle.stock_no)}`,
+        const saved = await axios.put(`${API_URL}/api/inventory/${encodeURIComponent(vehicle.stock_no)}`,
           { model_code: pickedCode }, { headers: { Authorization: `Bearer ${token}` } });
         if (cancelled) return;
-        setInventoryList(list => list.map((v: any) => v.stock_no === vehicle.stock_no ? { ...v, model_code: pickedCode } : v));
-        setSelectedInventory((v: any) => v && v.stock_no === vehicle.stock_no ? { ...v, model_code: pickedCode } : v);
-        setCodeSavedFor(`${vehicle.stock_no} · ${pickedCode}`);
+        const match = saved.data?.program_match;
+        const patch = (v: any) => ({ ...v, model_code: pickedCode, ...(match ? { program_match: match } : {}) });
+        setInventoryList(list => list.map((v: any) => v.stock_no === vehicle.stock_no ? patch(v) : v));
+        setSelectedInventory((v: any) => v && v.stock_no === vehicle.stock_no ? patch(v) : v);
+        // Le code détermine la ligne de programme : on passe à la bonne ligne
+        // pour que les rabais admissibles soient ceux de ce code.
+        const rightProgram = match?.program_id && match.program_id !== selectedProgram?.id
+          ? programs.find((p: any) => p.id === match.program_id) : null;
+        if (rightProgram) selectProgram(rightProgram);
+        setCodeSavedFor(`${vehicle.stock_no} · ${pickedCode}`
+          + (rightProgram ? (lang === 'fr' ? ` — programme ajusté : ${rightProgram.trim || rightProgram.model}` : ` — program adjusted: ${rightProgram.trim || rightProgram.model}`) : '')
+          + (saved.data?.code_learned ? (lang === 'fr' ? ' — code retenu pour les prochains véhicules de cette version' : ' — code kept for future vehicles of this trim') : ''));
       } catch (e) {
         console.log('Could not save model code on vehicle');
       }
@@ -582,6 +591,7 @@ export default function HomeScreen() {
   // Véhicule sans code : le serveur lit la version (fiche, annonce, NIV) et
   // propose les codes de cette version.
   const [codeSuggest, setCodeSuggest] = useState<any>(null);
+  const [typedCode, setTypedCode] = useState<string>('');
   useEffect(() => {
     const vehicle = selectedInventory;
     setCodeSuggest(null);
@@ -2418,9 +2428,32 @@ export default function HomeScreen() {
                       </View>
                     </View>
                   ) : (
-                    <Text style={{ color: '#aaa', fontSize: 12, marginTop: 4 }}>
-                      {lang === 'fr' ? 'Choisis-le dans la liste ou entre-le sur la fiche, il sera retenu.' : 'Pick it in the list or enter it on the vehicle record; it will be kept.'}
-                    </Text>
+                    <View>
+                      <Text style={{ color: '#aaa', fontSize: 12, marginTop: 4 }}>
+                        {lang === 'fr'
+                          ? 'Aucun code connu pour cette version. Entre-le une fois : il sera retenu pour les prochains véhicules.'
+                          : 'No known code for this trim. Enter it once: it will be kept for future vehicles.'}
+                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
+                        <TextInput
+                          style={{ flex: 1, backgroundColor: '#2d2d44', color: '#fff', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12, fontSize: 15, marginRight: 8 }}
+                          value={typedCode}
+                          onChangeText={(v) => setTypedCode(v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
+                          placeholder={lang === 'fr' ? 'Code (6 caractères)' : 'Code (6 characters)'}
+                          placeholderTextColor="#666"
+                          autoCapitalize="characters"
+                          data-testid="model-code-input"
+                        />
+                        <TouchableOpacity
+                          disabled={typedCode.length !== 6}
+                          onPress={() => { setPickedCode(typedCode); setTypedCode(''); }}
+                          style={{ backgroundColor: typedCode.length === 6 ? '#4ECDC4' : '#3a3a55', borderRadius: 10, paddingVertical: 9, paddingHorizontal: 14 }}
+                          data-testid="model-code-keep"
+                        >
+                          <Text style={{ color: '#1a1a2e', fontWeight: '700' }}>{lang === 'fr' ? 'Retenir' : 'Keep'}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
                   )}
                 </View>
               ) : null}

@@ -1076,3 +1076,19 @@ class TestModelCodeSuggest:
         assert trims_of_program({"trim": "Tradesman, Express, Warlock"}) == ["Tradesman", "Express", "Warlock"]
         assert trims_of_program({"trim": "Big Horn (excludes DT6H91)"}) == ["Big Horn"]
         assert trims_of_program(None) == []
+
+    def test_known_trims_from_reference_and_programs(self):
+        from services.model_code_suggest import known_trims
+        programs = [
+            {"brand": "Ram", "model": "1500", "trim": "Tradesman, Express, Warlock"},
+            {"brand": "Ram", "model": "2500/3500", "trim": "Gas Models (excl Chassis Cab Models)"},
+            {"brand": "Jeep", "model": "Compass", "trim": "North"},
+        ]
+        assert known_trims(self.MASTER, "Ram", "1500", programs) == ["Big Horn", "Express", "Tradesman", "Warlock"]
+        assert known_trims(self.MASTER, "Ram", "2500", programs) == ["Tradesman"]
+        assert known_trims(self.MASTER, "Jeep", "Compass", programs) == ["North"]
+
+    def test_is_known_code(self):
+        from services.model_code_suggest import is_known_code
+        assert is_known_code(self.MASTER, "zz6l98")
+        assert not is_known_code(self.MASTER, "QQ1A11")
