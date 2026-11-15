@@ -4,6 +4,8 @@ from database import db
 from models import Contact, ContactCreate, ContactBulkCreate
 from dependencies import get_current_user
 
+from services.etv_link import effective_desired
+
 router = APIRouter()
 
 # ============ Contacts API ============
@@ -27,7 +29,9 @@ async def get_contacts(authorization: Optional[str] = Header(None)):
         "etv_created_at": c.get("etv_created_at"),
         "etv_advisor": c.get("etv_advisor"),
         "trade": c.get("trade"),
-        "desired": c.get("desired"),
+        # Le véhicule jumelé par le conseiller passe avant ceux de l'évaluation.
+        "desired": effective_desired(c) if c.get("etv_eval_id") else c.get("desired"),
+        "desired_paired": bool(c.get("desired_local")),
     } for c in contacts]
 
 @router.post("/contacts")

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -24,7 +24,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Language, saveLanguage, loadLanguage } from '../../utils/i18n';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { useAuth } from '../../contexts/AuthContext';
-import { Dossier, dossierFromContact, tradeLabel, desiredLabel, queueDossier, syncDossiers, Followup, fetchFollowups, completeFollowup, followupCalendarUrl } from '../../utils/etvDossier';
+import { Dossier, dossierFromContact, tradeLabel, desiredLabel, queueDossier, syncDossiers, pairDesired, DossierDesired, Followup, fetchFollowups, completeFollowup, followupCalendarUrl } from '../../utils/etvDossier';
 
 import { API_URL } from '../../utils/api';
 
@@ -313,6 +313,12 @@ export default function ClientsScreen() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  // Filtre « contacts d'évaluation » et jumelage d'un véhicule convoité
+  const [evalOnly, setEvalOnly] = useState(false);
+  const [pairClient, setPairClient] = useState<Client | null>(null);
+  const [pairVehicles, setPairVehicles] = useState<any[]>([]);
+  const [pairSearch, setPairSearch] = useState('');
+  const [pairBusy, setPairBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
@@ -372,6 +378,44 @@ export default function ClientsScreen() {
       setSavingContact(false);
     }
   };
+
+  // Ouvre le choix du véhicule à jumeler à ce contact d'évaluation
+  const openPairing = async (client: Client) => {
+    setPairClient(client);
+    setPairSearch('');
+    if (pairVehicles.length) return;
+    try {
+      const response = await axios.get(`${API_URL}/api/inventory`, { headers: await getAuthHeaders() });
+      setPairVehicles((response.data || []).filter((v: any) => v.status === 'disponible'));
+    } catch {
+      setPairVehicles([]);
+    }
+  };
+
+  const savePairing = async (vehicle: DossierDesired | null) => {
+    const client = pairClient;
+    if (!client?.dossier || pairBusy) return;
+    setPairBusy(true);
+    const saved = await pairDesired(await getAuthHeaders() as Record<string, string>, client.dossier.evalId, vehicle);
+    setPairBusy(false);
+    if (!saved) {
+      const message = lang === 'fr' ? "Le jumelage n'a pas été enregistré. Réessayez." : 'The match was not saved. Try again.';
+      Platform.OS === 'web' ? alert(message) : Alert.alert('Erreur', message);
+      return;
+    }
+    const evalId = client.dossier.evalId;
+    setClients(prev => prev.map(c => c.dossier?.evalId === evalId
+      ? { ...c, dossier: { ...c.dossier, desired: saved.desired, paired: saved.paired } } : c));
+    setPairClient(null);
+  };
+
+  const pairChoices = useMemo(() => {
+    const words = pairSearch.toLowerCase().split(/\s+/).filter(Boolean);
+    return pairVehicles.filter((v: any) => {
+      const text = `${v.stock_no} ${v.year} ${v.brand} ${v.model} ${v.trim || ''}`.toLowerCase();
+      return words.every(w => text.includes(w));
+    }).slice(0, 60);
+  }, [pairVehicles, pairSearch]);
 
   // Helper function to get auth headers
   const getAuthHeaders = async () => {
@@ -489,17 +533,18 @@ export default function ClientsScreen() {
   useEffect(() => { loadData(); }, []);
   
   useEffect(() => {
+    const pool = evalOnly ? clients.filter(c => !!c.dossier) : clients;
     if (!searchQuery.trim()) {
-      setFilteredClients(clients);
+      setFilteredClients(pool);
     } else {
       const query = searchQuery.toLowerCase();
-      setFilteredClients(clients.filter(c => 
+      setFilteredClients(pool.filter(c => 
         c.name.toLowerCase().includes(query) || 
         c.phone?.toLowerCase().includes(query) ||
         c.email?.toLowerCase().includes(query)
       ));
     }
-  }, [searchQuery, clients]);
+  }, [searchQuery, clients, evalOnly]);
 
   const onRefresh = () => { setRefreshing(true); loadData(); };
   
@@ -1086,11 +1131,21 @@ export default function ClientsScreen() {
                     </Text>
                   )}
                   {!!desiredLabel(client.dossier) && (
-                    <Text style={styles.dossierLine}>
+                    <Text style={styles.dossierLine} data-testid="client-dossier-desired">
                       {lang === 'fr' ? 'Convoité : ' : 'Wants: '}{desiredLabel(client.dossier)}
+                      {client.dossier.paired ? (lang === 'fr' ? ' (jumelé)' : ' (matched)') : ''}
                     </Text>
                   )}
                 </View>
+                <TouchableOpacity
+                  style={styles.importPickBtn}
+                  onPress={(e) => { e.stopPropagation(); openPairing(client); }}
+                  data-testid="client-dossier-pair"
+                >
+                  <Text style={styles.importPickText}>
+                    {client.dossier.desired.length ? (lang === 'fr' ? 'Changer le véhicule' : 'Change vehicle') : (lang === 'fr' ? 'Jumeler un véhicule' : 'Match a vehicle')}
+                  </Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.dossierBtn}
                   onPress={async (e) => { e.stopPropagation(); await queueDossier(client.dossier!); router.push('/(tabs)'); }}
@@ -1715,6 +1770,27 @@ export default function ClientsScreen() {
         </View>
       </View>
 
+      {activeTab === 'clients' && clients.some(c => !!c.dossier) && (
+        <View style={[styles.importPickRow, { paddingHorizontal: 16, marginTop: 10, marginBottom: 0 }]}>
+          <TouchableOpacity
+            style={[styles.importPickBtn, !evalOnly && { borderColor: '#e6c65a' }]}
+            onPress={() => setEvalOnly(false)}
+            data-testid="filter-all-contacts"
+          >
+            <Text style={styles.importPickText}>{lang === 'fr' ? 'Tous' : 'All'} ({clients.length})</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.importPickBtn, evalOnly && { borderColor: '#e6c65a' }]}
+            onPress={() => setEvalOnly(true)}
+            data-testid="filter-eval-contacts"
+          >
+            <Text style={styles.importPickText}>
+              {lang === 'fr' ? 'Contacts d\'évaluation' : 'Appraisal contacts'} ({clients.filter(c => !!c.dossier).length})
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Action Buttons */}
       <View style={styles.actionsRow}>
         <TouchableOpacity 
@@ -1957,6 +2033,70 @@ export default function ClientsScreen() {
                   <Ionicons name="chevron-forward" size={20} color="#9aa3b1" />
                 </TouchableOpacity>
               ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Jumelage d'un véhicule convoité */}
+      <Modal visible={!!pairClient} animationType="slide" transparent={true} onRequestClose={() => setPairClient(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.contactsModalContent} data-testid="pair-modal">
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {lang === 'fr' ? 'Véhicule convoité' : 'Wanted vehicle'}{pairClient ? ` · ${pairClient.name}` : ''}
+              </Text>
+              <TouchableOpacity onPress={() => setPairClient(null)}>
+                <Ionicons name="close" size={24} color="#f4f1ea" />
+              </TouchableOpacity>
+            </View>
+            <View style={[styles.searchContainer, { marginBottom: 10, marginHorizontal: 16 }]}>
+              <Ionicons name="search" size={20} color="#9aa3b1" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder={lang === 'fr' ? 'Numéro, année, marque ou modèle' : 'Stock, year, make or model'}
+                placeholderTextColor="#8a93a1"
+                value={pairSearch}
+                onChangeText={setPairSearch}
+                data-testid="pair-search"
+              />
+            </View>
+            {!!pairClient?.dossier?.paired && (
+              <View style={styles.importPickRow}>
+                <TouchableOpacity style={styles.importPickBtn} onPress={() => savePairing(null)} disabled={pairBusy} data-testid="pair-remove">
+                  <Text style={styles.importPickText}>{lang === 'fr' ? 'Enlever le jumelage' : 'Remove the match'}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            <ScrollView style={styles.contactsList}>
+              {pairChoices.length === 0 && (
+                <Text style={styles.dossierLine}>
+                  {lang === 'fr' ? "Aucun véhicule disponible ne correspond dans l'inventaire." : 'No available vehicle matches in the inventory.'}
+                </Text>
+              )}
+              {pairChoices.map((v: any) => {
+                const label = `${v.year} ${v.brand} ${v.model} ${v.trim || ''}`.replace(/\s+/g, ' ').trim();
+                const price = v.type === 'occasion' ? (v.asking_price || v.msrp) : (v.msrp || v.asking_price);
+                return (
+                  <TouchableOpacity
+                    key={v.id || v.stock_no}
+                    style={styles.contactItem}
+                    disabled={pairBusy}
+                    onPress={() => savePairing({ stock: String(v.stock_no), label, price: price || null })}
+                    data-testid={`pair-pick-${v.stock_no}`}
+                  >
+                    <View style={styles.contactDetails}>
+                      <Text style={styles.contactName}>#{v.stock_no} · {label}</Text>
+                      <Text style={styles.contactPhone}>
+                        {v.type === 'occasion' ? (lang === 'fr' ? 'Occasion' : 'Used') : (lang === 'fr' ? 'Neuf' : 'New')}
+                        {price ? ` · ${Math.round(price).toLocaleString('fr-CA')} $` : ''}
+                        {v.km ? ` · ${Number(v.km).toLocaleString('fr-CA')} km` : ''}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color="#9aa3b1" />
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
           </View>
         </View>
