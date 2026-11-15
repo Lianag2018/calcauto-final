@@ -10,7 +10,6 @@ import {
   Alert,
   Platform,
   ScrollView,
-  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -94,9 +93,7 @@ function ComparisonReport({ comparison }: { comparison: ComparisonDetail[] }) {
 }
 
 function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
-  const { isDemoUser } = useAuth();
   const [importing, setImporting] = useState(false);
-  const [adminPassword, setAdminPassword] = useState(isDemoUser ? 'Liana2018' : '');
   const [result, setResult] = useState<string | null>(null);
   const [resultType, setResultType] = useState<'success' | 'error'>('success');
   const [comparison, setComparison] = useState<ComparisonDetail[] | null>(null);
@@ -122,11 +119,6 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
   };
 
   const handleImport = async () => {
-    if (!adminPassword) {
-      setResult('Entrez le mot de passe admin');
-      setResultType('error');
-      return;
-    }
     if (Platform.OS === 'web' && fileInputRef.current) {
       fileInputRef.current.click();
     }
@@ -142,10 +134,10 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('password', adminPassword);
 
+      const token = await getToken();
       const response = await axios.post(`${API_URL}/api/programs/import-excel`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
       });
 
       const data = response.data;
@@ -189,19 +181,6 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
         <Text style={{ color: '#b9c0cc', fontSize: 13, marginBottom: 16 }}>
           Uploadez le fichier Excel corrige. Les programmes seront mis a jour avec les nouvelles valeurs. Ce fichier devient la source de verite.
         </Text>
-
-        <TextInput
-          style={{
-            backgroundColor: '#07090e', color: '#f4f1ea', borderRadius: 8,
-            paddingHorizontal: 16, paddingVertical: 12, marginBottom: 12,
-            borderWidth: 1, borderColor: '#303744', fontSize: 14,
-          }}
-          placeholder="Mot de passe admin"
-          placeholderTextColor="#8a93a1"
-          secureTextEntry
-          value={adminPassword}
-          onChangeText={setAdminPassword}
-        />
 
         {Platform.OS === 'web' && (
           <input
@@ -273,16 +252,16 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
             style={{ display: 'none' }}
             onChange={async (event: any) => {
               const file = event?.target?.files?.[0];
-              if (!file || !adminPassword) return;
+              if (!file) return;
               setImporting(true);
               setResult(null);
               setSciComparison(null);
               try {
                 const formData = new FormData();
                 formData.append('file', file);
-                formData.append('password', adminPassword);
+                const token = await getToken();
                 const response = await axios.post(`${API_URL}/api/sci/import-excel`, formData, {
-                  headers: { 'Content-Type': 'multipart/form-data' },
+                  headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
                 });
                 setResult(`SCI: ${response.data.message}`);
                 setResultType('success');
@@ -306,7 +285,6 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
             paddingVertical: 14, alignItems: 'center', opacity: importing ? 0.7 : 1,
           }}
           onPress={() => {
-            if (!adminPassword) { setResult('Entrez le mot de passe admin'); setResultType('error'); return; }
             if (Platform.OS === 'web' && (window as any).__sciFileRef) (window as any).__sciFileRef.click();
           }}
           disabled={importing}
@@ -348,11 +326,9 @@ interface CorrectionItem {
 }
 
 function CorrectionsManager({ getToken }: { getToken: () => Promise<string> }) {
-  const { isDemoUser } = useAuth();
   const [corrections, setCorrections] = useState<CorrectionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [adminPassword, setAdminPassword] = useState(isDemoUser ? 'Liana2018' : '');
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
   const fetchCorrections = useCallback(async () => {
@@ -412,9 +388,10 @@ function CorrectionsManager({ getToken }: { getToken: () => Promise<string> }) {
     if (!confirmed) return;
     setDeleting(key);
     try {
+      const token = await getToken();
       await axios.delete(
         `${API_URL}/api/corrections/${encodeURIComponent(c.brand)}/${encodeURIComponent(c.model)}/${c.year}`,
-        { params: { password: adminPassword } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setCorrections(prev => prev.filter(x => !(x.brand === c.brand && x.model === c.model && x.year === c.year)));
     } catch (e: any) {
@@ -426,10 +403,6 @@ function CorrectionsManager({ getToken }: { getToken: () => Promise<string> }) {
   };
 
   const handleDeleteAll = async () => {
-    if (!adminPassword) {
-      Platform.OS === 'web' ? alert('Entrez le mot de passe admin') : Alert.alert('Erreur', 'Entrez le mot de passe admin');
-      return;
-    }
     const confirmed = Platform.OS === 'web'
       ? window.confirm(`Supprimer TOUTES les ${corrections.length} corrections ?`)
       : await new Promise<boolean>((resolve) =>
@@ -441,7 +414,8 @@ function CorrectionsManager({ getToken }: { getToken: () => Promise<string> }) {
     if (!confirmed) return;
     setDeleting('all');
     try {
-      await axios.delete(`${API_URL}/api/corrections/all`, { params: { password: adminPassword } });
+      const token = await getToken();
+      await axios.delete(`${API_URL}/api/corrections/all`, { headers: { Authorization: `Bearer ${token}` } });
       setCorrections([]);
     } catch (e: any) {
       const msg = e.response?.data?.detail || 'Erreur';
@@ -480,22 +454,8 @@ function CorrectionsManager({ getToken }: { getToken: () => Promise<string> }) {
           Ces corrections sont appliquees automatiquement a chaque import PDF. Elles memorisent les modifications faites via l'import Excel.
         </Text>
 
-        {/* Admin password + Delete All */}
         {corrections.length > 0 && (
           <View style={{ marginTop: 16 }}>
-            <TextInput
-              style={{
-                backgroundColor: '#07090e', color: '#f4f1ea', borderRadius: 8,
-                paddingHorizontal: 16, paddingVertical: 10, marginBottom: 10,
-                borderWidth: 1, borderColor: '#303744', fontSize: 14,
-              }}
-              placeholder="Mot de passe admin (pour suppression)"
-              placeholderTextColor="#8a93a1"
-              secureTextEntry
-              value={adminPassword}
-              onChangeText={setAdminPassword}
-              data-testid="corrections-password-input"
-            />
             <TouchableOpacity
               style={{
                 backgroundColor: deleting === 'all' ? '#5a6372' : '#FF6B6B', borderRadius: 8,
@@ -655,7 +615,6 @@ function CorrectionsManager({ getToken }: { getToken: () => Promise<string> }) {
 
 // ============ Vehicle Order Manager Component ============
 function VehicleOrderManager({ getToken }: { getToken: () => Promise<string> }) {
-  const { isDemoUser } = useAuth();
   const [programs, setPrograms] = useState<ProgramItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -663,8 +622,6 @@ function VehicleOrderManager({ getToken }: { getToken: () => Promise<string> }) 
   const [selectedBrand, setSelectedBrand] = useState('Tous');
   const [hasChanges, setHasChanges] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [adminPassword, setAdminPassword] = useState(isDemoUser ? 'Liana2018' : '');
-  const [showPasswordInput, setShowPasswordInput] = useState(false);
   const dragOverIndex = useRef<number | null>(null);
 
   const brands = ['Tous', 'Chrysler', 'Jeep', 'Dodge', 'Ram', 'Fiat'];
@@ -709,10 +666,6 @@ function VehicleOrderManager({ getToken }: { getToken: () => Promise<string> }) 
   };
 
   const handleSave = async () => {
-    if (!adminPassword) {
-      setShowPasswordInput(true);
-      return;
-    }
     setSaving(true);
     try {
       const ordersToSave = filtered.map((p, idx) => ({
@@ -722,14 +675,12 @@ function VehicleOrderManager({ getToken }: { getToken: () => Promise<string> }) 
 
       const token = await getToken();
       await axios.put(`${API_URL}/api/programs/reorder`, {
-        password: adminPassword,
         orders: ordersToSave,
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       setHasChanges(false);
-      setShowPasswordInput(false);
       if (Platform.OS === 'web') {
         alert('Ordre sauvegardé avec succès !');
       } else {
@@ -811,27 +762,15 @@ function VehicleOrderManager({ getToken }: { getToken: () => Promise<string> }) 
 
       <Text style={os.countLabel}>{filtered.length} programmes - Glissez pour réordonner</Text>
 
-      {/* Save Button + Password */}
       {hasChanges && (
         <View style={os.saveSection}>
-          {showPasswordInput && (
-            <TextInput
-              style={os.passwordInput}
-              placeholder="Mot de passe admin"
-              placeholderTextColor="#8a93a1"
-              secureTextEntry
-              value={adminPassword}
-              onChangeText={setAdminPassword}
-              onSubmitEditing={handleSave}
-            />
-          )}
           <TouchableOpacity style={os.saveBtn} onPress={handleSave} disabled={saving}>
             {saving ? (
               <ActivityIndicator size="small" color="#f4f1ea" />
             ) : (
               <>
                 <Ionicons name="save" size={18} color="#f4f1ea" />
-                <Text style={os.saveBtnText}>{showPasswordInput ? 'Confirmer' : 'Sauvegarder l\'ordre'}</Text>
+                <Text style={os.saveBtnText}>Sauvegarder l'ordre</Text>
               </>
             )}
           </TouchableOpacity>

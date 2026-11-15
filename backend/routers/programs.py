@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Header
 from fastapi.responses import StreamingResponse
 from typing import List, Optional, Dict, Any
 from datetime import datetime
@@ -10,7 +10,7 @@ from models import (
     CalculationRequest, PaymentComparison, CalculationResponse,
     ProgramPeriod, ImportRequest, FinancingRates
 )
-from dependencies import calculate_monthly_payment, get_rate_for_term
+from dependencies import calculate_monthly_payment, get_rate_for_term, require_admin_or_password
 import pypdf
 import io
 
@@ -318,14 +318,14 @@ async def export_programs_excel(month: Optional[int] = None, year: Optional[int]
 
 
 @router.post("/programs/import-excel")
-async def import_programs_excel(file: UploadFile = File(...), password: str = Form("")):
+async def import_programs_excel(file: UploadFile = File(...), password: str = Form(""),
+                                authorization: Optional[str] = Header(None)):
     """Importe un Excel corrige avec systeme de comparaison avant/apres.
     Utilise cle composite (brand+model+trim+year) pour le matching."""
     if not EXCEL_AVAILABLE:
         raise HTTPException(status_code=500, detail="openpyxl non disponible")
 
-    if password != ADMIN_PASSWORD:
-        raise HTTPException(status_code=401, detail="Mot de passe admin incorrect")
+    await require_admin_or_password(authorization, password)
 
     # 1. SNAPSHOT AVANT: capturer l'etat actuel de tous les programmes
     all_before = {}
@@ -597,11 +597,9 @@ async def get_comparison_detail(comparison_id: str):
 
 # Programs CRUD
 @router.put("/programs/reorder")
-async def reorder_programs(data: Dict[str, Any]):
-    """Réordonne les programmes - data = {password, orders: [{id, sort_order}]}"""
-    password = data.get("password", "")
-    if password != ADMIN_PASSWORD:
-        raise HTTPException(status_code=401, detail="Mot de passe incorrect")
+async def reorder_programs(data: Dict[str, Any], authorization: Optional[str] = Header(None)):
+    """Réordonne les programmes - data = {orders: [{id, sort_order}]}"""
+    await require_admin_or_password(authorization, data.get("password", ""))
 
     orders = data.get("orders", [])
     updated = 0

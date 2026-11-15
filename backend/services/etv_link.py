@@ -149,3 +149,10 @@ def contact_from_dossier(dossier: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         },
         "desired": desired[:5],
     }
+
+
+def admin_password_matches(password, expected) -> bool:
+    """Ancien mot de passe des outils Admin : jamais accepte s'il est vide."""
+    if not password or not expected:
+        return False
+    return hmac.compare_digest(str(password).encode(), str(expected).encode())

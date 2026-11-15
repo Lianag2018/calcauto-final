@@ -1239,3 +1239,20 @@ class TestEtvLink:
         assert contact["desired"] == [{"stock": "A1", "label": "Ram 1500", "price": 60000}]
         assert contact_from_dossier({"id": "e2", "client": {"name": ""}}) is None
         assert contact_from_dossier("texte") is None
+
+
+class TestAdminToolsAccess:
+    """Outils de l'onglet Admin : l'ancien mot de passe ne passe jamais a vide."""
+
+    def test_empty_password_never_matches(self):
+        from services.etv_link import admin_password_matches
+        assert admin_password_matches("", "valeur-inventee") is False
+        assert admin_password_matches("", "") is False
+        assert admin_password_matches("quelque-chose", "") is False
+        assert admin_password_matches(None, None) is False
+
+    def test_only_exact_password_matches(self):
+        from services.etv_link import admin_password_matches
+        assert admin_password_matches("valeur-inventee", "valeur-inventee") is True
+        assert admin_password_matches("valeur-inventef", "valeur-inventee") is False
+        assert admin_password_matches("Valeur-Inventee", "valeur-inventee") is False
