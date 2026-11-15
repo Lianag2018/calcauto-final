@@ -11,6 +11,7 @@ import json
 import os
 import re
 import time
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 STAFF_ROLES = ("admin", "directeur", "conseiller")
@@ -198,3 +199,100 @@ def link_refusal(target, link_key) -> str:
     if existing and existing != link_key:
         return "Ce compte est déjà relié à un autre utilisateur d'eTradeValue."
     return ""
+
+
+# --- Relances après une évaluation : 2, 7 et 15 jours -------------------------------
+
+FOLLOWUP_DAYS = (2, 7, 15)
+
+
+def parse_instant(value) -> Optional[datetime]:
+    """Date ISO d'eTradeValue -> datetime UTC sans fuseau ; None si illisible."""
+    if isinstance(value, datetime):
+        return value.astimezone(timezone.utc).replace(tzinfo=None) if value.tzinfo else value
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed.astimezone(timezone.utc).replace(tzinfo=None) if parsed.tzinfo else parsed
+
+
+def followup_plan(created_at, now: datetime) -> List[Dict[str, Any]]:
+    """Relances a venir pour une evaluation. Celles deja depassees ne sont pas creees :
+    une vieille evaluation importee ne noie pas le conseiller de rappels en retard."""
+    start = parse_instant(created_at)
+    if not start:
+        return []
+    plan = []
+    for day in FOLLOWUP_DAYS:
+        due = start + timedelta(days=day)
+        if due > now:
+            plan.append({"day": day, "due": due, "done": False})
+    return plan
+
+
+def owns_followups(user: Dict[str, Any], advisor: str) -> bool:
+    """Les relances vont au conseiller qui a fait l'evaluation, pas a tous ceux qui la voient."""
+    username = str((user or {}).get("etv_username") or "").strip().lower()
+    return bool(username) and username == str(advisor or "").strip().lower()
+
+
+def _ics_text(value) -> str:
+    return (str(value or "").replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,")
+            .replace("\r", "").replace("\n", "\\n"))
+
+
+def _ics_fold(line: str) -> str:
+    raw = line.encode("utf-8")
+    if len(raw) <= 75:
+        return line
+    parts, current = [], b""
+    for char in line:
+        encoded = char.encode("utf-8")
+        if len(current) + len(encoded) > (75 if not parts else 74):
+            parts.append(current.decode("utf-8"))
+            current = b""
+        current += encoded
+    parts.append(current.decode("utf-8"))
+    return "\r\n ".join(parts)
+
+
+def calendar_feed(items: List[Dict[str, Any]], web_url: str, now: datetime) -> str:
+    """Calendrier (format iCalendar) des relances a faire. Un evenement d'une journee
+    par relance, avec le lien qui ouvre le dossier dans le calculateur par eTradeValue."""
+    base = str(web_url or "").rstrip("/")
+    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//CalcAuto//Relances//FR", "CALSCALE:GREGORIAN",
+             "METHOD:PUBLISH", "X-WR-CALNAME:Relances CalcAuto", "REFRESH-INTERVAL;VALUE=DURATION:PT6H",
+             "X-PUBLISHED-TTL:PT6H"]
+    stamp = now.strftime("%Y%m%dT%H%M%SZ")
+    for item in items:
+        due = item.get("due")
+        eval_id = str(item.get("eval_id") or "")
+        if not isinstance(due, datetime) or not eval_id:
+            continue
+        link = f"{base}/?tab=calculateur&ouvrir=1&eval={eval_id}"
+        details = [part for part in (item.get("trade"), item.get("phone")) if part]
+        details.append(f"Ouvrir le dossier : {link}")
+        lines += [
+            "BEGIN:VEVENT",
+            f"UID:{re.sub(r'[^A-Za-z0-9-]', '', eval_id)}-j{int(item.get('day') or 0)}@calcauto",
+            f"DTSTAMP:{stamp}",
+            f"DTSTART;VALUE=DATE:{due.strftime('%Y%m%d')}",
+            f"DTEND;VALUE=DATE:{(due + timedelta(days=1)).strftime('%Y%m%d')}",
+            f"SUMMARY:{_ics_text('Relancer ' + str(item.get('name') or 'le client') + ' (jour ' + str(item.get('day')) + ')')}",
+            f"DESCRIPTION:{_ics_text(chr(10).join(details))}",
+            f"URL:{link}",
+            "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:Relance client", "TRIGGER:PT9H", "END:VALARM",
+            "END:VEVENT",
+        ]
+    lines.append("END:VCALENDAR")
+    return "\r\n".join(_ics_fold(line) for line in lines) + "\r\n"
+
+
+def trade_summary(trade) -> str:
+    trade = trade if isinstance(trade, dict) else {}
+    vehicle = " ".join(str(trade.get(key) or "").strip() for key in ("year", "make", "model")).strip()
+    return f"Reprise : {vehicle}" if vehicle else ""

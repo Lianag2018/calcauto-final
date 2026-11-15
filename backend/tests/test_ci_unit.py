@@ -1302,3 +1302,50 @@ class TestEtvAccountLink:
         assert link_refusal({"email": "luc@kia-essai.etradevalue"}, self.KEY)
         assert link_refusal(None, self.KEY)
         assert link_refusal({"email": "marie@example.com"}, "")
+
+
+class TestEvaluationFollowups:
+    """Relances à 2, 7 et 15 jours après une évaluation, et leur calendrier."""
+
+    def test_new_evaluation_gets_three_followups(self):
+        from datetime import datetime
+        from services.etv_link import followup_plan
+        plan = followup_plan("2026-11-10T15:00:00+00:00", datetime(2026, 11, 10, 16, 0))
+        assert [step["day"] for step in plan] == [2, 7, 15]
+        assert plan[0]["due"] == datetime(2026, 11, 12, 15, 0) and plan[2]["due"] == datetime(2026, 11, 25, 15, 0)
+        assert all(step["done"] is False for step in plan)
+
+    def test_old_evaluation_only_gets_future_followups(self):
+        from datetime import datetime
+        from services.etv_link import followup_plan
+        assert [s["day"] for s in followup_plan("2026-11-01T12:00:00Z", datetime(2026, 11, 10, 12, 0))] == [15]
+        assert followup_plan("2026-08-01T12:00:00Z", datetime(2026, 11, 10, 12, 0)) == []
+        assert followup_plan("pas une date", datetime(2026, 11, 10)) == []
+        assert followup_plan("", datetime(2026, 11, 10)) == []
+
+    def test_followups_go_to_the_advisor_of_the_file_only(self):
+        from services.etv_link import owns_followups
+        assert owns_followups({"etv_username": "Marie"}, "marie") is True
+        assert owns_followups({"etv_username": "directeur"}, "marie") is False
+        assert owns_followups({"etv_username": ""}, "") is False
+        assert owns_followups({}, "marie") is False
+
+    def test_calendar_has_one_event_per_followup_with_the_direct_link(self):
+        from datetime import datetime
+        from services.etv_link import calendar_feed
+        feed = calendar_feed([{"eval_id": "e1", "day": 2, "due": datetime(2026, 11, 12, 15, 0), "name": "Client; Inventé",
+                               "phone": "418-555-0100", "trade": "Reprise : 2019 Marque Modèle"}],
+                             "https://app.example/", datetime(2026, 11, 10, 16, 0))
+        assert feed.startswith("BEGIN:VCALENDAR\r\n") and feed.endswith("END:VCALENDAR\r\n")
+        assert feed.count("BEGIN:VEVENT") == 1
+        assert "DTSTART;VALUE=DATE:20261112" in feed and "DTEND;VALUE=DATE:20261113" in feed
+        assert "URL:https://app.example/?tab=calculateur&ouvrir=1&eval=e1" in feed
+        assert "Client\\; Inventé (jour 2)" in feed
+        assert all(len(line.encode("utf-8")) <= 75 for line in feed.split("\r\n"))
+
+    def test_calendar_skips_unusable_items(self):
+        from datetime import datetime
+        from services.etv_link import calendar_feed
+        feed = calendar_feed([{"eval_id": "", "day": 2, "due": datetime(2026, 11, 12)},
+                              {"eval_id": "e2", "day": 7, "due": "2026-11-12"}], "https://app.example", datetime(2026, 11, 10))
+        assert "BEGIN:VEVENT" not in feed
