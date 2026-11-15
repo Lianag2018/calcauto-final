@@ -60,6 +60,10 @@ const monthNames = {
   en: enTranslations.months,
 };
 
+// Prix de départ d'un véhicule neuf : le PDSF, jamais le prix du site déjà réduit.
+const newVehicleBasePrice = (vehicle: any): number =>
+  Number(vehicle?.calc_price ?? Math.max(Number(vehicle?.msrp) || 0, Number(vehicle?.asking_price) || 0)) || 0;
+
 export default function HomeScreen() {
   const router = useRouter();
   const { user, logout, getToken } = useAuth();
@@ -2470,7 +2474,8 @@ export default function HomeScreen() {
                         onPress={() => {
                           setSelectedInventory(vehicle);
                           setManualVin('');  // Clear manual VIN when selecting from inventory
-                          setVehiclePrice(String(vehicle.asking_price || vehicle.msrp || ''));
+                          // Un véhicule neuf part du PDSF : les rabais du programme s'appliquent ensuite.
+                          setVehiclePrice(String(newVehicleBasePrice(vehicle) || ''));
                         }}
                       >
                         <Text style={styles.inventoryStock}>#{vehicle.stock_no}</Text>
@@ -2484,7 +2489,12 @@ export default function HomeScreen() {
                           <Text style={styles.inventoryVin}>VIN: {vehicle.vin}</Text>
                         )}
                         <Text style={styles.inventoryPrice}>
-                          {formatCurrency(vehicle.asking_price || vehicle.msrp)}
+                          {formatCurrency(newVehicleBasePrice(vehicle))}
+                        </Text>
+                        <Text style={[styles.inventoryVin, vehicle.pdsf_confirmed === false && { color: '#FFB347' }]}>
+                          {vehicle.pdsf_confirmed === false
+                            ? (lang === 'fr' ? 'PDSF à vérifier' : 'Check MSRP')
+                            : (lang === 'fr' ? 'PDSF avant rabais' : 'MSRP before rebates')}
                         </Text>
                         {vehicle.net_cost > 0 && (
                           <Text style={styles.inventoryProfit}>

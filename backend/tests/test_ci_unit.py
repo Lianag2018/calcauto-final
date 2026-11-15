@@ -1116,3 +1116,35 @@ class TestStaleSharedInventory:
     def test_without_any_sync_date_nothing_is_dropped(self):
         from services.shared_inventory import drop_stale_shared
         assert len(drop_stale_shared(self._vehicles(), None)) == 5
+
+
+class TestCalcPriceFromPdsf:
+    """Le calculateur part du PDSF d'un véhicule neuf, jamais du prix déjà réduit."""
+
+    def _price(self, **vehicle):
+        from services.shared_inventory import calc_price
+        return calc_price(vehicle)
+
+    def test_new_shared_vehicle_uses_pdsf_not_site_price(self):
+        got = self._price(owner_id="SHARED_KENNEBEC", type="neuf", asking_price=50000, msrp=61000, pdsf=61000, rabais=11000)
+        assert got == {"calc_price": 61000, "pdsf_confirmed": True}
+
+    def test_new_shared_vehicle_without_pdsf_is_flagged(self):
+        got = self._price(owner_id="SHARED_KENNEBEC", type="neuf", asking_price=50000, msrp=50000, pdsf=0)
+        assert got == {"calc_price": 50000, "pdsf_confirmed": False}
+
+    def test_pdsf_below_site_price_is_not_trusted(self):
+        got = self._price(owner_id="SHARED_KENNEBEC", type="neuf", asking_price=50000, msrp=4500, pdsf=4500)
+        assert got == {"calc_price": 50000, "pdsf_confirmed": False}
+
+    def test_manual_vehicle_uses_entered_msrp(self):
+        got = self._price(owner_id="user-1", type="neuf", asking_price=58000, msrp=60000)
+        assert got == {"calc_price": 60000, "pdsf_confirmed": True}
+
+    def test_used_vehicle_keeps_asking_price(self):
+        got = self._price(owner_id="SHARED_KENNEBEC", type="occasion", asking_price=21000, msrp=21000, pdsf=0)
+        assert got == {"calc_price": 21000, "pdsf_confirmed": True}
+
+    def test_missing_or_bad_amounts_do_not_crash(self):
+        got = self._price(owner_id="SHARED_KENNEBEC", asking_price=None, msrp="abc")
+        assert got == {"calc_price": 0, "pdsf_confirmed": False}

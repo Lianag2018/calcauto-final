@@ -16,7 +16,7 @@ from services.program_matching import describe_vehicle, match_program, is_model_
 from services.model_code_suggest import (
     trim_from_title, suggest_codes, trims_of_program, known_trims, is_known_code)
 import httpx
-from services.shared_inventory import SHARED_OWNER, drop_stale_shared
+from services.shared_inventory import SHARED_OWNER, calc_price, drop_stale_shared
 
 router = APIRouter()
 
@@ -254,6 +254,7 @@ async def get_inventory(
         vehicle["shared"] = vehicle.get("owner_id") == SHARED_OWNER
         if not vehicle.get("trim"):
             vehicle["trim"] = _title_trim(vehicle)
+        vehicle.update(calc_price(vehicle))
 
     try:
         await _attach_program_matches(vehicles)
