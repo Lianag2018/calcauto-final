@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { View, Animated, Easing, AccessibilityInfo } from 'react-native';
+import { View, Text, Animated, Easing, AccessibilityInfo } from 'react-native';
 
 // Le cadran de CalcAuto : un compteur dont l'aiguille monte jusqu'au paiement.
 // Dessiné avec des vues simples (aucune dépendance graphique), sur une grille
@@ -24,6 +24,24 @@ type Props = {
   /** 'once' : l'aiguille monte une fois. 'loop' : elle recommence. 'none' : image fixe. */
   motion?: 'once' | 'loop' | 'none';
   duration?: number;
+};
+
+// ----- Compte-tours (grandes tailles) -----
+// Un vrai cadran de tableau de bord : chiffres de 0 à 7, zone rouge à partir
+// de 6, arc bleu qui suit l'aiguille et « RPM x1000 » au centre.
+const TACH_CX = 80;
+const TACH_CY = 82;
+const TACH_MAX = 7;
+const TACH_REDLINE = 6;
+const TACH_TARGET = 5.5; // où l'aiguille s'arrête : juste avant la zone rouge
+const TACH_DEG_PER_UNIT = TRACK_SWEEP / TACH_MAX;
+const TACH_MIN_SIZE = 60; // en dessous, on garde le petit cadran simple
+const BLUE = '#3d8bff';
+const RED = '#ff453a';
+
+const tachPoint = (value: number, radius: number) => {
+  const rad = ((START_DEG + value * TACH_DEG_PER_UNIT) * Math.PI) / 180;
+  return { x: TACH_CX + radius * Math.cos(rad), y: TACH_CY + radius * Math.sin(rad) };
 };
 
 const pointAt = (deg: number) => {
@@ -92,6 +110,128 @@ export const GaugeMark: React.FC<Props> = ({ size = 150, motion = 'once', durati
     inputRange: [0, 1],
     outputRange: ['-120deg', '30deg'],
   });
+
+  const tachArc = useMemo(() => {
+    const dots = [];
+    for (let v = 0; v <= TACH_TARGET + 0.001; v += 0.07) dots.push({ ...tachPoint(v, 66), at: v / TACH_TARGET });
+    return dots;
+  }, []);
+
+  const tachRedline = useMemo(() => {
+    const dots = [];
+    for (let v = TACH_REDLINE; v <= TACH_MAX + 0.001; v += 0.05) dots.push(tachPoint(v, 66));
+    return dots;
+  }, []);
+
+  if (size >= TACH_MIN_SIZE) {
+    const numbers = size >= 100;
+    const ring = (radius: number, opacity: number) => ({
+      position: 'absolute' as const,
+      left: (TACH_CX - radius) * unit,
+      top: (TACH_CY - radius) * unit,
+      width: radius * 2 * unit,
+      height: radius * 2 * unit,
+      borderRadius: radius * unit,
+      borderWidth: Math.max(1, 1.2 * unit),
+      borderColor: `rgba(244,241,234,${opacity})`,
+    });
+    const bead = (x: number, y: number, width: number, color: string) => ({
+      position: 'absolute' as const,
+      left: (x - width / 2) * unit,
+      top: (y - width / 2) * unit,
+      width: width * unit,
+      height: width * unit,
+      borderRadius: (width / 2) * unit,
+      backgroundColor: color,
+    });
+    const reach = 70 * unit; // l'aiguille va jusqu'à l'anneau extérieur
+    const tachRotation = progress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [`${START_DEG + 90 - 360}deg`, `${START_DEG + 90 - 360 + TACH_TARGET * TACH_DEG_PER_UNIT}deg`],
+    });
+    return (
+      <View style={{ width: size, height: size }} accessible={false} importantForAccessibility="no-hide-descendants">
+        <View style={ring(71, 0.55)} />
+        <View style={ring(61, 0.3)} />
+        {tachRedline.map((p, i) => (
+          <View key={`r${i}`} style={bead(p.x, p.y, 3, RED)} />
+        ))}
+        {tachArc.map((p, i) => (
+          <Animated.View
+            key={`b${i}`}
+            style={[
+              bead(p.x, p.y, 6, BLUE),
+              {
+                opacity: progress.interpolate({
+                  inputRange: [Math.max(0, p.at - 0.02), Math.max(0.001, p.at)],
+                  outputRange: [p.at === 0 ? 1 : 0, 1],
+                  extrapolate: 'clamp',
+                }),
+              },
+            ]}
+          />
+        ))}
+        {Array.from({ length: TACH_MAX + 1 }, (_, value) => {
+          const red = value >= TACH_REDLINE;
+          const tick = tachPoint(value, 55.5);
+          const label = tachPoint(value, 43);
+          return (
+            <React.Fragment key={`n${value}`}>
+              <View
+                style={{
+                  position: 'absolute',
+                  left: (tick.x - 1.8) * unit,
+                  top: (tick.y - 1.8) * unit,
+                  width: 3.6 * unit,
+                  height: 3.6 * unit,
+                  backgroundColor: red ? RED : CREAM,
+                }}
+              />
+              {numbers && (
+                <Text
+                  allowFontScaling={false}
+                  style={{
+                    position: 'absolute',
+                    left: (label.x - 12) * unit,
+                    top: (label.y - 9) * unit,
+                    width: 24 * unit,
+                    height: 18 * unit,
+                    lineHeight: 18 * unit,
+                    textAlign: 'center',
+                    fontSize: 14 * unit,
+                    fontWeight: '700',
+                    color: red ? RED : CREAM,
+                  }}
+                >
+                  {value}
+                </Text>
+              )}
+            </React.Fragment>
+          );
+        })}
+        {numbers && (
+          <View style={{ position: 'absolute', left: 0, right: 0, top: (TACH_CY + 12) * unit, alignItems: 'center' }}>
+            <Text allowFontScaling={false} style={{ color: CREAM, fontWeight: '800', fontSize: 12 * unit, lineHeight: 14 * unit }}>RPM</Text>
+            <Text allowFontScaling={false} style={{ color: CREAM, fontSize: 6.5 * unit, lineHeight: 8 * unit }}>x1000</Text>
+          </View>
+        )}
+        {/* L'aiguille : un trait fin qui part de l'anneau, comme sur un tableau de bord */}
+        <Animated.View
+          style={{
+            position: 'absolute',
+            left: TACH_CX * unit - reach,
+            top: TACH_CY * unit - reach,
+            width: reach * 2,
+            height: reach * 2,
+            alignItems: 'center',
+            transform: [{ rotate: tachRotation }],
+          }}
+        >
+          <View style={{ width: Math.max(2, 2.6 * unit), height: 30 * unit, borderRadius: 1.3 * unit, backgroundColor: '#ffffff' }} />
+        </Animated.View>
+      </View>
+    );
+  }
 
   const dot = (x: number, y: number, color: string) => ({
     position: 'absolute' as const,

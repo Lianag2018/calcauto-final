@@ -90,7 +90,7 @@ export default function LoginScreen() {
         >
           <View style={styles.header}>
             <View style={styles.logoContainer}>
-              <GaugeMark size={104} motion="once" />
+              <GaugeMark size={150} motion="once" />
             </View>
             <Text style={styles.logoText}>
               Calc<Text style={styles.logoTextGold}>Auto</Text>
@@ -218,15 +218,9 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logoContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 27,
-    backgroundColor: '#0d1118',
-    borderWidth: 1,
-    borderColor: '#303744',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   logoText: {
     fontSize: 28,

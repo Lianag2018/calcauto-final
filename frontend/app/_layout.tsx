@@ -25,7 +25,7 @@ function RootLayoutNav() {
   if (!isClient || isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <GaugeMark size={120} motion="loop" />
+        <GaugeMark size={180} motion="loop" />
         {slowStart && (
           <Text style={styles.loadingText}>
             Le serveur se réveille…{'\n'}Ça peut prendre jusqu'à une minute. Ne fermez pas la page.
