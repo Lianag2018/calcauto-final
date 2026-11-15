@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import LoginScreen from './login';
 
@@ -10,8 +10,14 @@ function RootLayoutNav() {
   const { isAuthenticated, isLoading } = useAuth();
   const [isClient, setIsClient] = useState(false);
 
+  // Le serveur dort après une période sans visite : son réveil peut prendre
+  // jusqu'à une minute. On l'explique au lieu de laisser une roue muette.
+  const [slowStart, setSlowStart] = useState(false);
+
   useEffect(() => {
     setIsClient(true);
+    const timer = setTimeout(() => setSlowStart(true), 4000);
+    return () => clearTimeout(timer);
   }, []);
 
   // Wait for client-side hydration
@@ -19,6 +25,11 @@ function RootLayoutNav() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#4ECDC4" />
+        {slowStart && (
+          <Text style={styles.loadingText}>
+            Le serveur se réveille…{'\n'}Ça peut prendre jusqu'à une minute. Ne fermez pas la page.
+          </Text>
+        )}
       </View>
     );
   }
@@ -54,6 +65,14 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
+  loadingText: {
+    color: '#9ca3af',
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+    marginTop: 18,
+    paddingHorizontal: 32,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
