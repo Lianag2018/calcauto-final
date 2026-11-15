@@ -17,6 +17,7 @@ from services.model_code_suggest import (
     trim_from_title, suggest_codes, trims_of_program, known_trims, is_known_code)
 import httpx
 from services.shared_inventory import SHARED_OWNER, calc_price, drop_stale_shared
+from services.etv_link import inventory_owners, sees_shared_inventory
 
 router = APIRouter()
 
@@ -25,8 +26,9 @@ router = APIRouter()
 
 
 def _owners(user: Dict[str, Any]) -> Dict[str, Any]:
-    """Véhicules de l'utilisateur + inventaire Kennebec partagé."""
-    return {"$in": [user["id"], SHARED_OWNER]}
+    """Véhicules de l'utilisateur + inventaire Kennebec partagé, sauf pour un
+    compte d'une autre concession, qui ne voit que les siens."""
+    return {"$in": inventory_owners(user, SHARED_OWNER)}
 
 
 # Champs descriptifs qu'on peut corriger sur une fiche partagée. Kenbot réécrit
@@ -439,7 +441,8 @@ async def update_inventory_vehicle(stock_no: str, update: InventoryUpdate, autho
     if result.matched_count == 0:
         # Fiche de l'inventaire Kennebec partagé : seuls le code de modèle, la
         # version, la carrosserie et la couleur se corrigent, pour tout le monde.
-        shared = await db.inventory.find_one({"stock_no": stock_no, "owner_id": SHARED_OWNER})
+        shared = (await db.inventory.find_one({"stock_no": stock_no, "owner_id": SHARED_OWNER})
+                  if sees_shared_inventory(user) else None)
         if not shared:
             raise HTTPException(status_code=404, detail="Véhicule non trouvé")
         fields = {k: v for k, v in update_data.items() if k in SHARED_EDITABLE and v}

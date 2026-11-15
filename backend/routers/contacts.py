@@ -21,7 +21,13 @@ async def get_contacts(authorization: Optional[str] = Header(None)):
         "phone": c.get("phone", ""),
         "email": c.get("email", ""),
         "created_at": c.get("created_at"),
-        "source": c.get("source", "import")
+        "source": c.get("source", "import"),
+        # Dossier venu d'une évaluation eTradeValue (absent pour les autres contacts)
+        "etv_eval_id": c.get("etv_eval_id"),
+        "etv_created_at": c.get("etv_created_at"),
+        "etv_advisor": c.get("etv_advisor"),
+        "trade": c.get("trade"),
+        "desired": c.get("desired"),
     } for c in contacts]
 
 @router.post("/contacts")

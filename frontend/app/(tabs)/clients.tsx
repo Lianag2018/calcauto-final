@@ -24,6 +24,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Language, saveLanguage, loadLanguage } from '../../utils/i18n';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { useAuth } from '../../contexts/AuthContext';
+import { Dossier, dossierFromContact, tradeLabel, desiredLabel, queueDossier, syncDossiers } from '../../utils/etvDossier';
 
 import { API_URL } from '../../utils/api';
 
@@ -60,6 +61,7 @@ interface Client {
   last_submission_date: string;
   next_reminder: string | null;
   has_pending_reminder: boolean;
+  dossier?: Dossier | null;
 }
 
 interface ImportedContact {
@@ -67,6 +69,9 @@ interface ImportedContact {
   name: string;
   phone: string;
   email: string;
+  etv_eval_id?: string | null;
+  trade?: any;
+  desired?: any;
 }
 
 interface PaymentByTerm {
@@ -252,7 +257,7 @@ type TabType = 'clients' | 'reminders' | 'offers' | 'history';
 
 export default function ClientsScreen() {
   const router = useRouter();
-  const { getToken } = useAuth();
+  const { getToken, user } = useAuth();
   const [lang, setLang] = useState<Language>('fr');
   const crm = crmTranslations[lang];
   
@@ -347,6 +352,9 @@ export default function ClientsScreen() {
         console.log('Could not load better offers:', err);
       }
       
+      // Compte relié à eTradeValue : on recopie d'abord ses évaluations en contacts
+      if (user?.etv_username) await syncDossiers(headers as Record<string, string>);
+
       // Load saved contacts from database
       let savedContacts: ImportedContact[] = [];
       try {
@@ -390,6 +398,12 @@ export default function ClientsScreen() {
       const existingKeys = new Set(clientsArray.map(c => (c.phone || c.email || c.name).toLowerCase()));
       for (const contact of savedContacts) {
         const key = (contact.phone || contact.email || contact.name).toLowerCase();
+        const dossier = dossierFromContact(contact);
+        if (dossier && existingKeys.has(key)) {
+          // Client déjà connu par ses soumissions : on lui rattache son dossier d'évaluation
+          const known = clientsArray.find(c => (c.phone || c.email || c.name).toLowerCase() === key);
+          if (known && !known.dossier) known.dossier = dossier;
+        }
         if (!existingKeys.has(key)) {
           clientsArray.push({
             name: contact.name,
@@ -398,7 +412,8 @@ export default function ClientsScreen() {
             submissions: [],
             last_submission_date: contact.created_at || new Date().toISOString(),
             next_reminder: null,
-            has_pending_reminder: false
+            has_pending_reminder: false,
+            dossier,
           });
           existingKeys.add(key);
         }
@@ -993,6 +1008,31 @@ export default function ClientsScreen() {
                 </TouchableOpacity>
               </View>
             </View>
+            {client.dossier && (
+              <View style={styles.dossierBox} data-testid="client-dossier">
+                <View>
+                  <Text style={styles.dossierTag}>{lang === 'fr' ? 'Évaluation eTradeValue' : 'eTradeValue appraisal'}</Text>
+                  {!!tradeLabel(client.dossier) && (
+                    <Text style={styles.dossierLine}>
+                      {lang === 'fr' ? 'Reprise : ' : 'Trade-in: '}{tradeLabel(client.dossier)}
+                    </Text>
+                  )}
+                  {!!desiredLabel(client.dossier) && (
+                    <Text style={styles.dossierLine}>
+                      {lang === 'fr' ? 'Convoité : ' : 'Wants: '}{desiredLabel(client.dossier)}
+                    </Text>
+                  )}
+                </View>
+                <TouchableOpacity
+                  style={styles.dossierBtn}
+                  onPress={async (e) => { e.stopPropagation(); await queueDossier(client.dossier!); router.push('/(tabs)'); }}
+                  data-testid="client-dossier-open"
+                >
+                  <Ionicons name="calculator" size={16} color="#11130f" />
+                  <Text style={styles.dossierBtnText}>{lang === 'fr' ? 'Calculer' : 'Calculate'}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
             {client.has_pending_reminder && (
               <View style={styles.clientReminderBadge}>
                 <Ionicons name="notifications" size={12} color="#f0d879" />
@@ -2173,6 +2213,17 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   historyReminderText: { color: '#f0d879', fontSize: 11 },
+  dossierBox: {
+    gap: 8, marginTop: 10, padding: 10,
+    borderRadius: 10, borderWidth: 1, borderColor: '#303744', backgroundColor: '#0d1118',
+  },
+  dossierTag: { color: '#e6c65a', fontSize: 11, fontWeight: '700', marginBottom: 2 },
+  dossierLine: { color: '#b9c0cc', fontSize: 13, lineHeight: 18 },
+  dossierBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#e6c65a',
+    paddingVertical: 10, paddingHorizontal: 12, borderRadius: 9,
+  },
+  dossierBtnText: { color: '#11130f', fontSize: 13, fontWeight: '700' },
   openCalcBtn: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1148,3 +1148,94 @@ class TestCalcPriceFromPdsf:
     def test_missing_or_bad_amounts_do_not_crash(self):
         got = self._price(owner_id="SHARED_KENNEBEC", asking_price=None, msrp="abc")
         assert got == {"calc_price": 0, "pdsf_confirmed": False}
+
+
+class TestEtvLink:
+    """Lien eTradeValue → CalcAuto : billet d'entrée, isolation par concession, dossiers."""
+
+    SECRET = "cle-inventee-pour-les-tests-0123456789abcdef"
+
+    def _ticket(self, monkeypatch, secret=None, **overrides):
+        import base64, json
+        from services import etv_link
+        monkeypatch.setenv("CALCAUTO_LINK_SECRET", self.SECRET)
+        payload = {"v": 1, "sub": "marie", "name": "Marie Essai", "role": "conseiller", "dealer": "kennebec",
+                   "exp": 1120, "nonce": "numero-unique-123456", **overrides}
+        body = base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
+        return f"{body}.{etv_link.sign((secret or self.SECRET).encode(), 'ticket:' + body)}"
+
+    def test_valid_ticket_gives_identity(self, monkeypatch):
+        from services.etv_link import verify_ticket
+        identity = verify_ticket(self._ticket(monkeypatch), now=1000)
+        assert (identity["username"], identity["dealer_slug"], identity["role"], identity["name"]) == (
+            "marie", "kennebec", "conseiller", "Marie Essai")
+
+    def test_ticket_refused_when_forged_expired_or_malformed(self, monkeypatch):
+        from services.etv_link import LinkError, verify_ticket
+        good = self._ticket(monkeypatch)
+        bad = [self._ticket(monkeypatch, secret="une-autre-cle-inventee-0123456789abcdef"),
+               good[:-2] + "xx", good.split(".")[0], "", "n'importe.quoi",
+               self._ticket(monkeypatch, role="grossiste"), self._ticket(monkeypatch, dealer=""),
+               self._ticket(monkeypatch, dealer="Kia Thetford"), self._ticket(monkeypatch, sub=""),
+               self._ticket(monkeypatch, nonce="court"), self._ticket(monkeypatch, v=2),
+               self._ticket(monkeypatch, exp=99999)]
+        for ticket in bad:
+            with pytest.raises(LinkError) as err:
+                verify_ticket(ticket, now=1000)
+            assert err.value.status == 401
+        with pytest.raises(LinkError):
+            verify_ticket(good, now=1121)  # expiré
+
+    def test_everything_is_off_without_the_secret(self, monkeypatch):
+        from services.etv_link import LinkError, dossiers_request, verify_ticket
+        ticket = self._ticket(monkeypatch)
+        monkeypatch.delenv("CALCAUTO_LINK_SECRET")
+        for call in (lambda: verify_ticket(ticket, now=1000),
+                     lambda: dossiers_request({"dealer_slug": "kennebec", "etv_username": "marie", "etv_role": "conseiller"})):
+            with pytest.raises(LinkError) as err:
+                call()
+            assert err.value.status == 503
+
+    def test_accounts_are_separate_per_dealer(self):
+        from services.etv_link import account_email
+        assert account_email("Marie", "kennebec") != account_email("Marie", "kia-essai")
+        assert account_email("Marie", "kennebec") == "marie@kennebec.etradevalue"
+
+    def test_admin_tab_only_for_admins_of_allowed_dealers(self, monkeypatch):
+        from services.etv_link import is_calcauto_admin
+        monkeypatch.delenv("CALCAUTO_ADMIN_DEALERS", raising=False)
+        assert is_calcauto_admin("admin", "kennebec") is True
+        assert is_calcauto_admin("directeur", "kennebec") is False
+        assert is_calcauto_admin("admin", "kia-essai") is False
+
+    def test_other_dealer_never_sees_shared_kennebec_inventory(self):
+        from services.etv_link import inventory_owners, sees_shared_inventory
+        from services.shared_inventory import SHARED_OWNER
+        assert sees_shared_inventory({"id": "u1"}) and sees_shared_inventory({"id": "u1", "dealer_slug": "kennebec"})
+        assert inventory_owners({"id": "u2", "dealer_slug": "kia-essai"}, SHARED_OWNER) == ["u2"]
+        assert inventory_owners({"id": "u1", "dealer_slug": "kennebec"}, SHARED_OWNER) == ["u1", SHARED_OWNER]
+        assert inventory_owners({"id": "demo"}, SHARED_OWNER) == ["demo", SHARED_OWNER]
+
+    def test_dossiers_request_is_signed_for_this_user_only(self, monkeypatch):
+        from services.etv_link import LinkError, dossiers_request, sign
+        monkeypatch.setenv("CALCAUTO_LINK_SECRET", self.SECRET)
+        req = dossiers_request({"dealer_slug": "kennebec", "etv_username": "marie", "etv_role": "conseiller"}, now=5000)
+        assert req["params"] == {"dealer": "kennebec", "username": "marie", "role": "conseiller"}
+        assert req["headers"]["X-CalcAuto-Signature"] == sign(self.SECRET.encode(), "dossiers:5000:kennebec:marie:conseiller")
+        with pytest.raises(LinkError) as err:
+            dossiers_request({"id": "demo"})  # compte Démo : pas relié à eTradeValue
+        assert err.value.status == 403
+
+    def test_contact_from_dossier_keeps_client_trade_and_desired_vehicle(self):
+        from services.etv_link import contact_from_dossier
+        contact = contact_from_dossier({
+            "id": "e1", "created_at": "2026-11-10T10:00:00+00:00", "status": "NOUVEAU", "advisor": "marie",
+            "client": {"name": " Client Essai ", "phone": "418-555-0100", "email": ""},
+            "trade": {"year": "2019", "make": "Ford", "model": "F-150", "trim": "XLT", "vin": "", "km": 98000,
+                      "value": 21500, "balance_owed": 4000},
+            "desired": [{"stock": "A1", "label": "Ram 1500", "price": 60000}, {"stock": ""}, "texte"]})
+        assert contact["name"] == "Client Essai" and contact["source"] == "etradevalue" and contact["etv_eval_id"] == "e1"
+        assert contact["trade"]["value"] == 21500 and contact["trade"]["balance_owed"] == 4000
+        assert contact["desired"] == [{"stock": "A1", "label": "Ram 1500", "price": 60000}]
+        assert contact_from_dossier({"id": "e2", "client": {"name": ""}}) is None
+        assert contact_from_dossier("texte") is None
