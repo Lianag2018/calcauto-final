@@ -282,6 +282,10 @@ async def compare_programs_with_submissions(authorization: Optional[str] = Heade
         all_terms = [36, 48, 60, 72, 84, 96]
         
         for sub in submissions:
+            # Un véhicule d'occasion n'a pas de programme du fabricant : rien à comparer.
+            state = sub.get("calculator_state")
+            if isinstance(state, dict) and state.get("vehicleMode") == "usage":
+                continue
             # Find NEW program (current month)
             new_program = await db.programs.find_one({
                 "brand": sub.get("vehicle_brand"),

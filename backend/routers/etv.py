@@ -14,8 +14,9 @@ from pydantic import BaseModel
 from database import db, ADMIN_EMAIL
 from dependencies import generate_token, get_current_user, hash_password
 from services.etv_link import (LinkError, account_email, browser_key_hash, calendar_feed, contact_from_dossier,
-                               dossiers_request, followup_plan, is_calcauto_admin, is_etv_only_account,
-                               link_refusal, owns_followups, same_browser, trade_summary, verify_ticket)
+                               dossiers_request, effective_desired, followup_plan, is_calcauto_admin,
+                               is_etv_only_account, link_refusal, listing_request, owns_followups, pairing,
+                               safe_listing_url, same_browser, trade_summary, verify_ticket)
 
 router = APIRouter()
 
@@ -28,6 +29,12 @@ class TicketLogin(BaseModel):
 class AccountLink(BaseModel):
     email: str
     password: str
+
+
+class DesiredPairing(BaseModel):
+    stock: str = ""
+    label: str = ""
+    price: Optional[float] = None
 
 
 def _etv_api_url() -> str:
@@ -181,6 +188,45 @@ async def link_account(body: AccountLink, authorization: Optional[str] = Header(
                      "is_admin": bool(target.get("is_admin")) or target["email"] == ADMIN_EMAIL, **etv_fields}}
 
 
+@router.put("/etv/dossiers/{eval_id}/desired")
+async def pair_desired_vehicle(eval_id: str, body: DesiredPairing, authorization: Optional[str] = Header(None)):
+    """Le conseiller jumelle un véhicule de l'inventaire à un contact d'évaluation.
+
+    Le choix est gardé à part : la synchronisation avec eTradeValue ne l'écrase
+    pas. Un numéro vide l'enlève et rend la place au véhicule de l'évaluation.
+    """
+    user = await get_current_user(authorization)
+    key = {"owner_id": user["id"], "etv_eval_id": eval_id}
+    if not await db.contacts.find_one(key):
+        raise HTTPException(status_code=404, detail="Dossier introuvable.")
+    chosen = pairing(body.stock, body.label, body.price)
+    if chosen:
+        await db.contacts.update_one(key, {"$set": {"desired_local": chosen}})
+    else:
+        await db.contacts.update_one(key, {"$unset": {"desired_local": ""}})
+    contact = await db.contacts.find_one(key)
+    return {"success": True, "desired": effective_desired(contact or {}), "desired_paired": bool(chosen)}
+
+
+@router.get("/etv/listing")
+async def vehicle_listing(stock: str = "", authorization: Optional[str] = Header(None)):
+    """Lien de la fiche du site pour ce véhicule (aperçu avec photo dans le texto).
+
+    Sans lien avec eTradeValue, ou si le véhicule n'est plus en vente, le lien
+    est vide : le texto part quand même, sans aperçu.
+    """
+    user = await get_current_user(authorization)
+    try:
+        request = listing_request(user, stock)
+        async with httpx.AsyncClient(timeout=20) as client:
+            response = await client.get(f"{_etv_api_url()}/api/calcauto/fiche",
+                                        params=request["params"], headers=request["headers"])
+        data = response.json() if response.status_code == 200 else {}
+    except (LinkError, httpx.HTTPError, ValueError):
+        data = {}
+    return {"url": safe_listing_url(data.get("url") if isinstance(data, dict) else "")}
+
+
 def _etv_web_url() -> str:
     return (os.environ.get("ETV_WEB_URL") or "https://app.etradevalue.ca").rstrip("/")
 
@@ -195,7 +241,7 @@ async def _pending_followups(owner_id: str) -> list:
                 continue
             items.append({"eval_id": contact.get("etv_eval_id"), "day": step.get("day"), "due": step["due"],
                           "name": contact.get("name"), "phone": contact.get("phone"), "email": contact.get("email"),
-                          "trade": contact.get("trade"), "desired": contact.get("desired") or [],
+                          "trade": contact.get("trade"), "desired": effective_desired(contact),
                           "advisor": contact.get("etv_advisor")})
     return sorted(items, key=lambda item: item["due"])
 

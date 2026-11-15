@@ -1349,3 +1349,42 @@ class TestEvaluationFollowups:
         feed = calendar_feed([{"eval_id": "", "day": 2, "due": datetime(2026, 11, 12)},
                               {"eval_id": "e2", "day": 7, "due": "2026-11-12"}], "https://app.example", datetime(2026, 11, 10))
         assert "BEGIN:VEVENT" not in feed
+
+
+class TestDesiredPairingAndListing:
+    """Véhicule jumelé par le conseiller et lien de fiche mis dans le texto."""
+
+    def test_paired_vehicle_wins_over_the_evaluation_and_can_be_removed(self):
+        from services.etv_link import effective_desired, pairing
+        contact = {"desired": [{"stock": "A1", "label": "Ram 1500", "price": 60000}]}
+        assert effective_desired(contact)[0]["stock"] == "A1"
+        contact["desired_local"] = pairing(" U7 ", "Jeep Compass 2021", "24995")
+        assert effective_desired(contact) == [{"stock": "U7", "label": "Jeep Compass 2021", "price": 24995.0}]
+        assert pairing("", "x") is None and pairing(None) is None
+        contact.pop("desired_local")
+        assert effective_desired(contact)[0]["stock"] == "A1"
+        assert effective_desired({}) == [] and effective_desired({"desired": "x"}) == []
+
+    def test_sync_fields_never_touch_the_paired_vehicle(self):
+        from services.etv_link import contact_from_dossier
+        fields = contact_from_dossier({"id": "e1", "client": {"name": "Client"}, "desired": [{"stock": "A1"}]})
+        assert "desired_local" not in fields
+
+    def test_listing_request_is_signed_for_the_advisor_and_needs_a_stock(self, monkeypatch):
+        from services.etv_link import LinkError, listing_request
+        monkeypatch.setenv("CALCAUTO_LINK_SECRET", "cle-inventee-pour-les-tests-0123456789abcdef")
+        user = {"dealer_slug": "kia-essai", "etv_username": "kim", "etv_role": "conseiller"}
+        request = listing_request(user, " U7 ", now=1000)
+        assert request["params"] == {"dealer": "kia-essai", "username": "kim", "role": "conseiller", "stock": "U7"}
+        assert request["headers"]["X-CalcAuto-Signature"]
+        with pytest.raises(LinkError):
+            listing_request(user, "  ")
+        with pytest.raises(LinkError):
+            listing_request({"email": "seul@exemple.test"}, "U7")
+
+    def test_only_a_plain_https_link_goes_into_a_text_message(self):
+        from services.etv_link import safe_listing_url
+        assert safe_listing_url("https://exemple.test/occasion/jeep-id12") == "https://exemple.test/occasion/jeep-id12"
+        for bad in ("http://exemple.test/x", "javascript:alert(1)", "https://exemple.test/a b", "https://", "", None,
+                    "https://localhost/x", "https://exemple.test/" + "a" * 600):
+            assert safe_listing_url(bad) == ""
