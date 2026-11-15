@@ -114,10 +114,32 @@ export default function InventoryScreen() {
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState('');
   const [productCodes, setProductCodes] = useState<any[]>([]);
+  // Version décodée, versions connues et codes possibles pour la fiche ouverte
+  const [editSuggest, setEditSuggest] = useState<any>(null);
+
+  const loadEditSuggest = async (stockNo: string, trim?: string) => {
+    try {
+      const token = await getToken();
+      const res = await axios.get(`${API_URL}/api/inventory/${encodeURIComponent(stockNo)}/code-suggestions`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: trim ? { trim } : {},
+      });
+      setEditSuggest(res.data);
+    } catch (e) {
+      console.log('Could not load code suggestions');
+    }
+  };
+
+  const pickTrim = (trim: string) => {
+    setEditForm(form => ({ ...form, trim }));
+    if (editVehicle) loadEditSuggest(editVehicle.stock_no, trim);
+  };
 
   const openEdit = async (vehicle: InventoryVehicle) => {
     setEditVehicle(vehicle);
     setEditError('');
+    setEditSuggest(null);
+    if (vehicle.type !== 'occasion') loadEditSuggest(vehicle.stock_no);
     setEditForm({
       model_code: vehicle.model_code || '', trim: vehicle.trim || '',
       body_style: vehicle.body_style || '', color: vehicle.color || '',
@@ -134,11 +156,13 @@ export default function InventoryScreen() {
 
   const codeSuggestions = editVehicle ? productCodes.filter((c: any) =>
     (c.brand || '').toLowerCase() === (editVehicle.brand || '').toLowerCase()
-    && (!c.year || String(c.year) === String(editVehicle.year))
     && (c.model || '').toLowerCase().replace(/\s+/g, '') === (editVehicle.model || '').toLowerCase().replace(/\s+/g, '')
-    && (!editForm.model_code || (c.code || '').toUpperCase().startsWith(editForm.model_code.toUpperCase())
-        || (c.full_description || '').toLowerCase().includes(editForm.model_code.toLowerCase()))
-  ).slice(0, 12) : [];
+    // Recherche au clavier dans tout le référentiel, dès deux caractères
+    && editForm.model_code.length >= 2
+    && !(editSuggest?.codes || []).some((x: any) => x.code === (c.code || '').toUpperCase())
+    && (c.code || '').toUpperCase().startsWith(editForm.model_code.toUpperCase())
+    && (c.code || '').toUpperCase() !== editForm.model_code.toUpperCase()
+  ).slice(0, 8) : [];
 
   const saveEdit = async () => {
     if (!editVehicle) return;
@@ -1077,7 +1101,58 @@ export default function InventoryScreen() {
                 {editVehicle?.year} {editVehicle?.brand} {editVehicle?.model}
                 {editVehicle?.shared ? "  ·  Inventaire Kennebec (la correction vaut pour tous)" : ''}
               </Text>
-              <Text style={styles.formLabel}>Code de modèle</Text>
+              <Text style={styles.formLabel}>Version</Text>
+              {editSuggest && (editSuggest.vin_trim || editSuggest.cab) ? (
+                <Text style={{ color: '#4ECDC4', fontSize: 12, marginBottom: 6 }} data-testid="edit-decoded">
+                  NIV décodé : {[editSuggest.vin_trim, editSuggest.cab, /4x4|4wd/i.test(editSuggest.drive || '') ? '4x4' : ''].filter(Boolean).join(' · ')}
+                </Text>
+              ) : null}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 6 }}>
+                {(editSuggest?.known_trims || []).map((trim: string) => {
+                  const active = trim.toLowerCase() === (editForm.trim || '').toLowerCase();
+                  return (
+                    <TouchableOpacity
+                      key={trim}
+                      onPress={() => pickTrim(trim)}
+                      style={{ backgroundColor: active ? '#4ECDC4' : '#2d2d44', borderRadius: 16, paddingVertical: 7, paddingHorizontal: 12, marginRight: 6, marginBottom: 6 }}
+                      data-testid={`edit-trim-${trim}`}
+                    >
+                      <Text style={{ color: active ? '#1a1a2e' : '#fff', fontWeight: active ? '700' : '400' }}>{trim}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <TextInput style={styles.formInput} value={editForm.trim}
+                onChangeText={(v) => setEditForm({ ...editForm, trim: v })}
+                onBlur={() => { if (editVehicle && editForm.trim.trim()) loadEditSuggest(editVehicle.stock_no, editForm.trim.trim()); }}
+                placeholder="Ex : Big Horn" placeholderTextColor="#666" />
+
+              <Text style={[styles.formLabel, { marginTop: 14 }]}>Code de modèle</Text>
+              {editSuggest && (editSuggest.codes || []).length > 0 ? (
+                <View style={{ marginBottom: 6 }}>
+                  <Text style={{ color: '#aaa', fontSize: 12, marginBottom: 6 }}>Codes possibles pour cette version :</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                    {editSuggest.codes.map((c: any) => {
+                      const active = c.code === editForm.model_code;
+                      return (
+                        <TouchableOpacity
+                          key={c.code}
+                          onPress={() => setEditForm({ ...editForm, model_code: c.code })}
+                          style={{ backgroundColor: active ? '#FFB347' : '#2d2d44', borderColor: '#FFB347', borderWidth: 1, borderRadius: 10, paddingVertical: 7, paddingHorizontal: 11, marginRight: 6, marginBottom: 6 }}
+                          data-testid={`edit-code-${c.code}`}
+                        >
+                          <Text style={{ color: active ? '#1a1a2e' : '#FFB347', fontWeight: '700' }}>{c.code}</Text>
+                          <Text style={{ color: active ? '#1a1a2e' : '#ccc', fontSize: 11 }}>{c.description}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              ) : editSuggest && editSuggest.needs_code && !editVehicle?.model_code ? (
+                <Text style={{ color: '#FFB347', fontSize: 12, marginBottom: 6 }} data-testid="edit-needs-code">
+                  Aucun code connu pour cette version. Entre-le une fois : il sera retenu pour les prochains véhicules de cette version.
+                </Text>
+              ) : null}
               <TextInput
                 style={styles.formInput}
                 value={editForm.model_code}
@@ -1098,9 +1173,6 @@ export default function InventoryScreen() {
                   </Text>
                 </TouchableOpacity>
               ))}
-              <Text style={[styles.formLabel, { marginTop: 14 }]}>Version</Text>
-              <TextInput style={styles.formInput} value={editForm.trim}
-                onChangeText={(v) => setEditForm({ ...editForm, trim: v })} placeholder="Ex : Big Horn" placeholderTextColor="#666" />
               <Text style={[styles.formLabel, { marginTop: 14 }]}>Carrosserie</Text>
               <TextInput style={styles.formInput} value={editForm.body_style}
                 onChangeText={(v) => setEditForm({ ...editForm, body_style: v })} placeholder="Ex : Crew Cab 4x4" placeholderTextColor="#666" />

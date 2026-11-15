@@ -566,18 +566,51 @@ export default function HomeScreen() {
       try {
         const token = await getToken();
         if (!token) return;
-        await axios.put(`${API_URL}/api/inventory/${encodeURIComponent(vehicle.stock_no)}`,
+        const saved = await axios.put(`${API_URL}/api/inventory/${encodeURIComponent(vehicle.stock_no)}`,
           { model_code: pickedCode }, { headers: { Authorization: `Bearer ${token}` } });
         if (cancelled) return;
-        setInventoryList(list => list.map((v: any) => v.stock_no === vehicle.stock_no ? { ...v, model_code: pickedCode } : v));
-        setSelectedInventory((v: any) => v && v.stock_no === vehicle.stock_no ? { ...v, model_code: pickedCode } : v);
-        setCodeSavedFor(`${vehicle.stock_no} · ${pickedCode}`);
+        const match = saved.data?.program_match;
+        const patch = (v: any) => ({ ...v, model_code: pickedCode, ...(match ? { program_match: match } : {}) });
+        setInventoryList(list => list.map((v: any) => v.stock_no === vehicle.stock_no ? patch(v) : v));
+        setSelectedInventory((v: any) => v && v.stock_no === vehicle.stock_no ? patch(v) : v);
+        // Le code détermine la ligne de programme : on passe à la bonne ligne
+        // pour que les rabais admissibles soient ceux de ce code.
+        const rightProgram = match?.program_id && match.program_id !== selectedProgram?.id
+          ? programs.find((p: any) => p.id === match.program_id) : null;
+        if (rightProgram) selectProgram(rightProgram);
+        setCodeSavedFor(`${vehicle.stock_no} · ${pickedCode}`
+          + (rightProgram ? (lang === 'fr' ? ` — programme ajusté : ${rightProgram.trim || rightProgram.model}` : ` — program adjusted: ${rightProgram.trim || rightProgram.model}`) : '')
+          + (saved.data?.code_learned ? (lang === 'fr' ? ' — code retenu pour les prochains véhicules de cette version' : ' — code kept for future vehicles of this trim') : ''));
       } catch (e) {
         console.log('Could not save model code on vehicle');
       }
     })();
     return () => { cancelled = true; };
   }, [selectedInventory?.stock_no, selectedInventory?.model_code, pickedCode]);
+
+  // Véhicule sans code : le serveur lit la version (fiche, annonce, NIV) et
+  // propose les codes de cette version.
+  const [codeSuggest, setCodeSuggest] = useState<any>(null);
+  const [typedCode, setTypedCode] = useState<string>('');
+  useEffect(() => {
+    const vehicle = selectedInventory;
+    setCodeSuggest(null);
+    if (!vehicle?.stock_no || vehicle.model_code || vehicle.type === 'occasion') return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const res = await axios.get(
+          `${API_URL}/api/inventory/${encodeURIComponent(vehicle.stock_no)}/code-suggestions`,
+          { headers: { Authorization: `Bearer ${token}` } });
+        if (!cancelled) setCodeSuggest(res.data);
+      } catch (e) {
+        console.log('Could not load code suggestions');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedInventory?.stock_no, selectedInventory?.model_code]);
 
   // Load SCI lease data
   useEffect(() => {
@@ -2362,12 +2395,67 @@ export default function HomeScreen() {
                   {lang === 'fr' ? `Code inscrit sur la fiche #${codeSavedFor}` : `Code saved on vehicle #${codeSavedFor}`}
                 </Text>
               ) : null}
-              {selectedInventory && !selectedInventory.model_code && !pickedCode && modelCodes.length > 0 ? (
-                <Text style={{ color: '#FFB347', fontSize: 12, marginBottom: 8 }} data-testid="model-code-missing">
-                  {lang === 'fr'
-                    ? `La fiche #${selectedInventory.stock_no} n'a pas de code : choisis-le dans la liste, il sera retenu.`
-                    : `Vehicle #${selectedInventory.stock_no} has no code: pick it in the list, it will be kept.`}
-                </Text>
+              {selectedInventory && !selectedInventory.model_code && !pickedCode ? (
+                <View style={{ marginBottom: 8 }} data-testid="model-code-missing">
+                  <Text style={{ color: '#FFB347', fontSize: 12 }}>
+                    {lang === 'fr'
+                      ? `La fiche #${selectedInventory.stock_no} n'a pas de code.`
+                      : `Vehicle #${selectedInventory.stock_no} has no code.`}
+                    {codeSuggest && codeSuggest.stock_no === selectedInventory.stock_no && (codeSuggest.trim || codeSuggest.cab)
+                      ? (lang === 'fr' ? ' Version décodée : ' : ' Decoded trim: ')
+                        + [codeSuggest.vin_trim || codeSuggest.trim,
+                           codeSuggest.title_trim && codeSuggest.title_trim.toLowerCase() !== (codeSuggest.vin_trim || codeSuggest.trim || '').toLowerCase() ? `(${codeSuggest.title_trim})` : '',
+                           codeSuggest.cab, /4x4|4wd/i.test(codeSuggest.drive || '') ? '4x4' : ''].filter(Boolean).join(' · ')
+                      : ''}
+                  </Text>
+                  {codeSuggest && codeSuggest.stock_no === selectedInventory.stock_no && (codeSuggest.codes || []).length > 0 ? (
+                    <View>
+                      <Text style={{ color: '#aaa', fontSize: 12, marginTop: 6 }}>
+                        {lang === 'fr' ? 'Codes possibles (touche le bon, il sera retenu sur la fiche) :' : 'Possible codes (tap the right one, it will be kept):'}
+                      </Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 }}>
+                        {codeSuggest.codes.map((c: any) => (
+                          <TouchableOpacity
+                            key={c.code}
+                            onPress={() => setPickedCode(c.code)}
+                            style={{ backgroundColor: '#2d2d44', borderColor: '#FFB347', borderWidth: 1, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 }}
+                            data-testid={`code-suggestion-${c.code}`}
+                          >
+                            <Text style={{ color: '#FFB347', fontWeight: '700', fontSize: 14 }}>{c.code}</Text>
+                            <Text style={{ color: '#ccc', fontSize: 11 }}>{c.description}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+                  ) : (
+                    <View>
+                      <Text style={{ color: '#aaa', fontSize: 12, marginTop: 4 }}>
+                        {lang === 'fr'
+                          ? 'Aucun code connu pour cette version. Entre-le une fois : il sera retenu pour les prochains véhicules.'
+                          : 'No known code for this trim. Enter it once: it will be kept for future vehicles.'}
+                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
+                        <TextInput
+                          style={{ flex: 1, backgroundColor: '#2d2d44', color: '#fff', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12, fontSize: 15, marginRight: 8 }}
+                          value={typedCode}
+                          onChangeText={(v) => setTypedCode(v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
+                          placeholder={lang === 'fr' ? 'Code (6 caractères)' : 'Code (6 characters)'}
+                          placeholderTextColor="#666"
+                          autoCapitalize="characters"
+                          data-testid="model-code-input"
+                        />
+                        <TouchableOpacity
+                          disabled={typedCode.length !== 6}
+                          onPress={() => { setPickedCode(typedCode); setTypedCode(''); }}
+                          style={{ backgroundColor: typedCode.length === 6 ? '#4ECDC4' : '#3a3a55', borderRadius: 10, paddingVertical: 9, paddingHorizontal: 14 }}
+                          data-testid="model-code-keep"
+                        >
+                          <Text style={{ color: '#1a1a2e', fontWeight: '700' }}>{lang === 'fr' ? 'Retenir' : 'Keep'}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
+                </View>
               ) : null}
               {inventoryList.length > 0 ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.inventoryScroll}>
