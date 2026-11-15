@@ -33,7 +33,7 @@ const brandColors: Record<string, { bg: string; text: string; accent: string }> 
 };
 
 function BrandBadge({ brand }: { brand: string }) {
-  const colors = brandColors[brand] || { bg: '#2d2d44', text: '#fff', accent: '#666' };
+  const colors = brandColors[brand] || { bg: '#111722', text: '#fff', accent: '#8a93a1' };
   return (
     <View style={[bs.badge, { backgroundColor: colors.bg, borderColor: colors.accent }]} data-testid={`brand-badge-${brand.toLowerCase()}`}>
       <View style={[bs.dot, { backgroundColor: colors.accent }]} />
@@ -56,7 +56,7 @@ export function EventBanner({ meta, lang, loyaltyChecked, onToggleLoyalty, defer
     <View style={s.container} data-testid="event-banner">
       {/* Event Name */}
       <View style={s.titleRow}>
-        <Ionicons name="megaphone" size={18} color="#FFD700" />
+        <Ionicons name="megaphone" size={18} color="#f0d879" />
         <Text style={s.eventName} data-testid="event-banner-name">{eventName}</Text>
       </View>
 
@@ -76,7 +76,7 @@ export function EventBanner({ meta, lang, loyaltyChecked, onToggleLoyalty, defer
       <View style={s.highlightsRow}>
         {hasFeaturedRate && meta.featured_term && (
           <View style={s.chip}>
-            <Ionicons name="trending-down" size={14} color="#4ECDC4" />
+            <Ionicons name="trending-down" size={14} color="#e6c65a" />
             <Text style={s.chipText}>
               {meta.featured_rate}% / {meta.featured_term} {lang === 'fr' ? 'mois' : 'mo'}
             </Text>
@@ -84,7 +84,7 @@ export function EventBanner({ meta, lang, loyaltyChecked, onToggleLoyalty, defer
         )}
         {hasNoPayments && (
           <View style={s.chip}>
-            <Ionicons name="calendar" size={14} color="#FFD700" />
+            <Ionicons name="calendar" size={14} color="#f0d879" />
             <Text style={s.chipText}>
               {lang === 'fr'
                 ? `${meta.no_payments_days}j sans paiement`
@@ -105,10 +105,10 @@ export function EventBanner({ meta, lang, loyaltyChecked, onToggleLoyalty, defer
             data-testid="deferred-toggle"
           >
             <View style={[s.checkbox, deferredChecked && termEligible ? s.checkboxActiveDeferred : null]}>
-              {deferredChecked && termEligible && <Ionicons name="checkmark" size={14} color="#1a1a2e" />}
+              {deferredChecked && termEligible && <Ionicons name="checkmark" size={14} color="#07090e" />}
             </View>
             <View style={s.toggleTextWrap}>
-              <Text style={[s.toggleLabel, { color: '#FFD700' }]}>
+              <Text style={[s.toggleLabel, { color: '#f0d879' }]}>
                 {meta.no_payments_days}j {lang === 'fr' ? 'sans versement' : 'no payment'}
               </Text>
               <Text style={s.toggleDesc}>
@@ -131,10 +131,10 @@ export function EventBanner({ meta, lang, loyaltyChecked, onToggleLoyalty, defer
             data-testid="loyalty-toggle"
           >
             <View style={[s.checkbox, loyaltyChecked && s.checkboxActiveLoyalty]}>
-              {loyaltyChecked && <Ionicons name="checkmark" size={14} color="#1a1a2e" />}
+              {loyaltyChecked && <Ionicons name="checkmark" size={14} color="#07090e" />}
             </View>
             <View style={s.toggleTextWrap}>
-              <Text style={[s.toggleLabel, { color: '#4ECDC4' }]}>
+              <Text style={[s.toggleLabel, { color: '#e6c65a' }]}>
                 {lang === 'fr' ? 'Fidelite' : 'Loyalty'} -{meta.loyalty_rate}%
               </Text>
               <Text style={s.toggleDesc}>
@@ -176,11 +176,11 @@ const bs = StyleSheet.create({
 const s = StyleSheet.create({
   container: {
     marginBottom: 12,
-    backgroundColor: '#16213e',
+    backgroundColor: '#0d1118',
     borderRadius: 12,
     padding: 14,
     borderLeftWidth: 4,
-    borderLeftColor: '#FFD700',
+    borderLeftColor: '#f0d879',
   },
   titleRow: {
     flexDirection: 'row',
@@ -191,7 +191,7 @@ const s = StyleSheet.create({
   eventName: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFD700',
+    color: '#f0d879',
     flexShrink: 1,
   },
   period: {
@@ -216,7 +216,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 16,
@@ -224,7 +224,7 @@ const s = StyleSheet.create({
   chipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#fff',
+    color: '#f4f1ea',
   },
   togglesSection: {
     gap: 8,
@@ -234,36 +234,36 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     padding: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#2d2d44',
+    borderColor: '#303744',
   },
   toggleRowActiveDeferred: {
-    borderColor: '#FFD700',
-    backgroundColor: 'rgba(255,215,0,0.08)',
+    borderColor: '#f0d879',
+    backgroundColor: 'rgba(240, 216, 121,0.08)',
   },
   toggleRowActiveLoyalty: {
-    borderColor: '#4ECDC4',
-    backgroundColor: 'rgba(78,205,196,0.08)',
+    borderColor: '#e6c65a',
+    backgroundColor: 'rgba(230, 198, 90,0.08)',
   },
   checkbox: {
     width: 22,
     height: 22,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: '#4ECDC4',
+    borderColor: '#e6c65a',
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
   },
   checkboxActiveDeferred: {
-    backgroundColor: '#FFD700',
-    borderColor: '#FFD700',
+    backgroundColor: '#f0d879',
+    borderColor: '#f0d879',
   },
   checkboxActiveLoyalty: {
-    backgroundColor: '#4ECDC4',
-    borderColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
+    borderColor: '#e6c65a',
   },
   toggleTextWrap: {
     flex: 1,

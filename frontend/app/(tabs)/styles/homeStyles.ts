@@ -5,7 +5,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 export const loadingStyles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     zIndex: 1000,
   },
   borderContainer: {
@@ -17,8 +17,8 @@ export const loadingStyles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 3,
-    backgroundColor: '#4ECDC4',
-    shadowColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
+    shadowColor: '#e6c65a',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 10,
@@ -30,8 +30,8 @@ export const loadingStyles = StyleSheet.create({
     right: 0,
     bottom: 0,
     width: 3,
-    backgroundColor: '#4ECDC4',
-    shadowColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
+    shadowColor: '#e6c65a',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 10,
@@ -43,8 +43,8 @@ export const loadingStyles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 3,
-    backgroundColor: '#4ECDC4',
-    shadowColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
+    shadowColor: '#e6c65a',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 10,
@@ -56,8 +56,8 @@ export const loadingStyles = StyleSheet.create({
     left: 0,
     bottom: 0,
     width: 3,
-    backgroundColor: '#4ECDC4',
-    shadowColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
+    shadowColor: '#e6c65a',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 10,
@@ -70,8 +70,8 @@ export const loadingStyles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#4ECDC4',
-    shadowColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
+    shadowColor: '#e6c65a',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 20,
@@ -89,12 +89,12 @@ export const loadingStyles = StyleSheet.create({
   logoText: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f4f1ea',
   },
   logoSubText: {
     fontSize: 24,
     fontWeight: '300',
-    color: '#4ECDC4',
+    color: '#e6c65a',
     marginTop: -5,
   },
   spinner: {
@@ -102,14 +102,14 @@ export const loadingStyles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 14,
-    color: '#888',
+    color: '#9aa3b1',
   },
 });
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
   },
   flex: {
     flex: 1,
@@ -121,16 +121,16 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2d2d44',
+    borderBottomColor: '#303744',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f4f1ea',
   },
   headerSubtitle: {
     fontSize: 12,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     marginTop: 2,
   },
   periodSelector: {
@@ -138,7 +138,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   periodModal: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 16,
     width: '85%',
     maxHeight: '60%',
@@ -151,12 +151,12 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2d2d44',
+    borderBottomColor: '#303744',
   },
   periodModalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f4f1ea',
   },
   periodList: {
     maxHeight: 300,
@@ -168,22 +168,22 @@ export const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2d2d44',
+    borderBottomColor: '#303744',
   },
   periodItemActive: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
   },
   periodItemText: {
     fontSize: 16,
-    color: '#fff',
+    color: '#f4f1ea',
     fontWeight: '500',
   },
   periodItemTextActive: {
-    color: '#1a1a2e',
+    color: '#07090e',
   },
   periodItemCount: {
     fontSize: 12,
-    color: '#888',
+    color: '#9aa3b1',
   },
   headerActions: {
     flexDirection: 'row',
@@ -191,19 +191,19 @@ export const styles = StyleSheet.create({
     gap: 10,
   },
   langButton: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
   },
   langButtonText: {
-    color: '#1a1a2e',
+    color: '#07090e',
     fontWeight: 'bold',
     fontSize: 12,
   },
   importButton: {
     padding: 6,
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 8,
   },
   scrollView: {
@@ -218,7 +218,7 @@ export const styles = StyleSheet.create({
   },
   filterLabel: {
     fontSize: 14,
-    color: '#fff',
+    color: '#f4f1ea',
     marginBottom: 10,
     fontWeight: '600',
   },
@@ -231,7 +231,7 @@ export const styles = StyleSheet.create({
     gap: 8,
   },
   filterChip: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     paddingHorizontal: 18,
     paddingVertical: 12,
     borderRadius: 20,
@@ -242,16 +242,16 @@ export const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   filterChipActive: {
-    backgroundColor: '#4ECDC4',
-    borderColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
+    borderColor: '#e6c65a',
   },
   filterChipText: {
-    color: '#aaa',
+    color: '#b9c0cc',
     fontSize: 15,
     fontWeight: '600',
   },
   filterChipTextActive: {
-    color: '#1a1a2e',
+    color: '#07090e',
   },
   section: {
     marginBottom: 20,
@@ -259,7 +259,7 @@ export const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: '#f4f1ea',
     marginBottom: 12,
   },
   loadingContainer: {
@@ -268,11 +268,11 @@ export const styles = StyleSheet.create({
     padding: 16,
   },
   loadingText: {
-    color: '#888',
+    color: '#9aa3b1',
     marginLeft: 8,
   },
   noDataText: {
-    color: '#888',
+    color: '#9aa3b1',
     fontStyle: 'italic',
     padding: 16,
   },
@@ -281,7 +281,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   programCard: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 12,
     marginRight: 10,
@@ -291,8 +291,8 @@ export const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   programCardSelected: {
-    borderColor: '#4ECDC4',
-    backgroundColor: '#3d3d54',
+    borderColor: '#e6c65a',
+    backgroundColor: '#303744',
   },
   programHeader: {
     flexDirection: 'row',
@@ -301,23 +301,23 @@ export const styles = StyleSheet.create({
   },
   programBrand: {
     fontSize: 11,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: '600',
   },
   programYear: {
     fontSize: 11,
-    color: '#888',
+    color: '#9aa3b1',
     fontWeight: '500',
   },
   programModel: {
     fontSize: 14,
-    color: '#fff',
+    color: '#f4f1ea',
     fontWeight: 'bold',
     marginTop: 4,
   },
   programTrim: {
     fontSize: 10,
-    color: '#aaa',
+    color: '#b9c0cc',
     marginTop: 2,
   },
   badgeRow: {
@@ -334,22 +334,22 @@ export const styles = StyleSheet.create({
   },
   cashBadgeText: {
     fontSize: 9,
-    color: '#fff',
+    color: '#f4f1ea',
     fontWeight: 'bold',
   },
   bonusBadge: {
-    backgroundColor: '#FFD700',
+    backgroundColor: '#f0d879',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
   },
   bonusBadgeText: {
     fontSize: 9,
-    color: '#1a1a2e',
+    color: '#07090e',
     fontWeight: 'bold',
   },
   option2Badge: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
@@ -358,11 +358,11 @@ export const styles = StyleSheet.create({
   },
   option2BadgeText: {
     fontSize: 9,
-    color: '#1a1a2e',
+    color: '#07090e',
     fontWeight: 'bold',
   },
   selectedInfo: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 14,
     marginTop: 12,
@@ -378,18 +378,18 @@ export const styles = StyleSheet.create({
   },
   selectedBrand: {
     fontSize: 12,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: '600',
   },
   selectedTitle: {
     fontSize: 16,
-    color: '#fff',
+    color: '#f4f1ea',
     fontWeight: 'bold',
     marginTop: 2,
   },
   selectedTrim: {
     fontSize: 12,
-    color: '#aaa',
+    color: '#b9c0cc',
     marginTop: 2,
   },
   optionsPreview: {
@@ -399,7 +399,7 @@ export const styles = StyleSheet.create({
   },
   optionPreview: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 8,
     padding: 10,
   },
@@ -408,23 +408,23 @@ export const styles = StyleSheet.create({
   },
   optionPreviewLabel: {
     fontSize: 11,
-    color: '#888',
+    color: '#9aa3b1',
   },
   optionPreviewValue: {
     fontSize: 13,
-    color: '#fff',
+    color: '#f4f1ea',
     fontWeight: '600',
     marginTop: 4,
   },
   optionPreviewValueNA: {
     fontSize: 13,
-    color: '#666',
+    color: '#8a93a1',
     fontWeight: '600',
     marginTop: 4,
   },
   optionPreviewNote: {
     fontSize: 9,
-    color: '#666',
+    color: '#8a93a1',
     marginTop: 2,
   },
   bonusCashInfo: {
@@ -433,35 +433,35 @@ export const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#3d3d54',
+    borderTopColor: '#303744',
     gap: 6,
   },
   bonusCashText: {
     fontSize: 12,
-    color: '#FFD700',
+    color: '#f0d879',
     fontWeight: '500',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     paddingHorizontal: 16,
   },
   currencySymbol: {
     fontSize: 22,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: 'bold',
   },
   priceInput: {
     flex: 1,
     fontSize: 22,
-    color: '#fff',
+    color: '#f4f1ea',
     paddingVertical: 14,
     paddingHorizontal: 8,
   },
   calculateButton: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     borderRadius: 12,
     padding: 14,
     flexDirection: 'row',
@@ -474,12 +474,12 @@ export const styles = StyleSheet.create({
     opacity: 0.5,
   },
   calculateButtonText: {
-    color: '#1a1a2e',
+    color: '#07090e',
     fontSize: 16,
     fontWeight: 'bold',
   },
   resultsSummary: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
@@ -487,13 +487,13 @@ export const styles = StyleSheet.create({
   },
   summaryTitle: {
     fontSize: 14,
-    color: '#fff',
+    color: '#f4f1ea',
     fontWeight: '600',
     textAlign: 'center',
   },
   summaryPrice: {
     fontSize: 24,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: 'bold',
     marginTop: 4,
   },
@@ -507,7 +507,7 @@ export const styles = StyleSheet.create({
   },
   summaryBonus: {
     fontSize: 12,
-    color: '#FFD700',
+    color: '#f0d879',
     textAlign: 'center',
     marginTop: 2,
   },
@@ -530,10 +530,10 @@ export const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 11,
-    color: '#888',
+    color: '#9aa3b1',
   },
   resultCard: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
@@ -547,7 +547,7 @@ export const styles = StyleSheet.create({
   resultTerm: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f4f1ea',
   },
   bestBadge: {
     flexDirection: 'row',
@@ -561,12 +561,12 @@ export const styles = StyleSheet.create({
     backgroundColor: '#FF6B6B',
   },
   bestBadgeOption2: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
   },
   bestBadgeText: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#1a1a2e',
+    color: '#07090e',
   },
   optionsGrid: {
     flexDirection: 'row',
@@ -583,14 +583,14 @@ export const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 107, 107, 0.1)',
   },
   optionCard2: {
-    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    backgroundColor: 'rgba(230, 198, 90, 0.1)',
   },
   optionCardBest: {
-    borderColor: '#4ECDC4',
+    borderColor: '#e6c65a',
   },
   optionCardTitle: {
     fontSize: 12,
-    color: '#888',
+    color: '#9aa3b1',
     fontWeight: '600',
     marginBottom: 8,
   },
@@ -601,16 +601,16 @@ export const styles = StyleSheet.create({
   },
   optionDetailLabel: {
     fontSize: 11,
-    color: '#888',
+    color: '#9aa3b1',
   },
   optionDetailValue: {
     fontSize: 11,
-    color: '#fff',
+    color: '#f4f1ea',
     fontWeight: '500',
   },
   optionMonthly: {
     fontSize: 13,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: 'bold',
   },
   noOption: {
@@ -621,7 +621,7 @@ export const styles = StyleSheet.create({
   },
   noOptionText: {
     fontSize: 14,
-    color: '#666',
+    color: '#8a93a1',
     fontStyle: 'italic',
   },
   savingsRow: {
@@ -631,12 +631,12 @@ export const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#3d3d54',
+    borderTopColor: '#303744',
     gap: 6,
   },
   savingsText: {
     fontSize: 13,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: '600',
   },
   // Modal styles
@@ -648,7 +648,7 @@ export const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 16,
     padding: 24,
     width: '100%',
@@ -657,22 +657,22 @@ export const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f4f1ea',
     textAlign: 'center',
     marginBottom: 8,
   },
   modalSubtitle: {
     fontSize: 14,
-    color: '#888',
+    color: '#9aa3b1',
     textAlign: 'center',
     marginBottom: 20,
   },
   passwordInput: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 12,
     padding: 14,
     fontSize: 16,
-    color: '#fff',
+    color: '#f4f1ea',
     marginBottom: 20,
   },
   modalButtons: {
@@ -681,45 +681,45 @@ export const styles = StyleSheet.create({
   },
   modalButtonCancel: {
     flex: 1,
-    backgroundColor: '#3d3d54',
+    backgroundColor: '#303744',
     borderRadius: 12,
     padding: 14,
     alignItems: 'center',
   },
   modalButtonCancelText: {
-    color: '#aaa',
+    color: '#b9c0cc',
     fontSize: 16,
     fontWeight: '600',
   },
   modalButtonConfirm: {
     flex: 1,
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     borderRadius: 12,
     padding: 14,
     alignItems: 'center',
   },
   modalButtonConfirmText: {
-    color: '#1a1a2e',
+    color: '#07090e',
     fontSize: 16,
     fontWeight: '600',
   },
   // Rates table styles
   ratesTable: {
     marginTop: 12,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 8,
     overflow: 'hidden',
   },
   ratesHeader: {
     flexDirection: 'row',
-    backgroundColor: '#3d3d54',
+    backgroundColor: '#303744',
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
   ratesHeaderCell: {
     flex: 1,
     fontSize: 11,
-    color: '#aaa',
+    color: '#b9c0cc',
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -728,32 +728,32 @@ export const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2d2d44',
+    borderBottomColor: '#303744',
   },
   ratesRowSelected: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
   },
   ratesCell: {
     flex: 1,
     fontSize: 13,
-    color: '#fff',
+    color: '#f4f1ea',
     textAlign: 'center',
   },
   ratesCellSelected: {
-    color: '#1a1a2e',
+    color: '#07090e',
     fontWeight: 'bold',
   },
   ratesCellOption1: {
     color: '#FF6B6B',
   },
   ratesCellOption2: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
   },
   rebatesSummary: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#3d3d54',
+    borderTopColor: '#303744',
     gap: 6,
   },
   rebateItem: {
@@ -772,11 +772,11 @@ export const styles = StyleSheet.create({
   },
   rebateLabelBonus: {
     fontSize: 12,
-    color: '#FFD700',
+    color: '#f0d879',
   },
   rebateValueBonus: {
     fontSize: 12,
-    color: '#FFD700',
+    color: '#f0d879',
     fontWeight: 'bold',
   },
   // Input styles
@@ -785,7 +785,7 @@ export const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 13,
-    color: '#aaa',
+    color: '#b9c0cc',
     marginBottom: 6,
   },
   // Term selection styles
@@ -798,7 +798,7 @@ export const styles = StyleSheet.create({
     gap: 8,
   },
   termButton: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 10,
@@ -808,27 +808,27 @@ export const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   termButtonActive: {
-    backgroundColor: '#4ECDC4',
-    borderColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
+    borderColor: '#e6c65a',
   },
   termButtonText: {
     fontSize: 14,
-    color: '#aaa',
+    color: '#b9c0cc',
     fontWeight: '600',
   },
   termButtonTextActive: {
-    color: '#1a1a2e',
+    color: '#07090e',
   },
   // Fees section styles
   feesSection: {
     marginTop: 16,
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 12,
   },
   feesSectionTitle: {
     fontSize: 13,
-    color: '#aaa',
+    color: '#b9c0cc',
     fontWeight: '600',
     marginBottom: 10,
   },
@@ -843,31 +843,31 @@ export const styles = StyleSheet.create({
   },
   feeLabel: {
     fontSize: 11,
-    color: '#888',
+    color: '#9aa3b1',
     marginBottom: 4,
   },
   feeInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 8,
     paddingHorizontal: 8,
   },
   feeSymbol: {
     fontSize: 14,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: '600',
   },
   feeInput: {
     flex: 1,
     fontSize: 14,
-    color: '#fff',
+    color: '#f4f1ea',
     paddingVertical: 8,
     paddingHorizontal: 4,
   },
   feeNote: {
     fontSize: 9,
-    color: '#666',
+    color: '#8a93a1',
     marginTop: 2,
   },
   exchangeRow: {
@@ -885,7 +885,7 @@ export const styles = StyleSheet.create({
   },
   frequencyButton: {
     flex: 1,
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
@@ -893,16 +893,16 @@ export const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   frequencyButtonActive: {
-    backgroundColor: '#FFD700',
-    borderColor: '#FFD700',
+    backgroundColor: '#f0d879',
+    borderColor: '#f0d879',
   },
   frequencyButtonText: {
     fontSize: 13,
-    color: '#aaa',
+    color: '#b9c0cc',
     fontWeight: '600',
   },
   frequencyButtonTextActive: {
-    color: '#1a1a2e',
+    color: '#07090e',
   },
   // Option selection buttons
   optionButtons: {
@@ -923,16 +923,16 @@ export const styles = StyleSheet.create({
     borderColor: 'rgba(255, 107, 107, 0.3)',
   },
   optionButton2: {
-    backgroundColor: 'rgba(78, 205, 196, 0.2)',
-    borderColor: 'rgba(78, 205, 196, 0.3)',
+    backgroundColor: 'rgba(230, 198, 90, 0.2)',
+    borderColor: 'rgba(230, 198, 90, 0.3)',
   },
   optionButtonActive1: {
     backgroundColor: '#FF6B6B',
     borderColor: '#FF6B6B',
   },
   optionButtonActive2: {
-    backgroundColor: '#4ECDC4',
-    borderColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
+    borderColor: '#e6c65a',
   },
   optionButtonDisabled: {
     backgroundColor: 'rgba(100, 100, 100, 0.2)',
@@ -940,19 +940,19 @@ export const styles = StyleSheet.create({
   },
   optionButtonText: {
     fontSize: 16,
-    color: '#fff',
+    color: '#f4f1ea',
     fontWeight: 'bold',
   },
   optionButtonTextActive: {
-    color: '#1a1a2e',
+    color: '#07090e',
   },
   optionButtonTextDisabled: {
     fontSize: 14,
-    color: '#666',
+    color: '#8a93a1',
   },
   optionButtonSubtext: {
     fontSize: 12,
-    color: '#aaa',
+    color: '#b9c0cc',
     marginTop: 4,
   },
   // Best option banner
@@ -969,16 +969,16 @@ export const styles = StyleSheet.create({
     backgroundColor: '#FF6B6B',
   },
   bestOptionBanner2: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
   },
   bestOptionText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#1a1a2e',
+    color: '#07090e',
   },
   bestOptionSavings: {
     fontSize: 12,
-    color: '#1a1a2e',
+    color: '#07090e',
     fontWeight: '600',
   },
   // Option card enhancements
@@ -990,12 +990,12 @@ export const styles = StyleSheet.create({
   },
   optionSubtitle: {
     fontSize: 10,
-    color: '#888',
+    color: '#9aa3b1',
     marginBottom: 10,
   },
   optionRateValue: {
     fontSize: 14,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: 'bold',
   },
   optionMainResult: {
@@ -1007,28 +1007,28 @@ export const styles = StyleSheet.create({
   },
   optionMonthlyLabel: {
     fontSize: 10,
-    color: '#aaa',
+    color: '#b9c0cc',
   },
   optionMonthlyValue: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#e6c65a',
   },
   optionTotalValue: {
     fontSize: 13,
-    color: '#fff',
+    color: '#f4f1ea',
     fontWeight: 'bold',
   },
   noOptionSubtext: {
     fontSize: 11,
-    color: '#555',
+    color: '#5a6372',
     marginTop: 4,
   },
   // Bonus cash note
   bonusCashNote: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    backgroundColor: 'rgba(240, 216, 121, 0.1)',
     padding: 12,
     borderRadius: 8,
     marginTop: 12,
@@ -1036,7 +1036,7 @@ export const styles = StyleSheet.create({
   },
   bonusCashNoteText: {
     fontSize: 12,
-    color: '#FFD700',
+    color: '#f0d879',
     flex: 1,
   },
   // Email button and modal styles
@@ -1044,7 +1044,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     borderRadius: 12,
     padding: 16,
     marginTop: 16,
@@ -1053,7 +1053,7 @@ export const styles = StyleSheet.create({
   sendEmailButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: '#11130f',
   },
   // Share actions row (SMS + Print)
   shareActionsRow: {
@@ -1094,11 +1094,11 @@ export const styles = StyleSheet.create({
   shareButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: '#f4f1ea',
   },
   // SMS Preview Modal styles
   smsPreviewModalContent: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingBottom: 30,
@@ -1111,13 +1111,13 @@ export const styles = StyleSheet.create({
     paddingBottom: 16,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#2d2d44',
+    borderBottomColor: '#303744',
   },
   smsPreviewIconContainer: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: 'rgba(78, 205, 196, 0.2)',
+    backgroundColor: 'rgba(230, 198, 90, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -1126,7 +1126,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f4f1ea',
   },
   smsPreviewClose: {
     padding: 8,
@@ -1136,22 +1136,22 @@ export const styles = StyleSheet.create({
   },
   smsPreviewLabel: {
     fontSize: 14,
-    color: '#888',
+    color: '#9aa3b1',
     marginBottom: 12,
   },
   smsPreviewTextInput: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 16,
     fontSize: 14,
-    color: '#fff',
+    color: '#f4f1ea',
     minHeight: 200,
     maxHeight: 300,
     textAlignVertical: 'top',
   },
   smsPreviewCharCount: {
     fontSize: 12,
-    color: '#666',
+    color: '#8a93a1',
     textAlign: 'right',
     marginTop: 8,
   },
@@ -1164,13 +1164,13 @@ export const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     borderRadius: 12,
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     alignItems: 'center',
   },
   smsPreviewCancelText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#888',
+    color: '#9aa3b1',
   },
   smsPreviewSendButton: {
     flex: 1,
@@ -1185,10 +1185,10 @@ export const styles = StyleSheet.create({
   smsPreviewSendText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: '#f4f1ea',
   },
   emailModalContent: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 16,
     width: '100%',
     maxWidth: 420,
@@ -1202,14 +1202,14 @@ export const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2d2d44',
+    borderBottomColor: '#303744',
     flexShrink: 0,
   },
   emailModalIconContainer: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(78, 205, 196, 0.2)',
+    backgroundColor: 'rgba(230, 198, 90, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -1217,7 +1217,7 @@ export const styles = StyleSheet.create({
   emailModalTitle: {
     fontSize: 17,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f4f1ea',
     flex: 1,
   },
   emailModalClose: {
@@ -1229,19 +1229,19 @@ export const styles = StyleSheet.create({
   },
   emailModalLabel: {
     fontSize: 13,
-    color: '#888',
+    color: '#9aa3b1',
     marginBottom: 5,
     marginTop: 8,
   },
   emailModalInput: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 10,
     padding: 12,
     fontSize: 15,
-    color: '#fff',
+    color: '#f4f1ea',
   },
   emailPreviewBox: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 10,
     padding: 12,
     marginTop: 12,
@@ -1249,18 +1249,18 @@ export const styles = StyleSheet.create({
   },
   emailPreviewTitle: {
     fontSize: 11,
-    color: '#888',
+    color: '#9aa3b1',
     marginBottom: 4,
   },
   emailPreviewText: {
     fontSize: 13,
-    color: '#fff',
+    color: '#f4f1ea',
     marginBottom: 2,
   },
   emailPreviewPayment: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#e6c65a',
     marginTop: 4,
   },
   emailModalButtons: {
@@ -1270,23 +1270,23 @@ export const styles = StyleSheet.create({
     gap: 10,
     flexShrink: 0,
     borderTopWidth: 1,
-    borderTopColor: '#2d2d44',
+    borderTopColor: '#303744',
   },
   emailModalCancelButton: {
     flex: 1,
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
   },
   emailModalCancelText: {
     fontSize: 16,
-    color: '#fff',
+    color: '#f4f1ea',
   },
   emailModalSendButton: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
@@ -1299,19 +1299,19 @@ export const styles = StyleSheet.create({
   emailModalSendText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a2e',
+    color: '#07090e',
   },
   // Inventory styles
   inventorySubtitle: {
     fontSize: 13,
-    color: '#888',
+    color: '#9aa3b1',
     marginBottom: 12,
   },
   inventoryScroll: {
     marginHorizontal: -8,
   },
   inventoryCard: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 14,
     marginHorizontal: 6,
@@ -1320,28 +1320,28 @@ export const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   inventoryCardSelected: {
-    borderColor: '#4ECDC4',
-    backgroundColor: '#3d3d54',
+    borderColor: '#e6c65a',
+    backgroundColor: '#303744',
   },
   inventoryStock: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#e6c65a',
     marginBottom: 4,
   },
   inventoryModel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#fff',
+    color: '#f4f1ea',
   },
   inventoryTrim: {
     fontSize: 12,
-    color: '#888',
+    color: '#9aa3b1',
     marginBottom: 4,
   },
   inventoryVin: {
     fontSize: 10,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontFamily: 'monospace',
     marginBottom: 6,
   },
@@ -1352,11 +1352,11 @@ export const styles = StyleSheet.create({
   },
   inventoryProfit: {
     fontSize: 11,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     marginTop: 4,
   },
   noInventoryText: {
-    color: '#888',
+    color: '#9aa3b1',
     fontStyle: 'italic',
     padding: 16,
     textAlign: 'center',
@@ -1373,20 +1373,20 @@ export const styles = StyleSheet.create({
     borderColor: '#333',
   },
   manualVinLabel: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontSize: 13,
     marginBottom: 8,
     fontWeight: '500',
   },
   manualVinInput: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 8,
     padding: 12,
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 15,
     fontFamily: 'monospace',
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: '#303744',
   },
   manualVinError: {
     color: '#ff6b6b',
@@ -1394,7 +1394,7 @@ export const styles = StyleSheet.create({
     marginTop: 6,
   },
   manualVinSuccess: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontSize: 12,
     marginTop: 6,
     fontWeight: '500',
@@ -1403,12 +1403,12 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    backgroundColor: 'rgba(230, 198, 90, 0.1)',
     borderRadius: 10,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#4ECDC4',
+    borderColor: '#e6c65a',
   },
   selectedInventoryInfo: {
     flexDirection: 'row',
@@ -1418,24 +1418,24 @@ export const styles = StyleSheet.create({
   },
   selectedInventoryText: {
     fontSize: 13,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     flex: 1,
   },
   selectedInventoryVin: {
     fontSize: 11,
-    color: '#888',
+    color: '#9aa3b1',
     fontFamily: 'monospace',
     marginLeft: 28,
     marginTop: 2,
   },
   // Styles Auto-financing banner
   autoFinancingBanner: {
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    backgroundColor: 'rgba(240, 216, 121, 0.1)',
     borderRadius: 10,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#FFD700',
+    borderColor: '#f0d879',
   },
   autoFinancingHeader: {
     flexDirection: 'row',
@@ -1446,7 +1446,7 @@ export const styles = StyleSheet.create({
   autoFinancingTitle: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#FFD700',
+    color: '#f0d879',
   },
   autoFinancingContent: {
     gap: 4,
@@ -1458,16 +1458,16 @@ export const styles = StyleSheet.create({
   },
   autoFinancingLabel: {
     fontSize: 13,
-    color: '#aaa',
+    color: '#b9c0cc',
   },
   autoFinancingLabelTotal: {
     fontSize: 13,
-    color: '#fff',
+    color: '#f4f1ea',
     fontWeight: 'bold',
   },
   autoFinancingValue: {
     fontSize: 14,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: 'bold',
   },
   autoFinancingValueBonus: {
@@ -1477,7 +1477,7 @@ export const styles = StyleSheet.create({
   },
   autoFinancingValueTotal: {
     fontSize: 15,
-    color: '#FFD700',
+    color: '#f0d879',
     fontWeight: 'bold',
   },
   autoFinancingValueRate: {
@@ -1487,7 +1487,7 @@ export const styles = StyleSheet.create({
   },
   autoFinancingSource: {
     fontSize: 10,
-    color: '#666',
+    color: '#8a93a1',
     marginTop: 6,
     fontStyle: 'italic',
   },
@@ -1500,17 +1500,17 @@ export const styles = StyleSheet.create({
   },
   accessoryDescInput: {
     flex: 2,
-    backgroundColor: '#2a2a3e',
+    backgroundColor: '#111722',
     borderColor: '#4CAF50',
-    color: '#ffffff',
+    color: '#f4f1ea',
     fontSize: 16,
   },
   accessoryPriceInput: {
     flex: 1,
     textAlign: 'right',
-    backgroundColor: '#2a2a3e',
+    backgroundColor: '#111722',
     borderColor: '#4CAF50',
-    color: '#ffffff',
+    color: '#f4f1ea',
     fontSize: 16,
   },
   removeAccessoryBtn: {
@@ -1544,7 +1544,7 @@ export const styles = StyleSheet.create({
     borderTopColor: '#333',
   },
   accessoriesTotalLabel: {
-    color: '#aaa',
+    color: '#b9c0cc',
     fontSize: 14,
   },
   accessoriesTotalValue: {
@@ -1554,13 +1554,13 @@ export const styles = StyleSheet.create({
   },
   // Base input style for accessories
   input: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: '#444',
-    color: '#ffffff',
+    borderColor: '#303744',
+    color: '#f4f1ea',
     fontSize: 15,
   },
   // Section header for accessories
@@ -1579,20 +1579,20 @@ export const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#4ECDC4',
+    borderColor: '#e6c65a',
     backgroundColor: 'transparent',
   },
   leaseToggleActive: {
-    backgroundColor: '#4ECDC4',
-    borderColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
+    borderColor: '#e6c65a',
   },
   leaseToggleText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#4ECDC4',
+    color: '#e6c65a',
   },
   leaseToggleTextActive: {
-    color: '#fff',
+    color: '#11130f',
   },
   leaseContent: {
     marginTop: 12,
@@ -1606,32 +1606,32 @@ export const styles = StyleSheet.create({
   leaseInputLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#ccc',
+    color: '#cfd4dc',
     minWidth: 100,
   },
   leaseInput: {
     flex: 1,
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 8,
     padding: 10,
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#3d3d5c',
+    borderColor: '#303744',
   },
   leaseInputHint: {
     fontSize: 11,
-    color: '#888',
+    color: '#9aa3b1',
     minWidth: 55,
   },
   // Residual by km table
   residualKmTable: {
-    backgroundColor: '#1e2a3a',
+    backgroundColor: '#0d1118',
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#2d3d54',
+    borderColor: '#303744',
   },
   residualKmTitle: {
     fontSize: 12,
@@ -1650,9 +1650,9 @@ export const styles = StyleSheet.create({
     marginBottom: 2,
   },
   residualKmRowSelected: {
-    backgroundColor: 'rgba(78, 205, 196, 0.12)',
+    backgroundColor: 'rgba(230, 198, 90, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(78, 205, 196, 0.3)',
+    borderColor: 'rgba(230, 198, 90, 0.3)',
   },
   residualKmHeader: {
     flex: 1,
@@ -1674,7 +1674,7 @@ export const styles = StyleSheet.create({
     fontWeight: '500',
   },
   residualKmTextSelected: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: '700',
   },
   residualKmValue: {
@@ -1683,14 +1683,14 @@ export const styles = StyleSheet.create({
     fontWeight: '500',
   },
   residualKmValueSelected: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: '700',
   },
   leaseInfoBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#1e2a3a',
+    backgroundColor: '#0d1118',
     borderRadius: 8,
     padding: 8,
     borderWidth: 1,
@@ -1725,7 +1725,7 @@ export const styles = StyleSheet.create({
   leaseLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#ccc',
+    color: '#cfd4dc',
     minWidth: 100,
   },
   leaseKmButtons: {
@@ -1736,21 +1736,21 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderWidth: 1,
-    borderColor: '#3d3d5c',
+    borderColor: '#303744',
   },
   leaseKmBtnActive: {
-    backgroundColor: '#4ECDC4',
-    borderColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
+    borderColor: '#e6c65a',
   },
   leaseKmBtnText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#aaa',
+    color: '#b9c0cc',
   },
   leaseKmBtnTextActive: {
-    color: '#1a1a2e',
+    color: '#07090e',
   },
   leaseTermScroll: {
     flexGrow: 0,
@@ -1759,22 +1759,22 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     marginRight: 6,
     borderWidth: 1,
-    borderColor: '#3d3d5c',
+    borderColor: '#303744',
   },
   leaseTermBtnActive: {
-    backgroundColor: '#4ECDC4',
-    borderColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
+    borderColor: '#e6c65a',
   },
   leaseTermBtnText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#aaa',
+    color: '#b9c0cc',
   },
   leaseTermBtnTextActive: {
-    color: '#1a1a2e',
+    color: '#07090e',
   },
   leaseResults: {
     gap: 10,
@@ -1783,25 +1783,25 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 10,
     padding: 12,
   },
   leaseResidualLabel: {
     fontSize: 13,
-    color: '#aaa',
+    color: '#b9c0cc',
     fontWeight: '500',
   },
   leaseResidualValue: {
     fontSize: 15,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: '700',
   },
   leaseBestBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#FFD700',
+    backgroundColor: '#f0d879',
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -1809,13 +1809,13 @@ export const styles = StyleSheet.create({
   leaseBestText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: '#07090e',
     flex: 1,
   },
   leaseBestSavings: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: '#07090e',
   },
   leaseCardsRow: {
     flexDirection: 'row',
@@ -1823,19 +1823,19 @@ export const styles = StyleSheet.create({
   },
   leaseCard: {
     flex: 1,
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#3d3d5c',
+    borderColor: '#303744',
     gap: 6,
   },
   leaseCardAlt: {
-    backgroundColor: '#1e2a3a',
+    backgroundColor: '#0d1118',
     borderColor: '#2d4a6c',
   },
   leaseCardBest: {
-    borderColor: '#4ECDC4',
+    borderColor: '#e6c65a',
     borderWidth: 2,
   },
   leaseCardHeader: {
@@ -1847,7 +1847,7 @@ export const styles = StyleSheet.create({
   leaseCardTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#fff',
+    color: '#f4f1ea',
     flex: 1,
   },
   leaseCardDetail: {
@@ -1857,35 +1857,35 @@ export const styles = StyleSheet.create({
   },
   leaseCardDetailLabel: {
     fontSize: 11,
-    color: '#888',
+    color: '#9aa3b1',
   },
   leaseCardDetailValue: {
     fontSize: 11,
-    color: '#ccc',
+    color: '#cfd4dc',
     fontWeight: '500',
   },
   leaseCardRateValue: {
     fontSize: 13,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: '700',
   },
   leaseCardMainResult: {
     alignItems: 'center',
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 8,
     padding: 10,
     marginVertical: 4,
   },
   leaseCardPaymentLabel: {
     fontSize: 10,
-    color: '#888',
+    color: '#9aa3b1',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   leaseCardPaymentValue: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#4ECDC4',
+    color: '#e6c65a',
     marginTop: 2,
   },
   leaseCardTaxDetail: {
@@ -1901,20 +1901,20 @@ export const styles = StyleSheet.create({
   },
   leaseCardTaxLine: {
     fontSize: 9,
-    color: '#666',
+    color: '#8a93a1',
     lineHeight: 14,
   },
   leaseCardRabaisLine: {
     fontSize: 9,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     marginTop: 2,
     fontWeight: '500',
   },
   bestLeaseBox: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#FFD700',
+    borderColor: '#f0d879',
     padding: 12,
     marginTop: 12,
     marginBottom: 8,
@@ -1929,7 +1929,7 @@ export const styles = StyleSheet.create({
   bestLeaseTitle: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#FFD700',
+    color: '#f0d879',
     letterSpacing: 1,
   },
   bestLeaseContent: {
@@ -1942,16 +1942,16 @@ export const styles = StyleSheet.create({
   },
   bestLeaseLabel: {
     fontSize: 11,
-    color: '#999',
+    color: '#9aa3b1',
   },
   bestLeaseValue: {
     fontSize: 11,
-    color: '#fff',
+    color: '#f4f1ea',
     fontWeight: '600',
   },
   bestLeaseTap: {
     fontSize: 9,
-    color: '#666',
+    color: '#8a93a1',
     textAlign: 'center',
     marginTop: 6,
     fontStyle: 'italic',
@@ -1963,21 +1963,21 @@ export const styles = StyleSheet.create({
   analysisSectionTitle: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#4ECDC4',
+    color: '#e6c65a',
     letterSpacing: 1,
     textAlign: 'center',
     marginBottom: 8,
   },
   analysisKmBlock: {
     marginBottom: 10,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 8,
     padding: 8,
   },
   analysisKmTitle: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#ccc',
+    color: '#cfd4dc',
     marginBottom: 6,
     textAlign: 'center',
   },
@@ -1995,23 +1995,23 @@ export const styles = StyleSheet.create({
     borderBottomColor: '#222',
   },
   analysisBestRow: {
-    backgroundColor: 'rgba(255, 215, 0, 0.15)',
+    backgroundColor: 'rgba(240, 216, 121, 0.15)',
     borderRadius: 4,
   },
   analysisCell: {
     fontSize: 10,
-    color: '#aaa',
+    color: '#b9c0cc',
     textAlign: 'center',
   },
   analysisCellHeader: {
     fontWeight: '700',
-    color: '#888',
+    color: '#9aa3b1',
     fontSize: 9,
     textTransform: 'uppercase',
   },
   leaseCardTotalValue: {
     fontSize: 12,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: '600',
   },
   leaseNoOption: {
@@ -2019,12 +2019,12 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     padding: 14,
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 10,
   },
   leaseNoOptionText: {
     fontSize: 13,
-    color: '#888',
+    color: '#9aa3b1',
     flex: 1,
   },
   leaseVsFinance: {
@@ -2032,12 +2032,12 @@ export const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#3d3d5c',
+    borderColor: '#303744',
   },
   leaseVsFinanceTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFD700',
+    color: '#f0d879',
     textAlign: 'center',
     marginBottom: 10,
   },
@@ -2051,23 +2051,23 @@ export const styles = StyleSheet.create({
   },
   leaseVsFinanceLabel: {
     fontSize: 11,
-    color: '#888',
+    color: '#9aa3b1',
     marginBottom: 4,
   },
   leaseVsFinanceValue: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#4ECDC4',
+    color: '#e6c65a',
   },
   leaseVsFinanceSub: {
     fontSize: 10,
-    color: '#666',
+    color: '#8a93a1',
     marginTop: 2,
   },
   leaseVsFinanceDivider: {
     width: 1,
     height: 50,
-    backgroundColor: '#3d3d5c',
+    backgroundColor: '#303744',
     marginHorizontal: 8,
   },
 });

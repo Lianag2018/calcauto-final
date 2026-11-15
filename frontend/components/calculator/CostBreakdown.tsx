@@ -83,7 +83,7 @@ export const CostBreakdown: React.FC<Props> = ({
   return (
     <View style={styles.container} data-testid="cost-breakdown">
       <View style={styles.header}>
-        <Ionicons name="receipt-outline" size={18} color="#4ECDC4" />
+        <Ionicons name="receipt-outline" size={18} color="#e6c65a" />
         <Text style={styles.title}>{labels.breakdown}</Text>
       </View>
 
@@ -113,7 +113,7 @@ export const CostBreakdown: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 12,
     padding: 16,
     marginVertical: 12,
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -136,16 +136,16 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   rowLabel: {
-    color: '#888',
+    color: '#9aa3b1',
     fontSize: 13,
   },
   rowValue: {
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 13,
     fontWeight: '500',
   },
   rowValueNegative: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
   },
   divider: {
     height: 1,
@@ -158,12 +158,12 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   totalLabel: {
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 14,
     fontWeight: '600',
   },
   totalValue: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontSize: 18,
     fontWeight: 'bold',
   },

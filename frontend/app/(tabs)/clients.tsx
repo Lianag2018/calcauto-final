@@ -942,7 +942,7 @@ export default function ClientsScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4ECDC4" />
+          <ActivityIndicator size="large" color="#e6c65a" />
           <Text style={styles.loadingText}>{crm.loading}</Text>
         </View>
       </SafeAreaView>
@@ -956,11 +956,11 @@ export default function ClientsScreen() {
   const renderClientsTab = () => (
     <ScrollView 
       style={styles.tabContent}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4ECDC4" />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#e6c65a" />}
     >
       {filteredClients.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="people-outline" size={64} color="#4ECDC4" />
+          <Ionicons name="people-outline" size={64} color="#e6c65a" />
           <Text style={styles.emptyText}>{crm.noClients}</Text>
           <Text style={styles.emptySubtext}>{crm.startByCalculator}</Text>
           <TouchableOpacity style={styles.goToCalcButton} onPress={() => router.push('/(tabs)')}>
@@ -982,11 +982,11 @@ export default function ClientsScreen() {
               <View style={styles.clientActions}>
                 {client.phone && (
                   <TouchableOpacity style={styles.actionBtn} onPress={(e) => { e.stopPropagation(); callContact(client.phone); }}>
-                    <Ionicons name="call" size={18} color="#4ECDC4" />
+                    <Ionicons name="call" size={18} color="#e6c65a" />
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity style={styles.actionBtn} onPress={(e) => { e.stopPropagation(); newQuoteForClient(client); }}>
-                  <Ionicons name="add-circle" size={18} color="#4ECDC4" />
+                  <Ionicons name="add-circle" size={18} color="#e6c65a" />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.actionBtnDelete} onPress={(e) => { e.stopPropagation(); deleteContact(client); }}>
                   <Ionicons name="trash" size={18} color="#FF6B6B" />
@@ -995,7 +995,7 @@ export default function ClientsScreen() {
             </View>
             {client.has_pending_reminder && (
               <View style={styles.clientReminderBadge}>
-                <Ionicons name="notifications" size={12} color="#FFD93D" />
+                <Ionicons name="notifications" size={12} color="#f0d879" />
                 <Text style={styles.clientReminderText}>Rappel: {formatDate(client.next_reminder!)}</Text>
               </View>
             )}
@@ -1010,11 +1010,11 @@ export default function ClientsScreen() {
   const renderRemindersTab = () => (
     <ScrollView 
       style={styles.tabContent}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4ECDC4" />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#e6c65a" />}
     >
       {reminders.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="notifications-off-outline" size={64} color="#888" />
+          <Ionicons name="notifications-off-outline" size={64} color="#9aa3b1" />
           <Text style={styles.emptyText}>{crm.noReminders}</Text>
         </View>
       ) : (
@@ -1038,12 +1038,12 @@ export default function ClientsScreen() {
               <View style={styles.reminderActions}>
                 {reminder.client_phone && (
                   <TouchableOpacity style={styles.reminderBtn} onPress={() => callContact(reminder.client_phone)}>
-                    <Ionicons name="call" size={16} color="#4ECDC4" />
+                    <Ionicons name="call" size={16} color="#e6c65a" />
                     <Text style={styles.reminderBtnText}>{crm.call}</Text>
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity style={[styles.reminderBtn, styles.reminderBtnDone]} onPress={() => markReminderDone(reminder.id)}>
-                  <Ionicons name="checkmark" size={16} color="#1a1a2e" />
+                  <Ionicons name="checkmark" size={16} color="#07090e" />
                   <Text style={styles.reminderBtnTextDone}>{crm.markDone}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.reminderBtn, styles.reminderBtnDelete]} onPress={() => deleteReminder(reminder.id)}>
@@ -1061,7 +1061,7 @@ export default function ClientsScreen() {
   const renderOffersTab = () => (
     <ScrollView 
       style={styles.tabContent}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4ECDC4" />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#e6c65a" />}
     >
       {/* Button to check for new offers */}
       <TouchableOpacity 
@@ -1070,10 +1070,10 @@ export default function ClientsScreen() {
         disabled={checkingOffers}
       >
         {checkingOffers ? (
-          <ActivityIndicator size="small" color="#1a1a2e" />
+          <ActivityIndicator size="small" color="#07090e" />
         ) : (
           <>
-            <Ionicons name="refresh" size={20} color="#1a1a2e" />
+            <Ionicons name="refresh" size={20} color="#07090e" />
             <Text style={styles.checkOffersButtonText}>{crm.checkNewPrograms}</Text>
           </>
         )}
@@ -1081,7 +1081,7 @@ export default function ClientsScreen() {
 
       {betterOffers.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="pricetag-outline" size={64} color="#888" />
+          <Ionicons name="pricetag-outline" size={64} color="#9aa3b1" />
           <Text style={styles.emptyText}>{crm.noOffers}</Text>
           <Text style={styles.emptySubtext}>{crm.offersDesc}</Text>
         </View>
@@ -1092,7 +1092,7 @@ export default function ClientsScreen() {
               <Text style={styles.offerClient}>{offer.client_name}</Text>
               {offer.email_sent && (
                 <View style={styles.emailSentBadge}>
-                  <Ionicons name="checkmark-circle" size={14} color="#4ECDC4" />
+                  <Ionicons name="checkmark-circle" size={14} color="#e6c65a" />
                   <Text style={styles.emailSentText}>Envoyé</Text>
                 </View>
               )}
@@ -1105,7 +1105,7 @@ export default function ClientsScreen() {
                 <Text style={styles.offerLabel}>{crm.oldPayment}</Text>
                 <Text style={styles.offerOldPrice}>{formatCurrency(offer.old_payment)}{crm.perMonth}</Text>
               </View>
-              <Ionicons name="arrow-forward" size={20} color="#4ECDC4" />
+              <Ionicons name="arrow-forward" size={20} color="#e6c65a" />
               <View style={styles.offerNew}>
                 <Text style={styles.offerLabel}>{crm.newPayment}</Text>
                 <Text style={styles.offerNewPrice}>{formatCurrency(offer.new_payment)}{crm.perMonth}</Text>
@@ -1114,7 +1114,7 @@ export default function ClientsScreen() {
             
             {/* Savings */}
             <View style={styles.offerSavings}>
-              <Ionicons name="trending-down" size={18} color="#4ECDC4" />
+              <Ionicons name="trending-down" size={18} color="#e6c65a" />
               <Text style={styles.offerSavingsText}>
                 {crm.savings}: {formatCurrency(offer.savings_monthly)}{crm.perMonth} • {formatCurrency(offer.savings_total)} {crm.total}
               </Text>
@@ -1127,7 +1127,7 @@ export default function ClientsScreen() {
                   style={styles.ignoreBtn}
                   onPress={() => ignoreOffer(offer.submission_id)}
                 >
-                  <Ionicons name="close" size={18} color="#888" />
+                  <Ionicons name="close" size={18} color="#9aa3b1" />
                   <Text style={styles.ignoreBtnText}>{crm.reject}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
@@ -1142,10 +1142,10 @@ export default function ClientsScreen() {
                   disabled={approvingOffer === offer.submission_id}
                 >
                   {approvingOffer === offer.submission_id ? (
-                    <ActivityIndicator size="small" color="#1a1a2e" />
+                    <ActivityIndicator size="small" color="#07090e" />
                   ) : (
                     <>
-                      <Ionicons name="checkmark" size={18} color="#1a1a2e" />
+                      <Ionicons name="checkmark" size={18} color="#07090e" />
                       <Text style={styles.approveBtnText}>{crm.approve}</Text>
                     </>
                   )}
@@ -1181,18 +1181,18 @@ export default function ClientsScreen() {
       <Modal visible={!!selectedOffer} transparent animationType="fade" onRequestClose={() => setSelectedOffer(null)}>
         <View style={{flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 12}}>
           <View style={{
-            backgroundColor: '#1a1a2e', borderRadius: 16, width: '100%', maxWidth: 500,
+            backgroundColor: '#07090e', borderRadius: 16, width: '100%', maxWidth: 500,
             maxHeight: Math.round(Dimensions.get('window').height * 0.9), flexDirection: 'column' as const, overflow: 'hidden' as const,
           }}>
             {/* Header */}
-            <View style={{flexDirection: 'row' as const, alignItems: 'center' as const, padding: 14, borderBottomWidth: 1, borderBottomColor: '#2d2d44'}}>
-              <Ionicons name="pricetag" size={22} color="#4ECDC4" style={{marginRight: 10}} />
+            <View style={{flexDirection: 'row' as const, alignItems: 'center' as const, padding: 14, borderBottomWidth: 1, borderBottomColor: '#303744'}}>
+              <Ionicons name="pricetag" size={22} color="#e6c65a" style={{marginRight: 10}} />
               <View style={{flex: 1}}>
-                <Text style={{color: '#fff', fontSize: 16, fontWeight: 'bold'}}>{o.client_name}</Text>
-                <Text style={{color: '#888', fontSize: 13}}>{o.vehicle_brand} {o.vehicle_model} {o.vehicle_year}{o.vehicle_price > 0 ? ` | ${fmtCur(o.vehicle_price)}` : ''}</Text>
+                <Text style={{color: '#f4f1ea', fontSize: 16, fontWeight: 'bold'}}>{o.client_name}</Text>
+                <Text style={{color: '#9aa3b1', fontSize: 13}}>{o.vehicle_brand} {o.vehicle_model} {o.vehicle_year}{o.vehicle_price > 0 ? ` | ${fmtCur(o.vehicle_price)}` : ''}</Text>
               </View>
               <TouchableOpacity onPress={() => setSelectedOffer(null)} style={{padding: 4}} data-testid="close-offer-modal">
-                <Ionicons name="close" size={22} color="#888" />
+                <Ionicons name="close" size={22} color="#9aa3b1" />
               </TouchableOpacity>
             </View>
             
@@ -1200,52 +1200,52 @@ export default function ClientsScreen() {
               <View style={{padding: 14}}>
 
                 {/* Old deal summary */}
-                <View style={{backgroundColor: '#2d2d44', borderRadius: 10, padding: 12, marginBottom: 10}}>
+                <View style={{backgroundColor: '#111722', borderRadius: 10, padding: 12, marginBottom: 10}}>
                   <Text style={{color: '#FF6B6B', fontSize: 12, fontWeight: 'bold', marginBottom: 6}}>
                     {isFr ? 'ANCIEN DEAL' : 'OLD DEAL'} ({o.old_program})
                   </Text>
                   <View style={{flexDirection: 'row' as const, justifyContent: 'space-between' as const}}>
                     <View>
-                      <Text style={{color: '#888', fontSize: 11}}>{isFr ? 'Paiement' : 'Payment'}</Text>
+                      <Text style={{color: '#9aa3b1', fontSize: 11}}>{isFr ? 'Paiement' : 'Payment'}</Text>
                       <Text style={{color: '#FF6B6B', fontSize: 18, fontWeight: 'bold', textDecorationLine: 'line-through'}}>{fmtCur(o.old_payment)}/m</Text>
                     </View>
                     <View style={{alignItems: 'center' as const}}>
-                      <Text style={{color: '#888', fontSize: 11}}>{isFr ? 'Taux' : 'Rate'}</Text>
+                      <Text style={{color: '#9aa3b1', fontSize: 11}}>{isFr ? 'Taux' : 'Rate'}</Text>
                       <Text style={{color: '#FF6B6B', fontSize: 16, fontWeight: 'bold'}}>{o.old_rate}%</Text>
                     </View>
                     <View style={{alignItems: 'flex-end' as const}}>
-                      <Text style={{color: '#888', fontSize: 11}}>{isFr ? 'Terme' : 'Term'}</Text>
-                      <Text style={{color: '#ccc', fontSize: 16, fontWeight: 'bold'}}>{clientTerm}m</Text>
+                      <Text style={{color: '#9aa3b1', fontSize: 11}}>{isFr ? 'Terme' : 'Term'}</Text>
+                      <Text style={{color: '#cfd4dc', fontSize: 16, fontWeight: 'bold'}}>{clientTerm}m</Text>
                     </View>
                   </View>
                   {o.old_consumer_cash > 0 && (
-                    <Text style={{color: '#888', fontSize: 12, marginTop: 4}}>
+                    <Text style={{color: '#9aa3b1', fontSize: 12, marginTop: 4}}>
                       {isFr ? 'Rabais' : 'Rebate'}: {fmtCur(o.old_consumer_cash)}
                     </Text>
                   )}
                   {(o.old_selected_option || '1') !== '1' && (
-                    <Text style={{color: '#888', fontSize: 12}}>Option {o.old_selected_option}</Text>
+                    <Text style={{color: '#9aa3b1', fontSize: 12}}>Option {o.old_selected_option}</Text>
                   )}
                 </View>
 
                 {/* Trade-in section */}
                 {(prixEchange > 0 || balanceDue > 0) && (
-                  <View style={{backgroundColor: '#2d2d44', borderRadius: 10, padding: 12, marginBottom: 10}}>
+                  <View style={{backgroundColor: '#111722', borderRadius: 10, padding: 12, marginBottom: 10}}>
                     <Text style={{color: '#FF9F43', fontSize: 12, fontWeight: 'bold', marginBottom: 6}}>
                       {isFr ? 'ECHANGE' : 'TRADE-IN'}
                     </Text>
                     <View style={{flexDirection: 'row' as const, justifyContent: 'space-between' as const}}>
                       <View>
-                        <Text style={{color: '#888', fontSize: 11}}>{isFr ? 'Valeur' : 'Value'}</Text>
-                        <Text style={{color: '#4ECDC4', fontSize: 16, fontWeight: 'bold'}}>{fmtCur(prixEchange)}</Text>
+                        <Text style={{color: '#9aa3b1', fontSize: 11}}>{isFr ? 'Valeur' : 'Value'}</Text>
+                        <Text style={{color: '#e6c65a', fontSize: 16, fontWeight: 'bold'}}>{fmtCur(prixEchange)}</Text>
                       </View>
                       <View style={{alignItems: 'center' as const}}>
-                        <Text style={{color: '#888', fontSize: 11}}>{isFr ? 'Balance' : 'Balance'}</Text>
+                        <Text style={{color: '#9aa3b1', fontSize: 11}}>{isFr ? 'Balance' : 'Balance'}</Text>
                         <Text style={{color: '#FF6B6B', fontSize: 16, fontWeight: 'bold'}}>{fmtCur(balanceDue)}</Text>
                       </View>
                       <View style={{alignItems: 'flex-end' as const}}>
-                        <Text style={{color: '#888', fontSize: 11}}>{isFr ? 'Equite' : 'Equity'}</Text>
-                        <Text style={{color: equite >= 0 ? '#4ECDC4' : '#FF6B6B', fontSize: 16, fontWeight: 'bold'}}>
+                        <Text style={{color: '#9aa3b1', fontSize: 11}}>{isFr ? 'Equite' : 'Equity'}</Text>
+                        <Text style={{color: equite >= 0 ? '#e6c65a' : '#FF6B6B', fontSize: 16, fontWeight: 'bold'}}>
                           {equite >= 0 ? '+' : '-'}{fmtCur(equite)}
                         </Text>
                       </View>
@@ -1254,47 +1254,47 @@ export default function ClientsScreen() {
                 )}
 
                 {/* New program info */}
-                <View style={{backgroundColor: '#1e3a2e', borderRadius: 10, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: '#4ECDC4'}}>
-                  <Text style={{color: '#4ECDC4', fontSize: 12, fontWeight: 'bold', marginBottom: 6}}>
+                <View style={{backgroundColor: '#1e3a2e', borderRadius: 10, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: '#e6c65a'}}>
+                  <Text style={{color: '#e6c65a', fontSize: 12, fontWeight: 'bold', marginBottom: 6}}>
                     {isFr ? 'NOUVEAU PROGRAMME' : 'NEW PROGRAM'} ({o.new_program})
                   </Text>
                   <View style={{flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 8}}>
                     {npd.consumer_cash > 0 && (
                       <View style={{backgroundColor: '#0d2a1e', borderRadius: 6, padding: 6, paddingHorizontal: 10}}>
-                        <Text style={{color: '#888', fontSize: 10}}>Opt.1 {isFr ? 'Rabais' : 'Rebate'}</Text>
-                        <Text style={{color: '#4ECDC4', fontSize: 14, fontWeight: 'bold'}}>{fmtCur(npd.consumer_cash)}</Text>
+                        <Text style={{color: '#9aa3b1', fontSize: 10}}>Opt.1 {isFr ? 'Rabais' : 'Rebate'}</Text>
+                        <Text style={{color: '#e6c65a', fontSize: 14, fontWeight: 'bold'}}>{fmtCur(npd.consumer_cash)}</Text>
                       </View>
                     )}
                     {hasOpt2 && npd.alt_consumer_cash > 0 && (
                       <View style={{backgroundColor: '#0d2a1e', borderRadius: 6, padding: 6, paddingHorizontal: 10}}>
-                        <Text style={{color: '#888', fontSize: 10}}>Opt.2 {isFr ? 'Rabais' : 'Rebate'}</Text>
-                        <Text style={{color: '#4ECDC4', fontSize: 14, fontWeight: 'bold'}}>{fmtCur(npd.alt_consumer_cash)}</Text>
+                        <Text style={{color: '#9aa3b1', fontSize: 10}}>Opt.2 {isFr ? 'Rabais' : 'Rebate'}</Text>
+                        <Text style={{color: '#e6c65a', fontSize: 14, fontWeight: 'bold'}}>{fmtCur(npd.alt_consumer_cash)}</Text>
                       </View>
                     )}
                     {npd.bonus_cash > 0 && (
                       <View style={{backgroundColor: '#0d2a1e', borderRadius: 6, padding: 6, paddingHorizontal: 10}}>
-                        <Text style={{color: '#888', fontSize: 10}}>Bonus</Text>
-                        <Text style={{color: '#FFD93D', fontSize: 14, fontWeight: 'bold'}}>{fmtCur(npd.bonus_cash)}</Text>
+                        <Text style={{color: '#9aa3b1', fontSize: 10}}>Bonus</Text>
+                        <Text style={{color: '#f0d879', fontSize: 14, fontWeight: 'bold'}}>{fmtCur(npd.bonus_cash)}</Text>
                       </View>
                     )}
                   </View>
                 </View>
 
                 {/* Payment comparison table for all terms */}
-                <View style={{backgroundColor: '#2d2d44', borderRadius: 10, overflow: 'hidden' as const, marginBottom: 10}}>
-                  <Text style={{color: '#FFD93D', fontSize: 12, fontWeight: 'bold', padding: 10, paddingBottom: 6}}>
+                <View style={{backgroundColor: '#111722', borderRadius: 10, overflow: 'hidden' as const, marginBottom: 10}}>
+                  <Text style={{color: '#f0d879', fontSize: 12, fontWeight: 'bold', padding: 10, paddingBottom: 6}}>
                     {isFr ? 'COMPARAISON PAR TERME' : 'COMPARISON BY TERM'}
                   </Text>
                   {/* Table header */}
-                  <View style={{flexDirection: 'row' as const, backgroundColor: '#1a1a2e', paddingVertical: 6, paddingHorizontal: 10}}>
-                    <Text style={{color: '#888', fontSize: 10, width: 42, fontWeight: 'bold'}}>{isFr ? 'Terme' : 'Term'}</Text>
-                    <Text style={{color: '#4ECDC4', fontSize: 10, flex: 1, textAlign: 'center' as const, fontWeight: 'bold'}}>
+                  <View style={{flexDirection: 'row' as const, backgroundColor: '#07090e', paddingVertical: 6, paddingHorizontal: 10}}>
+                    <Text style={{color: '#9aa3b1', fontSize: 10, width: 42, fontWeight: 'bold'}}>{isFr ? 'Terme' : 'Term'}</Text>
+                    <Text style={{color: '#e6c65a', fontSize: 10, flex: 1, textAlign: 'center' as const, fontWeight: 'bold'}}>
                       {isFr ? 'Economie Opt.1' : 'Savings Opt.1'}
                     </Text>
-                    {hasOpt2 && <Text style={{color: '#4ECDC4', fontSize: 10, flex: 1, textAlign: 'center' as const, fontWeight: 'bold'}}>
+                    {hasOpt2 && <Text style={{color: '#e6c65a', fontSize: 10, flex: 1, textAlign: 'center' as const, fontWeight: 'bold'}}>
                       {isFr ? 'Economie Opt.2' : 'Savings Opt.2'}
                     </Text>}
-                    <Text style={{color: '#888', fontSize: 10, width: 50, textAlign: 'center' as const, fontWeight: 'bold'}}>
+                    <Text style={{color: '#9aa3b1', fontSize: 10, width: 50, textAlign: 'center' as const, fontWeight: 'bold'}}>
                       {isFr ? 'Taux' : 'Rate'}
                     </Text>
                   </View>
@@ -1307,21 +1307,21 @@ export default function ClientsScreen() {
                     return (
                       <View key={t} style={{
                         flexDirection: 'row' as const, paddingVertical: 7, paddingHorizontal: 10,
-                        backgroundColor: isClientTerm ? 'rgba(78,205,196,0.1)' : 'transparent',
-                        borderLeftWidth: isClientTerm ? 3 : 0, borderLeftColor: '#4ECDC4',
+                        backgroundColor: isClientTerm ? 'rgba(230, 198, 90,0.1)' : 'transparent',
+                        borderLeftWidth: isClientTerm ? 3 : 0, borderLeftColor: '#e6c65a',
                       }}>
-                        <Text style={{color: isClientTerm ? '#4ECDC4' : '#ccc', fontSize: 12, width: 42, fontWeight: isClientTerm ? 'bold' : 'normal'}}>
+                        <Text style={{color: isClientTerm ? '#e6c65a' : '#cfd4dc', fontSize: 12, width: 42, fontWeight: isClientTerm ? 'bold' : 'normal'}}>
                           {t}m{isClientTerm ? ' *' : ''}
                         </Text>
-                        <Text style={{color: o1Delta > 0 ? '#4ECDC4' : '#888', fontSize: 12, flex: 1, textAlign: 'center' as const, fontWeight: isClientTerm ? 'bold' : 'normal'}}>
+                        <Text style={{color: o1Delta > 0 ? '#e6c65a' : '#9aa3b1', fontSize: 12, flex: 1, textAlign: 'center' as const, fontWeight: isClientTerm ? 'bold' : 'normal'}}>
                           {o1Delta > 0 ? `-${fmtCur(o1Delta)}/m` : '-'}
                         </Text>
                         {hasOpt2 && (
-                          <Text style={{color: (o2Delta ?? 0) > 0 ? '#4ECDC4' : '#888', fontSize: 12, flex: 1, textAlign: 'center' as const, fontWeight: isClientTerm ? 'bold' : 'normal'}}>
+                          <Text style={{color: (o2Delta ?? 0) > 0 ? '#e6c65a' : '#9aa3b1', fontSize: 12, flex: 1, textAlign: 'center' as const, fontWeight: isClientTerm ? 'bold' : 'normal'}}>
                             {o2Delta != null && o2Delta > 0 ? `-${fmtCur(o2Delta)}/m` : '-'}
                           </Text>
                         )}
-                        <Text style={{color: '#888', fontSize: 11, width: 50, textAlign: 'center' as const}}>
+                        <Text style={{color: '#9aa3b1', fontSize: 11, width: 50, textAlign: 'center' as const}}>
                           {termData?.opt1_rate ?? '-'}%
                         </Text>
                       </View>
@@ -1330,24 +1330,24 @@ export default function ClientsScreen() {
                 </View>
 
                 {/* Savings highlight */}
-                <View style={{backgroundColor: '#1e3a2e', borderRadius: 10, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#4ECDC4'}}>
-                  <Text style={{color: '#4ECDC4', fontSize: 12, fontWeight: 'bold', marginBottom: 8}}>
+                <View style={{backgroundColor: '#1e3a2e', borderRadius: 10, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#e6c65a'}}>
+                  <Text style={{color: '#e6c65a', fontSize: 12, fontWeight: 'bold', marginBottom: 8}}>
                     {isFr ? 'ECONOMIE DU CLIENT' : 'CLIENT SAVINGS'} ({clientTerm}m)
                   </Text>
                   <View style={{flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const}}>
                     <View>
-                      <Text style={{color: '#888', fontSize: 11}}>{isFr ? 'Ancien' : 'Old'}</Text>
+                      <Text style={{color: '#9aa3b1', fontSize: 11}}>{isFr ? 'Ancien' : 'Old'}</Text>
                       <Text style={{color: '#FF6B6B', fontSize: 20, fontWeight: 'bold', textDecorationLine: 'line-through'}}>{fmtCur(o.old_payment)}/m</Text>
                     </View>
-                    <Ionicons name="arrow-forward" size={20} color="#4ECDC4" />
+                    <Ionicons name="arrow-forward" size={20} color="#e6c65a" />
                     <View style={{alignItems: 'flex-end' as const}}>
-                      <Text style={{color: '#888', fontSize: 11}}>{isFr ? 'Nouveau' : 'New'}</Text>
-                      <Text style={{color: '#4ECDC4', fontSize: 20, fontWeight: 'bold'}}>{fmtCur(o.new_payment)}/m</Text>
+                      <Text style={{color: '#9aa3b1', fontSize: 11}}>{isFr ? 'Nouveau' : 'New'}</Text>
+                      <Text style={{color: '#e6c65a', fontSize: 20, fontWeight: 'bold'}}>{fmtCur(o.new_payment)}/m</Text>
                     </View>
                   </View>
                   <View style={{backgroundColor: '#0d2a1e', borderRadius: 8, padding: 10, marginTop: 10, alignItems: 'center' as const}}>
-                    <Text style={{color: '#4ECDC4', fontSize: 24, fontWeight: 'bold'}}>-{fmtCur(o.savings_monthly)}/m</Text>
-                    <Text style={{color: '#4ECDC4', fontSize: 14, marginTop: 2}}>
+                    <Text style={{color: '#e6c65a', fontSize: 24, fontWeight: 'bold'}}>-{fmtCur(o.savings_monthly)}/m</Text>
+                    <Text style={{color: '#e6c65a', fontSize: 14, marginTop: 2}}>
                       {isFr ? 'Total sur' : 'Total over'} {clientTerm}m: -{fmtCur(o.savings_total)}
                     </Text>
                   </View>
@@ -1355,12 +1355,12 @@ export default function ClientsScreen() {
 
                 {/* Extra info */}
                 {comptant > 0 && (
-                  <Text style={{color: '#888', fontSize: 12, marginBottom: 4}}>
+                  <Text style={{color: '#9aa3b1', fontSize: 12, marginBottom: 4}}>
                     {isFr ? 'Comptant' : 'Down payment'}: {fmtCur(comptant)}
                   </Text>
                 )}
                 {fraisDossier > 0 && (
-                  <Text style={{color: '#888', fontSize: 12, marginBottom: 4}}>
+                  <Text style={{color: '#9aa3b1', fontSize: 12, marginBottom: 4}}>
                     {isFr ? 'Frais de dossier' : 'Admin fees'}: {fmtCur(fraisDossier)}
                   </Text>
                 )}
@@ -1368,22 +1368,22 @@ export default function ClientsScreen() {
             </ScrollView>
             
             {/* Action buttons */}
-            <View style={{flexDirection: 'row' as const, padding: 12, gap: 10, borderTopWidth: 1, borderTopColor: '#2d2d44'}}>
+            <View style={{flexDirection: 'row' as const, padding: 12, gap: 10, borderTopWidth: 1, borderTopColor: '#303744'}}>
               <TouchableOpacity 
-                style={{flex: 1, backgroundColor: '#2d2d44', borderRadius: 10, padding: 12, alignItems: 'center' as const}}
+                style={{flex: 1, backgroundColor: '#111722', borderRadius: 10, padding: 12, alignItems: 'center' as const}}
                 onPress={() => setSelectedOffer(null)}
                 data-testid="offer-modal-close-btn"
               >
-                <Text style={{color: '#ccc', fontWeight: 'bold'}}>{isFr ? 'Fermer' : 'Close'}</Text>
+                <Text style={{color: '#cfd4dc', fontWeight: 'bold'}}>{isFr ? 'Fermer' : 'Close'}</Text>
               </TouchableOpacity>
               {!o.email_sent && (
                 <TouchableOpacity 
-                  style={{flex: 2, backgroundColor: '#4ECDC4', borderRadius: 10, padding: 12, flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 8}}
+                  style={{flex: 2, backgroundColor: '#e6c65a', borderRadius: 10, padding: 12, flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 8}}
                   onPress={() => { setSelectedOffer(null); approveOffer(o.submission_id); }}
                   data-testid="offer-modal-approve-btn"
                 >
-                  <Ionicons name="send" size={18} color="#1a1a2e" />
-                  <Text style={{color: '#1a1a2e', fontWeight: 'bold'}}>
+                  <Ionicons name="send" size={18} color="#07090e" />
+                  <Text style={{color: '#07090e', fontWeight: 'bold'}}>
                     {isFr ? 'Approuver & Envoyer' : 'Approve & Send'}
                   </Text>
                 </TouchableOpacity>
@@ -1455,11 +1455,11 @@ export default function ClientsScreen() {
   const renderHistoryTab = () => (
     <ScrollView 
       style={styles.tabContent}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4ECDC4" />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#e6c65a" />}
     >
       {submissions.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="document-text-outline" size={64} color="#888" />
+          <Ionicons name="document-text-outline" size={64} color="#9aa3b1" />
           <Text style={styles.emptyText}>{crm.noSubmissions}</Text>
         </View>
       ) : (
@@ -1478,7 +1478,7 @@ export default function ClientsScreen() {
               </Text>
               {sub.reminder_date && !sub.reminder_done && (
                 <View style={styles.historyReminderBadge}>
-                  <Ionicons name="notifications" size={12} color="#FFD93D" />
+                  <Ionicons name="notifications" size={12} color="#f0d879" />
                   <Text style={styles.historyReminderText}>{formatDate(sub.reminder_date)}</Text>
                 </View>
               )}
@@ -1488,7 +1488,7 @@ export default function ClientsScreen() {
               onPress={() => openSubmissionInCalculator(sub)}
               data-testid={`open-submission-${index}`}
             >
-              <Ionicons name="calculator-outline" size={16} color="#1a1a2e" />
+              <Ionicons name="calculator-outline" size={16} color="#07090e" />
               <Text style={styles.openCalcBtnText}>{lang === 'fr' ? 'Ouvrir le calcul' : 'Open calculation'}</Text>
             </TouchableOpacity>
           </View>
@@ -1506,7 +1506,7 @@ export default function ClientsScreen() {
           <Text style={styles.headerTitle}>{crm.title}</Text>
           {remindersCount > 0 && (
             <View style={styles.remindersBadge}>
-              <Ionicons name="warning" size={14} color="#FFD93D" />
+              <Ionicons name="warning" size={14} color="#f0d879" />
               <Text style={styles.remindersBadgeText}>{remindersCount} {crm.remindersCount}</Text>
             </View>
           )}
@@ -1520,14 +1520,14 @@ export default function ClientsScreen() {
           style={[styles.tab, activeTab === 'clients' && styles.tabActive]}
           onPress={() => setActiveTab('clients')}
         >
-          <Ionicons name="people" size={18} color={activeTab === 'clients' ? '#4ECDC4' : '#888'} />
+          <Ionicons name="people" size={18} color={activeTab === 'clients' ? '#e6c65a' : '#9aa3b1'} />
           <Text style={[styles.tabText, activeTab === 'clients' && styles.tabTextActive]}>{crm.tabs.clients}</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.tab, activeTab === 'reminders' && styles.tabActive]}
           onPress={() => setActiveTab('reminders')}
         >
-          <Ionicons name="notifications" size={18} color={activeTab === 'reminders' ? '#4ECDC4' : '#888'} />
+          <Ionicons name="notifications" size={18} color={activeTab === 'reminders' ? '#e6c65a' : '#9aa3b1'} />
           <Text style={[styles.tabText, activeTab === 'reminders' && styles.tabTextActive]}>
             {crm.tabs.reminders} {remindersCount > 0 && `(${remindersCount})`}
           </Text>
@@ -1536,14 +1536,14 @@ export default function ClientsScreen() {
           style={[styles.tab, activeTab === 'offers' && styles.tabActive]}
           onPress={() => setActiveTab('offers')}
         >
-          <Ionicons name="pricetag" size={18} color={activeTab === 'offers' ? '#4ECDC4' : '#888'} />
+          <Ionicons name="pricetag" size={18} color={activeTab === 'offers' ? '#e6c65a' : '#9aa3b1'} />
           <Text style={[styles.tabText, activeTab === 'offers' && styles.tabTextActive]}>{crm.tabs.offers}</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.tab, activeTab === 'history' && styles.tabActive]}
           onPress={() => setActiveTab('history')}
         >
-          <Ionicons name="document-text" size={18} color={activeTab === 'history' ? '#4ECDC4' : '#888'} />
+          <Ionicons name="document-text" size={18} color={activeTab === 'history' ? '#e6c65a' : '#9aa3b1'} />
           <Text style={[styles.tabText, activeTab === 'history' && styles.tabTextActive]}>{crm.tabs.history}</Text>
         </TouchableOpacity>
       </View>
@@ -1551,17 +1551,17 @@ export default function ClientsScreen() {
       {/* Search Bar */}
       <View style={styles.searchRow}>
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#888" />
+          <Ionicons name="search" size={20} color="#9aa3b1" />
           <TextInput
             style={styles.searchInput}
             placeholder={crm.search}
-            placeholderTextColor="#666"
+            placeholderTextColor="#8a93a1"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {searchQuery ? (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color="#888" />
+              <Ionicons name="close-circle" size={20} color="#9aa3b1" />
             </TouchableOpacity>
           ) : null}
         </View>
@@ -1574,7 +1574,7 @@ export default function ClientsScreen() {
           onPress={() => setShowAddContactModal(true)}
           data-testid="add-contact-btn"
         >
-          <Ionicons name="add" size={20} color="#1a1a2e" />
+          <Ionicons name="add" size={20} color="#07090e" />
           <Text style={styles.addButtonText}>{crm.add}</Text>
         </TouchableOpacity>
         <TouchableOpacity 
@@ -1600,54 +1600,54 @@ export default function ClientsScreen() {
       {/* ============================================ */}
       <Modal visible={showAddContactModal} animationType="slide" transparent={true} onRequestClose={() => setShowAddContactModal(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 20 }}>
-          <View style={{ backgroundColor: '#1a1a2e', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: '#333' }}>
+          <View style={{ backgroundColor: '#07090e', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: '#333' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>Nouveau contact</Text>
+              <Text style={{ color: '#f4f1ea', fontSize: 20, fontWeight: '700' }}>Nouveau contact</Text>
               <TouchableOpacity onPress={() => setShowAddContactModal(false)} data-testid="close-add-contact-modal">
-                <Ionicons name="close" size={24} color="#888" />
+                <Ionicons name="close" size={24} color="#9aa3b1" />
               </TouchableOpacity>
             </View>
 
-            <Text style={{ color: '#aaa', fontSize: 13, marginBottom: 6 }}>Nom *</Text>
+            <Text style={{ color: '#b9c0cc', fontSize: 13, marginBottom: 6 }}>Nom *</Text>
             <TextInput
-              style={{ backgroundColor: '#16213e', borderRadius: 10, padding: 14, color: '#fff', fontSize: 16, marginBottom: 14, borderWidth: 1, borderColor: '#333' }}
+              style={{ backgroundColor: '#0d1118', borderRadius: 10, padding: 14, color: '#f4f1ea', fontSize: 16, marginBottom: 14, borderWidth: 1, borderColor: '#333' }}
               value={newContactName}
               onChangeText={setNewContactName}
               placeholder="Nom complet"
-              placeholderTextColor="#555"
+              placeholderTextColor="#5a6372"
               data-testid="new-contact-name-input"
             />
 
-            <Text style={{ color: '#aaa', fontSize: 13, marginBottom: 6 }}>Téléphone</Text>
+            <Text style={{ color: '#b9c0cc', fontSize: 13, marginBottom: 6 }}>Téléphone</Text>
             <TextInput
-              style={{ backgroundColor: '#16213e', borderRadius: 10, padding: 14, color: '#fff', fontSize: 16, marginBottom: 14, borderWidth: 1, borderColor: '#333' }}
+              style={{ backgroundColor: '#0d1118', borderRadius: 10, padding: 14, color: '#f4f1ea', fontSize: 16, marginBottom: 14, borderWidth: 1, borderColor: '#333' }}
               value={newContactPhone}
               onChangeText={setNewContactPhone}
               placeholder="(418) 555-1234"
-              placeholderTextColor="#555"
+              placeholderTextColor="#5a6372"
               keyboardType="phone-pad"
               data-testid="new-contact-phone-input"
             />
 
-            <Text style={{ color: '#aaa', fontSize: 13, marginBottom: 6 }}>Courriel</Text>
+            <Text style={{ color: '#b9c0cc', fontSize: 13, marginBottom: 6 }}>Courriel</Text>
             <TextInput
-              style={{ backgroundColor: '#16213e', borderRadius: 10, padding: 14, color: '#fff', fontSize: 16, marginBottom: 20, borderWidth: 1, borderColor: '#333' }}
+              style={{ backgroundColor: '#0d1118', borderRadius: 10, padding: 14, color: '#f4f1ea', fontSize: 16, marginBottom: 20, borderWidth: 1, borderColor: '#333' }}
               value={newContactEmail}
               onChangeText={setNewContactEmail}
               placeholder="email@exemple.com"
-              placeholderTextColor="#555"
+              placeholderTextColor="#5a6372"
               keyboardType="email-address"
               autoCapitalize="none"
               data-testid="new-contact-email-input"
             />
 
             <TouchableOpacity
-              style={{ backgroundColor: savingContact ? '#555' : '#4ECDC4', borderRadius: 12, padding: 16, alignItems: 'center' }}
+              style={{ backgroundColor: savingContact ? '#5a6372' : '#e6c65a', borderRadius: 12, padding: 16, alignItems: 'center' }}
               onPress={handleCreateContact}
               disabled={savingContact || !newContactName.trim()}
               data-testid="save-new-contact-btn"
             >
-              <Text style={{ color: '#1a1a2e', fontSize: 16, fontWeight: '700' }}>
+              <Text style={{ color: '#07090e', fontSize: 16, fontWeight: '700' }}>
                 {savingContact ? 'Enregistrement...' : 'Enregistrer'}
               </Text>
             </TouchableOpacity>
@@ -1664,7 +1664,7 @@ export default function ClientsScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{crm.importTitle}</Text>
               <TouchableOpacity onPress={() => setShowImportModal(false)}>
-                <Ionicons name="close" size={24} color="#fff" />
+                <Ionicons name="close" size={24} color="#f4f1ea" />
               </TouchableOpacity>
             </View>
             
@@ -1678,16 +1678,16 @@ export default function ClientsScreen() {
                 disabled={importingFile}
               >
                 <View style={styles.importOptionIcon}>
-                  <Ionicons name="cloud-outline" size={28} color="#4ECDC4" />
+                  <Ionicons name="cloud-outline" size={28} color="#e6c65a" />
                 </View>
                 <View style={styles.importOptionInfo}>
                   <Text style={styles.importOptionTitle}>{crm.iCloudOption}</Text>
                   <Text style={styles.importOptionDesc}>{crm.iCloudDesc}</Text>
                 </View>
                 {importingFile ? (
-                  <ActivityIndicator size="small" color="#4ECDC4" />
+                  <ActivityIndicator size="small" color="#e6c65a" />
                 ) : (
-                  <Ionicons name="chevron-forward" size={24} color="#888" />
+                  <Ionicons name="chevron-forward" size={24} color="#9aa3b1" />
                 )}
               </TouchableOpacity>
               
@@ -1707,7 +1707,7 @@ export default function ClientsScreen() {
                 {importingFile ? (
                   <ActivityIndicator size="small" color="#4285F4" />
                 ) : (
-                  <Ionicons name="chevron-forward" size={24} color="#888" />
+                  <Ionicons name="chevron-forward" size={24} color="#9aa3b1" />
                 )}
               </TouchableOpacity>
               
@@ -1735,7 +1735,7 @@ export default function ClientsScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{crm.contactsImported} ({importedContacts.length})</Text>
               <TouchableOpacity onPress={() => setShowImportedContactsModal(false)}>
-                <Ionicons name="close" size={24} color="#fff" />
+                <Ionicons name="close" size={24} color="#f4f1ea" />
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.contactsList}>
@@ -1749,7 +1749,7 @@ export default function ClientsScreen() {
                     {contact.phone && <Text style={styles.contactPhone}>{contact.phone}</Text>}
                     {contact.email && <Text style={styles.contactEmail}>{contact.email}</Text>}
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color="#888" />
+                  <Ionicons name="chevron-forward" size={20} color="#9aa3b1" />
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -1764,7 +1764,7 @@ export default function ClientsScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{selectedClient?.name}</Text>
               <TouchableOpacity onPress={() => setShowClientModal(false)}>
-                <Ionicons name="close" size={24} color="#fff" />
+                <Ionicons name="close" size={24} color="#f4f1ea" />
               </TouchableOpacity>
             </View>
             {selectedClient && (
@@ -1772,19 +1772,19 @@ export default function ClientsScreen() {
                 <View style={styles.clientModalInfo}>
                   {selectedClient.phone && (
                     <TouchableOpacity style={styles.clientModalContact} onPress={() => callContact(selectedClient.phone)}>
-                      <Ionicons name="call" size={20} color="#4ECDC4" />
+                      <Ionicons name="call" size={20} color="#e6c65a" />
                       <Text style={styles.clientModalContactText}>{selectedClient.phone}</Text>
                     </TouchableOpacity>
                   )}
                   {selectedClient.email && (
                     <TouchableOpacity style={styles.clientModalContact} onPress={() => emailContact(selectedClient.email)}>
-                      <Ionicons name="mail" size={20} color="#4ECDC4" />
+                      <Ionicons name="mail" size={20} color="#e6c65a" />
                       <Text style={styles.clientModalContactText}>{selectedClient.email}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
                 <TouchableOpacity style={styles.newQuoteButton} onPress={() => newQuoteForClient(selectedClient)}>
-                  <Ionicons name="add-circle" size={20} color="#1a1a2e" />
+                  <Ionicons name="add-circle" size={20} color="#07090e" />
                   <Text style={styles.newQuoteButtonText}>{crm.newQuote}</Text>
                 </TouchableOpacity>
                 <Text style={styles.clientModalSectionTitle}>{crm.submissions} ({selectedClient.submissions.length})</Text>
@@ -1827,7 +1827,7 @@ export default function ClientsScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{crm.scheduleFollowUp}</Text>
               <TouchableOpacity onPress={() => setShowFollowUpModal(false)}>
-                <Ionicons name="close" size={24} color="#fff" />
+                <Ionicons name="close" size={24} color="#f4f1ea" />
               </TouchableOpacity>
             </View>
             <View style={styles.followUpForm}>
@@ -1837,7 +1837,7 @@ export default function ClientsScreen() {
                 value={followUpDate}
                 onChangeText={setFollowUpDate}
                 placeholder="YYYY-MM-DD"
-                placeholderTextColor="#666"
+                placeholderTextColor="#8a93a1"
               />
               <Text style={styles.followUpLabel}>{crm.notes}</Text>
               <TextInput
@@ -1845,7 +1845,7 @@ export default function ClientsScreen() {
                 value={followUpNotes}
                 onChangeText={setFollowUpNotes}
                 placeholder={crm.notes}
-                placeholderTextColor="#666"
+                placeholderTextColor="#8a93a1"
                 multiline
                 numberOfLines={4}
               />
@@ -1855,7 +1855,7 @@ export default function ClientsScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.saveButton} onPress={saveFollowUp} disabled={savingFollowUp}>
                   {savingFollowUp ? (
-                    <ActivityIndicator size="small" color="#1a1a2e" />
+                    <ActivityIndicator size="small" color="#07090e" />
                   ) : (
                     <Text style={styles.saveButtonText}>{crm.save}</Text>
                   )}
@@ -1870,9 +1870,9 @@ export default function ClientsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a2e' },
+  container: { flex: 1, backgroundColor: '#07090e' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { color: '#888', marginTop: 12, fontSize: 16 },
+  loadingText: { color: '#9aa3b1', marginTop: 12, fontSize: 16 },
   
   // Header
   header: { 
@@ -1882,25 +1882,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, 
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2d2d44',
+    borderBottomColor: '#303744',
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  headerTitle: { fontSize: 28, fontWeight: 'bold', color: '#fff' },
+  headerTitle: { fontSize: 28, fontWeight: 'bold', color: '#f4f1ea' },
   remindersBadge: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    backgroundColor: 'rgba(255, 217, 61, 0.15)', 
+    backgroundColor: 'rgba(240, 216, 121, 0.15)', 
     paddingHorizontal: 10, 
     paddingVertical: 6, 
     borderRadius: 20,
     gap: 6,
   },
-  remindersBadgeText: { color: '#FFD93D', fontSize: 12, fontWeight: '600' },
+  remindersBadgeText: { color: '#f0d879', fontSize: 12, fontWeight: '600' },
   
   // Tabs
   tabsContainer: { 
     flexDirection: 'row', 
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     marginHorizontal: 16,
     marginTop: 16,
     borderRadius: 12,
@@ -1916,21 +1916,21 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     gap: 4,
   },
-  tabActive: { backgroundColor: '#1a1a2e' },
-  tabText: { color: '#888', fontSize: 11, fontWeight: '600' },
-  tabTextActive: { color: '#4ECDC4' },
+  tabActive: { backgroundColor: '#07090e' },
+  tabText: { color: '#9aa3b1', fontSize: 11, fontWeight: '600' },
+  tabTextActive: { color: '#e6c65a' },
   
   // Search
   searchRow: { paddingHorizontal: 16, marginTop: 16 },
   searchContainer: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    backgroundColor: '#2d2d44', 
+    backgroundColor: '#111722', 
     borderRadius: 12, 
     paddingHorizontal: 16, 
     paddingVertical: 12,
   },
-  searchInput: { flex: 1, color: '#fff', fontSize: 16, marginLeft: 10 },
+  searchInput: { flex: 1, color: '#f4f1ea', fontSize: 16, marginLeft: 10 },
   
   // Action Buttons
   actionsRow: { 
@@ -1944,12 +1944,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     justifyContent: 'center',
-    backgroundColor: '#4ECDC4', 
+    backgroundColor: '#e6c65a', 
     paddingVertical: 12, 
     borderRadius: 12,
     gap: 8,
   },
-  addButtonText: { color: '#1a1a2e', fontSize: 16, fontWeight: '600' },
+  addButtonText: { color: '#07090e', fontSize: 16, fontWeight: '600' },
   importButton: { 
     flex: 1,
     flexDirection: 'row', 
@@ -1969,20 +1969,20 @@ const styles = StyleSheet.create({
   
   // Empty State
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
-  emptyText: { color: '#888', fontSize: 18, marginTop: 16, fontWeight: '600' },
-  emptySubtext: { color: '#666', fontSize: 14, marginTop: 8, textAlign: 'center', paddingHorizontal: 20 },
+  emptyText: { color: '#9aa3b1', fontSize: 18, marginTop: 16, fontWeight: '600' },
+  emptySubtext: { color: '#8a93a1', fontSize: 14, marginTop: 8, textAlign: 'center', paddingHorizontal: 20 },
   goToCalcButton: { 
-    backgroundColor: '#4ECDC4', 
+    backgroundColor: '#e6c65a', 
     paddingHorizontal: 24, 
     paddingVertical: 14, 
     borderRadius: 12, 
     marginTop: 20,
   },
-  goToCalcText: { color: '#1a1a2e', fontWeight: '600', fontSize: 16 },
+  goToCalcText: { color: '#07090e', fontWeight: '600', fontSize: 16 },
   
   // Client Card
   clientCard: { 
-    backgroundColor: '#2d2d44', 
+    backgroundColor: '#111722', 
     borderRadius: 12, 
     padding: 16, 
     marginBottom: 10,
@@ -1992,15 +1992,15 @@ const styles = StyleSheet.create({
     width: 48, 
     height: 48, 
     borderRadius: 24, 
-    backgroundColor: '#4ECDC4', 
+    backgroundColor: '#e6c65a', 
     justifyContent: 'center', 
     alignItems: 'center',
   },
-  avatarText: { color: '#1a1a2e', fontSize: 20, fontWeight: 'bold' },
+  avatarText: { color: '#07090e', fontSize: 20, fontWeight: 'bold' },
   clientInfo: { flex: 1, marginLeft: 14 },
-  clientName: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  clientPhone: { color: '#888', fontSize: 14, marginTop: 2 },
-  clientEmail: { color: '#666', fontSize: 12, marginTop: 1 },
+  clientName: { color: '#f4f1ea', fontSize: 16, fontWeight: '700' },
+  clientPhone: { color: '#9aa3b1', fontSize: 14, marginTop: 2 },
+  clientEmail: { color: '#8a93a1', fontSize: 12, marginTop: 1 },
   clientActions: { flexDirection: 'row', gap: 8 },
   actionBtn: { 
     width: 36, 
@@ -2021,7 +2021,7 @@ const styles = StyleSheet.create({
   clientReminderBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 217, 61, 0.15)',
+    backgroundColor: 'rgba(240, 216, 121, 0.15)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -2029,67 +2029,67 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     gap: 6,
   },
-  clientReminderText: { color: '#FFD93D', fontSize: 12 },
-  clientSubmissions: { color: '#666', fontSize: 12, marginTop: 8 },
+  clientReminderText: { color: '#f0d879', fontSize: 12 },
+  clientSubmissions: { color: '#8a93a1', fontSize: 12, marginTop: 8 },
   
   // Better Offers
   checkOffersButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     paddingVertical: 14,
     borderRadius: 12,
     marginBottom: 16,
     gap: 8,
   },
-  checkOffersButtonText: { color: '#1a1a2e', fontSize: 16, fontWeight: '600' },
+  checkOffersButtonText: { color: '#07090e', fontSize: 16, fontWeight: '600' },
   offerCard: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderLeftWidth: 4,
-    borderLeftColor: '#4ECDC4',
+    borderLeftColor: '#e6c65a',
   },
   offerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  offerClient: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  offerVehicle: { color: '#4ECDC4', fontSize: 14, marginBottom: 12 },
+  offerClient: { color: '#f4f1ea', fontSize: 16, fontWeight: '700' },
+  offerVehicle: { color: '#e6c65a', fontSize: 14, marginBottom: 12 },
   emailSentBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(78, 205, 196, 0.15)',
+    backgroundColor: 'rgba(230, 198, 90, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 10,
     gap: 4,
   },
-  emailSentText: { color: '#4ECDC4', fontSize: 12, fontWeight: '600' },
+  emailSentText: { color: '#e6c65a', fontSize: 12, fontWeight: '600' },
   offerComparison: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 10,
     padding: 12,
     marginBottom: 12,
   },
   offerOld: { alignItems: 'center', flex: 1 },
   offerNew: { alignItems: 'center', flex: 1 },
-  offerLabel: { color: '#888', fontSize: 11, marginBottom: 4 },
+  offerLabel: { color: '#9aa3b1', fontSize: 11, marginBottom: 4 },
   offerOldPrice: { color: '#FF6B6B', fontSize: 16, fontWeight: '600', textDecorationLine: 'line-through' },
-  offerNewPrice: { color: '#4ECDC4', fontSize: 18, fontWeight: '700' },
+  offerNewPrice: { color: '#e6c65a', fontSize: 18, fontWeight: '700' },
   offerSavings: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    backgroundColor: 'rgba(230, 198, 90, 0.1)',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
     marginBottom: 12,
     gap: 8,
   },
-  offerSavingsText: { color: '#4ECDC4', fontSize: 13, fontWeight: '600' },
+  offerSavingsText: { color: '#e6c65a', fontSize: 13, fontWeight: '600' },
   offerActions: { flexDirection: 'row', gap: 12 },
   ignoreBtn: {
     flex: 1,
@@ -2099,40 +2099,40 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#888',
+    borderColor: '#9aa3b1',
     gap: 6,
   },
-  ignoreBtnText: { color: '#888', fontSize: 14, fontWeight: '600' },
+  ignoreBtnText: { color: '#9aa3b1', fontSize: 14, fontWeight: '600' },
   approveBtn: {
     flex: 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     paddingVertical: 12,
     borderRadius: 10,
     gap: 6,
   },
-  approveBtnText: { color: '#1a1a2e', fontSize: 14, fontWeight: '600' },
+  approveBtnText: { color: '#07090e', fontSize: 14, fontWeight: '600' },
   
   // Reminder Card
   reminderCard: { 
-    backgroundColor: '#2d2d44', 
+    backgroundColor: '#111722', 
     borderRadius: 12, 
     padding: 16, 
     marginBottom: 10,
     borderLeftWidth: 4,
-    borderLeftColor: '#4ECDC4',
+    borderLeftColor: '#e6c65a',
   },
   reminderOverdue: { borderLeftColor: '#FF6B6B' },
-  reminderToday: { borderLeftColor: '#FFD93D' },
+  reminderToday: { borderLeftColor: '#f0d879' },
   reminderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  reminderClient: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  reminderDue: { color: '#4ECDC4', fontSize: 13, fontWeight: '600' },
+  reminderClient: { color: '#f4f1ea', fontSize: 16, fontWeight: '700' },
+  reminderDue: { color: '#e6c65a', fontSize: 13, fontWeight: '600' },
   reminderDueOverdue: { color: '#FF6B6B' },
-  reminderVehicle: { color: '#4ECDC4', fontSize: 14, marginTop: 6 },
-  reminderPayment: { color: '#888', fontSize: 13, marginTop: 4 },
-  reminderNotes: { color: '#aaa', fontSize: 13, marginTop: 8, fontStyle: 'italic' },
+  reminderVehicle: { color: '#e6c65a', fontSize: 14, marginTop: 6 },
+  reminderPayment: { color: '#9aa3b1', fontSize: 13, marginTop: 4 },
+  reminderNotes: { color: '#b9c0cc', fontSize: 13, marginTop: 8, fontStyle: 'italic' },
   reminderActions: { flexDirection: 'row', marginTop: 12, gap: 10 },
   reminderBtn: { 
     flexDirection: 'row', 
@@ -2141,30 +2141,30 @@ const styles = StyleSheet.create({
     paddingVertical: 8, 
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#4ECDC4',
+    borderColor: '#e6c65a',
     gap: 6,
   },
-  reminderBtnText: { color: '#4ECDC4', fontSize: 13, fontWeight: '600' },
-  reminderBtnDone: { backgroundColor: '#4ECDC4', borderColor: '#4ECDC4' },
+  reminderBtnText: { color: '#e6c65a', fontSize: 13, fontWeight: '600' },
+  reminderBtnDone: { backgroundColor: '#e6c65a', borderColor: '#e6c65a' },
   reminderBtnDelete: { borderColor: '#FF6B6B', paddingHorizontal: 10 },
-  reminderBtnTextDone: { color: '#1a1a2e', fontSize: 13, fontWeight: '600' },
+  reminderBtnTextDone: { color: '#07090e', fontSize: 13, fontWeight: '600' },
   
   // History Card
   historyCard: { 
-    backgroundColor: '#2d2d44', 
+    backgroundColor: '#111722', 
     borderRadius: 12, 
     padding: 14, 
     marginBottom: 8,
   },
   historyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  historyClient: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  historyDate: { color: '#888', fontSize: 12 },
-  historyVehicle: { color: '#4ECDC4', fontSize: 14, marginTop: 4 },
-  historyPayment: { color: '#888', fontSize: 13, marginTop: 4 },
+  historyClient: { color: '#f4f1ea', fontSize: 15, fontWeight: '600' },
+  historyDate: { color: '#9aa3b1', fontSize: 12 },
+  historyVehicle: { color: '#e6c65a', fontSize: 14, marginTop: 4 },
+  historyPayment: { color: '#9aa3b1', fontSize: 13, marginTop: 4 },
   historyReminderBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 217, 61, 0.15)',
+    backgroundColor: 'rgba(240, 216, 121, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 10,
@@ -2172,18 +2172,18 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     gap: 4,
   },
-  historyReminderText: { color: '#FFD93D', fontSize: 11 },
+  historyReminderText: { color: '#f0d879', fontSize: 11 },
   openCalcBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     borderRadius: 8,
     paddingVertical: 8,
     marginTop: 10,
   },
-  openCalcBtnText: { color: '#1a1a2e', fontSize: 13, fontWeight: '700' },
+  openCalcBtnText: { color: '#07090e', fontSize: 13, fontWeight: '700' },
   
   // Modal Common
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' },
@@ -2193,23 +2193,23 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     padding: 20, 
     borderBottomWidth: 1, 
-    borderBottomColor: '#2d2d44',
+    borderBottomColor: '#303744',
   },
-  modalTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+  modalTitle: { color: '#f4f1ea', fontSize: 20, fontWeight: 'bold' },
   
   // Import Modal
   importModalContent: { 
-    backgroundColor: '#1a1a2e', 
+    backgroundColor: '#07090e', 
     borderTopLeftRadius: 24, 
     borderTopRightRadius: 24,
     paddingBottom: 40,
   },
   importModalBody: { padding: 20 },
-  importDescription: { color: '#888', fontSize: 14, textAlign: 'center', marginBottom: 24 },
+  importDescription: { color: '#9aa3b1', fontSize: 14, textAlign: 'center', marginBottom: 24 },
   importOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -2218,34 +2218,34 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    backgroundColor: 'rgba(230, 198, 90, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   importOptionInfo: { flex: 1, marginLeft: 14 },
-  importOptionTitle: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  importOptionDesc: { color: '#888', fontSize: 13, marginTop: 2 },
+  importOptionTitle: { color: '#f4f1ea', fontSize: 16, fontWeight: '600' },
+  importOptionDesc: { color: '#9aa3b1', fontSize: 13, marginTop: 2 },
   importInstructions: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 16,
     marginTop: 12,
   },
-  importInstructionsTitle: { color: '#4ECDC4', fontSize: 14, fontWeight: '600', marginBottom: 8 },
-  importInstructionsText: { color: '#888', fontSize: 13, lineHeight: 20 },
+  importInstructionsTitle: { color: '#e6c65a', fontSize: 14, fontWeight: '600', marginBottom: 8 },
+  importInstructionsText: { color: '#9aa3b1', fontSize: 13, lineHeight: 20 },
   closeButton: {
     marginHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#888',
+    borderColor: '#9aa3b1',
     alignItems: 'center',
   },
-  closeButtonText: { color: '#888', fontSize: 16, fontWeight: '600' },
+  closeButtonText: { color: '#9aa3b1', fontSize: 16, fontWeight: '600' },
   
   // Contacts Modal
   contactsModalContent: { 
-    backgroundColor: '#1a1a2e', 
+    backgroundColor: '#07090e', 
     borderTopLeftRadius: 24, 
     borderTopRightRadius: 24, 
     maxHeight: '85%', 
@@ -2255,7 +2255,7 @@ const styles = StyleSheet.create({
   contactItem: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    backgroundColor: '#2d2d44', 
+    backgroundColor: '#111722', 
     borderRadius: 12, 
     padding: 12, 
     marginBottom: 8,
@@ -2264,19 +2264,19 @@ const styles = StyleSheet.create({
     width: 44, 
     height: 44, 
     borderRadius: 22, 
-    backgroundColor: '#4ECDC4', 
+    backgroundColor: '#e6c65a', 
     justifyContent: 'center', 
     alignItems: 'center',
   },
-  contactAvatarText: { color: '#1a1a2e', fontSize: 18, fontWeight: 'bold' },
+  contactAvatarText: { color: '#07090e', fontSize: 18, fontWeight: 'bold' },
   contactDetails: { flex: 1, marginLeft: 12 },
-  contactName: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  contactPhone: { color: '#888', fontSize: 13, marginTop: 2 },
-  contactEmail: { color: '#666', fontSize: 12, marginTop: 1 },
+  contactName: { color: '#f4f1ea', fontSize: 16, fontWeight: '600' },
+  contactPhone: { color: '#9aa3b1', fontSize: 13, marginTop: 2 },
+  contactEmail: { color: '#8a93a1', fontSize: 12, marginTop: 1 },
   
   // Client Modal
   clientModalContent: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '85%',
@@ -2290,21 +2290,21 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 12,
   },
-  clientModalContactText: { color: '#4ECDC4', fontSize: 16 },
+  clientModalContactText: { color: '#e6c65a', fontSize: 16 },
   newQuoteButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     paddingVertical: 14,
     borderRadius: 12,
     marginBottom: 20,
     gap: 8,
   },
-  newQuoteButtonText: { color: '#1a1a2e', fontSize: 16, fontWeight: '600' },
-  clientModalSectionTitle: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 12 },
+  newQuoteButtonText: { color: '#07090e', fontSize: 16, fontWeight: '600' },
+  clientModalSectionTitle: { color: '#f4f1ea', fontSize: 16, fontWeight: '600', marginBottom: 12 },
   submissionCard: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 10,
     padding: 12,
     marginBottom: 8,
@@ -2321,9 +2321,9 @@ const styles = StyleSheet.create({
     padding: 8,
     marginLeft: 8,
   },
-  submissionVehicle: { color: '#4ECDC4', fontSize: 14, fontWeight: '600' },
-  submissionPayment: { color: '#fff', fontSize: 14, marginTop: 4 },
-  submissionDate: { color: '#888', fontSize: 12, marginTop: 4 },
+  submissionVehicle: { color: '#e6c65a', fontSize: 14, fontWeight: '600' },
+  submissionPayment: { color: '#f4f1ea', fontSize: 14, marginTop: 4 },
+  submissionDate: { color: '#9aa3b1', fontSize: 12, marginTop: 4 },
   deleteHistoryButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2344,19 +2344,19 @@ const styles = StyleSheet.create({
   
   // Follow-up Modal
   followUpModalContent: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingBottom: 40,
   },
   followUpForm: { padding: 20 },
-  followUpLabel: { color: '#fff', fontSize: 14, fontWeight: '600', marginBottom: 8 },
+  followUpLabel: { color: '#f4f1ea', fontSize: 14, fontWeight: '600', marginBottom: 8 },
   followUpInput: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 16,
     marginBottom: 16,
   },
@@ -2367,16 +2367,16 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#888',
+    borderColor: '#9aa3b1',
     alignItems: 'center',
   },
-  cancelButtonText: { color: '#888', fontSize: 16, fontWeight: '600' },
+  cancelButtonText: { color: '#9aa3b1', fontSize: 16, fontWeight: '600' },
   saveButton: {
     flex: 1,
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
   },
-  saveButtonText: { color: '#1a1a2e', fontSize: 16, fontWeight: '600' },
+  saveButtonText: { color: '#07090e', fontSize: 16, fontWeight: '600' },
 });

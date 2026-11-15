@@ -142,7 +142,7 @@ export const CalculatorInputs: React.FC<Props> = ({
       {selectedInventory && (
         <View style={styles.inventoryBanner}>
           <View style={styles.inventoryInfo}>
-            <Ionicons name="car-sport" size={20} color="#4ECDC4" />
+            <Ionicons name="car-sport" size={20} color="#e6c65a" />
             <Text style={styles.inventoryText}>
               Stock #{selectedInventory.stock_no} - {selectedInventory.year} {selectedInventory.brand} {selectedInventory.model} {selectedInventory.trim || ''}
             </Text>
@@ -161,7 +161,7 @@ export const CalculatorInputs: React.FC<Props> = ({
           <TextInput
             style={styles.input}
             placeholder="55000"
-            placeholderTextColor="#666"
+            placeholderTextColor="#8a93a1"
             keyboardType="numeric"
             value={vehiclePrice}
             onChangeText={onVehiclePriceChange}
@@ -178,7 +178,7 @@ export const CalculatorInputs: React.FC<Props> = ({
           <TextInput
             style={styles.input}
             placeholder={String(defaultBonusCash || 0)}
-            placeholderTextColor="#666"
+            placeholderTextColor="#8a93a1"
             keyboardType="numeric"
             value={customBonusCash}
             onChangeText={onBonusCashChange}
@@ -195,7 +195,7 @@ export const CalculatorInputs: React.FC<Props> = ({
           <TextInput
             style={styles.input}
             placeholder="0"
-            placeholderTextColor="#666"
+            placeholderTextColor="#8a93a1"
             keyboardType="numeric"
             value={comptantTxInclus}
             onChangeText={onComptantChange}
@@ -215,7 +215,7 @@ export const CalculatorInputs: React.FC<Props> = ({
               <TextInput
                 style={styles.feeInput}
                 placeholder="259.95"
-                placeholderTextColor="#666"
+                placeholderTextColor="#8a93a1"
                 keyboardType="decimal-pad"
                 value={fraisDossier}
                 onChangeText={onFraisDossierChange}
@@ -229,7 +229,7 @@ export const CalculatorInputs: React.FC<Props> = ({
               <TextInput
                 style={styles.feeInput}
                 placeholder="15"
-                placeholderTextColor="#666"
+                placeholderTextColor="#8a93a1"
                 keyboardType="decimal-pad"
                 value={taxePneus}
                 onChangeText={onTaxePneusChange}
@@ -243,7 +243,7 @@ export const CalculatorInputs: React.FC<Props> = ({
               <TextInput
                 style={styles.feeInput}
                 placeholder="100"
-                placeholderTextColor="#666"
+                placeholderTextColor="#8a93a1"
                 keyboardType="decimal-pad"
                 value={fraisRDPRM}
                 onChangeText={onFraisRDPRMChange}
@@ -264,7 +264,7 @@ export const CalculatorInputs: React.FC<Props> = ({
               <TextInput
                 style={styles.feeInput}
                 placeholder="0"
-                placeholderTextColor="#666"
+                placeholderTextColor="#8a93a1"
                 keyboardType="numeric"
                 value={prixEchange}
                 onChangeText={onPrixEchangeChange}
@@ -279,7 +279,7 @@ export const CalculatorInputs: React.FC<Props> = ({
               <TextInput
                 style={styles.feeInput}
                 placeholder="0"
-                placeholderTextColor="#666"
+                placeholderTextColor="#8a93a1"
                 keyboardType="numeric"
                 value={montantDuEchange}
                 onChangeText={onMontantDuEchangeChange}
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     padding: 12,
     borderRadius: 10,
     marginBottom: 16,
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   inventoryText: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontSize: 13,
     fontWeight: '600',
     flex: 1,
@@ -397,19 +397,19 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   inputLabel: {
-    color: '#888',
+    color: '#9aa3b1',
     fontSize: 13,
     marginBottom: 8,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 10,
     paddingHorizontal: 12,
   },
   currencySymbol: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontSize: 16,
     fontWeight: '600',
     marginRight: 8,
@@ -417,17 +417,17 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     height: 48,
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 16,
   },
   feesSection: {
-    backgroundColor: '#252542',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
   },
   sectionTitle: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 12,
@@ -440,30 +440,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   feeLabel: {
-    color: '#888',
+    color: '#9aa3b1',
     fontSize: 11,
     marginBottom: 6,
   },
   feeInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 8,
     paddingHorizontal: 10,
   },
   feeSymbol: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontSize: 14,
     marginRight: 6,
   },
   feeInput: {
     flex: 1,
     height: 40,
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 14,
   },
   feeNote: {
-    color: '#666',
+    color: '#8a93a1',
     fontSize: 10,
     marginTop: 4,
   },
@@ -486,20 +486,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     minWidth: 60,
     alignItems: 'center',
   },
   termButtonActive: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
   },
   termButtonText: {
-    color: '#888',
+    color: '#9aa3b1',
     fontSize: 13,
     fontWeight: '500',
   },
   termButtonTextActive: {
-    color: '#1a1a2e',
+    color: '#07090e',
     fontWeight: '600',
   },
   frequencyButtons: {
@@ -510,19 +510,19 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 10,
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     alignItems: 'center',
   },
   frequencyButtonActive: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
   },
   frequencyButtonText: {
-    color: '#888',
+    color: '#9aa3b1',
     fontSize: 13,
     fontWeight: '500',
   },
   frequencyButtonTextActive: {
-    color: '#1a1a2e',
+    color: '#07090e',
     fontWeight: '600',
   },
   optionButtons: {
@@ -537,41 +537,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   optionButton1: {
-    backgroundColor: 'rgba(78, 205, 196, 0.1)',
-    borderColor: 'rgba(78, 205, 196, 0.3)',
+    backgroundColor: 'rgba(230, 198, 90, 0.1)',
+    borderColor: 'rgba(230, 198, 90, 0.3)',
   },
   optionButton2: {
     backgroundColor: 'rgba(255, 107, 107, 0.1)',
     borderColor: 'rgba(255, 107, 107, 0.3)',
   },
   optionButtonActive1: {
-    backgroundColor: '#4ECDC4',
-    borderColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
+    borderColor: '#e6c65a',
   },
   optionButtonActive2: {
     backgroundColor: '#FF6B6B',
     borderColor: '#FF6B6B',
   },
   optionButtonDisabled: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderColor: '#333',
     opacity: 0.5,
   },
   optionButtonText: {
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 14,
     fontWeight: '600',
   },
   optionButtonTextActive: {
-    color: '#1a1a2e',
+    color: '#07090e',
   },
   optionButtonSubtext: {
-    color: '#888',
+    color: '#9aa3b1',
     fontSize: 12,
     marginTop: 4,
   },
   optionButtonTextDisabled: {
-    color: '#555',
+    color: '#5a6372',
     fontSize: 12,
   },
 });

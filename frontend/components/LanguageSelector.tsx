@@ -52,7 +52,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 8,
     padding: 2,
   },
@@ -62,14 +62,14 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   langButtonActive: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
   },
   langButtonText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#888',
+    color: '#9aa3b1',
   },
   langButtonTextActive: {
-    color: '#1a1a2e',
+    color: '#07090e',
   },
 });

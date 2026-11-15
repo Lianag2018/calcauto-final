@@ -21,7 +21,7 @@
       "package": "com.calcauto.aipro",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#1a1a2e"
+        "backgroundColor": "#07090e"
       },
       "edgeToEdgeEnabled": true,
       "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "READ_CONTACTS", "WRITE_CONTACTS"]
@@ -33,8 +33,8 @@
       "name": "CalcAuto AiPro",
       "shortName": "CalcAuto",
       "description": "Calculateur de financement automobile avec CRM",
-      "backgroundColor": "#1a1a2e",
-      "themeColor": "#4ECDC4",
+      "backgroundColor": "#07090e",
+      "themeColor": "#07090e",
       "display": "standalone",
       "orientation": "portrait",
       "startUrl": "/",
@@ -48,7 +48,7 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#1a1a2e"
+          "backgroundColor": "#07090e"
         }
       ]
     ],

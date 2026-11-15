@@ -247,7 +247,7 @@ export default function ManageScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color="#f4f1ea" />
           <Text style={styles.backText}>{t.back}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t.title}</Text>
@@ -261,14 +261,14 @@ export default function ManageScreen() {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4ECDC4" />
+          <ActivityIndicator size="large" color="#e6c65a" />
           <Text style={styles.loadingText}>{t.loading}</Text>
         </View>
       ) : (
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
           {/* Add Button */}
           <TouchableOpacity style={styles.addButton} onPress={openAddModal}>
-            <Ionicons name="add-circle" size={24} color="#1a1a2e" />
+            <Ionicons name="add-circle" size={24} color="#07090e" />
             <Text style={styles.addButtonText}>{t.addProgram}</Text>
           </TouchableOpacity>
 
@@ -290,7 +290,7 @@ export default function ManageScreen() {
                       style={styles.editButton}
                       onPress={() => openEditModal(program)}
                     >
-                      <Ionicons name="pencil" size={20} color="#4ECDC4" />
+                      <Ionicons name="pencil" size={20} color="#e6c65a" />
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.deleteButton}
@@ -312,7 +312,7 @@ export default function ManageScreen() {
                 )}
 
                 <View style={styles.termsGrid}>
-                  {program.financing_terms.map((term, idx) => (
+                  {(program.financing_terms || []).map((term, idx) => (
                     <View key={idx} style={styles.termBadge}>
                       <Text style={styles.termMonths}>{term.term_months}m</Text>
                       <Text style={styles.termRate}>{term.interest_rate}%</Text>
@@ -343,7 +343,7 @@ export default function ManageScreen() {
                   {editingProgram ? t.editProgram : t.addProgram}
                 </Text>
                 <TouchableOpacity onPress={() => setModalVisible(false)}>
-                  <Ionicons name="close" size={28} color="#fff" />
+                  <Ionicons name="close" size={28} color="#f4f1ea" />
                 </TouchableOpacity>
               </View>
 
@@ -357,7 +357,7 @@ export default function ManageScreen() {
                       value={brand}
                       onChangeText={setBrand}
                       placeholder="Ram, Jeep, Dodge..."
-                      placeholderTextColor="#666"
+                      placeholderTextColor="#8a93a1"
                     />
                   </View>
                   <View style={styles.formField}>
@@ -367,7 +367,7 @@ export default function ManageScreen() {
                       value={model}
                       onChangeText={setModel}
                       placeholder="1500 DT, Wrangler..."
-                      placeholderTextColor="#666"
+                      placeholderTextColor="#8a93a1"
                     />
                   </View>
                 </View>
@@ -380,7 +380,7 @@ export default function ManageScreen() {
                       value={year}
                       onChangeText={setYear}
                       placeholder="2026"
-                      placeholderTextColor="#666"
+                      placeholderTextColor="#8a93a1"
                       keyboardType="numeric"
                     />
                   </View>
@@ -391,7 +391,7 @@ export default function ManageScreen() {
                       value={consumerCash}
                       onChangeText={setConsumerCash}
                       placeholder="10000"
-                      placeholderTextColor="#666"
+                      placeholderTextColor="#8a93a1"
                       keyboardType="numeric"
                     />
                   </View>
@@ -404,7 +404,7 @@ export default function ManageScreen() {
                     value={specialNotes}
                     onChangeText={setSpecialNotes}
                     placeholder="No Finance Payments for 90 Days..."
-                    placeholderTextColor="#666"
+                    placeholderTextColor="#8a93a1"
                     multiline
                   />
                 </View>
@@ -450,7 +450,7 @@ export default function ManageScreen() {
                 ))}
 
                 <TouchableOpacity style={styles.addTermButton} onPress={addTerm}>
-                  <Ionicons name="add" size={20} color="#4ECDC4" />
+                  <Ionicons name="add" size={20} color="#e6c65a" />
                   <Text style={styles.addTermText}>{t.addTerm}</Text>
                 </TouchableOpacity>
               </ScrollView>
@@ -469,7 +469,7 @@ export default function ManageScreen() {
                   disabled={saving}
                 >
                   {saving ? (
-                    <ActivityIndicator size="small" color="#1a1a2e" />
+                    <ActivityIndicator size="small" color="#07090e" />
                   ) : (
                     <Text style={styles.saveButtonText}>{t.save}</Text>
                   )}
@@ -486,7 +486,7 @@ export default function ManageScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
   },
   header: {
     flexDirection: 'row',
@@ -495,30 +495,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2d2d44',
+    borderBottomColor: '#303744',
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   backText: {
-    color: '#fff',
+    color: '#f4f1ea',
     marginLeft: 4,
     fontSize: 16,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f4f1ea',
   },
   langButton: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
   },
   langButtonText: {
-    color: '#1a1a2e',
+    color: '#07090e',
     fontWeight: 'bold',
     fontSize: 14,
   },
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#888',
+    color: '#9aa3b1',
     marginTop: 12,
   },
   scrollView: {
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   addButton: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -549,18 +549,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   addButtonText: {
-    color: '#1a1a2e',
+    color: '#07090e',
     fontSize: 16,
     fontWeight: 'bold',
   },
   noDataText: {
-    color: '#888',
+    color: '#9aa3b1',
     textAlign: 'center',
     fontStyle: 'italic',
     padding: 20,
   },
   programCard: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -572,12 +572,12 @@ const styles = StyleSheet.create({
   },
   programBrand: {
     fontSize: 14,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: '600',
   },
   programModel: {
     fontSize: 18,
-    color: '#fff',
+    color: '#f4f1ea',
     fontWeight: 'bold',
     marginTop: 2,
   },
@@ -587,12 +587,12 @@ const styles = StyleSheet.create({
   },
   editButton: {
     padding: 8,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 8,
   },
   deleteButton: {
     padding: 8,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 8,
   },
   programCash: {
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
   },
   programNotes: {
     fontSize: 13,
-    color: '#888',
+    color: '#9aa3b1',
     marginTop: 8,
     fontStyle: 'italic',
   },
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   termBadge: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 8,
     padding: 8,
     alignItems: 'center',
@@ -622,12 +622,12 @@ const styles = StyleSheet.create({
   },
   termMonths: {
     fontSize: 14,
-    color: '#fff',
+    color: '#f4f1ea',
     fontWeight: 'bold',
   },
   termRate: {
     fontSize: 12,
-    color: '#4ECDC4',
+    color: '#e6c65a',
   },
   termRebate: {
     fontSize: 10,
@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
   },
   modalContent: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '100%',
@@ -655,12 +655,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#2d2d44',
+    borderBottomColor: '#303744',
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f4f1ea',
   },
   modalScroll: {
     padding: 20,
@@ -679,14 +679,14 @@ const styles = StyleSheet.create({
   },
   formLabel: {
     fontSize: 14,
-    color: '#888',
+    color: '#9aa3b1',
     marginBottom: 6,
   },
   formInput: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 8,
     padding: 12,
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 16,
   },
   textArea: {
@@ -696,7 +696,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f4f1ea',
     marginTop: 8,
     marginBottom: 12,
   },
@@ -711,14 +711,14 @@ const styles = StyleSheet.create({
   },
   termLabel: {
     fontSize: 11,
-    color: '#888',
+    color: '#9aa3b1',
     marginBottom: 4,
   },
   termInput: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 8,
     padding: 10,
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 14,
     textAlign: 'center',
   },
@@ -731,13 +731,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 12,
     borderWidth: 1,
-    borderColor: '#4ECDC4',
+    borderColor: '#e6c65a',
     borderRadius: 8,
     borderStyle: 'dashed',
     marginTop: 8,
   },
   addTermText: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
     marginLeft: 8,
   },
   modalActions: {
@@ -745,17 +745,17 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 12,
     borderTopWidth: 1,
-    borderTopColor: '#2d2d44',
+    borderTopColor: '#303744',
   },
   cancelButton: {
     flex: 1,
     padding: 16,
     borderRadius: 12,
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -763,14 +763,14 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     borderRadius: 12,
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     alignItems: 'center',
   },
   saveButtonDisabled: {
     opacity: 0.6,
   },
   saveButtonText: {
-    color: '#1a1a2e',
+    color: '#07090e',
     fontSize: 16,
     fontWeight: 'bold',
   },

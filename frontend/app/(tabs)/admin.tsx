@@ -71,20 +71,20 @@ function ComparisonReport({ comparison }: { comparison: ComparisonDetail[] }) {
 
   return (
     <View style={{ marginTop: 12 }}>
-      <Text style={{ color: '#FFD700', fontWeight: '700', fontSize: 15, marginBottom: 8 }}>
+      <Text style={{ color: '#f0d879', fontWeight: '700', fontSize: 15, marginBottom: 8 }}>
         Rapport de comparaison ({comparison.length} modifications)
       </Text>
       {comparison.map((item, idx) => (
-        <View key={idx} style={{ backgroundColor: '#1a1a2e', borderRadius: 8, padding: 12, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: '#FFD700' }}>
-          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13, marginBottom: 6 }} data-testid={`comparison-vehicle-${idx}`}>
+        <View key={idx} style={{ backgroundColor: '#07090e', borderRadius: 8, padding: 12, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: '#f0d879' }}>
+          <Text style={{ color: '#f4f1ea', fontWeight: '700', fontSize: 13, marginBottom: 6 }} data-testid={`comparison-vehicle-${idx}`}>
             {item.vehicule}
           </Text>
           {Object.entries(item.changes).map(([field, change]) => (
             <View key={field} style={{ flexDirection: 'row', marginBottom: 3, flexWrap: 'wrap' }}>
-              <Text style={{ color: '#aaa', fontSize: 12, width: 160 }}>{field}:</Text>
+              <Text style={{ color: '#b9c0cc', fontSize: 12, width: 160 }}>{field}:</Text>
               <Text style={{ color: '#FF6B6B', fontSize: 12 }}>{formatValue(change.avant)}</Text>
-              <Text style={{ color: '#666', fontSize: 12, marginHorizontal: 6 }}>→</Text>
-              <Text style={{ color: '#4ECDC4', fontSize: 12 }}>{formatValue(change.apres)}</Text>
+              <Text style={{ color: '#8a93a1', fontSize: 12, marginHorizontal: 6 }}>→</Text>
+              <Text style={{ color: '#e6c65a', fontSize: 12 }}>{formatValue(change.apres)}</Text>
             </View>
           ))}
         </View>
@@ -165,39 +165,39 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
 
   return (
     <ScrollView style={{ flex: 1, padding: 16 }}>
-      <View style={{ backgroundColor: '#2d2d44', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+      <View style={{ backgroundColor: '#111722', borderRadius: 12, padding: 20, marginBottom: 16 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-          <Ionicons name="download-outline" size={24} color="#4ECDC4" />
-          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>Exporter les programmes</Text>
+          <Ionicons name="download-outline" size={24} color="#e6c65a" />
+          <Text style={{ color: '#f4f1ea', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>Exporter les programmes</Text>
         </View>
-        <Text style={{ color: '#aaa', fontSize: 13, marginBottom: 16 }}>
+        <Text style={{ color: '#b9c0cc', fontSize: 13, marginBottom: 16 }}>
           Telechargez un fichier Excel avec tous les programmes actuels. Corrigez les valeurs (Consumer Cash, taux, etc.) puis reimportez.
         </Text>
         <TouchableOpacity
-          style={{ backgroundColor: '#4ECDC4', borderRadius: 8, paddingVertical: 14, alignItems: 'center' }}
+          style={{ backgroundColor: '#e6c65a', borderRadius: 8, paddingVertical: 14, alignItems: 'center' }}
           onPress={handleExport}
         >
-          <Text style={{ color: '#1a1a2e', fontWeight: '700', fontSize: 16 }}>Telecharger Excel</Text>
+          <Text style={{ color: '#07090e', fontWeight: '700', fontSize: 16 }}>Telecharger Excel</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={{ backgroundColor: '#2d2d44', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+      <View style={{ backgroundColor: '#111722', borderRadius: 12, padding: 20, marginBottom: 16 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-          <Ionicons name="cloud-upload-outline" size={24} color="#FFD700" />
-          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>Importer Excel corrige</Text>
+          <Ionicons name="cloud-upload-outline" size={24} color="#f0d879" />
+          <Text style={{ color: '#f4f1ea', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>Importer Excel corrige</Text>
         </View>
-        <Text style={{ color: '#aaa', fontSize: 13, marginBottom: 16 }}>
+        <Text style={{ color: '#b9c0cc', fontSize: 13, marginBottom: 16 }}>
           Uploadez le fichier Excel corrige. Les programmes seront mis a jour avec les nouvelles valeurs. Ce fichier devient la source de verite.
         </Text>
 
         <TextInput
           style={{
-            backgroundColor: '#1a1a2e', color: '#fff', borderRadius: 8,
+            backgroundColor: '#07090e', color: '#f4f1ea', borderRadius: 8,
             paddingHorizontal: 16, paddingVertical: 12, marginBottom: 12,
-            borderWidth: 1, borderColor: '#444', fontSize: 14,
+            borderWidth: 1, borderColor: '#303744', fontSize: 14,
           }}
           placeholder="Mot de passe admin"
-          placeholderTextColor="#666"
+          placeholderTextColor="#8a93a1"
           secureTextEntry
           value={adminPassword}
           onChangeText={setAdminPassword}
@@ -215,27 +215,27 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
 
         <TouchableOpacity
           style={{
-            backgroundColor: importing ? '#555' : '#FFD700', borderRadius: 8,
+            backgroundColor: importing ? '#5a6372' : '#f0d879', borderRadius: 8,
             paddingVertical: 14, alignItems: 'center', opacity: importing ? 0.7 : 1,
           }}
           onPress={handleImport}
           disabled={importing}
         >
           {importing ? (
-            <ActivityIndicator size="small" color="#1a1a2e" />
+            <ActivityIndicator size="small" color="#07090e" />
           ) : (
-            <Text style={{ color: '#1a1a2e', fontWeight: '700', fontSize: 16 }}>Importer le fichier corrige</Text>
+            <Text style={{ color: '#07090e', fontWeight: '700', fontSize: 16 }}>Importer le fichier corrige</Text>
           )}
         </TouchableOpacity>
       </View>
 
       {result && (
         <View style={{
-          backgroundColor: resultType === 'success' ? 'rgba(78,205,196,0.15)' : 'rgba(255,107,107,0.15)',
+          backgroundColor: resultType === 'success' ? 'rgba(230, 198, 90,0.15)' : 'rgba(255,107,107,0.15)',
           borderRadius: 8, padding: 16, marginBottom: 16,
-          borderWidth: 1, borderColor: resultType === 'success' ? '#4ECDC4' : '#FF6B6B',
+          borderWidth: 1, borderColor: resultType === 'success' ? '#e6c65a' : '#FF6B6B',
         }}>
-          <Text style={{ color: resultType === 'success' ? '#4ECDC4' : '#FF6B6B', fontSize: 14 }}>{result}</Text>
+          <Text style={{ color: resultType === 'success' ? '#e6c65a' : '#FF6B6B', fontSize: 14 }}>{result}</Text>
         </View>
       )}
 
@@ -243,12 +243,12 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
       {sciComparison && <ComparisonReport comparison={sciComparison} />}
 
       {/* ============ LEASE SCI ============ */}
-      <View style={{ backgroundColor: '#2d2d44', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+      <View style={{ backgroundColor: '#111722', borderRadius: 12, padding: 20, marginBottom: 16 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
           <Ionicons name="car-sport-outline" size={24} color="#FF6B6B" />
-          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>Taux Location SCI</Text>
+          <Text style={{ color: '#f4f1ea', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>Taux Location SCI</Text>
         </View>
-        <Text style={{ color: '#aaa', fontSize: 13, marginBottom: 16 }}>
+        <Text style={{ color: '#b9c0cc', fontSize: 13, marginBottom: 16 }}>
           Exportez les taux de location SCI (standard + alternatif), corrigez, puis reimportez.
         </Text>
         <TouchableOpacity
@@ -262,7 +262,7 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
             }
           }}
         >
-          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Telecharger Excel Lease SCI</Text>
+          <Text style={{ color: '#f4f1ea', fontWeight: '700', fontSize: 16 }}>Telecharger Excel Lease SCI</Text>
         </TouchableOpacity>
 
         {Platform.OS === 'web' && (
@@ -302,7 +302,7 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
 
         <TouchableOpacity
           style={{
-            backgroundColor: importing ? '#555' : '#FFD700', borderRadius: 8,
+            backgroundColor: importing ? '#5a6372' : '#f0d879', borderRadius: 8,
             paddingVertical: 14, alignItems: 'center', opacity: importing ? 0.7 : 1,
           }}
           onPress={() => {
@@ -312,16 +312,16 @@ function ExcelManager({ getToken }: { getToken: () => Promise<string> }) {
           disabled={importing}
         >
           {importing ? (
-            <ActivityIndicator size="small" color="#1a1a2e" />
+            <ActivityIndicator size="small" color="#07090e" />
           ) : (
-            <Text style={{ color: '#1a1a2e', fontWeight: '700', fontSize: 16 }}>Importer Excel Lease corrige</Text>
+            <Text style={{ color: '#07090e', fontWeight: '700', fontSize: 16 }}>Importer Excel Lease corrige</Text>
           )}
         </TouchableOpacity>
       </View>
 
-      <View style={{ backgroundColor: '#2d2d44', borderRadius: 12, padding: 20, marginBottom: 40 }}>
-        <Text style={{ color: '#FFD700', fontSize: 14, fontWeight: '700', marginBottom: 8 }}>Instructions</Text>
-        <Text style={{ color: '#aaa', fontSize: 12, lineHeight: 20 }}>
+      <View style={{ backgroundColor: '#111722', borderRadius: 12, padding: 20, marginBottom: 40 }}>
+        <Text style={{ color: '#f0d879', fontSize: 14, fontWeight: '700', marginBottom: 8 }}>Instructions</Text>
+        <Text style={{ color: '#b9c0cc', fontSize: 12, lineHeight: 20 }}>
           1. Telechargez l'Excel actuel{'\n'}
           2. Ouvrez dans Excel/Google Sheets{'\n'}
           3. Corrigez: Consumer Cash, taux Option 1/2{'\n'}
@@ -454,7 +454,7 @@ function CorrectionsManager({ getToken }: { getToken: () => Promise<string> }) {
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 40 }}>
-        <ActivityIndicator size="large" color="#4ECDC4" />
+        <ActivityIndicator size="large" color="#e6c65a" />
       </View>
     );
   }
@@ -462,21 +462,21 @@ function CorrectionsManager({ getToken }: { getToken: () => Promise<string> }) {
   return (
     <ScrollView style={{ flex: 1, padding: 16 }} contentContainerStyle={{ paddingBottom: 120 }}>
       {/* Header card */}
-      <View style={{ backgroundColor: '#2d2d44', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+      <View style={{ backgroundColor: '#111722', borderRadius: 12, padding: 20, marginBottom: 16 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="git-compare-outline" size={24} color="#FF6B6B" />
-            <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>
+            <Text style={{ color: '#f4f1ea', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>
               Corrections memorisees
             </Text>
           </View>
           <View style={{ backgroundColor: '#FF6B6B', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 }}>
-            <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }} data-testid="corrections-count">
+            <Text style={{ color: '#f4f1ea', fontSize: 13, fontWeight: '700' }} data-testid="corrections-count">
               {corrections.length}
             </Text>
           </View>
         </View>
-        <Text style={{ color: '#aaa', fontSize: 13, lineHeight: 20 }}>
+        <Text style={{ color: '#b9c0cc', fontSize: 13, lineHeight: 20 }}>
           Ces corrections sont appliquees automatiquement a chaque import PDF. Elles memorisent les modifications faites via l'import Excel.
         </Text>
 
@@ -485,12 +485,12 @@ function CorrectionsManager({ getToken }: { getToken: () => Promise<string> }) {
           <View style={{ marginTop: 16 }}>
             <TextInput
               style={{
-                backgroundColor: '#1a1a2e', color: '#fff', borderRadius: 8,
+                backgroundColor: '#07090e', color: '#f4f1ea', borderRadius: 8,
                 paddingHorizontal: 16, paddingVertical: 10, marginBottom: 10,
-                borderWidth: 1, borderColor: '#444', fontSize: 14,
+                borderWidth: 1, borderColor: '#303744', fontSize: 14,
               }}
               placeholder="Mot de passe admin (pour suppression)"
-              placeholderTextColor="#666"
+              placeholderTextColor="#8a93a1"
               secureTextEntry
               value={adminPassword}
               onChangeText={setAdminPassword}
@@ -498,7 +498,7 @@ function CorrectionsManager({ getToken }: { getToken: () => Promise<string> }) {
             />
             <TouchableOpacity
               style={{
-                backgroundColor: deleting === 'all' ? '#555' : '#FF6B6B', borderRadius: 8,
+                backgroundColor: deleting === 'all' ? '#5a6372' : '#FF6B6B', borderRadius: 8,
                 paddingVertical: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8,
                 opacity: deleting === 'all' ? 0.7 : 1,
               }}
@@ -507,11 +507,11 @@ function CorrectionsManager({ getToken }: { getToken: () => Promise<string> }) {
               data-testid="delete-all-corrections-btn"
             >
               {deleting === 'all' ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color="#f4f1ea" />
               ) : (
                 <>
-                  <Ionicons name="trash-outline" size={18} color="#fff" />
-                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Tout supprimer</Text>
+                  <Ionicons name="trash-outline" size={18} color="#f4f1ea" />
+                  <Text style={{ color: '#f4f1ea', fontWeight: '700', fontSize: 14 }}>Tout supprimer</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -522,9 +522,9 @@ function CorrectionsManager({ getToken }: { getToken: () => Promise<string> }) {
       {/* Empty state */}
       {corrections.length === 0 && (
         <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-          <Ionicons name="checkmark-circle-outline" size={48} color="#4ECDC4" />
-          <Text style={{ color: '#888', marginTop: 12, fontSize: 16 }}>Aucune correction memorisee</Text>
-          <Text style={{ color: '#666', marginTop: 4, fontSize: 13 }}>
+          <Ionicons name="checkmark-circle-outline" size={48} color="#e6c65a" />
+          <Text style={{ color: '#9aa3b1', marginTop: 12, fontSize: 16 }}>Aucune correction memorisee</Text>
+          <Text style={{ color: '#8a93a1', marginTop: 4, fontSize: 13 }}>
             Les corrections apparaitront apres un import Excel modifie
           </Text>
         </View>
@@ -541,8 +541,8 @@ function CorrectionsManager({ getToken }: { getToken: () => Promise<string> }) {
           <View
             key={key}
             style={{
-              backgroundColor: '#2d2d44', borderRadius: 10, marginBottom: 10,
-              borderLeftWidth: 3, borderLeftColor: '#FFD700', overflow: 'hidden',
+              backgroundColor: '#111722', borderRadius: 10, marginBottom: 10,
+              borderLeftWidth: 3, borderLeftColor: '#f0d879', overflow: 'hidden',
             }}
             data-testid={`correction-card-${idx}`}
           >
@@ -554,72 +554,72 @@ function CorrectionsManager({ getToken }: { getToken: () => Promise<string> }) {
             >
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-                  <Text style={{ color: '#4ECDC4', fontSize: 11, fontWeight: '600', textTransform: 'uppercase' }}>
+                  <Text style={{ color: '#e6c65a', fontSize: 11, fontWeight: '600', textTransform: 'uppercase' }}>
                     {c.brand}
                   </Text>
-                  <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>{c.model}</Text>
-                  <View style={{ backgroundColor: '#1a1a2e', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
-                    <Text style={{ color: '#aaa', fontSize: 11 }}>{c.year}</Text>
+                  <Text style={{ color: '#f4f1ea', fontSize: 15, fontWeight: '700' }}>{c.model}</Text>
+                  <View style={{ backgroundColor: '#07090e', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                    <Text style={{ color: '#b9c0cc', fontSize: 11 }}>{c.year}</Text>
                   </View>
                 </View>
                 {c.trim ? (
-                  <Text style={{ color: '#888', fontSize: 12, marginTop: 3 }} numberOfLines={1}>{c.trim}</Text>
+                  <Text style={{ color: '#9aa3b1', fontSize: 12, marginTop: 3 }} numberOfLines={1}>{c.trim}</Text>
                 ) : null}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 12 }}>
-                  <Text style={{ color: '#666', fontSize: 11 }}>{formatDate(c.corrected_at)}</Text>
-                  <View style={{ backgroundColor: 'rgba(255,215,0,0.15)', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
-                    <Text style={{ color: '#FFD700', fontSize: 11, fontWeight: '600' }}>
+                  <Text style={{ color: '#8a93a1', fontSize: 11 }}>{formatDate(c.corrected_at)}</Text>
+                  <View style={{ backgroundColor: 'rgba(240, 216, 121,0.15)', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                    <Text style={{ color: '#f0d879', fontSize: 11, fontWeight: '600' }}>
                       {changesCount} modif{changesCount > 1 ? 's' : ''}
                     </Text>
                   </View>
                 </View>
               </View>
-              <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={20} color="#888" />
+              <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={20} color="#9aa3b1" />
             </TouchableOpacity>
 
             {/* Expanded details */}
             {isExpanded && (
-              <View style={{ paddingHorizontal: 14, paddingBottom: 14, borderTopWidth: 1, borderTopColor: '#3d3d54' }}>
+              <View style={{ paddingHorizontal: 14, paddingBottom: 14, borderTopWidth: 1, borderTopColor: '#303744' }}>
                 {/* Changes history */}
-                <Text style={{ color: '#FFD700', fontSize: 12, fontWeight: '700', marginTop: 10, marginBottom: 8 }}>
+                <Text style={{ color: '#f0d879', fontSize: 12, fontWeight: '700', marginTop: 10, marginBottom: 8 }}>
                   Historique des modifications
                 </Text>
                 {Object.entries(c.changes_history || {}).map(([field, change]) => (
-                  <View key={field} style={{ marginBottom: 8, backgroundColor: '#1a1a2e', borderRadius: 6, padding: 10 }}>
-                    <Text style={{ color: '#ccc', fontSize: 12, fontWeight: '600', marginBottom: 4 }}>
+                  <View key={field} style={{ marginBottom: 8, backgroundColor: '#07090e', borderRadius: 6, padding: 10 }}>
+                    <Text style={{ color: '#cfd4dc', fontSize: 12, fontWeight: '600', marginBottom: 4 }}>
                       {fieldLabel(field)}
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
                       <Text style={{ color: '#FF6B6B', fontSize: 11 }}>{formatVal(change.avant)}</Text>
-                      <Ionicons name="arrow-forward" size={12} color="#666" style={{ marginHorizontal: 6 }} />
-                      <Text style={{ color: '#4ECDC4', fontSize: 11 }}>{formatVal(change.apres)}</Text>
+                      <Ionicons name="arrow-forward" size={12} color="#8a93a1" style={{ marginHorizontal: 6 }} />
+                      <Text style={{ color: '#e6c65a', fontSize: 11 }}>{formatVal(change.apres)}</Text>
                     </View>
                   </View>
                 ))}
 
                 {/* Current corrected values summary */}
-                <Text style={{ color: '#4ECDC4', fontSize: 12, fontWeight: '700', marginTop: 8, marginBottom: 6 }}>
+                <Text style={{ color: '#e6c65a', fontSize: 12, fontWeight: '700', marginTop: 8, marginBottom: 6 }}>
                   Valeurs actuelles
                 </Text>
-                <View style={{ backgroundColor: '#1a1a2e', borderRadius: 6, padding: 10 }}>
+                <View style={{ backgroundColor: '#07090e', borderRadius: 6, padding: 10 }}>
                   {c.corrected_values?.consumer_cash != null && (
-                    <Text style={{ color: '#ccc', fontSize: 11, marginBottom: 2 }}>
-                      Consumer Cash: <Text style={{ color: '#fff', fontWeight: '600' }}>{c.corrected_values.consumer_cash.toLocaleString('fr-CA')} $</Text>
+                    <Text style={{ color: '#cfd4dc', fontSize: 11, marginBottom: 2 }}>
+                      Consumer Cash: <Text style={{ color: '#f4f1ea', fontWeight: '600' }}>{c.corrected_values.consumer_cash.toLocaleString('fr-CA')} $</Text>
                     </Text>
                   )}
                   {c.corrected_values?.bonus_cash != null && c.corrected_values.bonus_cash > 0 && (
-                    <Text style={{ color: '#ccc', fontSize: 11, marginBottom: 2 }}>
-                      Bonus Cash: <Text style={{ color: '#fff', fontWeight: '600' }}>{c.corrected_values.bonus_cash.toLocaleString('fr-CA')} $</Text>
+                    <Text style={{ color: '#cfd4dc', fontSize: 11, marginBottom: 2 }}>
+                      Bonus Cash: <Text style={{ color: '#f4f1ea', fontWeight: '600' }}>{c.corrected_values.bonus_cash.toLocaleString('fr-CA')} $</Text>
                     </Text>
                   )}
                   {c.corrected_values?.option1_rates && (
-                    <Text style={{ color: '#ccc', fontSize: 11, marginBottom: 2 }}>
-                      Opt1: <Text style={{ color: '#fff' }}>{formatVal(c.corrected_values.option1_rates)}</Text>
+                    <Text style={{ color: '#cfd4dc', fontSize: 11, marginBottom: 2 }}>
+                      Opt1: <Text style={{ color: '#f4f1ea' }}>{formatVal(c.corrected_values.option1_rates)}</Text>
                     </Text>
                   )}
                   {c.corrected_values?.option2_rates && (
-                    <Text style={{ color: '#ccc', fontSize: 11, marginBottom: 2 }}>
-                      Opt2: <Text style={{ color: '#fff' }}>{formatVal(c.corrected_values.option2_rates)}</Text>
+                    <Text style={{ color: '#cfd4dc', fontSize: 11, marginBottom: 2 }}>
+                      Opt2: <Text style={{ color: '#f4f1ea' }}>{formatVal(c.corrected_values.option2_rates)}</Text>
                     </Text>
                   )}
                 </View>
@@ -775,7 +775,7 @@ function VehicleOrderManager({ getToken }: { getToken: () => Promise<string> }) 
   if (loading) {
     return (
       <View style={os.loadingWrap}>
-        <ActivityIndicator size="large" color="#4ECDC4" />
+        <ActivityIndicator size="large" color="#e6c65a" />
       </View>
     );
   }
@@ -818,7 +818,7 @@ function VehicleOrderManager({ getToken }: { getToken: () => Promise<string> }) 
             <TextInput
               style={os.passwordInput}
               placeholder="Mot de passe admin"
-              placeholderTextColor="#666"
+              placeholderTextColor="#8a93a1"
               secureTextEntry
               value={adminPassword}
               onChangeText={setAdminPassword}
@@ -827,10 +827,10 @@ function VehicleOrderManager({ getToken }: { getToken: () => Promise<string> }) 
           )}
           <TouchableOpacity style={os.saveBtn} onPress={handleSave} disabled={saving}>
             {saving ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color="#f4f1ea" />
             ) : (
               <>
-                <Ionicons name="save" size={18} color="#fff" />
+                <Ionicons name="save" size={18} color="#f4f1ea" />
                 <Text style={os.saveBtnText}>{showPasswordInput ? 'Confirmer' : 'Sauvegarder l\'ordre'}</Text>
               </>
             )}
@@ -858,7 +858,7 @@ function VehicleOrderManager({ getToken }: { getToken: () => Promise<string> }) 
             >
               {/* Drag Handle */}
               <View style={os.dragHandle}>
-                <Ionicons name="menu" size={22} color="#666" />
+                <Ionicons name="menu" size={22} color="#8a93a1" />
               </View>
 
               {/* Sort Order Badge */}
@@ -887,14 +887,14 @@ function VehicleOrderManager({ getToken }: { getToken: () => Promise<string> }) 
                   onPress={() => idx > 0 && moveItem(idx, idx - 1)}
                   disabled={idx === 0}
                 >
-                  <Ionicons name="chevron-up" size={18} color={idx === 0 ? '#444' : '#4ECDC4'} />
+                  <Ionicons name="chevron-up" size={18} color={idx === 0 ? '#303744' : '#e6c65a'} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[os.arrowBtn, idx === filtered.length - 1 && os.arrowBtnDisabled]}
                   onPress={() => idx < filtered.length - 1 && moveItem(idx, idx + 1)}
                   disabled={idx === filtered.length - 1}
                 >
-                  <Ionicons name="chevron-down" size={18} color={idx === filtered.length - 1 ? '#444' : '#4ECDC4'} />
+                  <Ionicons name="chevron-down" size={18} color={idx === filtered.length - 1 ? '#303744' : '#e6c65a'} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -909,47 +909,47 @@ const os = StyleSheet.create({
   container: { flex: 1 },
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 40 },
   filterRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, gap: 8 },
-  filterLabel: { color: '#888', fontSize: 13, marginRight: 4 },
+  filterLabel: { color: '#9aa3b1', fontSize: 13, marginRight: 4 },
   brandScroll: { paddingHorizontal: 16, paddingTop: 8, maxHeight: 44 },
-  filterBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, backgroundColor: '#2d2d44', marginRight: 6 },
-  filterBtnActive: { backgroundColor: '#4ECDC4' },
-  filterBtnText: { color: '#ccc', fontSize: 13, fontWeight: '600' },
-  filterBtnTextActive: { color: '#1a1a2e' },
-  countLabel: { color: '#888', fontSize: 12, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4 },
+  filterBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, backgroundColor: '#111722', marginRight: 6 },
+  filterBtnActive: { backgroundColor: '#e6c65a' },
+  filterBtnText: { color: '#cfd4dc', fontSize: 13, fontWeight: '600' },
+  filterBtnTextActive: { color: '#07090e' },
+  countLabel: { color: '#9aa3b1', fontSize: 12, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4 },
   saveSection: { paddingHorizontal: 16, paddingVertical: 8, gap: 8 },
   passwordInput: {
-    backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#4ECDC4', borderRadius: 8,
-    paddingHorizontal: 14, paddingVertical: 10, color: '#fff', fontSize: 14,
+    backgroundColor: '#07090e', borderWidth: 1, borderColor: '#e6c65a', borderRadius: 8,
+    paddingHorizontal: 14, paddingVertical: 10, color: '#f4f1ea', fontSize: 14,
   },
   saveBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#4ECDC4', marginHorizontal: 16, marginVertical: 8, paddingVertical: 10,
+    backgroundColor: '#e6c65a', marginHorizontal: 16, marginVertical: 8, paddingVertical: 10,
     borderRadius: 8,
   },
-  saveBtnText: { color: '#1a1a2e', fontSize: 14, fontWeight: '700' },
+  saveBtnText: { color: '#07090e', fontSize: 14, fontWeight: '700' },
   listScroll: { flex: 1, paddingHorizontal: 12 },
   programCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#2d2d44',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#111722',
     borderRadius: 8, padding: 10, marginBottom: 4, gap: 8,
     ...(Platform.OS === 'web' ? { cursor: 'grab' } : {}),
   },
-  programCardDragging: { opacity: 0.4, borderWidth: 2, borderColor: '#4ECDC4', borderStyle: 'dashed' },
+  programCardDragging: { opacity: 0.4, borderWidth: 2, borderColor: '#e6c65a', borderStyle: 'dashed' },
   dragHandle: { width: 28, alignItems: 'center', justifyContent: 'center' },
   orderBadge: {
-    width: 26, height: 26, borderRadius: 13, backgroundColor: '#4ECDC4',
+    width: 26, height: 26, borderRadius: 13, backgroundColor: '#e6c65a',
     alignItems: 'center', justifyContent: 'center',
   },
-  orderBadgeText: { color: '#1a1a2e', fontSize: 12, fontWeight: '700' },
+  orderBadgeText: { color: '#07090e', fontSize: 12, fontWeight: '700' },
   programInfo: { flex: 1, marginLeft: 4 },
-  programBrand: { color: '#4ECDC4', fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  programModel: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  programTrim: { color: '#aaa', fontSize: 11, marginTop: 1 },
-  cashBadge: { backgroundColor: 'rgba(78, 205, 196, 0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  cashText: { color: '#4ECDC4', fontSize: 11, fontWeight: '600' },
+  programBrand: { color: '#e6c65a', fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  programModel: { color: '#f4f1ea', fontSize: 14, fontWeight: '600' },
+  programTrim: { color: '#b9c0cc', fontSize: 11, marginTop: 1 },
+  cashBadge: { backgroundColor: 'rgba(230, 198, 90, 0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  cashText: { color: '#e6c65a', fontSize: 11, fontWeight: '600' },
   arrowCol: { alignItems: 'center', gap: 2, marginLeft: 4 },
   arrowBtn: {
     width: 30, height: 24, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#1a1a2e', borderRadius: 4,
+    backgroundColor: '#07090e', borderRadius: 4,
   },
   arrowBtnDisabled: { opacity: 0.3 },
 });
@@ -1037,7 +1037,7 @@ export default function AdminScreen() {
             <Text style={styles.avatarText}>{item.name.charAt(0).toUpperCase()}</Text>
             {item.is_admin && (
               <View style={styles.adminBadge}>
-                <Ionicons name="shield-checkmark" size={12} color="#FFD700" />
+                <Ionicons name="shield-checkmark" size={12} color="#f0d879" />
               </View>
             )}
           </View>
@@ -1053,11 +1053,11 @@ export default function AdminScreen() {
         </View>
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <Ionicons name="people-outline" size={16} color="#4ECDC4" />
+            <Ionicons name="people-outline" size={16} color="#e6c65a" />
             <Text style={styles.statText}>{item.contacts_count} contacts</Text>
           </View>
           <View style={styles.statItem}>
-            <Ionicons name="document-text-outline" size={16} color="#4ECDC4" />
+            <Ionicons name="document-text-outline" size={16} color="#e6c65a" />
             <Text style={styles.statText}>{item.submissions_count} soumissions</Text>
           </View>
         </View>
@@ -1068,10 +1068,10 @@ export default function AdminScreen() {
         {!item.is_admin && !isCurrentUser && (
           <View style={styles.actionsRow}>
             {actionLoading === item.id ? (
-              <ActivityIndicator size="small" color="#4ECDC4" />
+              <ActivityIndicator size="small" color="#e6c65a" />
             ) : item.is_blocked ? (
               <TouchableOpacity style={styles.unblockButton} onPress={() => handleUnblockUser(item.id, item.name)}>
-                <Ionicons name="checkmark-circle" size={18} color="#4ECDC4" />
+                <Ionicons name="checkmark-circle" size={18} color="#e6c65a" />
                 <Text style={styles.unblockButtonText}>Debloquer</Text>
               </TouchableOpacity>
             ) : (
@@ -1090,7 +1090,7 @@ export default function AdminScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4ECDC4" />
+          <ActivityIndicator size="large" color="#e6c65a" />
           <Text style={styles.loadingText}>Chargement...</Text>
         </View>
       </SafeAreaView>
@@ -1101,7 +1101,7 @@ export default function AdminScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Administration</Text>
-        <Ionicons name="shield-checkmark" size={20} color="#FFD700" style={{ marginLeft: 10 }} />
+        <Ionicons name="shield-checkmark" size={20} color="#f0d879" style={{ marginLeft: 10 }} />
       </View>
 
       {/* Tab Switcher */}
@@ -1110,21 +1110,21 @@ export default function AdminScreen() {
           style={[styles.tab, activeTab === 'users' && styles.tabActive]}
           onPress={() => setActiveTab('users')}
         >
-          <Ionicons name="people" size={16} color={activeTab === 'users' ? '#1a1a2e' : '#888'} />
+          <Ionicons name="people" size={16} color={activeTab === 'users' ? '#07090e' : '#9aa3b1'} />
           <Text style={[styles.tabText, activeTab === 'users' && styles.tabTextActive]}>Utilisateurs</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'order' && styles.tabActive]}
           onPress={() => setActiveTab('order')}
         >
-          <Ionicons name="swap-vertical" size={16} color={activeTab === 'order' ? '#1a1a2e' : '#888'} />
+          <Ionicons name="swap-vertical" size={16} color={activeTab === 'order' ? '#07090e' : '#9aa3b1'} />
           <Text style={[styles.tabText, activeTab === 'order' && styles.tabTextActive]}>Ordre</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'excel' && styles.tabActive]}
           onPress={() => setActiveTab('excel')}
         >
-          <Ionicons name="document-text" size={16} color={activeTab === 'excel' ? '#1a1a2e' : '#888'} />
+          <Ionicons name="document-text" size={16} color={activeTab === 'excel' ? '#07090e' : '#9aa3b1'} />
           <Text style={[styles.tabText, activeTab === 'excel' && styles.tabTextActive]}>Excel</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -1132,7 +1132,7 @@ export default function AdminScreen() {
           onPress={() => setActiveTab('corrections')}
           data-testid="corrections-tab"
         >
-          <Ionicons name="git-compare" size={16} color={activeTab === 'corrections' ? '#1a1a2e' : '#888'} />
+          <Ionicons name="git-compare" size={16} color={activeTab === 'corrections' ? '#07090e' : '#9aa3b1'} />
           <Text style={[styles.tabText, activeTab === 'corrections' && styles.tabTextActive]}>Corrections</Text>
         </TouchableOpacity>
       </View>
@@ -1146,7 +1146,7 @@ export default function AdminScreen() {
                 <Text style={styles.statsLabel}>Utilisateurs</Text>
               </View>
               <View style={styles.statsCard}>
-                <Text style={[styles.statsNumber, { color: '#4ECDC4' }]}>{stats.active_users}</Text>
+                <Text style={[styles.statsNumber, { color: '#e6c65a' }]}>{stats.active_users}</Text>
                 <Text style={styles.statsLabel}>Actifs</Text>
               </View>
               <View style={styles.statsCard}>
@@ -1165,11 +1165,11 @@ export default function AdminScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4ECDC4" colors={['#4ECDC4']} />
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#e6c65a" colors={['#e6c65a']} />
             }
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Ionicons name="people-outline" size={48} color="#888" />
+                <Ionicons name="people-outline" size={48} color="#9aa3b1" />
                 <Text style={styles.emptyText}>Aucun utilisateur</Text>
               </View>
             }
@@ -1187,54 +1187,54 @@ export default function AdminScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a2e' },
+  container: { flex: 1, backgroundColor: '#07090e' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { color: '#888', marginTop: 10 },
+  loadingText: { color: '#9aa3b1', marginTop: 10 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 14, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: '#2d2d44',
+    paddingVertical: 14, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: '#303744',
   },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
+  title: { fontSize: 22, fontWeight: 'bold', color: '#f4f1ea' },
   tabRow: {
     flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, gap: 8,
-    borderBottomWidth: 1, borderBottomColor: '#2d2d44',
+    borderBottomWidth: 1, borderBottomColor: '#303744',
   },
   tab: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    paddingVertical: 10, borderRadius: 8, backgroundColor: '#2d2d44',
+    paddingVertical: 10, borderRadius: 8, backgroundColor: '#111722',
   },
-  tabActive: { backgroundColor: '#4ECDC4' },
-  tabText: { color: '#888', fontSize: 13, fontWeight: '600' },
-  tabTextActive: { color: '#1a1a2e' },
+  tabActive: { backgroundColor: '#e6c65a' },
+  tabText: { color: '#9aa3b1', fontSize: 13, fontWeight: '600' },
+  tabTextActive: { color: '#07090e' },
   statsContainer: {
     flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 14, paddingHorizontal: 10,
-    borderBottomWidth: 1, borderBottomColor: '#2d2d44',
+    borderBottomWidth: 1, borderBottomColor: '#303744',
   },
   statsCard: { alignItems: 'center', paddingHorizontal: 10 },
-  statsNumber: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
-  statsLabel: { fontSize: 11, color: '#888', marginTop: 3 },
+  statsNumber: { fontSize: 22, fontWeight: 'bold', color: '#f4f1ea' },
+  statsLabel: { fontSize: 11, color: '#9aa3b1', marginTop: 3 },
   listContent: { padding: 16, paddingBottom: 100 },
-  userCard: { backgroundColor: '#2d2d44', borderRadius: 12, padding: 16, marginBottom: 12 },
+  userCard: { backgroundColor: '#111722', borderRadius: 12, padding: 16, marginBottom: 12 },
   userCardBlocked: { borderWidth: 1, borderColor: '#FF6B6B', opacity: 0.8 },
   userHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   userAvatar: {
-    width: 48, height: 48, borderRadius: 24, backgroundColor: '#4ECDC4',
+    width: 48, height: 48, borderRadius: 24, backgroundColor: '#e6c65a',
     justifyContent: 'center', alignItems: 'center', position: 'relative',
   },
-  avatarText: { fontSize: 20, fontWeight: 'bold', color: '#1a1a2e' },
-  adminBadge: { position: 'absolute', bottom: -2, right: -2, backgroundColor: '#1a1a2e', borderRadius: 10, padding: 2 },
+  avatarText: { fontSize: 20, fontWeight: 'bold', color: '#07090e' },
+  adminBadge: { position: 'absolute', bottom: -2, right: -2, backgroundColor: '#07090e', borderRadius: 10, padding: 2 },
   userInfo: { flex: 1, marginLeft: 12 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  userName: { fontSize: 16, fontWeight: '600', color: '#fff' },
-  userEmail: { fontSize: 14, color: '#888', marginTop: 2 },
+  userName: { fontSize: 16, fontWeight: '600', color: '#f4f1ea' },
+  userEmail: { fontSize: 14, color: '#9aa3b1', marginTop: 2 },
   blockedBadge: { backgroundColor: '#FF6B6B', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
-  blockedText: { fontSize: 10, fontWeight: 'bold', color: '#fff' },
+  blockedText: { fontSize: 10, fontWeight: 'bold', color: '#f4f1ea' },
   statsRow: { flexDirection: 'row', gap: 20, marginBottom: 8 },
   statItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  statText: { fontSize: 13, color: '#ccc' },
+  statText: { fontSize: 13, color: '#cfd4dc' },
   datesRow: { marginBottom: 12 },
-  dateLabel: { fontSize: 12, color: '#666', marginBottom: 2 },
-  actionsRow: { flexDirection: 'row', justifyContent: 'flex-end', borderTopWidth: 1, borderTopColor: '#3d3d54', paddingTop: 12 },
+  dateLabel: { fontSize: 12, color: '#8a93a1', marginBottom: 2 },
+  actionsRow: { flexDirection: 'row', justifyContent: 'flex-end', borderTopWidth: 1, borderTopColor: '#303744', paddingTop: 12 },
   blockButton: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: 'rgba(255, 107, 107, 0.1)', paddingVertical: 8, paddingHorizontal: 16,
@@ -1243,10 +1243,10 @@ const styles = StyleSheet.create({
   blockButtonText: { color: '#FF6B6B', fontWeight: '600' },
   unblockButton: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: 'rgba(78, 205, 196, 0.1)', paddingVertical: 8, paddingHorizontal: 16,
-    borderRadius: 8, borderWidth: 1, borderColor: '#4ECDC4',
+    backgroundColor: 'rgba(230, 198, 90, 0.1)', paddingVertical: 8, paddingHorizontal: 16,
+    borderRadius: 8, borderWidth: 1, borderColor: '#e6c65a',
   },
-  unblockButtonText: { color: '#4ECDC4', fontWeight: '600' },
+  unblockButtonText: { color: '#e6c65a', fontWeight: '600' },
   emptyContainer: { alignItems: 'center', paddingVertical: 40 },
-  emptyText: { color: '#888', marginTop: 12, fontSize: 16 },
+  emptyText: { color: '#9aa3b1', marginTop: 12, fontSize: 16 },
 });

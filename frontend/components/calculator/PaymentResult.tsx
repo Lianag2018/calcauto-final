@@ -102,7 +102,7 @@ export const PaymentResult: React.FC<Props> = ({
       >
         {isBest && (
           <View style={styles.bestBadge}>
-            <Ionicons name="star" size={12} color="#fff" />
+            <Ionicons name="star" size={12} color="#f4f1ea" />
             <Text style={styles.bestBadgeText}>{labels.bestOptionBadge}</Text>
           </View>
         )}
@@ -128,7 +128,7 @@ export const PaymentResult: React.FC<Props> = ({
 
         {isSelected && (
           <View style={styles.selectedIndicator}>
-            <Ionicons name="checkmark-circle" size={24} color="#4ECDC4" />
+            <Ionicons name="checkmark-circle" size={24} color="#e6c65a" />
           </View>
         )}
       </TouchableOpacity>
@@ -144,7 +144,7 @@ export const PaymentResult: React.FC<Props> = ({
 
       {data.savings > 0 && data.bestOption && (
         <View style={styles.savingsContainer}>
-          <Ionicons name="trending-down" size={20} color="#4ECDC4" />
+          <Ionicons name="trending-down" size={20} color="#e6c65a" />
           <Text style={styles.savingsText}>
             {labels.savingsLabel}: {formatCurrency(data.savings)}
           </Text>
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   },
   optionCard: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderRadius: 12,
     padding: 16,
     borderWidth: 2,
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   optionCardSelected: {
-    borderColor: '#4ECDC4',
+    borderColor: '#e6c65a',
   },
   optionCardBest: {
     backgroundColor: '#1a2a2e',
@@ -183,19 +183,19 @@ const styles = StyleSheet.create({
     right: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
     gap: 4,
   },
   bestBadgeText: {
-    color: '#fff',
+    color: '#11130f',
     fontSize: 10,
     fontWeight: 'bold',
   },
   optionTitle: {
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 12,
@@ -206,11 +206,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   rateLabel: {
-    color: '#888',
+    color: '#9aa3b1',
     fontSize: 12,
   },
   rateValue: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -220,11 +220,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   paymentLabel: {
-    color: '#888',
+    color: '#9aa3b1',
     fontSize: 12,
   },
   paymentValue: {
-    color: '#fff',
+    color: '#f4f1ea',
     fontSize: 20,
     fontWeight: 'bold',
   },
@@ -236,11 +236,11 @@ const styles = StyleSheet.create({
     borderTopColor: '#333',
   },
   totalLabel: {
-    color: '#888',
+    color: '#9aa3b1',
     fontSize: 11,
   },
   totalValue: {
-    color: '#aaa',
+    color: '#b9c0cc',
     fontSize: 12,
   },
   selectedIndicator: {
@@ -254,12 +254,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 16,
     padding: 12,
-    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    backgroundColor: 'rgba(230, 198, 90, 0.1)',
     borderRadius: 8,
     gap: 8,
   },
   savingsText: {
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontSize: 14,
     fontWeight: '600',
   },

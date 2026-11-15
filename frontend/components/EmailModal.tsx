@@ -87,11 +87,11 @@ export const EmailModal: React.FC<EmailModalProps> = ({
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <View style={styles.iconContainer}>
-              <Ionicons name="mail" size={32} color="#4ECDC4" />
+              <Ionicons name="mail" size={32} color="#e6c65a" />
             </View>
             <Text style={styles.modalTitle}>{t.email.sendByEmail}</Text>
             <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-              <Ionicons name="close" size={24} color="#888" />
+              <Ionicons name="close" size={24} color="#9aa3b1" />
             </TouchableOpacity>
           </View>
 
@@ -100,7 +100,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
             <TextInput
               style={styles.input}
               placeholder="Ex: Jean Dupont"
-              placeholderTextColor="#666"
+              placeholderTextColor="#8a93a1"
               value={clientName}
               onChangeText={setClientName}
             />
@@ -109,7 +109,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
             <TextInput
               style={styles.input}
               placeholder="client@email.com"
-              placeholderTextColor="#666"
+              placeholderTextColor="#8a93a1"
               value={clientEmail}
               onChangeText={setClientEmail}
               keyboardType="email-address"
@@ -135,10 +135,10 @@ export const EmailModal: React.FC<EmailModalProps> = ({
               onPress={handleSend}
             >
               {sending ? (
-                <ActivityIndicator size="small" color="#1a1a2e" />
+                <ActivityIndicator size="small" color="#07090e" />
               ) : (
                 <>
-                  <Ionicons name="send" size={18} color="#1a1a2e" />
+                  <Ionicons name="send" size={18} color="#07090e" />
                   <Text style={styles.sendButtonText}>{t.email.send}</Text>
                 </>
               )}
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingBottom: 30,
@@ -166,13 +166,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#2d2d44',
+    borderBottomColor: '#303744',
   },
   iconContainer: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(78, 205, 196, 0.2)',
+    backgroundColor: 'rgba(230, 198, 90, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f4f1ea',
   },
   closeButton: {
     position: 'absolute',
@@ -193,37 +193,37 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#888',
+    color: '#9aa3b1',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 14,
     fontSize: 16,
-    color: '#fff',
+    color: '#f4f1ea',
     marginBottom: 16,
   },
   previewBox: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 16,
     marginTop: 8,
   },
   previewTitle: {
     fontSize: 12,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     marginBottom: 8,
   },
   previewText: {
     fontSize: 14,
-    color: '#fff',
+    color: '#f4f1ea',
     marginBottom: 4,
   },
   previewPayment: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#4ECDC4',
+    color: '#e6c65a',
     marginTop: 4,
   },
   modalButtons: {
@@ -233,19 +233,19 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
   },
   cancelButtonText: {
     fontSize: 16,
-    color: '#fff',
+    color: '#f4f1ea',
   },
   sendButton: {
     flex: 2,
     flexDirection: 'row',
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -258,6 +258,6 @@ const styles = StyleSheet.create({
   sendButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a2e',
+    color: '#07090e',
   },
 });

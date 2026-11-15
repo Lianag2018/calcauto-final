@@ -28,6 +28,7 @@ import html2canvas from 'html2canvas';
 
 // Import components and i18n
 import { AnimatedSplashScreen } from '../../components/AnimatedSplashScreen';
+import { GaugeMark } from '../../components/GaugeMark';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { Language, saveLanguage, loadLanguage, getTranslation, TranslationKeys } from '../../utils/i18n';
 import { useAuth } from '../../contexts/AuthContext';
@@ -1868,16 +1869,21 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={{flex: 1}}>
-            <Text style={styles.headerTitle}>{t.title}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <GaugeMark size={26} motion="none" />
+              <Text style={styles.headerTitle} accessibilityLabel={t.title}>
+                Calc<Text style={{ color: '#e6c65a' }}>Auto</Text>
+              </Text>
+            </View>
             <TouchableOpacity 
-              style={{flexDirection: 'row', alignItems: 'center', backgroundColor: '#2d2d44', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginTop: 4}}
+              style={{flexDirection: 'row', alignItems: 'center', backgroundColor: '#111722', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginTop: 4}}
               onPress={() => setShowPeriodSelector(true)}
             >
-              <Ionicons name="calendar-outline" size={14} color="#4ECDC4" />
-              <Text style={{color: '#4ECDC4', fontSize: 13, fontWeight: '600', marginLeft: 6}}>
+              <Ionicons name="calendar-outline" size={14} color="#e6c65a" />
+              <Text style={{color: '#e6c65a', fontSize: 13, fontWeight: '600', marginLeft: 6}}>
                 {currentPeriod ? `${monthNames[lang][currentPeriod.month]} ${currentPeriod.year}` : 'Période'}
               </Text>
-              <Ionicons name="chevron-down" size={14} color="#4ECDC4" style={{marginLeft: 4}} />
+              <Ionicons name="chevron-down" size={14} color="#e6c65a" style={{marginLeft: 4}} />
             </TouchableOpacity>
           </View>
           <View style={styles.headerActions}>
@@ -1889,13 +1895,13 @@ export default function HomeScreen() {
               style={styles.importButton}
               onPress={() => setShowImportModal(true)}
             >
-              <Ionicons name="cloud-upload-outline" size={20} color="#fff" />
+              <Ionicons name="cloud-upload-outline" size={20} color="#f4f1ea" />
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.importButton, {backgroundColor: '#e74c3c', marginLeft: 8}]}
               onPress={handleLogout}
             >
-              <Ionicons name="log-out-outline" size={20} color="#fff" />
+              <Ionicons name="log-out-outline" size={20} color="#f4f1ea" />
             </TouchableOpacity>
           </View>
         </View>
@@ -1914,7 +1920,7 @@ export default function HomeScreen() {
                   {lang === 'fr' ? 'Choisir la période' : 'Select Period'}
                 </Text>
                 <TouchableOpacity onPress={() => setShowPeriodSelector(false)}>
-                  <Ionicons name="close" size={24} color="#fff" />
+                  <Ionicons name="close" size={24} color="#f4f1ea" />
                 </TouchableOpacity>
               </View>
               <ScrollView style={styles.periodList}>
@@ -1951,21 +1957,27 @@ export default function HomeScreen() {
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4ECDC4" />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#e6c65a" />
           }
           keyboardShouldPersistTaps="handled"
         >
           {/* Véhicule neuf ou d'occasion */}
-          <View style={{ flexDirection: 'row', gap: 10, marginHorizontal: 16, marginTop: 12 }} data-testid="vehicle-mode">
+          <View
+            style={{ flexDirection: 'row', marginHorizontal: 16, marginTop: 12, marginBottom: 4, padding: 3, borderRadius: 12, borderWidth: 1, borderColor: '#303744', backgroundColor: '#07090e' }}
+            accessibilityRole="tablist"
+            data-testid="vehicle-mode"
+          >
             {(['neuf', 'usage'] as const).map(mode => (
               <TouchableOpacity
                 key={mode}
                 onPress={() => switchVehicleMode(mode)}
-                style={{ flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', backgroundColor: vehicleMode === mode ? '#4ECDC4' : '#2d2d44' }}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: vehicleMode === mode }}
+                style={{ flex: 1, paddingVertical: 10, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: vehicleMode === mode ? '#e6c65a' : 'transparent' }}
                 data-testid={`vehicle-mode-${mode}`}
               >
-                <Text style={{ color: vehicleMode === mode ? '#1a1a2e' : '#aaa', fontSize: 16, fontWeight: '700' }}>
-                  {mode === 'neuf' ? (lang === 'fr' ? 'Véhicule neuf' : 'New vehicle') : (lang === 'fr' ? "Véhicule d'occasion" : 'Used vehicle')}
+                <Text numberOfLines={1} style={{ color: vehicleMode === mode ? '#11130f' : '#b9c0cc', fontSize: 15, fontWeight: '700' }}>
+                  {mode === 'neuf' ? (lang === 'fr' ? 'Neuf' : 'New') : (lang === 'fr' ? 'Occasion' : 'Used')}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -1981,7 +1993,7 @@ export default function HomeScreen() {
                 value={usedSearch}
                 onChangeText={setUsedSearch}
                 placeholder={lang === 'fr' ? 'Chercher : no de stock, marque, modèle…' : 'Search: stock #, make, model…'}
-                placeholderTextColor="#666"
+                placeholderTextColor="#8a93a1"
               />
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.inventoryScroll}>
                 {usedVehicles.slice(0, 60).map((vehicle: any) => (
@@ -2017,7 +2029,7 @@ export default function HomeScreen() {
                   <TextInput
                     style={styles.priceInput}
                     placeholder="8.99"
-                    placeholderTextColor="#666"
+                    placeholderTextColor="#8a93a1"
                     keyboardType="decimal-pad"
                     value={usedRate}
                     onChangeText={(v) => setUsedRate(v.replace(/[^0-9.,]/g, ''))}
@@ -2097,7 +2109,7 @@ export default function HomeScreen() {
             </Text>
             {programsLoading ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#4ECDC4" />
+                <ActivityIndicator size="small" color="#e6c65a" />
                 <Text style={styles.loadingText}>{t.loadingPrograms}</Text>
               </View>
             ) : filteredPrograms.length === 0 ? (
@@ -2216,7 +2228,7 @@ export default function HomeScreen() {
                   )}
                   {selectedProgram.bonus_cash > 0 && (
                     <View style={styles.rebateItem}>
-                      <Ionicons name="gift-outline" size={14} color="#FFD700" />
+                      <Ionicons name="gift-outline" size={14} color="#f0d879" />
                       <Text style={styles.rebateLabelBonus}>{rebateName(t.results.bonusCash, selectedProgram.bonus_cash_program)} ({t.results.afterTax}):</Text>
                       <Text style={styles.rebateValueBonus}>{formatCurrency(selectedProgram.bonus_cash)}</Text>
                     </View>
@@ -2227,10 +2239,10 @@ export default function HomeScreen() {
                       onPress={() => setCheckedOffers(prev => ({ ...prev, [STD_RATE_CASH_KEY]: !prev[STD_RATE_CASH_KEY] }))}
                       testID="offer-toggle-standard-rate-lease-cash"
                     >
-                      <Ionicons name={stdRateCashChecked ? 'checkbox' : 'square-outline'} size={18} color="#FFD700" />
+                      <Ionicons name={stdRateCashChecked ? 'checkbox' : 'square-outline'} size={18} color="#f0d879" />
                       <View style={{ flex: 1 }}>
                         <Text style={styles.rebateLabelBonus}>SCI Standard Rate Lease Cash — 261QLB ({t.results.beforeTax}):</Text>
-                        <Text style={{ color: '#999', fontSize: 11 }}>
+                        <Text style={{ color: '#9aa3b1', fontSize: 11 }}>
                           {lang === 'fr' ? 'Location au taux standard seulement, s\'ajoute au Lease Cash' : 'Standard-rate lease only, stacks with Lease Cash'}
                         </Text>
                       </View>
@@ -2247,13 +2259,13 @@ export default function HomeScreen() {
                         onPress={() => setCheckedOffers(prev => ({ ...prev, [key]: !prev[key] }))}
                         testID={offer.kind === 'loyalty' ? 'loyalty-bonus-toggle' : `offer-toggle-${offer.code}`}
                       >
-                        <Ionicons name={isChecked ? 'checkbox' : 'square-outline'} size={18} color="#FFD700" />
+                        <Ionicons name={isChecked ? 'checkbox' : 'square-outline'} size={18} color="#f0d879" />
                         <View style={{ flex: 1 }}>
                           <Text style={styles.rebateLabelBonus}>
                             {offerLabel(offer)} ({offer.tax === 'before' ? t.results.beforeTax : t.results.afterTax}):
                           </Text>
                           {(offer.condition || offer.vin_list) ? (
-                            <Text style={{ color: '#999', fontSize: 11 }}>
+                            <Text style={{ color: '#9aa3b1', fontSize: 11 }}>
                               {offer.condition}{offer.vin_list ? (lang === 'fr' ? ' · véhicule sur la liste de NIV' : ' · VIN on the manifest list') : ''}
                             </Text>
                           ) : null}
@@ -2281,7 +2293,7 @@ export default function HomeScreen() {
                   <TextInput
                     style={[styles.input, styles.accessoryDescInput]}
                     placeholder={lang === 'fr' ? 'Description' : 'Description'}
-                    placeholderTextColor="#666"
+                    placeholderTextColor="#8a93a1"
                     value={acc.description}
                     onChangeText={(text) => {
                       const newAcc = [...accessories];
@@ -2292,7 +2304,7 @@ export default function HomeScreen() {
                   <TextInput
                     style={[styles.input, styles.accessoryPriceInput]}
                     placeholder="$"
-                    placeholderTextColor="#666"
+                    placeholderTextColor="#8a93a1"
                     keyboardType="numeric"
                     value={acc.price}
                     onChangeText={(text) => {
@@ -2351,16 +2363,16 @@ export default function HomeScreen() {
                 <View style={{ marginBottom: 10 }} data-testid="model-code-picker">
                   <TouchableOpacity
                     onPress={() => setShowCodeList(!showCodeList)}
-                    style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#2d2d44', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 14 }}
+                    style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#111722', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 14 }}
                     data-testid="model-code-toggle"
                   >
-                    <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', flex: 1 }}>
+                    <Text style={{ color: '#f4f1ea', fontSize: 14, fontWeight: '600', flex: 1 }}>
                       {lang === 'fr' ? 'Code de modèle : ' : 'Model code: '}
                       <Text style={{ color: '#FFB347' }}>
                         {pickedCode || (lang === 'fr' ? `Tous (${modelCodes.length})` : `All (${modelCodes.length})`)}
                       </Text>
                     </Text>
-                    <Text style={{ color: '#4ECDC4', fontSize: 14 }}>{showCodeList ? '▲' : '▼'}</Text>
+                    <Text style={{ color: '#e6c65a', fontSize: 14 }}>{showCodeList ? '▲' : '▼'}</Text>
                   </TouchableOpacity>
                   {showCodeList && (
                     <View style={{ backgroundColor: '#24243a', borderRadius: 10, marginTop: 4 }}>
@@ -2374,15 +2386,15 @@ export default function HomeScreen() {
                               setSelectedInventory(null);
                             }
                           }}
-                          style={{ paddingVertical: 11, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: '#33334d', backgroundColor: pickedCode === item.code ? '#33334d' : 'transparent' }}
+                          style={{ paddingVertical: 11, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: '#303744', backgroundColor: pickedCode === item.code ? '#303744' : 'transparent' }}
                           data-testid={`model-code-${item.code || 'all'}`}
                         >
-                          <Text style={{ color: '#fff', fontSize: 14 }}>
+                          <Text style={{ color: '#f4f1ea', fontSize: 14 }}>
                             {item.code ? <Text style={{ color: '#FFB347', fontWeight: '700' }}>{item.code}  </Text> : null}
                             {item.description}
                           </Text>
                           {item.in_stock >= 0 && (
-                            <Text style={{ color: item.in_stock > 0 ? '#4ECDC4' : '#888', fontSize: 12, marginTop: 2 }}>
+                            <Text style={{ color: item.in_stock > 0 ? '#e6c65a' : '#9aa3b1', fontSize: 12, marginTop: 2 }}>
                               {item.in_stock > 0
                                 ? (lang === 'fr' ? `${item.in_stock} en inventaire` : `${item.in_stock} in stock`)
                                 : (lang === 'fr' ? 'Aucun en inventaire' : 'None in stock')}
@@ -2395,7 +2407,7 @@ export default function HomeScreen() {
                 </View>
               )}
               {codeSavedFor ? (
-                <Text style={{ color: '#4ECDC4', fontSize: 12, marginBottom: 8 }} data-testid="model-code-saved">
+                <Text style={{ color: '#e6c65a', fontSize: 12, marginBottom: 8 }} data-testid="model-code-saved">
                   {lang === 'fr' ? `Code inscrit sur la fiche #${codeSavedFor}` : `Code saved on vehicle #${codeSavedFor}`}
                 </Text>
               ) : null}
@@ -2414,7 +2426,7 @@ export default function HomeScreen() {
                   </Text>
                   {codeSuggest && codeSuggest.stock_no === selectedInventory.stock_no && (codeSuggest.codes || []).length > 0 ? (
                     <View>
-                      <Text style={{ color: '#aaa', fontSize: 12, marginTop: 6 }}>
+                      <Text style={{ color: '#b9c0cc', fontSize: 12, marginTop: 6 }}>
                         {lang === 'fr' ? 'Codes possibles (touche le bon, il sera retenu sur la fiche) :' : 'Possible codes (tap the right one, it will be kept):'}
                       </Text>
                       <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 }}>
@@ -2422,39 +2434,39 @@ export default function HomeScreen() {
                           <TouchableOpacity
                             key={c.code}
                             onPress={() => setPickedCode(c.code)}
-                            style={{ backgroundColor: '#2d2d44', borderColor: '#FFB347', borderWidth: 1, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 }}
+                            style={{ backgroundColor: '#111722', borderColor: '#FFB347', borderWidth: 1, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 }}
                             data-testid={`code-suggestion-${c.code}`}
                           >
                             <Text style={{ color: '#FFB347', fontWeight: '700', fontSize: 14 }}>{c.code}</Text>
-                            <Text style={{ color: '#ccc', fontSize: 11 }}>{c.description}</Text>
+                            <Text style={{ color: '#cfd4dc', fontSize: 11 }}>{c.description}</Text>
                           </TouchableOpacity>
                         ))}
                       </View>
                     </View>
                   ) : (
                     <View>
-                      <Text style={{ color: '#aaa', fontSize: 12, marginTop: 4 }}>
+                      <Text style={{ color: '#b9c0cc', fontSize: 12, marginTop: 4 }}>
                         {lang === 'fr'
                           ? 'Aucun code connu pour cette version. Entre-le une fois : il sera retenu pour les prochains véhicules.'
                           : 'No known code for this trim. Enter it once: it will be kept for future vehicles.'}
                       </Text>
                       <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
                         <TextInput
-                          style={{ flex: 1, backgroundColor: '#2d2d44', color: '#fff', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12, fontSize: 15, marginRight: 8 }}
+                          style={{ flex: 1, backgroundColor: '#111722', color: '#f4f1ea', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12, fontSize: 15, marginRight: 8 }}
                           value={typedCode}
                           onChangeText={(v) => setTypedCode(v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
                           placeholder={lang === 'fr' ? 'Code (6 caractères)' : 'Code (6 characters)'}
-                          placeholderTextColor="#666"
+                          placeholderTextColor="#8a93a1"
                           autoCapitalize="characters"
                           data-testid="model-code-input"
                         />
                         <TouchableOpacity
                           disabled={typedCode.length !== 6}
                           onPress={() => { setPickedCode(typedCode); setTypedCode(''); }}
-                          style={{ backgroundColor: typedCode.length === 6 ? '#4ECDC4' : '#3a3a55', borderRadius: 10, paddingVertical: 9, paddingHorizontal: 14 }}
+                          style={{ backgroundColor: typedCode.length === 6 ? '#e6c65a' : '#3a3a55', borderRadius: 10, paddingVertical: 9, paddingHorizontal: 14 }}
                           data-testid="model-code-keep"
                         >
-                          <Text style={{ color: '#1a1a2e', fontWeight: '700' }}>{lang === 'fr' ? 'Retenir' : 'Keep'}</Text>
+                          <Text style={{ color: '#07090e', fontWeight: '700' }}>{lang === 'fr' ? 'Retenir' : 'Keep'}</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -2519,7 +2531,7 @@ export default function HomeScreen() {
                           value={manualVin}
                           onChangeText={(text) => setManualVin(text.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
                           placeholder="Ex: 1C4RJKBG5S8806267"
-                          placeholderTextColor="#666"
+                          placeholderTextColor="#8a93a1"
                           maxLength={17}
                           autoCapitalize="characters"
                         />
@@ -2554,7 +2566,7 @@ export default function HomeScreen() {
               {selectedInventory && (
                 <View style={styles.selectedInventoryBanner}>
                   <View style={styles.selectedInventoryInfo}>
-                    <Ionicons name="car-sport" size={20} color="#4ECDC4" />
+                    <Ionicons name="car-sport" size={20} color="#e6c65a" />
                     <Text style={styles.selectedInventoryText}>
                       Stock #{selectedInventory.stock_no} - {selectedInventory.year} {selectedInventory.brand} {selectedInventory.model} {selectedInventory.trim}
                     </Text>
@@ -2572,7 +2584,7 @@ export default function HomeScreen() {
               {autoFinancing && (selectedInventory || selectedProgram) && (
                 <View style={styles.autoFinancingBanner}>
                   <View style={styles.autoFinancingHeader}>
-                    <Ionicons name="flash" size={18} color="#FFD700" />
+                    <Ionicons name="flash" size={18} color="#f0d879" />
                     <Text style={styles.autoFinancingTitle}>
                       {lang === 'fr' ? 'Promotions détectées automatiquement' : 'Auto-detected Promotions'}
                     </Text>
@@ -2625,7 +2637,7 @@ export default function HomeScreen() {
                   <TextInput
                     style={styles.priceInput}
                     placeholder="55000"
-                    placeholderTextColor="#666"
+                    placeholderTextColor="#8a93a1"
                     keyboardType="numeric"
                     value={vehiclePrice}
                     onChangeText={setVehiclePrice}
@@ -2641,7 +2653,7 @@ export default function HomeScreen() {
                   <TextInput
                     style={styles.priceInput}
                     placeholder="0"
-                    placeholderTextColor="#666"
+                    placeholderTextColor="#8a93a1"
                     keyboardType="numeric"
                     value={leaseRabaisConcess}
                     onChangeText={setLeaseRabaisConcess}
@@ -2658,7 +2670,7 @@ export default function HomeScreen() {
                   <TextInput
                     style={styles.priceInput}
                     placeholder={String(selectedProgram.bonus_cash || 0)}
-                    placeholderTextColor="#666"
+                    placeholderTextColor="#8a93a1"
                     keyboardType="numeric"
                     value={customBonusCash}
                     onChangeText={setCustomBonusCash}
@@ -2674,7 +2686,7 @@ export default function HomeScreen() {
                   <TextInput
                     style={styles.priceInput}
                     placeholder="0"
-                    placeholderTextColor="#666"
+                    placeholderTextColor="#8a93a1"
                     keyboardType="numeric"
                     value={soldeReporteLocation}
                     onChangeText={setSoldeReporteLocation}
@@ -2691,7 +2703,7 @@ export default function HomeScreen() {
                   <TextInput
                     style={styles.priceInput}
                     placeholder="0"
-                    placeholderTextColor="#666"
+                    placeholderTextColor="#8a93a1"
                     keyboardType="numeric"
                     value={comptantTxInclus}
                     onChangeText={setComptantTxInclus}
@@ -2710,7 +2722,7 @@ export default function HomeScreen() {
                       <TextInput
                         style={styles.feeInput}
                         placeholder="259.95"
-                        placeholderTextColor="#666"
+                        placeholderTextColor="#8a93a1"
                         keyboardType="decimal-pad"
                         value={fraisDossier}
                         onChangeText={setFraisDossier}
@@ -2724,7 +2736,7 @@ export default function HomeScreen() {
                       <TextInput
                         style={styles.feeInput}
                         placeholder="15"
-                        placeholderTextColor="#666"
+                        placeholderTextColor="#8a93a1"
                         keyboardType="decimal-pad"
                         value={taxePneus}
                         onChangeText={setTaxePneus}
@@ -2738,7 +2750,7 @@ export default function HomeScreen() {
                       <TextInput
                         style={styles.feeInput}
                         placeholder="100"
-                        placeholderTextColor="#666"
+                        placeholderTextColor="#8a93a1"
                         keyboardType="decimal-pad"
                         value={fraisRDPRM}
                         onChangeText={setFraisRDPRM}
@@ -2759,7 +2771,7 @@ export default function HomeScreen() {
                       <TextInput
                         style={styles.feeInput}
                         placeholder="0"
-                        placeholderTextColor="#666"
+                        placeholderTextColor="#8a93a1"
                         keyboardType="numeric"
                         value={prixEchange}
                         onChangeText={setPrixEchange}
@@ -2774,7 +2786,7 @@ export default function HomeScreen() {
                       <TextInput
                         style={styles.feeInput}
                         placeholder="0"
-                        placeholderTextColor="#666"
+                        placeholderTextColor="#8a93a1"
                         keyboardType="numeric"
                         value={montantDuEchange}
                         onChangeText={setMontantDuEchange}
@@ -2947,7 +2959,7 @@ export default function HomeScreen() {
                   styles.bestOptionBanner,
                   localResult.bestOption === '1' ? styles.bestOptionBanner1 : styles.bestOptionBanner2
                 ]}>
-                  <Ionicons name="trophy" size={20} color="#1a1a2e" />
+                  <Ionicons name="trophy" size={20} color="#07090e" />
                   <Text style={styles.bestOptionText}>
                     {localResult.bestOption === '1' ? t.options.option1 : t.options.option2} = {t.results.bestChoice}
                   </Text>
@@ -2971,7 +2983,7 @@ export default function HomeScreen() {
                   <View style={styles.optionHeader}>
                     <Text style={styles.optionCardTitle}>{isUsed ? (lang === 'fr' ? 'Financement' : 'Financing') : t.options.option1}</Text>
                     {localResult.bestOption === '1' && !isUsed && (
-                      <Ionicons name="checkmark-circle" size={18} color="#4ECDC4" />
+                      <Ionicons name="checkmark-circle" size={18} color="#e6c65a" />
                     )}
                   </View>
                   <Text style={styles.optionSubtitle}>{isUsed ? (lang === 'fr' ? "Véhicule d'occasion" : 'Used vehicle') : t.options.option1Desc}</Text>
@@ -3018,7 +3030,7 @@ export default function HomeScreen() {
                   <View style={styles.optionHeader}>
                     <Text style={styles.optionCardTitle}>{t.options.option2}</Text>
                     {localResult.bestOption === '2' && (
-                      <Ionicons name="checkmark-circle" size={18} color="#4ECDC4" />
+                      <Ionicons name="checkmark-circle" size={18} color="#e6c65a" />
                     )}
                   </View>
                   <Text style={styles.optionSubtitle}>{t.options.option2Desc}</Text>
@@ -3056,7 +3068,7 @@ export default function HomeScreen() {
                     </>
                   ) : (
                     <View style={styles.noOption}>
-                      <Ionicons name="close-circle-outline" size={32} color="#666" />
+                      <Ionicons name="close-circle-outline" size={32} color="#8a93a1" />
                       <Text style={styles.noOptionText}>{t.options.notAvailable}</Text>
                       <Text style={styles.noOptionSubtext}>Non disponible pour ce véhicule</Text>
                     </View>
@@ -3067,7 +3079,7 @@ export default function HomeScreen() {
               {/* Promotions avant taxes cochées */}
               {beforeTaxRebates.map(rebate => (
                 <View key={rebate.label} style={styles.bonusCashNote}>
-                  <Ionicons name="information-circle" size={16} color="#FFD700" />
+                  <Ionicons name="information-circle" size={16} color="#f0d879" />
                   <Text style={styles.bonusCashNoteText}>
                     {rebate.label} : {formatCurrency(rebate.amount)} {lang === 'fr' ? 'déduit avant taxes' : 'deducted before tax'}
                   </Text>
@@ -3076,7 +3088,7 @@ export default function HomeScreen() {
               {/* Bonus Cash Note */}
               {afterTaxRebates.map(rebate => (
                 <View key={rebate.label} style={styles.bonusCashNote}>
-                  <Ionicons name="information-circle" size={16} color="#FFD700" />
+                  <Ionicons name="information-circle" size={16} color="#f0d879" />
                   <Text style={styles.bonusCashNoteText}>
                     {rebate.label} : {formatCurrency(rebate.amount)} {lang === 'fr' ? 'déduit après taxes, à part du comptant du client' : 'deducted after tax, separate from the cash down'}
                   </Text>
@@ -3089,7 +3101,7 @@ export default function HomeScreen() {
                 onPress={() => setShowEmailModal(true)}
                 data-testid="send-email-btn"
               >
-                <Ionicons name="mail-outline" size={20} color="#fff" />
+                <Ionicons name="mail-outline" size={20} color="#f4f1ea" />
                 <Text style={styles.sendEmailButtonText}>
                   {lang === 'fr' ? 'Envoyer par email' : 'Send by email'}
                 </Text>
@@ -3103,7 +3115,7 @@ export default function HomeScreen() {
                   onPress={handleShareSMS}
                   data-testid="share-sms-btn"
                 >
-                  <Ionicons name="chatbubble-outline" size={18} color="#fff" />
+                  <Ionicons name="chatbubble-outline" size={18} color="#f4f1ea" />
                   <Text style={styles.shareButtonText}>
                     {lang === 'fr' ? 'Texto' : 'SMS'}
                   </Text>
@@ -3115,7 +3127,7 @@ export default function HomeScreen() {
                   onPress={handlePrint}
                   data-testid="print-btn"
                 >
-                  <Ionicons name="print-outline" size={18} color="#fff" />
+                  <Ionicons name="print-outline" size={18} color="#f4f1ea" />
                   <Text style={styles.shareButtonText}>
                     {lang === 'fr' ? 'Imprimer' : 'Print'}
                   </Text>
@@ -3127,7 +3139,7 @@ export default function HomeScreen() {
                   onPress={handleExportExcel}
                   data-testid="export-excel-btn"
                 >
-                  <Ionicons name="document-outline" size={18} color="#fff" />
+                  <Ionicons name="document-outline" size={18} color="#f4f1ea" />
                   <Text style={styles.shareButtonText}>
                     Excel
                   </Text>
@@ -3145,11 +3157,11 @@ export default function HomeScreen() {
                 onPress={() => setShowLease(!showLease)}
                 data-testid="lease-toggle-btn"
               >
-                <Ionicons name="car-sport" size={20} color={showLease ? '#fff' : '#4ECDC4'} />
+                <Ionicons name="car-sport" size={20} color={showLease ? '#f4f1ea' : '#e6c65a'} />
                 <Text style={[styles.leaseToggleText, showLease && styles.leaseToggleTextActive]}>
                   {lang === 'fr' ? 'Location SCI' : 'SCI Lease'}
                 </Text>
-                <Ionicons name={showLease ? 'chevron-up' : 'chevron-down'} size={18} color={showLease ? '#fff' : '#4ECDC4'} />
+                <Ionicons name={showLease ? 'chevron-up' : 'chevron-down'} size={18} color={showLease ? '#f4f1ea' : '#e6c65a'} />
               </TouchableOpacity>
 
               {showLease && (
@@ -3162,7 +3174,7 @@ export default function HomeScreen() {
                       value={leasePdsf}
                       onChangeText={setLeasePdsf}
                       placeholder={vehiclePrice || '71580'}
-                      placeholderTextColor="#555"
+                      placeholderTextColor="#5a6372"
                       keyboardType="numeric"
                       data-testid="lease-pdsf-input"
                     />
@@ -3176,7 +3188,7 @@ export default function HomeScreen() {
                       value={leaseSoldeReporte}
                       onChangeText={setLeaseSoldeReporte}
                       placeholder="0"
-                      placeholderTextColor="#555"
+                      placeholderTextColor="#5a6372"
                       keyboardType="numeric"
                       data-testid="lease-solde-input"
                     />
@@ -3248,10 +3260,10 @@ export default function HomeScreen() {
                         data-testid={testID}
                         style={{
                           paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, marginRight: 6, marginBottom: 6,
-                          backgroundColor: active ? '#4ECDC4' : '#2d3d54',
+                          backgroundColor: active ? '#e6c65a' : '#303744',
                         }}
                       >
-                        <Text style={{ fontSize: 12, fontWeight: '600', color: active ? '#1a1a2e' : '#cfd8e3' }}>{label}</Text>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: active ? '#07090e' : '#cfd8e3' }}>{label}</Text>
                       </TouchableOpacity>
                     );
 
@@ -3342,7 +3354,7 @@ export default function HomeScreen() {
 
                   {/* Info: only frais de dossier capitalized in lease */}
                   <View style={styles.leaseInfoBar}>
-                    <Ionicons name="information-circle" size={14} color="#4ECDC4" />
+                    <Ionicons name="information-circle" size={14} color="#e6c65a" />
                     <Text style={styles.leaseInfoText}>
                       {lang === 'fr' 
                         ? `Capitalisé: ${formatCurrency(parseFloat(fraisDossier) || 0)} dossier | Pneus (${formatCurrency(parseFloat(taxePneus) || 0)}) + RDPRM (${formatCurrency(parseFloat(fraisRDPRM) || 0)}) payés à la livraison`
@@ -3384,7 +3396,7 @@ export default function HomeScreen() {
                       {/* Best lease banner */}
                       {leaseResult.bestLease && leaseResult.standard && leaseResult.alternative && (
                         <View style={styles.leaseBestBanner}>
-                          <Ionicons name="trophy" size={16} color="#1a1a2e" />
+                          <Ionicons name="trophy" size={16} color="#07090e" />
                           <Text style={styles.leaseBestText}>
                             {leaseResult.bestLease === 'standard' 
                               ? (lang === 'fr' ? 'Std + Lease Cash' : 'Std + Lease Cash')
@@ -3412,7 +3424,7 @@ export default function HomeScreen() {
                                 {lang === 'fr' ? 'Std + Lease Cash' : 'Std + Lease Cash'}
                               </Text>
                               {leaseResult.bestLease === 'standard' && (
-                                <Ionicons name="checkmark-circle" size={16} color="#4ECDC4" />
+                                <Ionicons name="checkmark-circle" size={16} color="#e6c65a" />
                               )}
                             </View>
                             {leaseResult.standard.leaseCash - leaseResult.offersBeforeTax > 0 && (
@@ -3486,7 +3498,7 @@ export default function HomeScreen() {
                                 {lang === 'fr' ? 'Taux Alternatif' : 'Alt. Rate'}
                               </Text>
                               {leaseResult.bestLease === 'alternative' && (
-                                <Ionicons name="checkmark-circle" size={16} color="#4ECDC4" />
+                                <Ionicons name="checkmark-circle" size={16} color="#e6c65a" />
                               )}
                             </View>
                             <View style={styles.leaseCardDetail}>
@@ -3550,7 +3562,7 @@ export default function HomeScreen() {
                       {/* No lease options available */}
                       {!leaseResult.standard && !leaseResult.alternative && (
                         <View style={styles.leaseNoOption}>
-                          <Ionicons name="information-circle" size={24} color="#666" />
+                          <Ionicons name="information-circle" size={24} color="#8a93a1" />
                           <Text style={styles.leaseNoOptionText}>
                             {lang === 'fr' ? 'Aucun taux de location disponible pour ce véhicule' : 'No lease rates available for this vehicle'}
                           </Text>
@@ -3632,11 +3644,11 @@ export default function HomeScreen() {
                                           onPress={() => { setLeaseTerm(t); setLeaseKmPerYear(km); }}
                                         >
                                           <Text style={[styles.analysisCell, { width: 52, fontWeight: '600' }]}>{t}m</Text>
-                                          <Text style={[styles.analysisCell, { width: 45, color: '#888' }]}>{stdRow?.residualPct || altRow?.residualPct}%</Text>
-                                          <Text style={[styles.analysisCell, { width: 82, color: isBestStd ? '#FFD700' : '#E65100', fontWeight: isBestStd ? '800' : '500' }]}>
+                                          <Text style={[styles.analysisCell, { width: 45, color: '#9aa3b1' }]}>{stdRow?.residualPct || altRow?.residualPct}%</Text>
+                                          <Text style={[styles.analysisCell, { width: 82, color: isBestStd ? '#f0d879' : '#E65100', fontWeight: isBestStd ? '800' : '500' }]}>
                                             {stdRow ? `${(paymentFrequency === 'weekly' ? stdRow.monthly * 12/52 : paymentFrequency === 'biweekly' ? stdRow.monthly * 12/26 : stdRow.monthly).toFixed(0)}$` : '-'}
                                           </Text>
-                                          <Text style={[styles.analysisCell, { width: 82, color: isBestAlt ? '#FFD700' : '#0277BD', fontWeight: isBestAlt ? '800' : '500' }]}>
+                                          <Text style={[styles.analysisCell, { width: 82, color: isBestAlt ? '#f0d879' : '#0277BD', fontWeight: isBestAlt ? '800' : '500' }]}>
                                             {altRow ? `${(paymentFrequency === 'weekly' ? altRow.monthly * 12/52 : paymentFrequency === 'biweekly' ? altRow.monthly * 12/26 : altRow.monthly).toFixed(0)}$` : '-'}
                                           </Text>
                                         </TouchableOpacity>
@@ -3661,11 +3673,11 @@ export default function HomeScreen() {
                           data-testid="best-lease-option"
                         >
                           <View style={styles.bestLeaseHeader}>
-                            <Ionicons name="trophy" size={18} color="#FFD700" />
+                            <Ionicons name="trophy" size={18} color="#f0d879" />
                             <Text style={styles.bestLeaseTitle}>
                               {lang === 'fr' ? 'MEILLEUR CHOIX LOCATION' : 'BEST LEASE OPTION'}
                             </Text>
-                            <Ionicons name="trophy" size={18} color="#FFD700" />
+                            <Ionicons name="trophy" size={18} color="#f0d879" />
                           </View>
                           <View style={styles.bestLeaseContent}>
                             <View style={styles.bestLeaseRow}>
@@ -3702,7 +3714,7 @@ export default function HomeScreen() {
                               <Text style={styles.bestLeaseLabel}>{lang === 'fr' ? 'Résiduel:' : 'Residual:'}</Text>
                               <Text style={styles.bestLeaseValue}>{bestLeaseOption.residualPct}% ({formatCurrency(bestLeaseOption.residualValue)})</Text>
                             </View>
-                            <View style={[styles.bestLeaseRow, { borderTopWidth: 1, borderTopColor: '#444', paddingTop: 6, marginTop: 4 }]}>
+                            <View style={[styles.bestLeaseRow, { borderTopWidth: 1, borderTopColor: '#303744', paddingTop: 6, marginTop: 4 }]}>
                               <Text style={[styles.bestLeaseLabel, { fontSize: 13 }]}>{lang === 'fr' ? 'Avant taxes:' : 'Before tax:'}</Text>
                               <Text style={[styles.bestLeaseValue, { fontSize: 13 }]}>{formatCurrencyDecimal(
                                 paymentFrequency === 'monthly' ? bestLeaseOption.monthlyBeforeTax :
@@ -3712,7 +3724,7 @@ export default function HomeScreen() {
                             </View>
                             <View style={styles.bestLeaseRow}>
                               <Text style={[styles.bestLeaseLabel, { fontSize: 16, fontWeight: '700' }]}>{paymentFrequency === 'monthly' ? (lang === 'fr' ? 'MENSUEL:' : 'MONTHLY:') : paymentFrequency === 'biweekly' ? (lang === 'fr' ? 'AUX 2 SEM.:' : 'BI-WEEKLY:') : (lang === 'fr' ? 'HEBDO:' : 'WEEKLY:')}</Text>
-                              <Text style={[styles.bestLeaseValue, { fontSize: 16, fontWeight: '700', color: '#4ECDC4' }]}>{formatCurrencyDecimal(
+                              <Text style={[styles.bestLeaseValue, { fontSize: 16, fontWeight: '700', color: '#e6c65a' }]}>{formatCurrencyDecimal(
                                 paymentFrequency === 'monthly' ? bestLeaseOption.monthly :
                                 paymentFrequency === 'biweekly' ? bestLeaseOption.monthly * 12 / 26 :
                                 bestLeaseOption.monthly * 12 / 52
@@ -3729,7 +3741,7 @@ export default function HomeScreen() {
                         onPress={() => setShowEmailModal(true)}
                         data-testid="lease-send-email-btn"
                       >
-                        <Ionicons name="mail-outline" size={20} color="#fff" />
+                        <Ionicons name="mail-outline" size={20} color="#f4f1ea" />
                         <Text style={styles.sendEmailButtonText}>
                           {lang === 'fr' ? 'Envoyer par email' : 'Send by email'}
                         </Text>
@@ -3741,7 +3753,7 @@ export default function HomeScreen() {
                           onPress={handleShareSMS}
                           data-testid="lease-share-sms-btn"
                         >
-                          <Ionicons name="chatbubble-outline" size={18} color="#fff" />
+                          <Ionicons name="chatbubble-outline" size={18} color="#f4f1ea" />
                           <Text style={styles.shareButtonText}>
                             {lang === 'fr' ? 'Texto' : 'SMS'}
                           </Text>
@@ -3752,7 +3764,7 @@ export default function HomeScreen() {
                           onPress={handlePrint}
                           data-testid="lease-print-btn"
                         >
-                          <Ionicons name="print-outline" size={18} color="#fff" />
+                          <Ionicons name="print-outline" size={18} color="#f4f1ea" />
                           <Text style={styles.shareButtonText}>
                             {lang === 'fr' ? 'Imprimer' : 'Print'}
                           </Text>
@@ -3763,7 +3775,7 @@ export default function HomeScreen() {
                           onPress={handleExportExcel}
                           data-testid="lease-export-excel-btn"
                         >
-                          <Ionicons name="document-outline" size={18} color="#fff" />
+                          <Ionicons name="document-outline" size={18} color="#f4f1ea" />
                           <Text style={styles.shareButtonText}>
                             Excel
                           </Text>
@@ -3800,7 +3812,7 @@ export default function HomeScreen() {
               <TextInput
                 style={styles.passwordInput}
                 placeholder={t.import.password}
-                placeholderTextColor="#666"
+                placeholderTextColor="#8a93a1"
                 secureTextEntry
                 value={importPassword}
                 onChangeText={setImportPassword}
@@ -3850,7 +3862,7 @@ export default function HomeScreen() {
             <View style={styles.smsPreviewModalContent}>
               <View style={styles.smsPreviewHeader}>
                 <View style={styles.smsPreviewIconContainer}>
-                  <Ionicons name="chatbubble-ellipses" size={32} color="#4ECDC4" />
+                  <Ionicons name="chatbubble-ellipses" size={32} color="#e6c65a" />
                 </View>
                 <Text style={styles.smsPreviewTitle}>
                   {lang === 'fr' ? 'Aperçu du message' : 'Message Preview'}
@@ -3859,7 +3871,7 @@ export default function HomeScreen() {
                   style={styles.smsPreviewClose}
                   onPress={() => setShowSmsPreview(false)}
                 >
-                  <Ionicons name="close" size={24} color="#888" />
+                  <Ionicons name="close" size={24} color="#9aa3b1" />
                 </TouchableOpacity>
               </View>
               
@@ -3874,7 +3886,7 @@ export default function HomeScreen() {
                   value={smsPreviewText}
                   onChangeText={setSmsPreviewText}
                   placeholder={lang === 'fr' ? 'Message...' : 'Message...'}
-                  placeholderTextColor="#666"
+                  placeholderTextColor="#8a93a1"
                   textAlignVertical="top"
                 />
                 <Text style={styles.smsPreviewCharCount}>
@@ -3896,7 +3908,7 @@ export default function HomeScreen() {
                   onPress={handleSendSms}
                   data-testid="sms-preview-send-btn"
                 >
-                  <Ionicons name="send" size={18} color="#fff" />
+                  <Ionicons name="send" size={18} color="#f4f1ea" />
                   <Text style={styles.smsPreviewSendText}>
                     {lang === 'fr' ? 'Envoyer' : 'Send'}
                   </Text>
@@ -3915,7 +3927,7 @@ export default function HomeScreen() {
         >
           <View style={[styles.modalOverlay, { justifyContent: 'center' }]}>
             <View style={{
-              backgroundColor: '#1a1a2e',
+              backgroundColor: '#07090e',
               borderRadius: 16,
               width: '90%',
               maxWidth: 420,
@@ -3929,17 +3941,17 @@ export default function HomeScreen() {
                 paddingVertical: 10,
                 paddingHorizontal: 16,
                 borderBottomWidth: 1,
-                borderBottomColor: '#2d2d44',
+                borderBottomColor: '#303744',
               }}>
-                <Ionicons name="mail" size={22} color="#4ECDC4" style={{ marginRight: 10 }} />
-                <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#fff', flex: 1 }}>
+                <Ionicons name="mail" size={22} color="#e6c65a" style={{ marginRight: 10 }} />
+                <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#f4f1ea', flex: 1 }}>
                   {t.email.sendByEmail}
                 </Text>
                 <TouchableOpacity
                   onPress={() => setShowEmailModal(false)}
                   style={{ padding: 4 }}
                 >
-                  <Ionicons name="close" size={22} color="#888" />
+                  <Ionicons name="close" size={22} color="#9aa3b1" />
                 </TouchableOpacity>
               </View>
               
@@ -3951,7 +3963,7 @@ export default function HomeScreen() {
                 <TextInput
                   style={styles.emailModalInput}
                   placeholder="Ex: Jean Dupont"
-                  placeholderTextColor="#666"
+                  placeholderTextColor="#8a93a1"
                   value={clientName}
                   onChangeText={setClientName}
                 />
@@ -3962,7 +3974,7 @@ export default function HomeScreen() {
                 <TextInput
                   style={styles.emailModalInput}
                   placeholder="514-555-1234"
-                  placeholderTextColor="#666"
+                  placeholderTextColor="#8a93a1"
                   value={clientPhone}
                   onChangeText={setClientPhone}
                   keyboardType="phone-pad"
@@ -3974,7 +3986,7 @@ export default function HomeScreen() {
                 <TextInput
                   style={styles.emailModalInput}
                   placeholder="client@email.com"
-                  placeholderTextColor="#666"
+                  placeholderTextColor="#8a93a1"
                   value={clientEmail}
                   onChangeText={setClientEmail}
                   keyboardType="email-address"
@@ -4000,7 +4012,7 @@ export default function HomeScreen() {
                       ) : formatCurrency(0)}{paymentFrequency === 'weekly' ? '/sem.' : paymentFrequency === 'biweekly' ? '/2 sem.' : '/mois'}
                     </Text>
                     {showLease && leaseResult && (leaseResult.standard || leaseResult.alternative) && (
-                      <Text style={[styles.emailPreviewText, {color: '#FFD700', marginTop: 6}]}>
+                      <Text style={[styles.emailPreviewText, {color: '#f0d879', marginTop: 6}]}>
                         + Location SCI: {formatCurrencyDecimal(
                           paymentFrequency === 'monthly' 
                             ? (leaseResult.bestLease === 'standard' ? leaseResult.standard?.monthly : leaseResult.alternative?.monthly) || 0
@@ -4021,7 +4033,7 @@ export default function HomeScreen() {
                 paddingVertical: 12,
                 gap: 10,
                 borderTopWidth: 1,
-                borderTopColor: '#2d2d44',
+                borderTopColor: '#303744',
               }}>
                 <TouchableOpacity
                   style={styles.emailModalCancelButton}
@@ -4336,10 +4348,10 @@ export default function HomeScreen() {
                   }}
                 >
                   {sendingEmail ? (
-                    <ActivityIndicator size="small" color="#1a1a2e" />
+                    <ActivityIndicator size="small" color="#07090e" />
                   ) : (
                     <>
-                      <Ionicons name="send" size={18} color="#1a1a2e" />
+                      <Ionicons name="send" size={18} color="#07090e" />
                       <Text style={styles.emailModalSendText}>
                         {lang === 'fr' ? 'Envoyer' : 'Send'}
                       </Text>

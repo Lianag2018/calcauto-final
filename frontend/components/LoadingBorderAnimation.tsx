@@ -117,7 +117,7 @@ const LoadingBorderAnimation = ({ loading }: { loading: boolean }) => {
           <Text style={loadingStyles.logoText}>CalcAuto</Text>
           <Text style={loadingStyles.logoSubText}>AiPro</Text>
         </View>
-        <ActivityIndicator size="large" color="#4ECDC4" style={loadingStyles.spinner} />
+        <ActivityIndicator size="large" color="#e6c65a" style={loadingStyles.spinner} />
         <Text style={loadingStyles.loadingText}>Chargement des programmes...</Text>
       </View>
     </View>

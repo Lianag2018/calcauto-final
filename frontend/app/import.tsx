@@ -405,7 +405,7 @@ export default function ImportScreen() {
   const renderLoginStep = () => (
     <View style={styles.stepContainer}>
       <View style={styles.iconContainer}>
-        <Ionicons name="lock-closed" size={60} color="#4ECDC4" />
+        <Ionicons name="lock-closed" size={60} color="#e6c65a" />
       </View>
       <Text style={styles.stepTitle}>Accès Administrateur</Text>
       <Text style={styles.stepDescription}>
@@ -415,7 +415,7 @@ export default function ImportScreen() {
       <TextInput
         style={styles.passwordInput}
         placeholder="Mot de passe"
-        placeholderTextColor="#666"
+        placeholderTextColor="#8a93a1"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
@@ -428,10 +428,10 @@ export default function ImportScreen() {
         disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator size="small" color="#1a1a2e" />
+          <ActivityIndicator size="small" color="#07090e" />
         ) : (
           <>
-            <Ionicons name="log-in" size={20} color="#1a1a2e" />
+            <Ionicons name="log-in" size={20} color="#07090e" />
             <Text style={styles.primaryButtonText}>Se connecter</Text>
           </>
         )}
@@ -443,7 +443,7 @@ export default function ImportScreen() {
   const renderChooseTypeStep = () => (
     <View style={styles.stepContainer}>
       <View style={styles.iconContainer}>
-        <Ionicons name="folder-open" size={60} color="#4ECDC4" />
+        <Ionicons name="folder-open" size={60} color="#e6c65a" />
       </View>
       <Text style={styles.stepTitle}>Type de document</Text>
       <Text style={styles.stepDescription}>
@@ -456,14 +456,14 @@ export default function ImportScreen() {
         data-testid="choose-programs-btn"
       >
         <View style={styles.docTypeIconWrap}>
-          <Ionicons name="calculator" size={32} color="#4ECDC4" />
+          <Ionicons name="calculator" size={32} color="#e6c65a" />
         </View>
         <View style={styles.docTypeTextWrap}>
           <Text style={styles.docTypeTitle}>Programmes de financement</Text>
           <Text style={styles.docTypeDesc}>Taux Option 1 & 2, Consumer Cash, Bonus Cash</Text>
           <Text style={styles.docTypeHint}>Vous indiquerez les pages Vente et SCI Lease</Text>
         </View>
-        <Ionicons name="chevron-forward" size={24} color="#4ECDC4" />
+        <Ionicons name="chevron-forward" size={24} color="#e6c65a" />
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -547,7 +547,7 @@ export default function ImportScreen() {
         onPress={handleResidualUpload}
         data-testid="upload-residual-btn"
       >
-        <Ionicons name="cloud-upload" size={20} color="#1a1a2e" />
+        <Ionicons name="cloud-upload" size={20} color="#07090e" />
         <Text style={styles.primaryButtonText}>Choisir le PDF</Text>
       </TouchableOpacity>
 
@@ -555,7 +555,7 @@ export default function ImportScreen() {
         style={styles.secondaryButton}
         onPress={() => setCurrentStep('choose-type')}
       >
-        <Ionicons name="arrow-back" size={18} color="#888" />
+        <Ionicons name="arrow-back" size={18} color="#9aa3b1" />
         <Text style={styles.secondaryButtonText}>Retour</Text>
       </TouchableOpacity>
     </View>
@@ -578,8 +578,8 @@ export default function ImportScreen() {
   // Render residual success step
   const renderResidualSuccessStep = () => (
     <View style={styles.stepContainer}>
-      <View style={[styles.iconContainer, { backgroundColor: 'rgba(78, 205, 196, 0.15)' }]}>
-        <Ionicons name="checkmark-circle" size={60} color="#4ECDC4" />
+      <View style={[styles.iconContainer, { backgroundColor: 'rgba(230, 198, 90, 0.15)' }]}>
+        <Ionicons name="checkmark-circle" size={60} color="#e6c65a" />
       </View>
       <Text style={styles.stepTitle}>Import réussi !</Text>
 
@@ -592,7 +592,7 @@ export default function ImportScreen() {
             </Text>
           )}
           {residualResult.covered_months && residualResult.covered_months.length > 1 && (
-            <Text style={{ color: '#4ECDC4', fontSize: 12, marginBottom: 8 }}>
+            <Text style={{ color: '#e6c65a', fontSize: 12, marginBottom: 8 }}>
               Appliqué pour : {residualResult.covered_months.join(', ')}
             </Text>
           )}
@@ -604,12 +604,12 @@ export default function ImportScreen() {
           {/* Changes summary */}
           {residualResult.changes && (
             <View style={{ marginTop: 10, marginBottom: 10, padding: 12, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: '#333' }}>
-              <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700', marginBottom: 8 }}>Rapport de comparaison</Text>
+              <Text style={{ color: '#f4f1ea', fontSize: 14, fontWeight: '700', marginBottom: 8 }}>Rapport de comparaison</Text>
               
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
                 {residualResult.changes.improved > 0 && (
-                  <View style={{ backgroundColor: 'rgba(78,205,196,0.15)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
-                    <Text style={{ color: '#4ECDC4', fontSize: 13, fontWeight: '700' }}>+{residualResult.changes.improved} améliorés</Text>
+                  <View style={{ backgroundColor: 'rgba(230, 198, 90,0.15)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
+                    <Text style={{ color: '#e6c65a', fontSize: 13, fontWeight: '700' }}>+{residualResult.changes.improved} améliorés</Text>
                   </View>
                 )}
                 {residualResult.changes.deteriorated > 0 && (
@@ -629,7 +629,7 @@ export default function ImportScreen() {
                 )}
                 {residualResult.changes.unchanged_vehicles > 0 && (
                   <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
-                    <Text style={{ color: '#888', fontSize: 13 }}>{residualResult.changes.unchanged_vehicles} inchangés</Text>
+                    <Text style={{ color: '#9aa3b1', fontSize: 13 }}>{residualResult.changes.unchanged_vehicles} inchangés</Text>
                   </View>
                 )}
               </View>
@@ -637,9 +637,9 @@ export default function ImportScreen() {
               {/* Improved details */}
               {residualResult.changes.improved_details?.length > 0 && (
                 <View style={{ marginTop: 4, marginBottom: 6 }}>
-                  <Text style={{ color: '#4ECDC4', fontSize: 12, fontWeight: '600', marginBottom: 4 }}>Améliorés (résiduels en hausse) :</Text>
+                  <Text style={{ color: '#e6c65a', fontSize: 12, fontWeight: '600', marginBottom: 4 }}>Améliorés (résiduels en hausse) :</Text>
                   {residualResult.changes.improved_details.slice(0, 5).map((d: any, i: number) => (
-                    <Text key={i} style={{ color: '#aaa', fontSize: 11, marginLeft: 8 }}>
+                    <Text key={i} style={{ color: '#b9c0cc', fontSize: 11, marginLeft: 8 }}>
                       {d.vehicle} (moy. +{d.avg_diff}%)
                     </Text>
                   ))}
@@ -651,7 +651,7 @@ export default function ImportScreen() {
                 <View style={{ marginTop: 4, marginBottom: 6 }}>
                   <Text style={{ color: '#FF6B6B', fontSize: 12, fontWeight: '600', marginBottom: 4 }}>Détériorés (résiduels en baisse) :</Text>
                   {residualResult.changes.deteriorated_details.slice(0, 5).map((d: any, i: number) => (
-                    <Text key={i} style={{ color: '#aaa', fontSize: 11, marginLeft: 8 }}>
+                    <Text key={i} style={{ color: '#b9c0cc', fontSize: 11, marginLeft: 8 }}>
                       {d.vehicle} (moy. {d.avg_diff}%)
                     </Text>
                   ))}
@@ -663,7 +663,7 @@ export default function ImportScreen() {
                 <View style={{ marginTop: 4 }}>
                   <Text style={{ color: '#45B7D1', fontSize: 12, fontWeight: '600', marginBottom: 4 }}>Nouveaux trims :</Text>
                   {residualResult.changes.new_trims.slice(0, 5).map((t: string, i: number) => (
-                    <Text key={i} style={{ color: '#aaa', fontSize: 11, marginLeft: 8 }}>{t}</Text>
+                    <Text key={i} style={{ color: '#b9c0cc', fontSize: 11, marginLeft: 8 }}>{t}</Text>
                   ))}
                 </View>
               )}
@@ -672,8 +672,8 @@ export default function ImportScreen() {
           
           {/* KM adjustments info */}
           {residualResult.km_adjustments && (
-            <View style={{ marginBottom: 10, padding: 8, borderRadius: 8, backgroundColor: 'rgba(78,205,196,0.1)' }}>
-              <Text style={{ color: '#4ECDC4', fontSize: 12, fontWeight: '600' }}>
+            <View style={{ marginBottom: 10, padding: 8, borderRadius: 8, backgroundColor: 'rgba(230, 198, 90,0.1)' }}>
+              <Text style={{ color: '#e6c65a', fontSize: 12, fontWeight: '600' }}>
                 Ajustements km : 12k/60m = +{residualResult.km_adjustments['12k_60mo']}% | 18k/60m = +{residualResult.km_adjustments['18k_60mo']}%
               </Text>
             </View>
@@ -689,9 +689,9 @@ export default function ImportScreen() {
             <Ionicons 
               name={residualResult.email_sent ? "mail" : "mail-unread"} 
               size={18} 
-              color={residualResult.email_sent ? "#4ECDC4" : "#888"} 
+              color={residualResult.email_sent ? "#e6c65a" : "#9aa3b1"} 
             />
-            <Text style={[styles.residualEmailText, { color: residualResult.email_sent ? "#4ECDC4" : "#888" }]}>
+            <Text style={[styles.residualEmailText, { color: residualResult.email_sent ? "#e6c65a" : "#9aa3b1" }]}>
               {residualResult.email_sent 
                 ? "Email de vérification envoyé avec fichier Excel" 
                 : "Email non envoyé (SMTP non configuré)"}
@@ -704,7 +704,7 @@ export default function ImportScreen() {
         style={styles.primaryButton}
         onPress={() => { setCurrentStep('choose-type'); setResidualResult(null); }}
       >
-        <Ionicons name="add-circle" size={20} color="#1a1a2e" />
+        <Ionicons name="add-circle" size={20} color="#07090e" />
         <Text style={styles.primaryButtonText}>Importer un autre document</Text>
       </TouchableOpacity>
 
@@ -712,7 +712,7 @@ export default function ImportScreen() {
         style={styles.secondaryButton}
         onPress={() => router.back()}
       >
-        <Ionicons name="home" size={18} color="#888" />
+        <Ionicons name="home" size={18} color="#9aa3b1" />
         <Text style={styles.secondaryButtonText}>Retour au calculateur</Text>
       </TouchableOpacity>
     </View>
@@ -722,7 +722,7 @@ export default function ImportScreen() {
   const renderUploadStep = () => (
     <View style={styles.stepContainer}>
       <View style={styles.iconContainer}>
-        <Ionicons name="document-text" size={60} color="#4ECDC4" />
+        <Ionicons name="document-text" size={60} color="#e6c65a" />
       </View>
       <Text style={styles.stepTitle}>Importer le PDF</Text>
       <Text style={styles.stepDescription}>
@@ -774,12 +774,12 @@ export default function ImportScreen() {
       >
         {uploading ? (
           <View style={styles.extractingContainer}>
-            <ActivityIndicator size="large" color="#4ECDC4" />
+            <ActivityIndicator size="large" color="#e6c65a" />
             <Text style={styles.extractingText}>Chargement du PDF...</Text>
           </View>
         ) : (
           <>
-            <Ionicons name="document" size={40} color="#1a1a2e" />
+            <Ionicons name="document" size={40} color="#07090e" />
             <Text style={styles.uploadButtonText}>Sélectionner le PDF</Text>
             <Text style={styles.uploadButtonSubtext}>Cliquez pour choisir un fichier</Text>
           </>
@@ -791,11 +791,11 @@ export default function ImportScreen() {
   // Render Step: Select Pages (Section Selector with checkboxes)
   const sectionConfig: Record<string, { icon: string; color: string; badge: string }> = {
     'go to market': { icon: 'megaphone', color: '#FF6B6B', badge: 'Promo' },
-    'general rules': { icon: 'settings', color: '#4ECDC4', badge: 'Regles' },
+    'general rules': { icon: 'settings', color: '#e6c65a', badge: 'Regles' },
     'bonus cash': { icon: 'cash', color: '#45B7D1', badge: 'Bonus' },
     'msrp discount': { icon: 'pricetag', color: '#96CEB4', badge: 'Rabais' },
     'addendum': { icon: 'document-text', color: '#DDA0DD', badge: 'Addendum' },
-    'finance prime': { icon: 'trending-up', color: '#4ECDC4', badge: 'Finance' },
+    'finance prime': { icon: 'trending-up', color: '#e6c65a', badge: 'Finance' },
     'finance non': { icon: 'trending-down', color: '#FFB347', badge: 'Non-Prime' },
     'lease': { icon: 'car-sport', color: '#FF6B6B', badge: 'Location' },
     'loyalty': { icon: 'heart', color: '#FF69B4', badge: 'Fidelite' },
@@ -806,7 +806,7 @@ export default function ImportScreen() {
     for (const [key, val] of Object.entries(sectionConfig)) {
       if (nameLower.includes(key)) return val;
     }
-    return { icon: 'document', color: '#888', badge: 'Info' };
+    return { icon: 'document', color: '#9aa3b1', badge: 'Info' };
   };
 
   const tocSections = sectionsOf(detectedSections);
@@ -838,14 +838,14 @@ export default function ImportScreen() {
       {/* Select All / Deselect All */}
       <TouchableOpacity
         onPress={toggleAll}
-        style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: allSelected ? 'rgba(78,205,196,0.15)' : 'rgba(255,255,255,0.05)' }}
+        style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: allSelected ? 'rgba(230, 198, 90,0.15)' : 'rgba(255,255,255,0.05)' }}
       >
-        <Ionicons name={allSelected ? 'checkbox' : 'square-outline'} size={22} color={allSelected ? '#4ECDC4' : '#666'} />
-        <Text style={{ color: allSelected ? '#4ECDC4' : '#aaa', marginLeft: 10, fontWeight: '600', fontSize: 14 }}>
+        <Ionicons name={allSelected ? 'checkbox' : 'square-outline'} size={22} color={allSelected ? '#e6c65a' : '#8a93a1'} />
+        <Text style={{ color: allSelected ? '#e6c65a' : '#b9c0cc', marginLeft: 10, fontWeight: '600', fontSize: 14 }}>
           {allSelected ? 'Tout desélectionner' : 'Tout sélectionner'}
         </Text>
-        <View style={{ marginLeft: 'auto', backgroundColor: '#4ECDC4', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 3 }}>
-          <Text style={{ color: '#1a1a2e', fontWeight: '700', fontSize: 12 }}>{selectedSectionIndices.size}/{tocSections.length}</Text>
+        <View style={{ marginLeft: 'auto', backgroundColor: '#e6c65a', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 3 }}>
+          <Text style={{ color: '#07090e', fontWeight: '700', fontSize: 12 }}>{selectedSectionIndices.size}/{tocSections.length}</Text>
         </View>
       </TouchableOpacity>
 
@@ -861,19 +861,19 @@ export default function ImportScreen() {
               onPress={() => toggleSection(idx)}
               style={{
                 flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 10,
-                backgroundColor: isSelected ? 'rgba(78,205,196,0.1)' : 'rgba(255,255,255,0.03)',
+                backgroundColor: isSelected ? 'rgba(230, 198, 90,0.1)' : 'rgba(255,255,255,0.03)',
                 borderWidth: 1, borderColor: isSelected ? style.color : '#333',
               }}
             >
-              <Ionicons name={isSelected ? 'checkbox' : 'square-outline'} size={22} color={isSelected ? style.color : '#555'} />
+              <Ionicons name={isSelected ? 'checkbox' : 'square-outline'} size={22} color={isSelected ? style.color : '#5a6372'} />
               <Ionicons name={style.icon as any} size={20} color={style.color} style={{ marginLeft: 12 }} />
               <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={{ color: isSelected ? '#fff' : '#aaa', fontWeight: '600', fontSize: 13 }}>{section.name}</Text>
+                <Text style={{ color: isSelected ? '#f4f1ea' : '#b9c0cc', fontWeight: '600', fontSize: 13 }}>{section.name}</Text>
               </View>
               <View style={{ backgroundColor: `${style.color}22`, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, marginRight: 8 }}>
                 <Text style={{ color: style.color, fontSize: 11, fontWeight: '600' }}>{style.badge}</Text>
               </View>
-              <Text style={{ color: '#888', fontSize: 12, fontWeight: '500' }}>p.{section.pages}</Text>
+              <Text style={{ color: '#9aa3b1', fontSize: 12, fontWeight: '500' }}>p.{section.pages}</Text>
             </TouchableOpacity>
           );
         })}
@@ -888,14 +888,14 @@ export default function ImportScreen() {
       >
         {extracting ? (
           <View style={styles.extractingContainer}>
-            <ActivityIndicator size="large" color="#4ECDC4" />
+            <ActivityIndicator size="large" color="#e6c65a" />
             <Text style={styles.extractingText}>{extractionStatus || 'Extraction en cours...'}</Text>
             <Text style={styles.extractingSubtext}>{selectedSectionIndices.size} sections en traitement</Text>
             <Text style={styles.extractingWait}>Veuillez patienter (2-4 minutes)</Text>
           </View>
         ) : (
           <>
-            <Ionicons name="analytics" size={24} color="#fff" />
+            <Ionicons name="analytics" size={24} color="#f4f1ea" />
             <Text style={styles.extractButtonText}>
               {tocSections.length === 0 ? 'Extraire (détection automatique)' : `Extraire ${selectedSectionIndices.size} section${selectedSectionIndices.size > 1 ? 's' : ''}`}
             </Text>
@@ -973,7 +973,7 @@ export default function ImportScreen() {
               onChangeText={setPageStart}
               keyboardType="numeric"
               placeholder="20"
-              placeholderTextColor="#666"
+              placeholderTextColor="#8a93a1"
             />
           </View>
           <View style={styles.pageField}>
@@ -984,7 +984,7 @@ export default function ImportScreen() {
               onChangeText={setPageEnd}
               keyboardType="numeric"
               placeholder="21"
-              placeholderTextColor="#666"
+              placeholderTextColor="#8a93a1"
             />
           </View>
         </View>
@@ -997,14 +997,14 @@ export default function ImportScreen() {
       >
         {extracting ? (
           <View style={styles.extractingContainer}>
-            <ActivityIndicator size="large" color="#4ECDC4" />
+            <ActivityIndicator size="large" color="#e6c65a" />
             <Text style={styles.extractingText}>{extractionStatus || 'Extraction en cours...'}</Text>
             <Text style={styles.extractingSubtext}>Pages {pageStart} à {pageEnd}</Text>
             <Text style={styles.extractingWait}>Veuillez patienter (2-4 minutes)</Text>
           </View>
         ) : (
           <>
-            <Ionicons name="cloud-upload" size={40} color="#1a1a2e" />
+            <Ionicons name="cloud-upload" size={40} color="#07090e" />
             <Text style={styles.uploadButtonText}>Sélectionner le PDF</Text>
             <Text style={styles.uploadButtonSubtext}>Pages {pageStart} à {pageEnd} seront analysées</Text>
           </>
@@ -1044,7 +1044,7 @@ export default function ImportScreen() {
                   style={styles.editButton}
                   onPress={() => openEditModal(index)}
                 >
-                  <Ionicons name="pencil" size={18} color="#4ECDC4" />
+                  <Ionicons name="pencil" size={18} color="#e6c65a" />
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.deleteButton}
@@ -1094,7 +1094,7 @@ export default function ImportScreen() {
           style={styles.backButton}
           onPress={() => setCurrentStep('upload')}
         >
-          <Ionicons name="arrow-back" size={20} color="#fff" />
+          <Ionicons name="arrow-back" size={20} color="#f4f1ea" />
           <Text style={styles.backButtonText}>Retour</Text>
         </TouchableOpacity>
         
@@ -1104,10 +1104,10 @@ export default function ImportScreen() {
           disabled={saving}
         >
           {saving ? (
-            <ActivityIndicator size="small" color="#1a1a2e" />
+            <ActivityIndicator size="small" color="#07090e" />
           ) : (
             <>
-              <Ionicons name="checkmark-circle" size={20} color="#1a1a2e" />
+              <Ionicons name="checkmark-circle" size={20} color="#07090e" />
               <Text style={styles.saveButtonText}>Approuver et Sauvegarder</Text>
             </>
           )}
@@ -1120,7 +1120,7 @@ export default function ImportScreen() {
   const renderSuccessStep = () => (
     <View style={styles.stepContainer}>
       <View style={[styles.iconContainer, styles.successIcon]}>
-        <Ionicons name="checkmark-circle" size={80} color="#4ECDC4" />
+        <Ionicons name="checkmark-circle" size={80} color="#e6c65a" />
       </View>
       <Text style={styles.stepTitle}>Programmes sauvegardés!</Text>
       <Text style={styles.stepDescription}>
@@ -1134,7 +1134,7 @@ export default function ImportScreen() {
         style={styles.primaryButton}
         onPress={() => setCurrentStep('choose-type')}
       >
-        <Ionicons name="add-circle" size={20} color="#1a1a2e" />
+        <Ionicons name="add-circle" size={20} color="#07090e" />
         <Text style={styles.primaryButtonText}>Importer un autre document</Text>
       </TouchableOpacity>
 
@@ -1142,7 +1142,7 @@ export default function ImportScreen() {
         style={[styles.secondaryButton, { marginTop: 10 }]}
         onPress={() => router.replace({ pathname: '/', params: { refresh: String(Date.now()) } })}
       >
-        <Ionicons name="home" size={20} color="#4ECDC4" />
+        <Ionicons name="home" size={20} color="#e6c65a" />
         <Text style={styles.secondaryButtonText}>Retour à l'accueil</Text>
       </TouchableOpacity>
     </View>
@@ -1152,7 +1152,7 @@ export default function ImportScreen() {
   const renderEmailSentStep = () => (
     <View style={styles.stepContainer}>
       <View style={[styles.iconContainer, styles.successIcon]}>
-        <Ionicons name="checkmark-circle" size={80} color="#4ECDC4" />
+        <Ionicons name="checkmark-circle" size={80} color="#e6c65a" />
       </View>
       <Text style={styles.stepTitle}>Importation reussie!</Text>
       <Text style={styles.stepDescription}>
@@ -1169,31 +1169,31 @@ export default function ImportScreen() {
       </Text>
       
       <TouchableOpacity
-        style={[styles.primaryButton, { backgroundColor: '#FFD700' }]}
+        style={[styles.primaryButton, { backgroundColor: '#f0d879' }]}
         onPress={() => setCurrentStep('excel-correction')}
       >
-        <Ionicons name="document-text" size={20} color="#1a1a2e" />
+        <Ionicons name="document-text" size={20} color="#07090e" />
         <Text style={styles.primaryButtonText}>Corriger et importer l'Excel final</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.primaryButton, { backgroundColor: '#4ECDC4', marginTop: 12 }]}
+        style={[styles.primaryButton, { backgroundColor: '#e6c65a', marginTop: 12 }]}
         onPress={() => {
           if (Platform.OS === 'web') {
             window.open(`${API_URL}/api/programs/export-excel`, '_blank');
           }
         }}
       >
-        <Ionicons name="download" size={20} color="#1a1a2e" />
+        <Ionicons name="download" size={20} color="#07090e" />
         <Text style={styles.primaryButtonText}>Telecharger l'Excel</Text>
       </TouchableOpacity>
       
       <TouchableOpacity
-        style={[styles.primaryButton, { backgroundColor: '#2d2d44', marginTop: 12 }]}
+        style={[styles.primaryButton, { backgroundColor: '#111722', marginTop: 12 }]}
         onPress={() => setCurrentStep('choose-type')}
       >
-        <Ionicons name="add-circle" size={20} color="#fff" />
-        <Text style={[styles.primaryButtonText, { color: '#fff' }]}>Importer un autre document</Text>
+        <Ionicons name="add-circle" size={20} color="#f4f1ea" />
+        <Text style={[styles.primaryButtonText, { color: '#f4f1ea' }]}>Importer un autre document</Text>
       </TouchableOpacity>
     </View>
   );
@@ -1228,8 +1228,8 @@ export default function ImportScreen() {
   // Render Excel correction step
   const renderExcelCorrectionStep = () => (
     <View style={styles.stepContainer}>
-      <View style={[styles.iconContainer, { backgroundColor: 'rgba(255,215,0,0.15)' }]}>
-        <Ionicons name="create" size={60} color="#FFD700" />
+      <View style={[styles.iconContainer, { backgroundColor: 'rgba(240, 216, 121,0.15)' }]}>
+        <Ionicons name="create" size={60} color="#f0d879" />
       </View>
       <Text style={styles.stepTitle}>Excel final - Source de verite</Text>
       <Text style={styles.stepDescription}>
@@ -1238,19 +1238,19 @@ export default function ImportScreen() {
       </Text>
 
       <TouchableOpacity
-        style={[styles.primaryButton, { backgroundColor: '#4ECDC4', marginBottom: 20 }]}
+        style={[styles.primaryButton, { backgroundColor: '#e6c65a', marginBottom: 20 }]}
         onPress={() => {
           if (Platform.OS === 'web') {
             window.open(`${API_URL}/api/programs/export-excel`, '_blank');
           }
         }}
       >
-        <Ionicons name="download" size={20} color="#1a1a2e" />
+        <Ionicons name="download" size={20} color="#07090e" />
         <Text style={styles.primaryButtonText}>Telecharger l'Excel actuel</Text>
       </TouchableOpacity>
 
-      <View style={{ backgroundColor: '#2d2d44', borderRadius: 12, padding: 20, width: '100%', marginBottom: 20 }}>
-        <Text style={{ color: '#FFD700', fontSize: 16, fontWeight: '700', marginBottom: 12, textAlign: 'center' }}>
+      <View style={{ backgroundColor: '#111722', borderRadius: 12, padding: 20, width: '100%', marginBottom: 20 }}>
+        <Text style={{ color: '#f0d879', fontSize: 16, fontWeight: '700', marginBottom: 12, textAlign: 'center' }}>
           Importer le fichier corrige
         </Text>
 
@@ -1266,7 +1266,7 @@ export default function ImportScreen() {
 
         <TouchableOpacity
           style={{
-            backgroundColor: excelImporting ? '#555' : '#FFD700',
+            backgroundColor: excelImporting ? '#5a6372' : '#f0d879',
             borderRadius: 8, paddingVertical: 16, alignItems: 'center',
             opacity: excelImporting ? 0.7 : 1,
           }}
@@ -1278,11 +1278,11 @@ export default function ImportScreen() {
           disabled={excelImporting}
         >
           {excelImporting ? (
-            <ActivityIndicator size="small" color="#1a1a2e" />
+            <ActivityIndicator size="small" color="#07090e" />
           ) : (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="cloud-upload" size={20} color="#1a1a2e" />
-              <Text style={{ color: '#1a1a2e', fontWeight: '700', fontSize: 16, marginLeft: 8 }}>
+              <Ionicons name="cloud-upload" size={20} color="#07090e" />
+              <Text style={{ color: '#07090e', fontWeight: '700', fontSize: 16, marginLeft: 8 }}>
                 Choisir le fichier Excel
               </Text>
             </View>
@@ -1292,18 +1292,18 @@ export default function ImportScreen() {
 
       {excelResult && (
         <View style={{
-          backgroundColor: excelResult.startsWith('Erreur') ? 'rgba(255,107,107,0.15)' : 'rgba(78,205,196,0.15)',
+          backgroundColor: excelResult.startsWith('Erreur') ? 'rgba(255,107,107,0.15)' : 'rgba(230, 198, 90,0.15)',
           borderRadius: 8, padding: 16, width: '100%', marginBottom: 16,
-          borderWidth: 1, borderColor: excelResult.startsWith('Erreur') ? '#FF6B6B' : '#4ECDC4',
+          borderWidth: 1, borderColor: excelResult.startsWith('Erreur') ? '#FF6B6B' : '#e6c65a',
         }}>
-          <Text style={{ color: excelResult.startsWith('Erreur') ? '#FF6B6B' : '#4ECDC4', fontSize: 14, textAlign: 'center' }}>
+          <Text style={{ color: excelResult.startsWith('Erreur') ? '#FF6B6B' : '#e6c65a', fontSize: 14, textAlign: 'center' }}>
             {excelResult}
           </Text>
         </View>
       )}
 
-      <View style={{ backgroundColor: '#2d2d44', borderRadius: 8, padding: 14, width: '100%', marginBottom: 16 }}>
-        <Text style={{ color: '#aaa', fontSize: 12, lineHeight: 18 }}>
+      <View style={{ backgroundColor: '#111722', borderRadius: 8, padding: 14, width: '100%', marginBottom: 16 }}>
+        <Text style={{ color: '#b9c0cc', fontSize: 12, lineHeight: 18 }}>
           {'\u2022'} NE PAS modifier la colonne ID{'\n'}
           {'\u2022'} Col F: Consumer Cash (Opt 1, avant taxes){'\n'}
           {'\u2022'} Col N: Rabais Alt. Cash (Opt 2, avant taxes){'\n'}
@@ -1313,10 +1313,10 @@ export default function ImportScreen() {
       </View>
 
       {/* ============ LEASE SCI SECTION ============ */}
-      <View style={{ backgroundColor: '#2d2d44', borderRadius: 12, padding: 20, width: '100%', marginBottom: 20 }}>
+      <View style={{ backgroundColor: '#111722', borderRadius: 12, padding: 20, width: '100%', marginBottom: 20 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
           <Ionicons name="car-sport" size={24} color="#FF6B6B" />
-          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>
+          <Text style={{ color: '#f4f1ea', fontSize: 18, fontWeight: '700', marginLeft: 10 }}>
             Taux Location SCI
           </Text>
         </View>
@@ -1329,7 +1329,7 @@ export default function ImportScreen() {
             }
           }}
         >
-          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Telecharger Excel Lease SCI</Text>
+          <Text style={{ color: '#f4f1ea', fontWeight: '700', fontSize: 15 }}>Telecharger Excel Lease SCI</Text>
         </TouchableOpacity>
 
         {Platform.OS === 'web' && (
@@ -1364,7 +1364,7 @@ export default function ImportScreen() {
 
         <TouchableOpacity
           style={{
-            backgroundColor: excelImporting ? '#555' : '#FFD700', borderRadius: 8,
+            backgroundColor: excelImporting ? '#5a6372' : '#f0d879', borderRadius: 8,
             paddingVertical: 14, alignItems: 'center', opacity: excelImporting ? 0.7 : 1,
           }}
           onPress={() => {
@@ -1373,19 +1373,19 @@ export default function ImportScreen() {
           disabled={excelImporting}
         >
           {excelImporting ? (
-            <ActivityIndicator size="small" color="#1a1a2e" />
+            <ActivityIndicator size="small" color="#07090e" />
           ) : (
-            <Text style={{ color: '#1a1a2e', fontWeight: '700', fontSize: 15 }}>Importer Excel Lease corrige</Text>
+            <Text style={{ color: '#07090e', fontWeight: '700', fontSize: 15 }}>Importer Excel Lease corrige</Text>
           )}
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity
-        style={[styles.primaryButton, { backgroundColor: '#2d2d44' }]}
+        style={[styles.primaryButton, { backgroundColor: '#111722' }]}
         onPress={() => router.replace({ pathname: '/', params: { refresh: String(Date.now()) } })}
       >
-        <Ionicons name="home" size={20} color="#fff" />
-        <Text style={[styles.primaryButtonText, { color: '#fff' }]}>Retour a l'accueil</Text>
+        <Ionicons name="home" size={20} color="#f4f1ea" />
+        <Text style={[styles.primaryButtonText, { color: '#f4f1ea' }]}>Retour a l'accueil</Text>
       </TouchableOpacity>
     </View>
   );
@@ -1403,7 +1403,7 @@ export default function ImportScreen() {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Modifier le programme</Text>
             <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-              <Ionicons name="close" size={24} color="#aaa" />
+              <Ionicons name="close" size={24} color="#b9c0cc" />
             </TouchableOpacity>
           </View>
           
@@ -1507,7 +1507,7 @@ export default function ImportScreen() {
                   <Ionicons
                     name={editProgram.option2_rates ? 'checkbox' : 'square-outline'}
                     size={24}
-                    color="#4ECDC4"
+                    color="#e6c65a"
                   />
                   <Text style={styles.option2ToggleText}>Option 2 disponible</Text>
                 </TouchableOpacity>
@@ -1544,7 +1544,7 @@ export default function ImportScreen() {
             style={styles.modalSaveButton}
             onPress={saveEditedProgram}
           >
-            <Ionicons name="checkmark" size={20} color="#1a1a2e" />
+            <Ionicons name="checkmark" size={20} color="#07090e" />
             <Text style={styles.modalSaveButtonText}>Sauvegarder les modifications</Text>
           </TouchableOpacity>
         </View>
@@ -1561,7 +1561,7 @@ export default function ImportScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.headerBackButton}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+            <Ionicons name="arrow-back" size={24} color="#f4f1ea" />
           </TouchableOpacity>
           <View>
             <Text style={styles.headerTitle}>Import PDF</Text>
@@ -1638,7 +1638,7 @@ export default function ImportScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
   },
   flex: {
     flex: 1,
@@ -1649,7 +1649,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2d2d44',
+    borderBottomColor: '#303744',
     gap: 12,
   },
   headerBackButton: {
@@ -1658,11 +1658,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f4f1ea',
   },
   headerSubtitle: {
     fontSize: 12,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     marginTop: 2,
   },
   progressContainer: {
@@ -1680,22 +1680,22 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
   },
   progressDotActive: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     transform: [{ scale: 1.3 }],
   },
   progressDotCompleted: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
   },
   progressLine: {
     width: 60,
     height: 2,
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
   },
   progressLineCompleted: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
   },
   scrollView: {
     flex: 1,
@@ -1712,34 +1712,34 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
   },
   successIcon: {
-    backgroundColor: 'rgba(78, 205, 196, 0.2)',
+    backgroundColor: 'rgba(230, 198, 90, 0.2)',
   },
   stepTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f4f1ea',
     marginBottom: 12,
     textAlign: 'center',
   },
   stepDescription: {
     fontSize: 14,
-    color: '#888',
+    color: '#9aa3b1',
     textAlign: 'center',
     marginBottom: 24,
     paddingHorizontal: 20,
   },
   passwordInput: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: '#fff',
+    color: '#f4f1ea',
     width: '100%',
     marginBottom: 16,
     textAlign: 'center',
@@ -1748,7 +1748,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     borderRadius: 12,
     padding: 16,
     width: '100%',
@@ -1757,7 +1757,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a2e',
+    color: '#07090e',
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -1768,7 +1768,7 @@ const styles = StyleSheet.create({
   },
   periodLabel: {
     fontSize: 14,
-    color: '#fff',
+    color: '#f4f1ea',
     marginBottom: 12,
     fontWeight: '600',
   },
@@ -1785,24 +1785,24 @@ const styles = StyleSheet.create({
   },
   pageLabel: {
     fontSize: 14,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     marginBottom: 8,
     fontWeight: '600',
   },
   pageInput: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 10,
     padding: 14,
     fontSize: 18,
-    color: '#fff',
+    color: '#f4f1ea',
     textAlign: 'center',
     fontWeight: '600',
     borderWidth: 2,
-    borderColor: '#3d3d54',
+    borderColor: '#303744',
   },
   pageHint: {
     fontSize: 13,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     marginTop: 4,
     marginBottom: 8,
   },
@@ -1814,21 +1814,21 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   monthButton: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 8,
   },
   monthButtonActive: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
   },
   monthButtonText: {
     fontSize: 12,
-    color: '#aaa',
+    color: '#b9c0cc',
     fontWeight: '500',
   },
   monthButtonTextActive: {
-    color: '#1a1a2e',
+    color: '#07090e',
   },
   yearRow: {
     flexDirection: 'row',
@@ -1837,36 +1837,36 @@ const styles = StyleSheet.create({
   },
   yearLabel: {
     fontSize: 14,
-    color: '#888',
+    color: '#9aa3b1',
   },
   yearInput: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 8,
     padding: 10,
     fontSize: 14,
-    color: '#fff',
+    color: '#f4f1ea',
     width: 100,
     textAlign: 'center',
   },
   uploadButton: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     borderRadius: 16,
     padding: 30,
     width: '100%',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#4ECDC4',
+    borderColor: '#e6c65a',
     borderStyle: 'dashed',
   },
   uploadButtonText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1a1a2e',
+    color: '#07090e',
     marginTop: 12,
   },
   uploadButtonSubtext: {
     fontSize: 12,
-    color: '#1a1a2e',
+    color: '#07090e',
     opacity: 0.7,
     marginTop: 4,
   },
@@ -1877,22 +1877,22 @@ const styles = StyleSheet.create({
   extractingText: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: '#07090e',
     marginTop: 16,
   },
   extractingSubtext: {
     fontSize: 14,
-    color: '#1a1a2e',
+    color: '#07090e',
     marginTop: 8,
   },
   extractingWait: {
     fontSize: 12,
-    color: '#666',
+    color: '#8a93a1',
     marginTop: 12,
     fontStyle: 'italic',
   },
   pdfInfoCard: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 16,
     padding: 20,
     flexDirection: 'row',
@@ -1906,23 +1906,23 @@ const styles = StyleSheet.create({
   pdfInfoTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: '#f4f1ea',
     marginBottom: 4,
   },
   pdfInfoPages: {
     fontSize: 14,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: '500',
   },
   pageValidation: {
     fontSize: 13,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     marginTop: 12,
     textAlign: 'center',
     fontWeight: '500',
   },
   extractButton: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     borderRadius: 12,
     padding: 18,
     width: '100%',
@@ -1934,7 +1934,7 @@ const styles = StyleSheet.create({
   extractButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a2e',
+    color: '#07090e',
   },
   changePdfButton: {
     marginTop: 16,
@@ -1943,7 +1943,7 @@ const styles = StyleSheet.create({
   },
   changePdfButtonText: {
     fontSize: 14,
-    color: '#888',
+    color: '#9aa3b1',
   },
   previewContainer: {
     flex: 1,
@@ -1954,16 +1954,16 @@ const styles = StyleSheet.create({
   previewTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f4f1ea',
   },
   previewPeriod: {
     fontSize: 14,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     marginTop: 4,
   },
   previewInstructions: {
     fontSize: 12,
-    color: '#888',
+    color: '#9aa3b1',
     marginBottom: 16,
   },
   programsList: {
@@ -1971,7 +1971,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   programCard: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
@@ -1986,12 +1986,12 @@ const styles = StyleSheet.create({
   },
   programBrand: {
     fontSize: 11,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: '600',
   },
   programModel: {
     fontSize: 14,
-    color: '#fff',
+    color: '#f4f1ea',
     fontWeight: 'bold',
     marginTop: 2,
   },
@@ -2001,7 +2001,7 @@ const styles = StyleSheet.create({
   },
   editButton: {
     padding: 6,
-    backgroundColor: 'rgba(78, 205, 196, 0.2)',
+    backgroundColor: 'rgba(230, 198, 90, 0.2)',
     borderRadius: 6,
   },
   deleteButton: {
@@ -2013,7 +2013,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#3d3d54',
+    borderTopColor: '#303744',
   },
   programDetailRow: {
     flexDirection: 'row',
@@ -2022,16 +2022,16 @@ const styles = StyleSheet.create({
   },
   programDetailLabel: {
     fontSize: 11,
-    color: '#888',
+    color: '#9aa3b1',
   },
   programDetailValue: {
     fontSize: 11,
-    color: '#fff',
+    color: '#f4f1ea',
     fontWeight: '500',
   },
   programDetailNA: {
     fontSize: 11,
-    color: '#666',
+    color: '#8a93a1',
     fontStyle: 'italic',
   },
   previewActions: {
@@ -2042,7 +2042,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 12,
     padding: 14,
     gap: 8,
@@ -2050,13 +2050,13 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 14,
-    color: '#fff',
+    color: '#f4f1ea',
   },
   saveButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     borderRadius: 12,
     padding: 14,
     gap: 8,
@@ -2065,18 +2065,18 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1a1a2e',
+    color: '#07090e',
   },
   successNote: {
     fontSize: 12,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     textAlign: 'center',
     marginBottom: 24,
     paddingHorizontal: 20,
   },
   emailSentNote: {
     fontSize: 13,
-    color: '#888',
+    color: '#9aa3b1',
     textAlign: 'center',
     marginBottom: 32,
     paddingHorizontal: 20,
@@ -2089,7 +2089,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#07090e',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '90%',
@@ -2100,12 +2100,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2d2d44',
+    borderBottomColor: '#303744',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#f4f1ea',
   },
   modalBody: {
     padding: 16,
@@ -2124,15 +2124,15 @@ const styles = StyleSheet.create({
   },
   formLabel: {
     fontSize: 12,
-    color: '#888',
+    color: '#9aa3b1',
     marginBottom: 6,
   },
   formInput: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 8,
     padding: 12,
     fontSize: 14,
-    color: '#fff',
+    color: '#f4f1ea',
   },
   ratesTitle: {
     fontSize: 14,
@@ -2152,16 +2152,16 @@ const styles = StyleSheet.create({
   },
   rateLabel: {
     fontSize: 10,
-    color: '#888',
+    color: '#9aa3b1',
     marginBottom: 4,
     textAlign: 'center',
   },
   rateInput: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 8,
     padding: 10,
     fontSize: 14,
-    color: '#fff',
+    color: '#f4f1ea',
     textAlign: 'center',
   },
   option2Toggle: {
@@ -2174,13 +2174,13 @@ const styles = StyleSheet.create({
   },
   option2ToggleText: {
     fontSize: 14,
-    color: '#fff',
+    color: '#f4f1ea',
   },
   modalSaveButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#4ECDC4',
+    backgroundColor: '#e6c65a',
     borderRadius: 12,
     padding: 16,
     margin: 16,
@@ -2189,24 +2189,24 @@ const styles = StyleSheet.create({
   modalSaveButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a2e',
+    color: '#07090e',
   },
   // Document type choice styles
   docTypeCard: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 16,
     padding: 18,
     marginBottom: 14,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#3d3d54',
+    borderColor: '#303744',
   },
   docTypeIconWrap: {
     width: 52,
     height: 52,
     borderRadius: 12,
-    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    backgroundColor: 'rgba(230, 198, 90, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
@@ -2217,22 +2217,22 @@ const styles = StyleSheet.create({
   docTypeTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#fff',
+    color: '#f4f1ea',
     marginBottom: 3,
   },
   docTypeDesc: {
     fontSize: 12,
-    color: '#aaa',
+    color: '#b9c0cc',
     marginBottom: 2,
   },
   docTypeHint: {
     fontSize: 10,
-    color: '#666',
+    color: '#8a93a1',
     fontStyle: 'italic',
   },
   // Residual success styles
   residualSummary: {
-    backgroundColor: '#2d2d44',
+    backgroundColor: '#111722',
     borderRadius: 16,
     padding: 18,
     marginBottom: 20,
@@ -2241,7 +2241,7 @@ const styles = StyleSheet.create({
   residualSummaryTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#4ECDC4',
+    color: '#e6c65a',
     textAlign: 'center',
     marginBottom: 14,
   },
@@ -2250,16 +2250,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#3d3d54',
+    borderBottomColor: '#303744',
   },
   residualBrandName: {
     fontSize: 14,
-    color: '#fff',
+    color: '#f4f1ea',
     fontWeight: '500',
   },
   residualBrandCount: {
     fontSize: 14,
-    color: '#4ECDC4',
+    color: '#e6c65a',
     fontWeight: '600',
   },
   residualEmailStatus: {
@@ -2269,7 +2269,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
     paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: '#3d3d54',
+    borderTopColor: '#303744',
   },
   residualEmailText: {
     fontSize: 13,
