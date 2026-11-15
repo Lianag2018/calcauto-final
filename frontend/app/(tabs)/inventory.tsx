@@ -45,6 +45,8 @@ interface InventoryVehicle {
   status: 'disponible' | 'réservé' | 'vendu';
   km: number;
   color: string;
+  model_code?: string;
+  shared?: boolean;
 }
 
 interface InventoryStats {
@@ -105,6 +107,62 @@ export default function InventoryScreen() {
 
   // SCI vehicle hierarchy for cascading dropdowns
   const [sciHierarchy, setSciHierarchy] = useState<any>(null);
+
+  // Fiche d'un véhicule : correction du code de modèle, de la version, etc.
+  const [editVehicle, setEditVehicle] = useState<InventoryVehicle | null>(null);
+  const [editForm, setEditForm] = useState({ model_code: '', trim: '', body_style: '', color: '' });
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+  const [productCodes, setProductCodes] = useState<any[]>([]);
+
+  const openEdit = async (vehicle: InventoryVehicle) => {
+    setEditVehicle(vehicle);
+    setEditError('');
+    setEditForm({
+      model_code: vehicle.model_code || '', trim: vehicle.trim || '',
+      body_style: vehicle.body_style || '', color: vehicle.color || '',
+    });
+    if (productCodes.length === 0) {
+      try {
+        const res = await axios.get(`${API_URL}/api/product-codes`);
+        if (Array.isArray(res.data)) setProductCodes(res.data);
+      } catch (e) {
+        console.log('Could not load product codes');
+      }
+    }
+  };
+
+  const codeSuggestions = editVehicle ? productCodes.filter((c: any) =>
+    (c.brand || '').toLowerCase() === (editVehicle.brand || '').toLowerCase()
+    && (!c.year || String(c.year) === String(editVehicle.year))
+    && (c.model || '').toLowerCase().replace(/\s+/g, '') === (editVehicle.model || '').toLowerCase().replace(/\s+/g, '')
+    && (!editForm.model_code || (c.code || '').toUpperCase().startsWith(editForm.model_code.toUpperCase())
+        || (c.full_description || '').toLowerCase().includes(editForm.model_code.toLowerCase()))
+  ).slice(0, 12) : [];
+
+  const saveEdit = async () => {
+    if (!editVehicle) return;
+    const changes: any = {};
+    (['model_code', 'trim', 'body_style', 'color'] as const).forEach(key => {
+      const value = (editForm[key] || '').trim();
+      if (value && value !== ((editVehicle as any)[key] || '')) changes[key] = key === 'model_code' ? value.toUpperCase() : value;
+    });
+    if (Object.keys(changes).length === 0) { setEditVehicle(null); return; }
+    setEditSaving(true);
+    setEditError('');
+    try {
+      const token = await getToken();
+      await axios.put(`${API_URL}/api/inventory/${encodeURIComponent(editVehicle.stock_no)}`, changes, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setEditVehicle(null);
+      fetchData();
+    } catch (e: any) {
+      setEditError(e?.response?.data?.detail || "La fiche n'a pas pu être enregistrée");
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -856,6 +914,9 @@ export default function InventoryScreen() {
       <Text style={styles.vehicleTitle}>{item.year} {item.brand} {item.model}</Text>
       {item.trim && <Text style={styles.vehicleTrim}>{item.trim}{item.body_style ? ` - ${item.body_style}` : ''}</Text>}
       {item.vin && <Text style={styles.vehicleVin}>VIN: {item.vin}</Text>}
+      <Text style={[styles.vehicleVin, { color: item.model_code ? '#FFB347' : '#FF6B6B' }]} data-testid={`inv-code-${item.stock_no}`}>
+        Code : {item.model_code || 'à entrer'}{item.shared ? '  ·  Inventaire Kennebec' : ''}
+      </Text>
 
       <View style={styles.priceGrid}>
         <View style={styles.priceItem}>
@@ -896,6 +957,9 @@ export default function InventoryScreen() {
           onPress={() => handleStatusChange(item.stock_no, 'vendu')}
         >
           <Ionicons name="car" size={18} color={item.status === 'vendu' ? '#FF6B6B' : '#666'} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => openEdit(item)} data-testid={`inv-edit-${item.stock_no}`}>
+          <Ionicons name="create-outline" size={18} color="#4ECDC4" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.stock_no)}>
           <Ionicons name="trash-outline" size={18} color="#FF6B6B" />
@@ -999,6 +1063,59 @@ export default function InventoryScreen() {
       />
 
       {/* Add Vehicle Modal */}
+      <Modal visible={!!editVehicle} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Fiche #{editVehicle?.stock_no}</Text>
+              <TouchableOpacity onPress={() => setEditVehicle(null)}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.formScroll}>
+              <Text style={{ color: '#aaa', marginBottom: 12 }}>
+                {editVehicle?.year} {editVehicle?.brand} {editVehicle?.model}
+                {editVehicle?.shared ? "  ·  Inventaire Kennebec (la correction vaut pour tous)" : ''}
+              </Text>
+              <Text style={styles.formLabel}>Code de modèle</Text>
+              <TextInput
+                style={styles.formInput}
+                value={editForm.model_code}
+                onChangeText={(v) => setEditForm({ ...editForm, model_code: v.toUpperCase().replace(/[^A-Z0-9]/g, '') })}
+                placeholder="Ex : DT6H98"
+                placeholderTextColor="#666"
+                autoCapitalize="characters"
+                maxLength={8}
+              />
+              {codeSuggestions.map((c: any) => (
+                <TouchableOpacity
+                  key={c.code}
+                  onPress={() => setEditForm({ ...editForm, model_code: c.code, trim: editForm.trim || c.trim || '' })}
+                  style={{ paddingVertical: 9, paddingHorizontal: 10, borderBottomWidth: 1, borderBottomColor: '#33334d' }}
+                >
+                  <Text style={{ color: '#fff' }}>
+                    <Text style={{ color: '#FFB347', fontWeight: '700' }}>{c.code}  </Text>{c.full_description}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              <Text style={[styles.formLabel, { marginTop: 14 }]}>Version</Text>
+              <TextInput style={styles.formInput} value={editForm.trim}
+                onChangeText={(v) => setEditForm({ ...editForm, trim: v })} placeholder="Ex : Big Horn" placeholderTextColor="#666" />
+              <Text style={[styles.formLabel, { marginTop: 14 }]}>Carrosserie</Text>
+              <TextInput style={styles.formInput} value={editForm.body_style}
+                onChangeText={(v) => setEditForm({ ...editForm, body_style: v })} placeholder="Ex : Crew Cab 4x4" placeholderTextColor="#666" />
+              <Text style={[styles.formLabel, { marginTop: 14 }]}>Couleur</Text>
+              <TextInput style={styles.formInput} value={editForm.color}
+                onChangeText={(v) => setEditForm({ ...editForm, color: v })} placeholderTextColor="#666" />
+              {editError ? <Text style={{ color: '#FF6B6B', marginTop: 12 }}>{editError}</Text> : null}
+              <TouchableOpacity style={styles.submitBtn} onPress={saveEdit} disabled={editSaving}>
+                <Text style={styles.submitBtnText}>{editSaving ? 'Enregistrement…' : 'Enregistrer la fiche'}</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={showAddModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>

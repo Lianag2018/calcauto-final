@@ -174,6 +174,10 @@ export default function HomeScreen() {
   const [inventoryList, setInventoryList] = useState<any[]>([]);
   const [selectedInventory, setSelectedInventory] = useState<any>(null);
   const [showInventoryPicker, setShowInventoryPicker] = useState(false);
+  // Codes de modèle couverts par le programme choisi (liste de choix)
+  const [modelCodes, setModelCodes] = useState<{ code: string; description: string; in_stock: number }[]>([]);
+  const [pickedCode, setPickedCode] = useState<string>('');
+  const [showCodeList, setShowCodeList] = useState(false);
   const [manualVin, setManualVin] = useState<string>('');  // VIN manuel si pas d'inventaire
   
   // Intelligent inventory-to-program matching
@@ -515,6 +519,60 @@ export default function HomeScreen() {
     
     loadAutoFinancing();
   }, [selectedInventory?.model_code]);
+
+  // Liste des codes de modèle du programme choisi
+  useEffect(() => {
+    setModelCodes([]);
+    setPickedCode('');
+    setShowCodeList(false);
+    if (!selectedProgram?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const res = await axios.get(`${API_URL}/api/programs/${selectedProgram.id}/model-codes`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!cancelled && Array.isArray(res.data)) setModelCodes(res.data);
+      } catch (e) {
+        console.log('Could not load model codes');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedProgram?.id]);
+
+  // Véhicules neufs en inventaire pour le programme (et le code) choisis
+  const programInventory = useMemo(() => inventoryList.filter((v: any) =>
+    v.type !== 'occasion'
+    && matchesInventoryToProgram(v, selectedProgram)
+    // Un véhicule sans code reste visible : le code choisi lui sera donné
+    && (!pickedCode || !v.model_code || (v.model_code || '').toUpperCase() === pickedCode)
+  ), [inventoryList, selectedProgram, pickedCode, matchesInventoryToProgram]);
+
+  // Le conseiller choisit un code pour un véhicule dont la fiche n'en a pas :
+  // on l'inscrit sur la fiche, pour les prochains calculs de tout le monde.
+  const [codeSavedFor, setCodeSavedFor] = useState<string>('');
+  useEffect(() => {
+    const vehicle = selectedInventory;
+    if (!vehicle?.stock_no || vehicle.model_code || !pickedCode) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        await axios.put(`${API_URL}/api/inventory/${encodeURIComponent(vehicle.stock_no)}`,
+          { model_code: pickedCode }, { headers: { Authorization: `Bearer ${token}` } });
+        if (cancelled) return;
+        setInventoryList(list => list.map((v: any) => v.stock_no === vehicle.stock_no ? { ...v, model_code: pickedCode } : v));
+        setSelectedInventory((v: any) => v && v.stock_no === vehicle.stock_no ? { ...v, model_code: pickedCode } : v);
+        setCodeSavedFor(`${vehicle.stock_no} · ${pickedCode}`);
+      } catch (e) {
+        console.log('Could not save model code on vehicle');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedInventory?.stock_no, selectedInventory?.model_code, pickedCode]);
 
   // Load SCI lease data
   useEffect(() => {
@@ -1603,7 +1661,7 @@ export default function HomeScreen() {
     try {
       const exportData = {
         vin: selectedInventory?.vin || manualVin || '',
-        model_code: selectedInventory?.model_code || selectedProgram?.code || '',
+        model_code: selectedInventory?.model_code || pickedCode || selectedProgram?.code || '',
         brand: selectedInventory?.brand || selectedProgram?.brand || '',
         model: selectedInventory?.model || selectedProgram?.model || '',
         trim: selectedInventory?.trim || selectedProgram?.trim || '',
@@ -2116,17 +2174,75 @@ export default function HomeScreen() {
           {selectedProgram && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>
-                {lang === 'fr' ? '📦 Inventaire disponible' : '📦 Available Inventory'} ({inventoryList.filter(v => matchesInventoryToProgram(v, selectedProgram)).length})
+                {lang === 'fr' ? '📦 Inventaire disponible' : '📦 Available Inventory'} ({programInventory.length})
               </Text>
               <Text style={styles.inventorySubtitle}>
                 {lang === 'fr' 
                   ? `${selectedProgram.brand} ${selectedProgram.model} ${selectedProgram.year} en stock`
                   : `${selectedProgram.brand} ${selectedProgram.model} ${selectedProgram.year} in stock`}
               </Text>
+              {modelCodes.length > 0 && (
+                <View style={{ marginBottom: 10 }} data-testid="model-code-picker">
+                  <TouchableOpacity
+                    onPress={() => setShowCodeList(!showCodeList)}
+                    style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#2d2d44', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 14 }}
+                    data-testid="model-code-toggle"
+                  >
+                    <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', flex: 1 }}>
+                      {lang === 'fr' ? 'Code de modèle : ' : 'Model code: '}
+                      <Text style={{ color: '#FFB347' }}>
+                        {pickedCode || (lang === 'fr' ? `Tous (${modelCodes.length})` : `All (${modelCodes.length})`)}
+                      </Text>
+                    </Text>
+                    <Text style={{ color: '#4ECDC4', fontSize: 14 }}>{showCodeList ? '▲' : '▼'}</Text>
+                  </TouchableOpacity>
+                  {showCodeList && (
+                    <View style={{ backgroundColor: '#24243a', borderRadius: 10, marginTop: 4 }}>
+                      {[{ code: '', description: lang === 'fr' ? 'Tous les codes' : 'All codes', in_stock: -1 }, ...modelCodes].map(item => (
+                        <TouchableOpacity
+                          key={item.code || 'all'}
+                          onPress={() => {
+                            setPickedCode(item.code);
+                            setShowCodeList(false);
+                            if (item.code && selectedInventory?.model_code && selectedInventory.model_code.toUpperCase() !== item.code) {
+                              setSelectedInventory(null);
+                            }
+                          }}
+                          style={{ paddingVertical: 11, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: '#33334d', backgroundColor: pickedCode === item.code ? '#33334d' : 'transparent' }}
+                          data-testid={`model-code-${item.code || 'all'}`}
+                        >
+                          <Text style={{ color: '#fff', fontSize: 14 }}>
+                            {item.code ? <Text style={{ color: '#FFB347', fontWeight: '700' }}>{item.code}  </Text> : null}
+                            {item.description}
+                          </Text>
+                          {item.in_stock >= 0 && (
+                            <Text style={{ color: item.in_stock > 0 ? '#4ECDC4' : '#888', fontSize: 12, marginTop: 2 }}>
+                              {item.in_stock > 0
+                                ? (lang === 'fr' ? `${item.in_stock} en inventaire` : `${item.in_stock} in stock`)
+                                : (lang === 'fr' ? 'Aucun en inventaire' : 'None in stock')}
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              )}
+              {codeSavedFor ? (
+                <Text style={{ color: '#4ECDC4', fontSize: 12, marginBottom: 8 }} data-testid="model-code-saved">
+                  {lang === 'fr' ? `Code inscrit sur la fiche #${codeSavedFor}` : `Code saved on vehicle #${codeSavedFor}`}
+                </Text>
+              ) : null}
+              {selectedInventory && !selectedInventory.model_code && !pickedCode && modelCodes.length > 0 ? (
+                <Text style={{ color: '#FFB347', fontSize: 12, marginBottom: 8 }} data-testid="model-code-missing">
+                  {lang === 'fr'
+                    ? `La fiche #${selectedInventory.stock_no} n'a pas de code : choisis-le dans la liste, il sera retenu.`
+                    : `Vehicle #${selectedInventory.stock_no} has no code: pick it in the list, it will be kept.`}
+                </Text>
+              ) : null}
               {inventoryList.length > 0 ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.inventoryScroll}>
-                  {inventoryList
-                    .filter(v => matchesInventoryToProgram(v, selectedProgram))
+                  {programInventory
                     .map((vehicle) => (
                       <TouchableOpacity
                         key={vehicle.id}
@@ -2144,21 +2260,23 @@ export default function HomeScreen() {
                         <Text style={styles.inventoryModel}>
                           {vehicle.year} {vehicle.model}
                         </Text>
-                        <Text style={styles.inventoryTrim}>{vehicle.trim}</Text>
+                        <Text style={styles.inventoryTrim}>
+                          {vehicle.trim}{vehicle.model_code ? <Text style={{ color: '#FFB347', fontWeight: '700' }}>  [{vehicle.model_code}]</Text> : null}
+                        </Text>
                         {vehicle.vin && (
                           <Text style={styles.inventoryVin}>VIN: {vehicle.vin}</Text>
                         )}
                         <Text style={styles.inventoryPrice}>
                           {formatCurrency(vehicle.asking_price || vehicle.msrp)}
                         </Text>
-                        {vehicle.net_cost && (
+                        {vehicle.net_cost > 0 && (
                           <Text style={styles.inventoryProfit}>
                             Profit: {formatCurrency((vehicle.asking_price || vehicle.msrp) - vehicle.net_cost)}
                           </Text>
                         )}
                       </TouchableOpacity>
                     ))}
-                  {inventoryList.filter(v => matchesInventoryToProgram(v, selectedProgram)).length === 0 && (
+                  {programInventory.length === 0 && (
                     <View style={styles.noInventoryContainer}>
                       <Text style={styles.noInventoryText}>
                         {lang === 'fr' 
@@ -2194,7 +2312,7 @@ export default function HomeScreen() {
                 </ScrollView>
               ) : (
                 <Text style={styles.noInventoryText}>
-                  {lang === 'fr' ? 'Chargement de l\'inventaire...' : 'Loading inventory...'}
+                  {lang === 'fr' ? 'Aucun véhicule en inventaire' : 'No vehicle in inventory'}
                 </Text>
               )}
             </View>
