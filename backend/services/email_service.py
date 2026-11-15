@@ -1,19 +1,27 @@
-import smtplib
+import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.image import MIMEImage
 from email import encoders
 from database import SMTP_EMAIL, SMTP_PASSWORD, SMTP_HOST, SMTP_PORT
+from services.mail_transport import SMTP_TIMEOUT, deliver, gmail_config  # noqa: F401
 
-# Secondes accordées au serveur de courriel : sans limite, un serveur injoignable
-# gèle tout le service pendant qu'on attend.
-SMTP_TIMEOUT = 10
+
+def mail_ready() -> bool:
+    """Vrai quand un courriel peut partir : adresse d'envoi, et l'API Gmail ou le mot de passe SMTP."""
+    return bool(SMTP_EMAIL and (gmail_config(os.environ) or SMTP_PASSWORD))
+
+
+def deliver_message(msg, recipients=None):
+    """Envoie un message déjà construit : par le web (API Gmail) si réglé, sinon par SMTP."""
+    return deliver(msg, recipients, os.environ,
+                   {"host": SMTP_HOST, "port": SMTP_PORT, "username": SMTP_EMAIL, "password": SMTP_PASSWORD})
 
 
 def send_email(to_email: str, subject: str, html_body: str, attachment_data: bytes = None, attachment_name: str = None, inline_images: list = None, cc_email: str = None):
     """
-    Envoie un email via Gmail SMTP avec support pour images inline (CID).
+    Envoie un email (API Gmail ou SMTP) avec support pour images inline (CID).
     
     Args:
         to_email: Email du destinataire
@@ -24,8 +32,8 @@ def send_email(to_email: str, subject: str, html_body: str, attachment_data: byt
         inline_images: Liste de dicts avec 'cid', 'data' (bytes), 'mimetype' (ex: 'image/jpeg')
         cc_email: Email en copie (CC) - optionnel
     """
-    if not SMTP_EMAIL or not SMTP_PASSWORD:
-        raise Exception("Configuration SMTP manquante")
+    if not mail_ready():
+        raise Exception("Configuration du courriel manquante")
     
     # Utiliser 'related' pour supporter les images CID
     msg = MIMEMultipart('related')
@@ -65,11 +73,7 @@ def send_email(to_email: str, subject: str, html_body: str, attachment_data: byt
     if cc_email:
         recipients.append(cc_email)
     
-    # Connexion SMTP
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT) as server:
-        server.starttls()
-        server.login(SMTP_EMAIL, SMTP_PASSWORD)
-        server.send_message(msg, to_addrs=recipients)
-    
+    deliver_message(msg, recipients)
+
     return True
 
