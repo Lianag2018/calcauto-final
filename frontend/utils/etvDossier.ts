@@ -28,6 +28,8 @@ export interface DossierDesired {
 
 export interface Dossier {
   evalId: string;
+  /** Conseiller qui a fait l'évaluation (utile au directeur et à l'administrateur). */
+  advisor: string;
   name: string;
   phone: string;
   email: string;
@@ -39,6 +41,7 @@ export const dossierFromContact = (contact: any): Dossier | null => {
   if (!contact || !contact.etv_eval_id) return null;
   return {
     evalId: String(contact.etv_eval_id),
+    advisor: String(contact.etv_advisor || ''),
     name: contact.name || '',
     phone: contact.phone || '',
     email: contact.email || '',

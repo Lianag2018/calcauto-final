@@ -1012,6 +1012,11 @@ export default function ClientsScreen() {
               <View style={styles.dossierBox} data-testid="client-dossier">
                 <View>
                   <Text style={styles.dossierTag}>{lang === 'fr' ? 'Évaluation eTradeValue' : 'eTradeValue appraisal'}</Text>
+                  {!!client.dossier.advisor && user?.etv_role !== 'conseiller' && (
+                    <Text style={styles.dossierLine} data-testid="client-dossier-advisor">
+                      {lang === 'fr' ? 'Conseiller : ' : 'Advisor: '}{client.dossier.advisor}
+                    </Text>
+                  )}
                   {!!tradeLabel(client.dossier) && (
                     <Text style={styles.dossierLine}>
                       {lang === 'fr' ? 'Reprise : ' : 'Trade-in: '}{tradeLabel(client.dossier)}
