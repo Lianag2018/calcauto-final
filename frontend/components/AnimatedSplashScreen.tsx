@@ -7,7 +7,7 @@ interface AnimatedSplashScreenProps {
   onFinish: () => void;
 }
 
-// Ouverture : le cadran s'allume, l'aiguille monte, puis le nom apparaît.
+// Ouverture : le compte-tours s'allume, l'aiguille monte, puis le nom apparaît.
 export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ visible, onFinish }) => {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const nameAnim = useRef(new Animated.Value(0)).current;
@@ -30,7 +30,7 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ visi
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <GaugeMark size={150} motion="once" />
+      <GaugeMark size={230} motion="once" />
       <Animated.View style={[styles.nameBlock, nameStyle]}>
         <Text style={styles.name}>
           Calc<Text style={styles.nameGold}>Auto</Text>
