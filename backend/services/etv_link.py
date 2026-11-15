@@ -156,3 +156,19 @@ def admin_password_matches(password, expected) -> bool:
     if not password or not expected:
         return False
     return hmac.compare_digest(str(password).encode(), str(expected).encode())
+
+
+def browser_key_hash(key) -> str:
+    """Empreinte de la cle que le navigateur joint au billet (vide si absente ou trop courte)."""
+    key = str(key or "").strip()
+    if len(key) < 16:
+        return ""
+    return hashlib.sha256(key.encode()).hexdigest()
+
+
+def same_browser(stored_hash, key) -> bool:
+    """Le meme navigateur represente son billet (page rechargee pendant le reveil du serveur)."""
+    candidate = browser_key_hash(key)
+    if not stored_hash or not candidate:
+        return False
+    return hmac.compare_digest(str(stored_hash), candidate)

@@ -1,4 +1,5 @@
 """Connexion par eTradeValue et dossiers d'évaluation (client, reprise, véhicule convoité)."""
+import asyncio
 import os
 import uuid
 from datetime import datetime
@@ -10,14 +11,15 @@ from pydantic import BaseModel
 
 from database import db
 from dependencies import generate_token, get_current_user
-from services.etv_link import (LinkError, account_email, contact_from_dossier, dossiers_request,
-                               is_calcauto_admin, verify_ticket)
+from services.etv_link import (LinkError, account_email, browser_key_hash, contact_from_dossier,
+                               dossiers_request, is_calcauto_admin, same_browser, verify_ticket)
 
 router = APIRouter()
 
 
 class TicketLogin(BaseModel):
     ticket: str
+    client: str = ""
 
 
 def _etv_api_url() -> str:
@@ -36,14 +38,31 @@ async def etv_login(body: TicketLogin):
     except LinkError as err:
         raise _http_error(err) from None
 
-    # Un billet ne sert qu'une fois : son numéro est retenu jusqu'à son expiration.
-    if await db.etv_nonces.find_one({"nonce": identity["nonce"]}):
-        raise HTTPException(status_code=401, detail="Billet déjà utilisé. Rouvrez le calculateur à partir d'eTradeValue.")
-    await db.etv_nonces.insert_one({"nonce": identity["nonce"], "expires_at": datetime.utcfromtimestamp(identity["expires"])})
-    await db.etv_nonces.delete_many({"expires_at": {"$lt": datetime.utcnow()}})
-
     email = account_email(identity["username"], identity["dealer_slug"])
     admin = is_calcauto_admin(identity["role"], identity["dealer_slug"])
+    public_user = {"name": identity["name"], "email": email, "is_admin": admin,
+                   "dealer_slug": identity["dealer_slug"], "etv_username": identity["username"],
+                   "etv_role": identity["role"]}
+
+    # Un billet ne sert qu'une fois : son numéro est retenu jusqu'à son expiration.
+    # Seule exception : le même navigateur qui le représente (page rechargée pendant
+    # le réveil du serveur) retrouve la session déjà ouverte, sans en créer une autre.
+    used = await db.etv_nonces.find_one({"nonce": identity["nonce"]})
+    if used:
+        if not same_browser(used.get("client_hash"), body.client):
+            raise HTTPException(status_code=401, detail="Billet déjà utilisé. Rouvrez le calculateur à partir d'eTradeValue.")
+        for _ in range(20):
+            session = await db.tokens.find_one({"token": used.get("token")})
+            if session:
+                return {"success": True, "token": session["token"], "user": {"id": session["user_id"], **public_user}}
+            await asyncio.sleep(0.25)
+        raise HTTPException(status_code=401, detail="Billet déjà utilisé. Rouvrez le calculateur à partir d'eTradeValue.")
+    token = generate_token()
+    await db.etv_nonces.insert_one({"nonce": identity["nonce"], "token": token,
+                                    "client_hash": browser_key_hash(body.client),
+                                    "expires_at": datetime.utcfromtimestamp(identity["expires"])})
+    await db.etv_nonces.delete_many({"expires_at": {"$lt": datetime.utcnow()}})
+
     profile = {"name": identity["name"], "dealer_slug": identity["dealer_slug"],
                "etv_username": identity["username"], "etv_role": identity["role"],
                "is_admin": admin, "last_login": datetime.utcnow()}
@@ -59,12 +78,8 @@ async def etv_login(body: TicketLogin):
         await db.users.insert_one({"id": user_id, "email": email, "password_hash": "", "is_blocked": False,
                                    "created_at": datetime.utcnow(), **profile})
 
-    token = generate_token()
     await db.tokens.insert_one({"user_id": user_id, "token": token, "created_at": datetime.utcnow()})
-    return {"success": True, "token": token,
-            "user": {"id": user_id, "name": identity["name"], "email": email, "is_admin": admin,
-                     "dealer_slug": identity["dealer_slug"], "etv_username": identity["username"],
-                     "etv_role": identity["role"]}}
+    return {"success": True, "token": token, "user": {"id": user_id, **public_user}}
 
 
 async def _fetch_dossiers(user: dict) -> list:

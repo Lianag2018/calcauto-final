@@ -1256,3 +1256,22 @@ class TestAdminToolsAccess:
         assert admin_password_matches("valeur-inventee", "valeur-inventee") is True
         assert admin_password_matches("valeur-inventef", "valeur-inventee") is False
         assert admin_password_matches("Valeur-Inventee", "valeur-inventee") is False
+
+
+class TestEtvTicketReload:
+    """Billet représenté par le même navigateur (page rechargée pendant le réveil du serveur)."""
+
+    def test_same_browser_key_is_recognised(self):
+        from services.etv_link import browser_key_hash, same_browser
+        stored = browser_key_hash("cle-inventee-du-navigateur-0001")
+        assert stored and "cle-inventee" not in stored
+        assert same_browser(stored, "cle-inventee-du-navigateur-0001") is True
+
+    def test_other_browser_or_missing_key_is_refused(self):
+        from services.etv_link import browser_key_hash, same_browser
+        stored = browser_key_hash("cle-inventee-du-navigateur-0001")
+        assert same_browser(stored, "cle-inventee-du-navigateur-0002") is False
+        assert same_browser(stored, "") is False
+        assert same_browser("", "cle-inventee-du-navigateur-0001") is False
+        assert browser_key_hash("court") == ""
+        assert same_browser(browser_key_hash("court"), "court") is False
