@@ -172,3 +172,29 @@ def same_browser(stored_hash, key) -> bool:
     if not stored_hash or not candidate:
         return False
     return hmac.compare_digest(str(stored_hash), candidate)
+
+
+ETV_ACCOUNT_SUFFIX = ".etradevalue"
+DEMO_EMAIL = "demo@calcauto.ca"
+
+
+def is_etv_only_account(user) -> bool:
+    """Compte fabrique par l'entree eTradeValue (aucun mot de passe, aucun historique)."""
+    user = user or {}
+    return bool(user.get("etv_username")) and str(user.get("email") or "").endswith(ETV_ACCOUNT_SUFFIX)
+
+
+def link_refusal(target, link_key) -> str:
+    """Raison de refuser de relier ce compte CalcAuto a cette identite eTradeValue ('' si permis)."""
+    target = target or {}
+    email = str(target.get("email") or "").lower()
+    if not email or not link_key:
+        return "Compte introuvable."
+    if target.get("is_blocked"):
+        return "Ce compte est désactivé."
+    if email == DEMO_EMAIL or email.endswith(ETV_ACCOUNT_SUFFIX):
+        return "Ce compte ne peut pas être relié."
+    existing = target.get("etv_link_key")
+    if existing and existing != link_key:
+        return "Ce compte est déjà relié à un autre utilisateur d'eTradeValue."
+    return ""

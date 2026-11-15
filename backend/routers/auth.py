@@ -81,7 +81,9 @@ async def login_user(credentials: UserLogin):
             "id": user["id"],
             "name": user["name"],
             "email": user["email"],
-            "is_admin": is_admin
+            "is_admin": is_admin,
+            # Compte relié à eTradeValue : ses dossiers d'évaluation le suivent ici aussi.
+            **{key: user[key] for key in ("dealer_slug", "etv_username", "etv_role") if user.get(key)}
         },
         "token": token
     }

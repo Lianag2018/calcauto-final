@@ -257,7 +257,23 @@ type TabType = 'clients' | 'reminders' | 'offers' | 'history';
 
 export default function ClientsScreen() {
   const router = useRouter();
-  const { getToken, user } = useAuth();
+  const { getToken, user, linkEtvAccount } = useAuth();
+  // Compte provisoire créé par l'entrée eTradeValue : on propose de le relier au compte existant.
+  const canLinkAccount = !!user?.etv_username && !!user?.email?.endsWith('.etradevalue');
+  const [linkEmail, setLinkEmail] = useState('');
+  const [linkPassword, setLinkPassword] = useState('');
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [linkError, setLinkError] = useState('');
+  const submitLink = async () => {
+    if (!linkEmail || !linkPassword || linkBusy) return;
+    setLinkBusy(true);
+    setLinkError('');
+    const result = await linkEtvAccount(linkEmail, linkPassword);
+    setLinkBusy(false);
+    setLinkPassword('');
+    if (!result.success) { setLinkError(result.error || 'Le lien a échoué.'); return; }
+    await loadData();
+  };
   const [lang, setLang] = useState<Language>('fr');
   const crm = crmTranslations[lang];
   
@@ -1632,6 +1648,40 @@ export default function ClientsScreen() {
       </View>
 
       {/* Tab Content */}
+      {canLinkAccount && activeTab === 'clients' && (
+        <View style={styles.linkBox} data-testid="etv-link-account">
+          <Text style={styles.dossierTag}>{lang === 'fr' ? 'Vous avez déjà un compte CalcAuto ?' : 'Already have a CalcAuto account?'}</Text>
+          <Text style={styles.dossierLine}>
+            {lang === 'fr'
+              ? 'Reliez-le une seule fois : vos contacts et vos soumissions apparaîtront ici avec vos évaluations.'
+              : 'Link it once: your contacts and quotes will appear here with your appraisals.'}
+          </Text>
+          <TextInput
+            style={styles.linkInput}
+            placeholder={lang === 'fr' ? 'Courriel du compte CalcAuto' : 'CalcAuto account email'}
+            placeholderTextColor="#8a93a1"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={linkEmail}
+            onChangeText={setLinkEmail}
+            data-testid="etv-link-email"
+          />
+          <TextInput
+            style={styles.linkInput}
+            placeholder={lang === 'fr' ? 'Mot de passe CalcAuto' : 'CalcAuto password'}
+            placeholderTextColor="#8a93a1"
+            secureTextEntry
+            value={linkPassword}
+            onChangeText={setLinkPassword}
+            onSubmitEditing={submitLink}
+            data-testid="etv-link-password"
+          />
+          {!!linkError && <Text style={styles.linkError}>{linkError}</Text>}
+          <TouchableOpacity style={[styles.dossierBtn, linkBusy && { opacity: 0.6 }]} onPress={submitLink} disabled={linkBusy} data-testid="etv-link-submit">
+            <Text style={styles.dossierBtnText}>{linkBusy ? (lang === 'fr' ? 'Un instant…' : 'One moment…') : (lang === 'fr' ? 'Relier mon compte' : 'Link my account')}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       {activeTab === 'clients' && renderClientsTab()}
       {activeTab === 'reminders' && renderRemindersTab()}
       {activeTab === 'offers' && renderOffersTab()}
@@ -2223,6 +2273,15 @@ const styles = StyleSheet.create({
     borderRadius: 10, borderWidth: 1, borderColor: '#303744', backgroundColor: '#0d1118',
   },
   dossierTag: { color: '#e6c65a', fontSize: 11, fontWeight: '700', marginBottom: 2 },
+  linkBox: {
+    gap: 8, marginHorizontal: 16, marginBottom: 12, padding: 12,
+    borderRadius: 10, borderWidth: 1, borderColor: '#303744', backgroundColor: '#0d1118',
+  },
+  linkInput: {
+    backgroundColor: '#07090e', color: '#f4f1ea', borderRadius: 8, borderWidth: 1, borderColor: '#303744',
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14,
+  },
+  linkError: { color: '#f87171', fontSize: 13 },
   dossierLine: { color: '#b9c0cc', fontSize: 13, lineHeight: 18 },
   dossierBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#e6c65a',
