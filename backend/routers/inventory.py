@@ -8,7 +8,7 @@ from models import (
     InventoryVehicle, InventoryCreate, InventoryUpdate,
     VehicleOption, ProductCode
 )
-from dependencies import get_current_user, require_admin
+from dependencies import get_current_user, require_admin, ADMIN_EMAIL
 from services.window_sticker import fetch_window_sticker, save_window_sticker_to_db
 from routers.invoice import get_full_vehicle_info, _CODE_PROGRAM_MAPPING
 from product_code_lookup import codes_for_year, dated_identity, lookup_product_code
@@ -17,7 +17,7 @@ from services.model_code_suggest import (
     trim_from_title, suggest_codes, trims_of_program, known_trims, is_known_code)
 import httpx
 from services.shared_inventory import SHARED_OWNER, calc_price, drop_stale_shared
-from services.etv_link import inventory_owners, sees_shared_inventory
+from services.etv_link import can_edit_vehicle_identity, inventory_owners, sees_shared_inventory
 
 router = APIRouter()
 
@@ -431,6 +431,8 @@ async def update_inventory_vehicle(stock_no: str, update: InventoryUpdate, autho
     update_data = {k: v for k, v in update.dict().items() if v is not None}
     if "model_code" in update_data:
         update_data["model_code"] = update_data["model_code"].upper().strip()
+    if any(update_data.get(field) for field in SHARED_EDITABLE) and not can_edit_vehicle_identity(user, ADMIN_EMAIL):
+        raise HTTPException(status_code=403, detail="Seul un administrateur ou un directeur peut modifier le code de modèle, la version, la carrosserie ou la couleur")
     if update_data.get("trim"):
         # Version choisie à la main : la banque de codes ne la remplacera pas
         update_data["trim_manual"] = True

@@ -122,6 +122,14 @@ def is_calcauto_admin(role: str, dealer_slug: str) -> bool:
     return role == "admin" and dealer_slug in allowed
 
 
+def can_edit_vehicle_identity(user: Dict[str, Any], admin_email: str = "") -> bool:
+    """Le code de modèle et la version décident des taux : seuls un administrateur
+    ou un directeur les corrigent."""
+    if user.get("is_admin") or (admin_email and user.get("email") == admin_email):
+        return True
+    return str(user.get("etv_role") or "").strip().lower() in ("admin", "directeur")
+
+
 def sees_shared_inventory(user: Dict[str, Any]) -> bool:
     """Un compte sans concession (ancien compte, Démo) garde l'inventaire partagé ;
     un compte d'une autre concession ne voit jamais l'inventaire de Kennebec."""
