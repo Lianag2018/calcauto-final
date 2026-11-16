@@ -113,3 +113,6 @@ def test_la_banque_ecarte_une_version_enregistree_impossible():
     # Sans fiche datée : rien ne change
     assert dated_identity('KMJM74', 2024, [], 'Limited') is None
     assert dated_identity('', 2026, [], 'x') is None
+    # Une version choisie à la main n'est jamais remplacée, même par un forfait
+    assert dated_identity('KMJM74', 2027, ['23F'], 'Limited', manual=True)['trim'] == 'Limited'
+    assert dated_identity('DT6L98', 2026, [], 'Warlock', manual=True)['trim'] == 'Warlock'

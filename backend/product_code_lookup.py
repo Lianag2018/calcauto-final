@@ -169,11 +169,13 @@ def _year_entry(code: str, year: Any, packages: Optional[Iterable[str]]) -> Opti
     return entry
 
 
-def dated_identity(code: str, year: Any, packages: Optional[Iterable[str]], stored_trim: str = "") -> Optional[Dict[str, str]]:
+def dated_identity(code: str, year: Any, packages: Optional[Iterable[str]], stored_trim: str = "",
+                   manual: bool = False) -> Optional[Dict[str, str]]:
     """Marque, modèle et version sûrs pour ce code cette année-là, ou None sans fiche datée.
 
     La version enregistrée sur le véhicule est gardée quand ce code peut l'être ;
     elle cède quand un forfait tranche, ou quand ce code ne peut pas être cette version.
+    `manual` : version choisie à la main par l'utilisateur ; elle n'est jamais remplacée.
     """
     code = (code or "").upper().strip()
     found = (_year_codes().get(str(year or "").strip()) or {}).get(code)
@@ -184,7 +186,9 @@ def dated_identity(code: str, year: Any, packages: Optional[Iterable[str]], stor
     decided = [trim for cpos, trim in by_package.items() if cpos in wanted]
     possible = [t.lower() for t in [found.get("trim") or "", *by_package.values()] if t]
     stored = (stored_trim or "").strip()
-    if len(decided) == 1:
+    if manual and stored:
+        trim = stored
+    elif len(decided) == 1:
         trim = decided[0]
     elif stored and (not possible or any(t in stored.lower() for t in possible)):
         trim = stored
