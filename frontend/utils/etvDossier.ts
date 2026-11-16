@@ -197,8 +197,36 @@ export interface UsedQuote {
   tradeValue?: number;
   advisorName?: string;
   listingUrl?: string;
+  stickerUrl?: string;
   lang?: 'fr' | 'en';
 }
+
+// Window Sticker du fabricant (marques Stellantis seulement, NIV complet).
+const STICKER_SITES: Record<string, string> = {
+  chrysler: 'www.chrysler.com',
+  jeep: 'www.jeep.com',
+  dodge: 'www.dodge.com',
+  ram: 'www.ramtrucks.com',
+  fiat: 'www.fiatusa.com',
+  alfa: 'www.alfaromeousa.com',
+};
+
+export const windowStickerUrl = (brand: string | undefined, vin: string | undefined): string => {
+  const cleanVin = (vin || '').trim().toUpperCase();
+  if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(cleanVin)) return '';
+  const name = (brand || '').toLowerCase();
+  const key = Object.keys(STICKER_SITES).find((k) => name.includes(k));
+  return key ? `https://${STICKER_SITES[key]}/hostd/windowsticker/getWindowStickerPdf.do?vin=${cleanVin}` : '';
+};
+
+// Liens à la fin d'un texto : le Window Sticker d'abord, la fiche du site en
+// toute dernière ligne (c'est elle qui donne l'aperçu avec la photo dans Messages).
+export const smsLinks = (stickerUrl: string, listingUrl: string, lang: 'fr' | 'en' = 'fr'): string => {
+  const parts: string[] = [];
+  if (stickerUrl) parts.push(`Window Sticker :\n${stickerUrl}`);
+  if (listingUrl) parts.push(`${lang === 'en' ? 'Photos and details' : 'Photos et détails'} :\n${listingUrl}`);
+  return parts.join('\n\n');
+};
 
 // Texto d'un calcul de véhicule d'occasion. Le lien de la fiche va en dernière
 // ligne : c'est ce qui fait apparaître l'aperçu avec la photo dans Messages.
@@ -218,7 +246,7 @@ export const usedQuoteSms = (q: UsedQuote): string => {
     '',
     fr ? "Montants à titre indicatif, sous réserve de l'approbation du crédit." : 'Amounts for information only, subject to credit approval.',
     q.advisorName ? `— ${q.advisorName}` : '',
-    q.listingUrl ? `\n${fr ? 'Photos et détails' : 'Photos and details'} :\n${q.listingUrl}` : '',
+    q.stickerUrl || q.listingUrl ? `\n${smsLinks(q.stickerUrl || '', q.listingUrl || '', fr ? 'fr' : 'en')}` : '',
   ];
   return lines.filter((line, i) => line !== '' || (i > 0 && lines[i - 1] !== '')).join('\n').trim();
 };
