@@ -78,3 +78,6 @@ def test_2026_packages_name_the_version():
     assert lookup_product_code('JTJL98', 2027)['trim'] == 'Sport'
     assert lookup_product_code('WLJH75', 2026, ['2C3'])['full_description'] == 'Jeep Grand Cherokee L Summit 4x4'
     assert lookup_product_code('WLJH74', 2026, ['2B5'])['trim'] == 'Altitude'
+    assert lookup_product_code('WSJM75', 2026)['model'] == 'Grand Wagoneer'
+    assert lookup_product_code('WSJR75', 2026, ['29Z'])['trim'] == 'Summit Obsidian'
+    assert lookup_product_code('WSJH75', 2026)['trim'] == 'Limited'

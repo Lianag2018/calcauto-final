@@ -6,7 +6,10 @@
     "JTJH98": {"brand": "Jeep", "model": "Gladiator", "trim": "Mojave", "drive": "4x4", "packages": {"24D": "Mojave", "24A": "Mojave X"}},
     "JTJS98": {"brand": "Jeep", "model": "Gladiator", "trim": "Rubicon", "drive": "4x4", "packages": {"24R": "Rubicon", "24Y": "Rubicon X"}},
     "WLJH74": {"brand": "Jeep", "model": "Grand Cherokee", "trim": "", "drive": "4x4", "packages": {"22L": "Laredo", "22P": "Laredo X", "2B5": "Altitude", "2C6": "Limited", "2C7": "85th Anniversary", "2C1": "Limited Reserve", "2C3": "Summit"}},
-    "WLJH75": {"brand": "Jeep", "model": "Grand Cherokee L", "trim": "", "drive": "4x4", "packages": {"22L": "Laredo", "22P": "Laredo X", "2B5": "Altitude", "2C6": "Limited", "2C7": "85th Anniversary", "2C1": "Limited Reserve", "2C3": "Summit"}}
+    "WLJH75": {"brand": "Jeep", "model": "Grand Cherokee L", "trim": "", "drive": "4x4", "packages": {"22L": "Laredo", "22P": "Laredo X", "2B5": "Altitude", "2C6": "Limited", "2C7": "85th Anniversary", "2C1": "Limited Reserve", "2C3": "Summit"}},
+    "WSJM75": {"brand": "Jeep", "model": "Grand Wagoneer", "trim": "", "drive": "4x4", "packages": {"29V": "Upland", "29G": "85th Anniversary"}},
+    "WSJH75": {"brand": "Jeep", "model": "Grand Wagoneer", "trim": "Limited", "drive": "4x4", "packages": {"29X": "Limited Altitude", "29D": "Limited Reserve"}},
+    "WSJR75": {"brand": "Jeep", "model": "Grand Wagoneer", "trim": "Summit", "drive": "4x4", "packages": {"29Z": "Summit Obsidian", "29K": "Summit Reserve"}}
   },
   "2027": {
     "KMJM74": {"brand": "Jeep", "model": "Cherokee", "trim": "Laredo", "drive": "4x4", "packages": {"23F": "Laredo"}},
