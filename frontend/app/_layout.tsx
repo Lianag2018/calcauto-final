@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import LoginScreen from './login';
-import { GaugeMark } from '../components/GaugeMark';
+import { OpeningMark } from '../components/AnimatedSplashScreen';
 
 function RootLayoutNav() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -25,12 +25,7 @@ function RootLayoutNav() {
   if (!isClient || isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <GaugeMark size={180} motion="loop" />
-        {slowStart && (
-          <Text style={styles.loadingText}>
-            Le serveur se réveille…{'\n'}Ça peut prendre jusqu'à une minute. Ne fermez pas la page.
-          </Text>
-        )}
+        <OpeningMark motion="loop" note={slowStart ? "Le serveur se réveille…\nÇa peut prendre jusqu'à une minute. Ne fermez pas la page." : undefined} />
       </View>
     );
   }
