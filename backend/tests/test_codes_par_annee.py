@@ -87,3 +87,6 @@ def test_2026_packages_name_the_version():
     assert lookup_product_code('JLJS72', 2026, ['23Y'])['trim'] == 'Rubicon X'
     assert lookup_product_code('DT6H41', 2026)['trim'] == 'Big Horn'
     assert lookup_product_code('VF3L19', 2026)['model'] == 'ProMaster 3500'
+    assert lookup_product_code('DJ7L91', 2026, ['24B'])['trim'] == 'Warlock'
+    assert lookup_product_code('D28M81', 2026)['cab'] == 'Mega Cab'
+    assert lookup_product_code('DP0L94', 2026)['model'] == '5500 Chassis Cab'
