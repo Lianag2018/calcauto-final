@@ -59,3 +59,12 @@ def test_ram_1500_and_grand_wagoneer_2027():
     assert lookup_product_code('DT6S98', 2027, ['22Y'])['full_description'] == 'Ram 1500 RHO Crew Cab 4x4'
     assert lookup_product_code('WDEH75', 2027, ['2BH'])['full_description'] == 'Dodge Durango GT Plus AWD'
     assert lookup_product_code('WDEX75', 2027)['trim'] == 'R/T 392'
+
+
+def test_charger_chrysler_and_fiat_2027():
+    plus = lookup_product_code('LBEP49', 2027, ['22B'])
+    assert (plus['trim'], plus['body_style']) == ('Scat Pack Plus', '4-Door')
+    assert lookup_product_code('LBEL29', 2027)['trim'] == 'R/T'
+    assert lookup_product_code('RUFH53', 2027)['full_description'] == 'Chrysler Pacifica Select AWD'
+    assert lookup_product_code('RUCL53', 2027)['model'] == 'Grand Caravan'
+    assert lookup_product_code('FGEP24', 2027, ['21R'])['full_description'] == 'Fiat 500e Icona'

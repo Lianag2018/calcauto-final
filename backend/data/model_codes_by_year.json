@@ -39,6 +39,16 @@
     "WDEH75": {"brand": "Dodge", "model": "Durango", "trim": "", "drive": "AWD", "packages": {"2BK": "SXT", "2BD": "GT", "2BH": "GT Plus"}},
     "WDES75": {"brand": "Dodge", "model": "Durango", "trim": "GT Hemi", "drive": "AWD", "packages": {"22T": "GT Hemi Plus", "22U": "GT Hemi Premium"}},
     "WDEX75": {"brand": "Dodge", "model": "Durango", "trim": "R/T 392", "drive": "AWD", "packages": {"29C": "R/T 392 Plus", "29N": "R/T 392 Premium"}},
-    "WDEM75": {"brand": "Dodge", "model": "Durango", "trim": "SRT Hellcat", "drive": "AWD", "packages": {"2XM": "SRT Hellcat Jailbreak"}}
+    "WDEM75": {"brand": "Dodge", "model": "Durango", "trim": "SRT Hellcat", "drive": "AWD", "packages": {"2XM": "SRT Hellcat Jailbreak"}},
+    "LBEL29": {"brand": "Dodge", "model": "Charger", "trim": "R/T", "body_style": "2-Door", "drive": "AWD", "packages": {"21L": "R/T", "21A": "R/T Plus"}},
+    "LBEL49": {"brand": "Dodge", "model": "Charger", "trim": "R/T", "body_style": "4-Door", "drive": "AWD", "packages": {"21L": "R/T", "21A": "R/T Plus"}},
+    "LBEP29": {"brand": "Dodge", "model": "Charger", "trim": "Scat Pack", "body_style": "2-Door", "drive": "AWD", "packages": {"22P": "Scat Pack", "22B": "Scat Pack Plus"}},
+    "LBEP49": {"brand": "Dodge", "model": "Charger", "trim": "Scat Pack", "body_style": "4-Door", "drive": "AWD", "packages": {"22P": "Scat Pack", "22B": "Scat Pack Plus"}},
+    "RUCL53": {"brand": "Chrysler", "model": "Grand Caravan", "trim": "SXT", "drive": "FWD", "packages": {"27E": "SXT"}},
+    "RUCH53": {"brand": "Chrysler", "model": "Pacifica", "trim": "Select", "drive": "FWD", "packages": {"27L": "Select"}},
+    "RUFH53": {"brand": "Chrysler", "model": "Pacifica", "trim": "Select", "drive": "AWD", "packages": {"27L": "Select"}},
+    "RUFT53": {"brand": "Chrysler", "model": "Pacifica", "trim": "Limited", "drive": "AWD"},
+    "RUFS53": {"brand": "Chrysler", "model": "Pacifica", "trim": "Pinnacle", "drive": "AWD", "packages": {"27S": "Pinnacle"}},
+    "FGEP24": {"brand": "Fiat", "model": "500e", "trim": "", "body_style": "Coupe", "drive": "", "packages": {"21Q": "Pop", "21R": "Icona"}}
   }
 }
