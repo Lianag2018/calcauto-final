@@ -33,7 +33,8 @@ const TACH_CX = 80;
 const TACH_CY = 82;
 const TACH_MAX = 7;
 const TACH_REDLINE = 6;
-const TACH_TARGET = 5.5; // où l'aiguille s'arrête : juste avant la zone rouge
+const TACH_IDLE = 1.7; // ralenti : où l'aiguille se pose après le démarrage
+const TACH_REV = 5.5; // pendant l'attente du serveur, le moteur monte jusqu'ici
 const TACH_DEG_PER_UNIT = TRACK_SWEEP / TACH_MAX;
 const TACH_MIN_SIZE = 60; // en dessous, on garde le petit cadran simple
 const BLUE = '#3d8bff';
@@ -50,7 +51,10 @@ const pointAt = (deg: number) => {
 };
 
 export const GaugeMark: React.FC<Props> = ({ size = 150, motion = 'once', duration = 1400 }) => {
-  const progress = useRef(new Animated.Value(motion === 'none' ? 1 : 0)).current;
+  const isTach = size >= TACH_MIN_SIZE;
+  // Compte-tours : progress = régime / 7. Petit cadran : progress = portion dorée.
+  const rest = isTach ? TACH_IDLE / TACH_MAX : 1;
+  const progress = useRef(new Animated.Value(motion === 'none' ? rest : 0)).current;
   const unit = size / GRID;
 
   const trackDots = useMemo(() => {
@@ -73,7 +77,31 @@ export const GaugeMark: React.FC<Props> = ({ size = 150, motion = 'once', durati
     const start = (reduced: boolean) => {
       if (stopped) return;
       if (reduced) {
-        progress.setValue(1);
+        progress.setValue(rest);
+        return;
+      }
+      if (isTach) {
+        const to = (rpm: number, ms: number, easing: (t: number) => number) =>
+          Animated.timing(progress, { toValue: rpm / TACH_MAX, duration: ms, easing, useNativeDriver: true });
+        running =
+          motion === 'loop'
+            ? // Attente : le moteur monte et redescend, comme un coup d'accélérateur.
+              Animated.loop(
+                Animated.sequence([
+                  to(TACH_REV, 900, Easing.out(Easing.cubic)),
+                  Animated.delay(150),
+                  to(1.2, 850, Easing.inOut(Easing.quad)),
+                  Animated.delay(250),
+                ])
+              )
+            : // Démarrage : l'aiguille balaie tout le cadran, revient, puis se pose au ralenti.
+              Animated.sequence([
+                to(TACH_MAX, 700, Easing.out(Easing.cubic)),
+                Animated.delay(120),
+                to(1, 750, Easing.inOut(Easing.quad)),
+                to(TACH_IDLE, 450, Easing.out(Easing.quad)),
+              ]);
+        running.start();
         return;
       }
       const sweep = Animated.timing(progress, {
@@ -104,7 +132,7 @@ export const GaugeMark: React.FC<Props> = ({ size = 150, motion = 'once', durati
       stopped = true;
       running?.stop();
     };
-  }, [motion, duration, progress]);
+  }, [motion, duration, progress, isTach, rest]);
 
   const needleRotation = progress.interpolate({
     inputRange: [0, 1],
@@ -113,7 +141,7 @@ export const GaugeMark: React.FC<Props> = ({ size = 150, motion = 'once', durati
 
   const tachArc = useMemo(() => {
     const dots = [];
-    for (let v = 0; v <= TACH_TARGET + 0.001; v += 0.07) dots.push({ ...tachPoint(v, 66), at: v / TACH_TARGET });
+    for (let v = 0; v <= TACH_REDLINE + 0.001; v += 0.05) dots.push({ ...tachPoint(v, 66), at: v / TACH_MAX });
     return dots;
   }, []);
 
@@ -123,7 +151,7 @@ export const GaugeMark: React.FC<Props> = ({ size = 150, motion = 'once', durati
     return dots;
   }, []);
 
-  if (size >= TACH_MIN_SIZE) {
+  if (isTach) {
     const numbers = size >= 100;
     const ring = (radius: number, opacity: number) => ({
       position: 'absolute' as const,
@@ -144,10 +172,10 @@ export const GaugeMark: React.FC<Props> = ({ size = 150, motion = 'once', durati
       borderRadius: (width / 2) * unit,
       backgroundColor: color,
     });
-    const reach = 70 * unit; // l'aiguille va jusqu'à l'anneau extérieur
+    const reach = 71 * unit; // l'aiguille part de l'anneau extérieur
     const tachRotation = progress.interpolate({
       inputRange: [0, 1],
-      outputRange: [`${START_DEG + 90 - 360}deg`, `${START_DEG + 90 - 360 + TACH_TARGET * TACH_DEG_PER_UNIT}deg`],
+      outputRange: [`${START_DEG + 90 - 360}deg`, `${START_DEG + 90 - 360 + TACH_MAX * TACH_DEG_PER_UNIT}deg`],
     });
     return (
       <View style={{ width: size, height: size }} accessible={false} importantForAccessibility="no-hide-descendants">
@@ -160,7 +188,7 @@ export const GaugeMark: React.FC<Props> = ({ size = 150, motion = 'once', durati
           <Animated.View
             key={`b${i}`}
             style={[
-              bead(p.x, p.y, 6, BLUE),
+              bead(p.x, p.y, 8.4, BLUE),
               {
                 opacity: progress.interpolate({
                   inputRange: [Math.max(0, p.at - 0.02), Math.max(0.001, p.at)],
@@ -174,7 +202,7 @@ export const GaugeMark: React.FC<Props> = ({ size = 150, motion = 'once', durati
         {Array.from({ length: TACH_MAX + 1 }, (_, value) => {
           const red = value >= TACH_REDLINE;
           const tick = tachPoint(value, 55.5);
-          const label = tachPoint(value, 43);
+          const label = tachPoint(value, 42.5);
           return (
             <React.Fragment key={`n${value}`}>
               <View
@@ -193,13 +221,13 @@ export const GaugeMark: React.FC<Props> = ({ size = 150, motion = 'once', durati
                   style={{
                     position: 'absolute',
                     left: (label.x - 12) * unit,
-                    top: (label.y - 9) * unit,
+                    top: (label.y - 10) * unit,
                     width: 24 * unit,
-                    height: 18 * unit,
-                    lineHeight: 18 * unit,
+                    height: 20 * unit,
+                    lineHeight: 20 * unit,
                     textAlign: 'center',
-                    fontSize: 14 * unit,
-                    fontWeight: '700',
+                    fontSize: 16.5 * unit,
+                    fontWeight: '600',
                     color: red ? RED : CREAM,
                   }}
                 >
@@ -227,7 +255,18 @@ export const GaugeMark: React.FC<Props> = ({ size = 150, motion = 'once', durati
             transform: [{ rotate: tachRotation }],
           }}
         >
-          <View style={{ width: Math.max(2, 2.6 * unit), height: 30 * unit, borderRadius: 1.3 * unit, backgroundColor: '#ffffff' }} />
+          <View
+            style={{
+              width: Math.max(2, 2.4 * unit),
+              height: 46 * unit,
+              borderRadius: 1.2 * unit,
+              backgroundColor: '#ffffff',
+              shadowColor: '#ffffff',
+              shadowOpacity: 0.55,
+              shadowRadius: 3 * unit,
+              shadowOffset: { width: 0, height: 0 },
+            }}
+          />
         </Animated.View>
       </View>
     );
