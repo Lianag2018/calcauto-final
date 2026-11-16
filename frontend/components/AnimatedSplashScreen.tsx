@@ -1,45 +1,55 @@
-import React, { useEffect, useRef } from 'react';
-import { Text, StyleSheet, Animated, useWindowDimensions } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Animated, useWindowDimensions } from 'react-native';
 import { GaugeMark } from './GaugeMark';
 
-interface AnimatedSplashScreenProps {
-  visible: boolean;
-  onFinish: () => void;
-}
-
-// Ouverture : le compte-tours s'allume, l'aiguille monte, puis le nom apparaît.
-export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ visible, onFinish }) => {
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const nameAnim = useRef(new Animated.Value(0)).current;
+// Un seul écran d'ouverture, du premier instant jusqu'au calculateur prêt : le même
+// compte-tours, à la même taille et à la même place, avec le nom dessous.
+export const OpeningMark: React.FC<{ motion?: 'once' | 'loop'; note?: string }> = ({ motion = 'loop', note }) => {
   const { width, height } = useWindowDimensions();
   // Le cadran remplit presque la largeur du téléphone, sans devenir géant sur un grand écran.
   const gaugeSize = Math.round(Math.max(200, Math.min(width * 0.86, height * 0.5, 380)));
-
-  useEffect(() => {
-    if (!visible) return;
-    Animated.timing(nameAnim, { toValue: 1, duration: 450, delay: 900, useNativeDriver: true }).start();
-    const timer = setTimeout(() => {
-      Animated.timing(fadeAnim, { toValue: 0, duration: 400, useNativeDriver: true }).start(() => onFinish());
-    }, 2700);
-    return () => clearTimeout(timer);
-  }, [visible]);
-
-  if (!visible) return null;
-
-  const nameStyle = {
-    opacity: nameAnim,
-    transform: [{ translateY: nameAnim.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
-  };
-
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <GaugeMark size={gaugeSize} motion="once" />
-      <Animated.View style={[styles.nameBlock, nameStyle]}>
+    <View style={styles.mark}>
+      <GaugeMark size={gaugeSize} motion={motion} />
+      <View style={styles.nameBlock}>
         <Text style={styles.name}>
           Calc<Text style={styles.nameGold}>Auto</Text>
         </Text>
         <Text style={styles.by}>par eTradeValue</Text>
-      </Animated.View>
+      </View>
+      {/* La place de la note est toujours réservée : le cadran ne bouge pas quand elle apparaît. */}
+      <Text style={styles.note}>{note || ' '}</Text>
+    </View>
+  );
+};
+
+interface AnimatedSplashScreenProps {
+  visible: boolean;
+  onFinish: () => void;
+  // Tant que « hold » est vrai (programmes en chargement), l'écran reste affiché.
+  hold?: boolean;
+}
+
+export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({ visible, onFinish, hold = false }) => {
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const [minimumShown, setMinimumShown] = useState(false);
+
+  useEffect(() => {
+    if (!visible) return;
+    const timer = setTimeout(() => setMinimumShown(true), 1200);
+    return () => clearTimeout(timer);
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible || !minimumShown || hold) return;
+    Animated.timing(fadeAnim, { toValue: 0, duration: 350, useNativeDriver: true }).start(() => onFinish());
+  }, [visible, minimumShown, hold]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+      <OpeningMark motion="loop" />
     </Animated.View>
   );
 };
@@ -51,6 +61,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 9999,
+  },
+  mark: {
+    alignItems: 'center',
   },
   nameBlock: {
     alignItems: 'center',
@@ -69,5 +82,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 13,
     color: '#b9c0cc',
+  },
+  note: {
+    color: '#b9c0cc',
+    fontSize: 14,
+    lineHeight: 20,
+    minHeight: 40,
+    textAlign: 'center',
+    marginTop: 18,
+    paddingHorizontal: 32,
   },
 });

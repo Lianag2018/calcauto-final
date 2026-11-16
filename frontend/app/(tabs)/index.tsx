@@ -44,7 +44,6 @@ import {
 } from '../../utils/leaseCalculator';
 import type { FinancingRates, VehicleProgram, PaymentComparison, CalculationResult, LocalResult, ProgramPeriod, PaymentFrequency } from '../../types/calculator';
 // Extracted components and styles
-import { LoadingBorderAnimation } from '../../components/LoadingBorderAnimation';
 import { EventBanner } from '../../components/EventBanner';
 import { styles, loadingStyles } from './styles/homeStyles';
 
@@ -2136,11 +2135,9 @@ export default function HomeScreen() {
       {/* Animated Splash Screen */}
       <AnimatedSplashScreen 
         visible={showSplash} 
+        hold={programsLoading}
         onFinish={() => setShowSplash(false)} 
       />
-      
-      {/* Loading Animation */}
-      <LoadingBorderAnimation loading={programsLoading && !showSplash} />
       
       <KeyboardAvoidingView
         style={styles.flex}
