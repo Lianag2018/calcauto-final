@@ -14,6 +14,8 @@ from services.window_sticker import (
     generate_lease_email_html, generate_window_sticker_html
 )
 
+from services.etv_link import mail_sender
+
 router = APIRouter()
 
 
@@ -121,12 +123,18 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
     try:
         # Récupérer l'email de l'utilisateur connecté pour le CC
         user_email = None
+        sender_name = None
         if authorization:
             try:
                 user = await get_current_user(authorization)
                 if user:
                     user_email = user.get("email")
-                    logger.info(f"Email CC sera envoyé à: {user_email}")
+                    # Arrivé par eTradeValue : le courriel part au nom du conseiller, et la
+                    # copie va à son vrai courriel (jamais à l'adresse fictive du compte).
+                    sender = mail_sender(user)
+                    if sender:
+                        sender_name = sender["name"]
+                        user_email = sender["copy"] or None
             except:
                 pass
         
@@ -439,7 +447,8 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
                 attachment_data=window_sticker_pdf,
                 attachment_name=f"WindowSticker_{vin}.pdf",
                 inline_images=inline_images,
-                cc_email=user_email  # CC à l'utilisateur connecté
+                cc_email=user_email,  # CC à l'utilisateur connecté
+                sender_name=sender_name
             )
             return {"success": True, "message": f"Email envoyé à {request.client_email}" + (f" (CC: {user_email})" if user_email else "")}
         else:
@@ -448,7 +457,8 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
                 subject, 
                 html_body, 
                 inline_images=inline_images if inline_images else None,
-                cc_email=user_email  # CC à l'utilisateur connecté
+                cc_email=user_email,  # CC à l'utilisateur connecté
+                sender_name=sender_name
             )
             return {"success": True, "message": f"Email envoyé à {request.client_email}" + (f" (CC: {user_email})" if user_email else "")}
         
