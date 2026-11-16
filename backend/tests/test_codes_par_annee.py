@@ -57,3 +57,5 @@ def test_ram_1500_and_grand_wagoneer_2027():
     assert lookup_product_code('DT6M98', 2027)['trim'] == 'Limited/Longhorn'
     assert lookup_product_code('DT6L41', 2027)['cab'] == 'Quad Cab'
     assert lookup_product_code('DT6S98', 2027, ['22Y'])['full_description'] == 'Ram 1500 RHO Crew Cab 4x4'
+    assert lookup_product_code('WDEH75', 2027, ['2BH'])['full_description'] == 'Dodge Durango GT Plus AWD'
+    assert lookup_product_code('WDEX75', 2027)['trim'] == 'R/T 392'

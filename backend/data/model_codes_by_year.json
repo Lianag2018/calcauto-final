@@ -35,6 +35,10 @@
     "DT6S98": {"brand": "Ram", "model": "1500", "trim": "RHO", "cab": "Crew Cab", "box": "5'7\"", "drive": "4x4", "packages": {"22Y": "RHO"}},
     "DT6R98": {"brand": "Ram", "model": "1500", "trim": "Tungsten", "cab": "Crew Cab", "box": "5'7\"", "drive": "4x4", "packages": {"22V": "Tungsten"}},
     "DT6S48": {"brand": "Ram", "model": "1500", "trim": "Sport Truck", "cab": "Quad Cab", "box": "5'7\"", "drive": "4x4"},
-    "DT6L41": {"brand": "Ram", "model": "1500", "trim": "Tradesman", "cab": "Quad Cab", "box": "6'4\"", "drive": "4x4"}
+    "DT6L41": {"brand": "Ram", "model": "1500", "trim": "Tradesman", "cab": "Quad Cab", "box": "6'4\"", "drive": "4x4"},
+    "WDEH75": {"brand": "Dodge", "model": "Durango", "trim": "", "drive": "AWD", "packages": {"2BK": "SXT", "2BD": "GT", "2BH": "GT Plus"}},
+    "WDES75": {"brand": "Dodge", "model": "Durango", "trim": "GT Hemi", "drive": "AWD", "packages": {"22T": "GT Hemi Plus", "22U": "GT Hemi Premium"}},
+    "WDEX75": {"brand": "Dodge", "model": "Durango", "trim": "R/T 392", "drive": "AWD", "packages": {"29C": "R/T 392 Plus", "29N": "R/T 392 Premium"}},
+    "WDEM75": {"brand": "Dodge", "model": "Durango", "trim": "SRT Hellcat", "drive": "AWD", "packages": {"2XM": "SRT Hellcat Jailbreak"}}
   }
 }
