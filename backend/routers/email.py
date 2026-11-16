@@ -15,6 +15,7 @@ from services.window_sticker import (
 )
 
 from services.etv_link import mail_sender
+from services.submission_sheet import submission_pdf, listing_link_html
 
 router = APIRouter()
 
@@ -413,6 +414,8 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
                     
                     {generate_lease_email_html(request.lease_data, freq, freq_label, fmt, fmt2)}
                     
+                    {listing_link_html(request.listing_url)}
+
                     <!-- WINDOW STICKER SECTION WITH IMAGES -->
                     {generate_window_sticker_html(vin, window_sticker_images, window_sticker_url, window_sticker_pdf)}
                 </div>
@@ -443,6 +446,8 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
                 'filename': f'WindowSticker_{vin}.jpg'
             })
         
+        sheet = submission_pdf(request.submission_pdf_base64)
+        extra = [(sheet, "Soumission.pdf")] if sheet else None
         if window_sticker_pdf:
             send_email(
                 request.client_email, 
@@ -452,7 +457,8 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
                 attachment_name=f"WindowSticker_{vin}.pdf",
                 inline_images=inline_images,
                 cc_email=user_email,  # CC à l'utilisateur connecté
-                sender_name=sender_name
+                sender_name=sender_name,
+                extra_attachments=extra
             )
             return {"success": True, "message": f"Email envoyé à {request.client_email}" + (f" (CC: {user_email})" if user_email else "")}
         else:
@@ -462,7 +468,8 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
                 html_body, 
                 inline_images=inline_images if inline_images else None,
                 cc_email=user_email,  # CC à l'utilisateur connecté
-                sender_name=sender_name
+                sender_name=sender_name,
+                extra_attachments=extra
             )
             return {"success": True, "message": f"Email envoyé à {request.client_email}" + (f" (CC: {user_email})" if user_email else "")}
         

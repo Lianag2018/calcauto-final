@@ -50,6 +50,7 @@ import { styles, loadingStyles } from './styles/homeStyles';
 
 import { API_URL } from '../../utils/api';
 import { ETV_LOGO, fetchDealerBranding, DealerBranding } from '../../utils/printBranding';
+import { jpegToLetterPdf, blobToBase64 } from '../../utils/simplePdf';
 
 const SUBMISSIONS_KEY = 'calcauto_submissions';
 
@@ -1230,7 +1231,11 @@ export default function HomeScreen() {
     const stock = selectedInventory?.stock_no;
     if (!stock) return '';
     const token = await getToken();
-    return token ? fetchListingUrl({ Authorization: `Bearer ${token}` }, String(stock)) : '';
+    const fromEtv = token ? await fetchListingUrl({ Authorization: `Bearer ${token}` }, String(stock)) : '';
+    if (fromEtv) return fromEtv;
+    // Sans réponse d'eTradeValue : l'adresse de la fiche déjà notée dans l'inventaire
+    const known = String((selectedInventory as any)?.source_url || '');
+    return /^https:\/\//i.test(known) ? known : '';
   };
 
   // Handle Share via SMS - Open preview modal
@@ -1474,7 +1479,11 @@ export default function HomeScreen() {
       const blob: Blob = await new Promise((resolve) => canvas.toBlob((b: any) => resolve(b), 'image/png'));
       const file = new File([blob], `soumission_${vehicle.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
       
-      const filesToShare: File[] = [file];
+      // La feuille d'une page en PDF prend la place de l'image quand le téléphone l'accepte
+      const pdfBlob = await buildSubmissionPdf();
+      const pdfFile = pdfBlob ? new File([pdfBlob], `Soumission_${vehicle.replace(/\s+/g, '_')}.pdf`, { type: 'application/pdf' }) : null;
+      const pdfShareable = !!pdfFile && !!navigator.canShare && navigator.canShare({ files: [pdfFile] });
+      const filesToShare: File[] = pdfShareable && pdfFile ? [pdfFile] : [file];
       
       // Build text message with sticker link
       let shareText = `${vehicle} - ${fmt(price)} $\n`;
@@ -1505,18 +1514,18 @@ export default function HomeScreen() {
         recordSmsFollowup();
       } else {
         // Fallback: download image + copy text
-        const url = URL.createObjectURL(blob);
+        const url = URL.createObjectURL(pdfBlob || blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = file.name;
+        a.download = pdfFile ? pdfFile.name : file.name;
         a.click();
         URL.revokeObjectURL(url);
         
         try {
           await navigator.clipboard.writeText(shareText);
-          alert(lang === 'fr' ? 'Image téléchargée et texte copié!' : 'Image downloaded and text copied!');
+          alert(lang === 'fr' ? 'Soumission téléchargée et texte copié!' : 'Submission downloaded and text copied!');
         } catch {
-          alert(lang === 'fr' ? 'Image téléchargée!' : 'Image downloaded!');
+          alert(lang === 'fr' ? 'Soumission téléchargée!' : 'Submission downloaded!');
         }
       }
       
@@ -1614,16 +1623,9 @@ export default function HomeScreen() {
     }
   };
 
-  // Handle Print
-  const handlePrint = async () => {
-    if (!selectedProgram || !localResult || !vehiclePrice) {
-      if (Platform.OS === 'web') {
-        alert(lang === 'fr' ? 'Aucune soumission à imprimer' : 'No submission to print');
-      } else {
-        Alert.alert('Erreur', lang === 'fr' ? 'Aucune soumission à imprimer' : 'No submission to print');
-      }
-      return;
-    }
+  // La feuille d'une page : la même pour l'impression, le texto et le courriel
+  const buildPrintHtml = (): string | null => {
+    if (!selectedProgram || !localResult || !vehiclePrice) return null;
 
     const vehicle = `${selectedProgram.brand} ${selectedProgram.model} ${selectedProgram.trim || ''} ${selectedProgram.year}`.trim();
     const option = selectedOption === '2' || !hasOption1 ? '2' : '1';
@@ -1938,6 +1940,51 @@ export default function HomeScreen() {
       </body>
       </html>
     `;
+
+    return printContent;
+  };
+
+  // La feuille en PDF (navigateur seulement) : jointe au texto et au courriel.
+  const buildSubmissionPdf = async (): Promise<Blob | null> => {
+    const html = buildPrintHtml();
+    if (!html || Platform.OS !== 'web' || typeof document === 'undefined') return null;
+    const frame = document.createElement('iframe');
+    frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:816px;height:1056px;border:0;';
+    document.body.appendChild(frame);
+    try {
+      const doc = frame.contentDocument;
+      if (!doc) return null;
+      doc.open(); doc.write(html); doc.close();
+      const started = Date.now();
+      while (Array.from(doc.images).some((im) => !im.complete) && Date.now() - started < 2500) {
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      const sheet = doc.getElementById('sheet');
+      if (!sheet) return null;
+      sheet.style.margin = '0';
+      (sheet.style as any).zoom = '1';
+      const canvas = await html2canvas(sheet, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+      const jpeg: Blob | null = await new Promise((resolve) => canvas.toBlob((b: any) => resolve(b), 'image/jpeg', 0.9));
+      if (!jpeg) return null;
+      return jpegToLetterPdf(new Uint8Array(await jpeg.arrayBuffer()), canvas.width, canvas.height);
+    } catch {
+      return null;
+    } finally {
+      document.body.removeChild(frame);
+    }
+  };
+
+  // Handle Print
+  const handlePrint = async () => {
+    const printContent = buildPrintHtml();
+    if (!printContent) {
+      if (Platform.OS === 'web') {
+        alert(lang === 'fr' ? 'Aucune soumission à imprimer' : 'No submission to print');
+      } else {
+        Alert.alert('Erreur', lang === 'fr' ? 'Aucune soumission à imprimer' : 'No submission to print');
+      }
+      return;
+    }
 
     if (Platform.OS === 'web') {
       // On web, open print dialog
@@ -4403,10 +4450,16 @@ export default function HomeScreen() {
                     
                     setSendingEmail(true);
                     try {
+                      const [pdfForEmail, listingForEmail] = await Promise.all([
+                        buildSubmissionPdf().then((b) => (b ? blobToBase64(b) : '')).catch(() => ''),
+                        listingUrlForSelection().catch(() => ''),
+                      ]);
                       const response = await fetch(`${API_URL}/api/send-calculation-email`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
+                          submission_pdf_base64: pdfForEmail,
+                          listing_url: listingForEmail,
                           client_email: clientEmail,
                           client_name: clientName,
                           client_phone: clientPhone,

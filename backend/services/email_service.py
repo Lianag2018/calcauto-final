@@ -20,7 +20,7 @@ def deliver_message(msg, recipients=None):
                    {"host": SMTP_HOST, "port": SMTP_PORT, "username": SMTP_EMAIL, "password": SMTP_PASSWORD})
 
 
-def send_email(to_email: str, subject: str, html_body: str, attachment_data: bytes = None, attachment_name: str = None, inline_images: list = None, cc_email: str = None, sender_name: str = None):
+def send_email(to_email: str, subject: str, html_body: str, attachment_data: bytes = None, attachment_name: str = None, inline_images: list = None, cc_email: str = None, sender_name: str = None, extra_attachments: list = None):
     """
     Envoie un email (API Gmail ou SMTP) avec support pour images inline (CID).
     
@@ -68,6 +68,14 @@ def send_email(to_email: str, subject: str, html_body: str, attachment_data: byt
         part.set_payload(attachment_data)
         encoders.encode_base64(part)
         part.add_header('Content-Disposition', f'attachment; filename="{attachment_name}"')
+        msg.attach(part)
+
+    # Autres pièces jointes : liste de (données, nom de fichier)
+    for data, name in extra_attachments or []:
+        part = MIMEBase('application', 'pdf' if str(name).lower().endswith('.pdf') else 'octet-stream')
+        part.set_payload(data)
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', f'attachment; filename="{name}"')
         msg.attach(part)
     
     # Liste des destinataires (To + CC)

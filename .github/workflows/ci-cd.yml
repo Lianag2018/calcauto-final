@@ -31,7 +31,7 @@ jobs:
         run: pip install pytest pdfplumber pandas openpyxl
 
       - name: Run unit tests
-        run: pytest tests/test_ci_unit.py tests/test_codes_par_annee.py -v --tb=short
+        run: pytest tests/test_ci_unit.py tests/test_codes_par_annee.py tests/test_soumission_pdf_courriel.py -v --tb=short
 
       - name: Run post-import validation tests
         run: pytest tests/test_post_import.py -v --tb=short
