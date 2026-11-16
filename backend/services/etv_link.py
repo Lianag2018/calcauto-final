@@ -69,7 +69,8 @@ def verify_ticket(ticket: str, now: Optional[float] = None) -> Dict[str, Any]:
     return {"username": username, "dealer_slug": dealer, "role": role, "nonce": nonce, "expires": expires,
             "name": str(payload.get("name") or username).strip()[:80] or username,
             "email": _real_email(payload.get("email")),
-            "dealer_name": _display(payload.get("dealer_name"), 60)}
+            "dealer_name": _display(payload.get("dealer_name"), 60),
+            "phone": _phone(payload.get("phone"))}
 
 
 def _display(value, limit: int) -> str:
@@ -86,11 +87,18 @@ def _real_email(value) -> str:
     return "" if email.lower().endswith(ETV_ACCOUNT_SUFFIX) else email
 
 
+def _phone(value) -> str:
+    """Téléphone du conseiller tel que saisi dans eTradeValue ; vide s'il n'a pas l'air d'un numéro."""
+    text = re.sub(r"[^0-9+() .\-]", "", str(value or "")).strip()[:24]
+    return text if sum(c.isdigit() for c in text) >= 7 else ""
+
+
 def etv_profile_fields(identity) -> dict:
     """Ce que la session garde du billet, pour signer les courriels au nom du conseiller."""
     return {"dealer_slug": identity["dealer_slug"], "etv_username": identity["username"],
             "etv_role": identity["role"], "etv_name": identity.get("name") or "",
-            "etv_email": identity.get("email") or "", "etv_dealer_name": identity.get("dealer_name") or ""}
+            "etv_email": identity.get("email") or "", "etv_dealer_name": identity.get("dealer_name") or "",
+            "etv_phone": identity.get("phone") or ""}
 
 
 def mail_sender(user):
