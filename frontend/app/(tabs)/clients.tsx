@@ -24,7 +24,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Language, saveLanguage, loadLanguage } from '../../utils/i18n';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { useAuth } from '../../contexts/AuthContext';
-import { Dossier, dossierFromContact, tradeLabel, desiredLabel, queueDossier, syncDossiers, pairDesired, DossierDesired, Followup, fetchFollowups, completeFollowup, followupCalendarUrl } from '../../utils/etvDossier';
+import { Dossier, dossierFromContact, byNewestEvaluation, evaluationDateLabel, tradeLabel, desiredLabel, queueDossier, syncDossiers, pairDesired, DossierDesired, Followup, fetchFollowups, completeFollowup, followupCalendarUrl } from '../../utils/etvDossier';
 
 import { API_URL } from '../../utils/api';
 
@@ -533,7 +533,8 @@ export default function ClientsScreen() {
   useEffect(() => { loadData(); }, []);
   
   useEffect(() => {
-    const pool = evalOnly ? clients.filter(c => !!c.dossier) : clients;
+    // Contacts d'évaluation : de la plus récente à la plus vieille.
+    const pool = evalOnly ? byNewestEvaluation(clients.filter(c => !!c.dossier)) : clients;
     if (!searchQuery.trim()) {
       setFilteredClients(pool);
     } else {
@@ -1119,7 +1120,10 @@ export default function ClientsScreen() {
             {client.dossier && (
               <View style={styles.dossierBox} data-testid="client-dossier">
                 <View>
-                  <Text style={styles.dossierTag}>{lang === 'fr' ? 'Évaluation eTradeValue' : 'eTradeValue appraisal'}</Text>
+                  <Text style={styles.dossierTag}>
+                    {lang === 'fr' ? 'Évaluation eTradeValue' : 'eTradeValue appraisal'}
+                    {!!evaluationDateLabel(client.dossier, lang === 'en' ? 'en' : 'fr') && ` · ${evaluationDateLabel(client.dossier, lang === 'en' ? 'en' : 'fr')}`}
+                  </Text>
                   {!!client.dossier.advisor && user?.etv_role !== 'conseiller' && (
                     <Text style={styles.dossierLine} data-testid="client-dossier-advisor">
                       {lang === 'fr' ? 'Conseiller : ' : 'Advisor: '}{client.dossier.advisor}

@@ -29,7 +29,7 @@ import html2canvas from 'html2canvas';
 // Import components and i18n
 import { AnimatedSplashScreen } from '../../components/AnimatedSplashScreen';
 import { GaugeMark } from '../../components/GaugeMark';
-import { Dossier, dossierFromContact, takeQueuedDossier, takeEvalId, syncDossiers, fetchListingUrl, usedQuoteSms, smsHref } from '../../utils/etvDossier';
+import { Dossier, dossierFromContact, takeQueuedDossier, takeEvalId, syncDossiers, fetchListingUrl, usedQuoteSms, smsHref, windowStickerUrl, smsLinks } from '../../utils/etvDossier';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { Language, saveLanguage, loadLanguage, getTranslation, TranslationKeys } from '../../utils/i18n';
 import { useAuth } from '../../contexts/AuthContext';
@@ -1188,8 +1188,17 @@ export default function HomeScreen() {
       tradeValue: parseFloat(prixEchange) || undefined,
       advisorName: user?.name || undefined,
       listingUrl,
+      stickerUrl: windowStickerUrl(vehicle?.brand, vehicle?.vin),
       lang,
     }));
+  };
+
+  // Lien de la fiche du site pour le véhicule d'inventaire choisi (vide si aucun ou hors vente).
+  const listingUrlForSelection = async (): Promise<string> => {
+    const stock = selectedInventory?.stock_no;
+    if (!stock) return '';
+    const token = await getToken();
+    return token ? fetchListingUrl({ Authorization: `Bearer ${token}` }, String(stock)) : '';
   };
 
   // Handle Share via SMS - Open preview modal
@@ -1204,6 +1213,9 @@ export default function HomeScreen() {
       return;
     }
 
+    // Demandé tout de suite, pendant que l'image de la soumission se prépare.
+    const listingPromise = listingUrlForSelection().catch(() => '');
+    let endLinks = '';
     try {
       // Show loading state
       setSmsPreviewText(lang === 'fr' ? 'Génération de la soumission...' : 'Generating submission...');
@@ -1226,6 +1238,8 @@ export default function HomeScreen() {
         fiat: 'https://www.fiatusa.com/hostd/windowsticker/getWindowStickerPdf.do?vin=',
       };
       const stickerUrl = vin ? (stickerBaseUrls[brand] || stickerBaseUrls['ram']) + vin : '';
+      // Window Sticker, puis la fiche du site en dernière ligne (aperçu avec photo).
+      endLinks = smsLinks(stickerUrl, await listingPromise, lang === 'en' ? 'en' : 'fr');
 
       // 2. Fetch window sticker image from our API
       let stickerImageUrl = '';
@@ -1442,9 +1456,9 @@ export default function HomeScreen() {
           shareText += `\nLocation ${leaseTerm}m: ${fmt2(leasePayment)} $${freqSuffix}`;
         }
       }
-      if (stickerUrl) shareText += `\n\nWindow Sticker: ${stickerUrl}`;
       shareText += `\n\n---\nAVIS: Montants à titre indicatif seulement. Sujet à l'approbation du crédit. Le concessionnaire ne peut être tenu responsable d'erreurs de calcul.`;
       shareText += `\n- CalcAuto AiPro`;
+      if (endLinks) shareText += `\n\n${endLinks}`;
 
       // 5. Share via native share sheet
       if (navigator.share && navigator.canShare && navigator.canShare({ files: filesToShare })) {
@@ -1476,7 +1490,7 @@ export default function HomeScreen() {
       setShowSmsPreview(false);
       // Fallback to text-only SMS
       const message = generateSubmissionText();
-      setSmsPreviewText(message);
+      setSmsPreviewText(endLinks ? `${message}\n\n${endLinks}` : message);
       setShowSmsPreview(true);
     }
   };

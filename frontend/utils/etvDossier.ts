@@ -30,6 +30,8 @@ export interface Dossier {
   evalId: string;
   /** Conseiller qui a fait l'évaluation (utile au directeur et à l'administrateur). */
   advisor: string;
+  /** Moment où l'évaluation a été faite (texte ISO), vide si inconnu. */
+  createdAt: string;
   name: string;
   phone: string;
   email: string;
@@ -44,6 +46,7 @@ export const dossierFromContact = (contact: any): Dossier | null => {
   return {
     evalId: String(contact.etv_eval_id),
     advisor: String(contact.etv_advisor || ''),
+    createdAt: String(contact.etv_created_at || ''),
     name: contact.name || '',
     phone: contact.phone || '',
     email: contact.email || '',
@@ -51,6 +54,22 @@ export const dossierFromContact = (contact: any): Dossier | null => {
     desired: Array.isArray(contact.desired) ? contact.desired.filter((d: any) => d && d.stock) : [],
     paired: !!contact.desired_paired,
   };
+};
+
+const instant = (value: string | undefined): number => {
+  const time = value ? new Date(value).getTime() : NaN;
+  return Number.isFinite(time) ? time : 0;
+};
+
+// Évaluations de la plus récente à la plus vieille ; sans date, à la fin.
+export const byNewestEvaluation = <T extends { dossier?: Dossier | null }>(items: T[]): T[] =>
+  [...items].sort((a, b) => instant(b.dossier?.createdAt) - instant(a.dossier?.createdAt));
+
+// « 15 nov. 2026 » ; vide si la date est inconnue.
+export const evaluationDateLabel = (dossier: Dossier, lang: 'fr' | 'en' = 'fr'): string => {
+  const time = instant(dossier.createdAt);
+  if (!time) return '';
+  return new Date(time).toLocaleDateString(lang === 'en' ? 'en-CA' : 'fr-CA', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
 const money = (value: number) => `${Math.round(value).toLocaleString('fr-CA')} $`;
@@ -197,8 +216,36 @@ export interface UsedQuote {
   tradeValue?: number;
   advisorName?: string;
   listingUrl?: string;
+  stickerUrl?: string;
   lang?: 'fr' | 'en';
 }
+
+// Window Sticker du fabricant (marques Stellantis seulement, NIV complet).
+const STICKER_SITES: Record<string, string> = {
+  chrysler: 'www.chrysler.com',
+  jeep: 'www.jeep.com',
+  dodge: 'www.dodge.com',
+  ram: 'www.ramtrucks.com',
+  fiat: 'www.fiatusa.com',
+  alfa: 'www.alfaromeousa.com',
+};
+
+export const windowStickerUrl = (brand: string | undefined, vin: string | undefined): string => {
+  const cleanVin = (vin || '').trim().toUpperCase();
+  if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(cleanVin)) return '';
+  const name = (brand || '').toLowerCase();
+  const key = Object.keys(STICKER_SITES).find((k) => name.includes(k));
+  return key ? `https://${STICKER_SITES[key]}/hostd/windowsticker/getWindowStickerPdf.do?vin=${cleanVin}` : '';
+};
+
+// Liens à la fin d'un texto : le Window Sticker d'abord, la fiche du site en
+// toute dernière ligne (c'est elle qui donne l'aperçu avec la photo dans Messages).
+export const smsLinks = (stickerUrl: string, listingUrl: string, lang: 'fr' | 'en' = 'fr'): string => {
+  const parts: string[] = [];
+  if (stickerUrl) parts.push(`Window Sticker :\n${stickerUrl}`);
+  if (listingUrl) parts.push(`${lang === 'en' ? 'Photos and details' : 'Photos et détails'} :\n${listingUrl}`);
+  return parts.join('\n\n');
+};
 
 // Texto d'un calcul de véhicule d'occasion. Le lien de la fiche va en dernière
 // ligne : c'est ce qui fait apparaître l'aperçu avec la photo dans Messages.
@@ -218,7 +265,7 @@ export const usedQuoteSms = (q: UsedQuote): string => {
     '',
     fr ? "Montants à titre indicatif, sous réserve de l'approbation du crédit." : 'Amounts for information only, subject to credit approval.',
     q.advisorName ? `— ${q.advisorName}` : '',
-    q.listingUrl ? `\n${fr ? 'Photos et détails' : 'Photos and details'} :\n${q.listingUrl}` : '',
+    q.stickerUrl || q.listingUrl ? `\n${smsLinks(q.stickerUrl || '', q.listingUrl || '', fr ? 'fr' : 'en')}` : '',
   ];
   return lines.filter((line, i) => line !== '' || (i > 0 && lines[i - 1] !== '')).join('\n').trim();
 };
