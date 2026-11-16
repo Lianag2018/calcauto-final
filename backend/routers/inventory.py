@@ -11,7 +11,7 @@ from models import (
 from dependencies import get_current_user, require_admin
 from services.window_sticker import fetch_window_sticker, save_window_sticker_to_db
 from routers.invoice import get_full_vehicle_info, _CODE_PROGRAM_MAPPING
-from product_code_lookup import codes_for_year, lookup_product_code
+from product_code_lookup import codes_for_year, dated_identity, lookup_product_code
 from services.program_matching import describe_vehicle, match_program, is_model_code
 from services.model_code_suggest import (
     trim_from_title, suggest_codes, trims_of_program, known_trims, is_known_code)
@@ -150,10 +150,12 @@ def _vehicle_for_matching(vehicle: Dict[str, Any], options: List[Dict[str, Any]]
         # Sur la facture, la première ligne d'options est le code de produit
         code = next((c for c in codes[:1] if is_model_code(c)), "")
     master = lookup_product_code(code, vehicle.get("year"), codes) if code else None
+    # Fiche datée : le code dit le modèle, et écarte une version qu'il ne peut pas être
+    sure = dated_identity(code, vehicle.get("year"), codes, vehicle.get("trim") or "") or {}
     return describe_vehicle(
-        brand=vehicle.get("brand") or (master or {}).get("brand", ""),
-        model=vehicle.get("model") or (master or {}).get("model", ""),
-        trim=vehicle.get("trim") or (master or {}).get("trim", "") or _title_trim(vehicle),
+        brand=sure.get("brand") or vehicle.get("brand") or (master or {}).get("brand", ""),
+        model=sure.get("model") or vehicle.get("model") or (master or {}).get("model", ""),
+        trim=sure.get("trim") or vehicle.get("trim") or (master or {}).get("trim", "") or _title_trim(vehicle),
         year=vehicle.get("year"),
         body_style=vehicle.get("body_style", ""),
         code=code,

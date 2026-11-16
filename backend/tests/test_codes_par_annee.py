@@ -97,3 +97,19 @@ def test_les_codes_propres_a_une_annee_sont_reconnus_sur_une_facture():
     codes = get_all_codes()
     assert 'VF3L19' in codes and 'KMJM74' in codes
     assert codes['DP0L94']['brand'] == 'Ram'
+
+
+def test_la_banque_ecarte_une_version_enregistree_impossible():
+    from product_code_lookup import dated_identity
+    # Cherokee 2027 KMJM74 ne peut être que Laredo : « Limited » venait de l'ancienne banque
+    assert dated_identity('KMJM74', 2027, [], 'Limited')['trim'] == 'Laredo'
+    # Une version possible pour ce code est gardée, même plus précise
+    assert dated_identity('KMJM74', 2026, [], 'Limited Altitude')['trim'] == 'Limited Altitude'
+    assert dated_identity('JLJL74', 2026, [], 'Willys')['trim'] == 'Willys'
+    # Le forfait tranche toujours
+    assert dated_identity('KMJM74', 2026, ['23F'], 'Limited')['trim'] == 'Laredo'
+    # Le modèle vient du code
+    assert dated_identity('WSJM76', 2026, [], '')['model'] == 'Grand Wagoneer L'
+    # Sans fiche datée : rien ne change
+    assert dated_identity('KMJM74', 2024, [], 'Limited') is None
+    assert dated_identity('', 2026, [], 'x') is None

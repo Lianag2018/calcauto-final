@@ -169,6 +169,30 @@ def _year_entry(code: str, year: Any, packages: Optional[Iterable[str]]) -> Opti
     return entry
 
 
+def dated_identity(code: str, year: Any, packages: Optional[Iterable[str]], stored_trim: str = "") -> Optional[Dict[str, str]]:
+    """Marque, modèle et version sûrs pour ce code cette année-là, ou None sans fiche datée.
+
+    La version enregistrée sur le véhicule est gardée quand ce code peut l'être ;
+    elle cède quand un forfait tranche, ou quand ce code ne peut pas être cette version.
+    """
+    code = (code or "").upper().strip()
+    found = (_year_codes().get(str(year or "").strip()) or {}).get(code)
+    if not found:
+        return None
+    by_package = found.get("packages") or {}
+    wanted = {str(p).upper().strip() for p in (packages or [])}
+    decided = [trim for cpos, trim in by_package.items() if cpos in wanted]
+    possible = [t.lower() for t in [found.get("trim") or "", *by_package.values()] if t]
+    stored = (stored_trim or "").strip()
+    if len(decided) == 1:
+        trim = decided[0]
+    elif stored and (not possible or any(t in stored.lower() for t in possible)):
+        trim = stored
+    else:
+        trim = found.get("trim") or stored
+    return {"brand": found.get("brand", ""), "model": found.get("model", ""), "trim": trim}
+
+
 def codes_for_year(reference: Dict[str, Dict[str, Any]], year: Any) -> Dict[str, Dict[str, Any]]:
     """Le référentiel, avec les fiches propres à cette année-modèle par-dessus."""
     dated = _year_codes().get(str(year or '').strip()) or {}
