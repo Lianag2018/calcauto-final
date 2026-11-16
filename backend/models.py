@@ -367,6 +367,10 @@ class SendCalculationEmailRequest(BaseModel):
     include_window_sticker: bool = True
     vin: str = ""
     lease_data: Optional[Dict[str, Any]] = None
+    # Feuille d'une page fabriquée par l'application, jointe telle quelle au courriel
+    submission_pdf_base64: str = ""
+    # Fiche du véhicule sur le site (photos)
+    listing_url: str = ""
 
 class SendReportEmailRequest(BaseModel):
     """Requete pour envoyer un rapport apres import"""
