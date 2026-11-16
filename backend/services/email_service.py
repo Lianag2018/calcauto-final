@@ -1,3 +1,4 @@
+from email.utils import formataddr
 import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -19,7 +20,7 @@ def deliver_message(msg, recipients=None):
                    {"host": SMTP_HOST, "port": SMTP_PORT, "username": SMTP_EMAIL, "password": SMTP_PASSWORD})
 
 
-def send_email(to_email: str, subject: str, html_body: str, attachment_data: bytes = None, attachment_name: str = None, inline_images: list = None, cc_email: str = None):
+def send_email(to_email: str, subject: str, html_body: str, attachment_data: bytes = None, attachment_name: str = None, inline_images: list = None, cc_email: str = None, sender_name: str = None):
     """
     Envoie un email (API Gmail ou SMTP) avec support pour images inline (CID).
     
@@ -31,13 +32,14 @@ def send_email(to_email: str, subject: str, html_body: str, attachment_data: byt
         attachment_name: Nom de la pièce jointe (optionnel)
         inline_images: Liste de dicts avec 'cid', 'data' (bytes), 'mimetype' (ex: 'image/jpeg')
         cc_email: Email en copie (CC) - optionnel
+        sender_name: Nom affiché de l'expéditeur (« William de Kennebec par eTradeValue ») - optionnel
     """
     if not mail_ready():
         raise Exception("Configuration du courriel manquante")
     
     # Utiliser 'related' pour supporter les images CID
     msg = MIMEMultipart('related')
-    msg['From'] = f"CalcAuto AiPro <{SMTP_EMAIL}>"
+    msg['From'] = formataddr((sender_name or "CalcAuto AiPro", SMTP_EMAIL))
     msg['To'] = to_email
     msg['Subject'] = subject
     

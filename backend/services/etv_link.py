@@ -67,7 +67,47 @@ def verify_ticket(ticket: str, now: Optional[float] = None) -> Dict[str, Any]:
             or role not in STAFF_ROLES or len(nonce) < 16):
         raise LinkError(401, "Billet invalide.")
     return {"username": username, "dealer_slug": dealer, "role": role, "nonce": nonce, "expires": expires,
-            "name": str(payload.get("name") or username).strip()[:80] or username}
+            "name": str(payload.get("name") or username).strip()[:80] or username,
+            "email": _real_email(payload.get("email")),
+            "dealer_name": _display(payload.get("dealer_name"), 60)}
+
+
+def _display(value, limit: int) -> str:
+    """Texte d'affichage sur une ligne, sans caractère qui casserait un en-tête de courriel."""
+    text = "".join(c for c in str(value or "") if c.isprintable() and c not in '<>"\\')
+    return " ".join(text.split())[:limit].strip()
+
+
+def _real_email(value) -> str:
+    """Une vraie adresse, ou rien : jamais l'adresse fictive d'un compte ouvert par eTradeValue."""
+    email = str(value or "").strip()
+    if len(email) > 120 or not re.fullmatch(r"[^@\s<>,;]+@[^@\s<>,;]+\.[^@\s<>,;]+", email):
+        return ""
+    return "" if email.lower().endswith(ETV_ACCOUNT_SUFFIX) else email
+
+
+def etv_profile_fields(identity) -> dict:
+    """Ce que la session garde du billet, pour signer les courriels au nom du conseiller."""
+    return {"dealer_slug": identity["dealer_slug"], "etv_username": identity["username"],
+            "etv_role": identity["role"], "etv_name": identity.get("name") or "",
+            "etv_email": identity.get("email") or "", "etv_dealer_name": identity.get("dealer_name") or ""}
+
+
+def mail_sender(user):
+    """Nom d'expéditeur et adresse de copie d'une soumission.
+
+    Arrivé par eTradeValue : « William de Kennebec par eTradeValue », copie (et réponses
+    du client) à son vrai courriel s'il est connu. Sinon None : rien ne change.
+    """
+    user = user or {}
+    if not user.get("etv_username"):
+        return None
+    name = _display(user.get("etv_name") or user.get("name") or user.get("etv_username"), 40)
+    if name and name == name.lower():
+        name = name[:1].upper() + name[1:]  # un simple nom d'utilisateur : « william » -> « William »
+    dealer = _display(user.get("etv_dealer_name"), 40)
+    shown = " ".join(part for part in (name, f"de {dealer}" if dealer else "", "par eTradeValue") if part)
+    return {"name": shown, "copy": _real_email(user.get("etv_email")) or _real_email(user.get("email"))}
 
 
 def account_email(username: str, dealer_slug: str) -> str:

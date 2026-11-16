@@ -1164,6 +1164,35 @@ class TestEtvLink:
         body = base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
         return f"{body}.{etv_link.sign((secret or self.SECRET).encode(), 'ticket:' + body)}"
 
+    def test_ticket_carries_the_advisor_name_email_and_dealer_name(self, monkeypatch):
+        from services.etv_link import etv_profile_fields, verify_ticket
+        identity = verify_ticket(self._ticket(monkeypatch, name="William Essai", email="william@exemple.test",
+                                              dealer_name="Garage Essai"), now=1000)
+        fields = etv_profile_fields(identity)
+        assert (fields["etv_name"], fields["etv_email"], fields["etv_dealer_name"]) == (
+            "William Essai", "william@exemple.test", "Garage Essai")
+        # Ancien billet (sans ces champs) ou valeurs douteuses : rien n'est inventé.
+        plain = etv_profile_fields(verify_ticket(self._ticket(monkeypatch), now=1000))
+        assert (plain["etv_email"], plain["etv_dealer_name"]) == ("", "")
+        odd = verify_ticket(self._ticket(monkeypatch, email="marie@kennebec.etradevalue",
+                                         dealer_name='Garage "Essai" <x>\nBcc: z@exemple.test'), now=1000)
+        assert odd["email"] == "" and odd["dealer_name"] == "Garage Essai xBcc: z@exemple.test"
+
+    def test_quote_is_sent_in_the_advisor_name(self):
+        from services.etv_link import mail_sender
+        etv = {"etv_username": "william", "email": "william@garage.etradevalue"}
+        assert mail_sender({"email": "quelquun@exemple.test", "name": "Compte ordinaire"}) is None
+        assert mail_sender({**etv, "etv_name": "William", "etv_dealer_name": "Kennebec",
+                            "etv_email": "william@exemple.test"}) == {
+            "name": "William de Kennebec par eTradeValue", "copy": "william@exemple.test"}
+        # Sans vrai nom : le nom d'utilisateur, avec une majuscule ; sans concession ni courriel : on s'en passe.
+        assert mail_sender(etv) == {"name": "William par eTradeValue", "copy": ""}
+        # Compte personnel relié : son vrai courriel sert de copie, jamais une adresse fictive.
+        assert mail_sender({"etv_username": "william", "email": "perso@exemple.test", "name": "W. Essai",
+                            "etv_dealer_name": "Kennebec"}) == {
+            "name": "W. Essai de Kennebec par eTradeValue", "copy": "perso@exemple.test"}
+        assert "\n" not in mail_sender({**etv, "etv_name": "Will\nBcc: z@exemple.test"})["name"]
+
     def test_valid_ticket_gives_identity(self, monkeypatch):
         from services.etv_link import verify_ticket
         identity = verify_ticket(self._ticket(monkeypatch), now=1000)

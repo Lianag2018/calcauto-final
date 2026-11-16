@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from database import db, ADMIN_EMAIL
 from dependencies import generate_token, get_current_user, hash_password
-from services.etv_link import (LinkError, account_email, browser_key_hash, calendar_feed, contact_from_dossier,
+from services.etv_link import (LinkError, account_email, etv_profile_fields, browser_key_hash, calendar_feed, contact_from_dossier,
                                dossiers_request, effective_desired, followup_plan, is_calcauto_admin,
                                is_etv_only_account, link_refusal, listing_request, owns_followups, pairing,
                                safe_listing_url, same_browser, trade_summary, verify_ticket)
@@ -55,8 +55,7 @@ async def etv_login(body: TicketLogin):
 
     email = account_email(identity["username"], identity["dealer_slug"])
     admin = is_calcauto_admin(identity["role"], identity["dealer_slug"])
-    etv_fields = {"dealer_slug": identity["dealer_slug"], "etv_username": identity["username"],
-                  "etv_role": identity["role"]}
+    etv_fields = etv_profile_fields(identity)
     # Compte CalcAuto que cette personne a relié elle-même (son mot de passe à l'appui) :
     # elle y retrouve ses contacts et ses soumissions, avec ses dossiers d'évaluation.
     linked = await db.users.find_one({"etv_link_key": email})
@@ -172,8 +171,8 @@ async def link_account(body: AccountLink, authorization: Optional[str] = Header(
     if reason:
         raise HTTPException(status_code=403, detail=reason)
 
-    etv_fields = {"dealer_slug": user.get("dealer_slug"), "etv_username": user.get("etv_username"),
-                  "etv_role": user.get("etv_role")}
+    etv_fields = {field: user.get(field) for field in ("dealer_slug", "etv_username", "etv_role",
+                                                         "etv_name", "etv_email", "etv_dealer_name")}
     await db.users.update_one({"id": target["id"]}, {"$set": {"etv_link_key": user["email"], **etv_fields,
                                                               "last_login": datetime.utcnow()}})
     # Les dossiers déjà recopiés suivent ; le compte provisoire ne sert plus.
