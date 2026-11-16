@@ -1483,3 +1483,72 @@ class TestMailTransport:
             mail_transport.send_via_gmail(self._config('-panne'), self._message(), opener)
         with pytest.raises(mail_transport.MailError):
             mail_transport.deliver(self._message(), None, {}, {'host': 'h', 'port': 587, 'username': '', 'password': ''})
+
+
+class TestMailRelay:
+    """Courriel remis à eTradeValue, qui l'envoie : les ports SMTP sont fermés chez l'hébergeur de CalcAuto."""
+
+    KEY = 'k' * 40
+
+    def _message(self):
+        return TestMailTransport()._message()
+
+    def test_relay_needs_the_link_key_and_can_be_switched_off(self):
+        from services.mail_transport import relay_config
+        assert relay_config({}) is None
+        assert relay_config({'CALCAUTO_LINK_SECRET': 'court'}) is None
+        assert relay_config({'CALCAUTO_LINK_SECRET': self.KEY, 'MAIL_RELAY': '0'}) is None
+        assert relay_config({'CALCAUTO_LINK_SECRET': self.KEY, 'ETV_API_URL': 'http://ailleurs.test'}) is None
+        config = relay_config({'CALCAUTO_LINK_SECRET': self.KEY, 'ETV_API_URL': 'https://etv.exemple.test/'})
+        assert config == {'url': 'https://etv.exemple.test/api/calcauto/courriel', 'secret': self.KEY.encode()}
+
+    def test_signature_covers_the_whole_message(self):
+        from services.mail_transport import relay_signature
+        from services.etv_link import sign
+        import hashlib
+        body = b'To: client@exemple.test\r\n\r\nBonjour'
+        expected = sign(self.KEY.encode(), 'courriel:1000:' + hashlib.sha256(body).hexdigest())
+        assert relay_signature(self.KEY.encode(), 1000, body) == expected
+        assert relay_signature(self.KEY.encode(), 1000, body + b'x') != expected
+        assert relay_signature(self.KEY.encode(), 1001, body) != expected
+
+    def test_message_is_handed_over_signed(self):
+        from services import mail_transport
+        seen = []
+
+        def opener(request, timeout=None):
+            seen.append((request, timeout))
+            return TestMailTransport._Answer({'sent': True, 'recipients': 2})
+
+        config = {'url': 'https://etv.exemple.test/api/calcauto/courriel', 'secret': self.KEY.encode()}
+        assert mail_transport.send_via_relay(config, self._message(), opener, lambda: 1000.4) is True
+        request, timeout = seen[0]
+        assert request.full_url == config['url'] and timeout == mail_transport.RELAY_TIMEOUT
+        assert request.get_header('X-calcauto-timestamp') == '1000'
+        assert request.get_header('X-calcauto-signature') == mail_transport.relay_signature(self.KEY.encode(), 1000, request.data)
+        assert b'To: client@exemple.test' in request.data
+
+        def silent(request, timeout=None):
+            return TestMailTransport._Answer({})
+        with pytest.raises(mail_transport.MailError):
+            mail_transport.send_via_relay(config, self._message(), silent)
+
+    def test_relay_first_then_smtp_only_if_it_is_configured(self, monkeypatch):
+        from services import mail_transport
+        env = {'CALCAUTO_LINK_SECRET': self.KEY, 'ETV_API_URL': 'https://etv.exemple.test'}
+        smtp = {'host': 'h', 'port': 587, 'username': 'u', 'password': 'p'}
+        calls = []
+        monkeypatch.setattr(mail_transport, 'send_via_relay', lambda config, msg: calls.append('relay') or True)
+        monkeypatch.setattr(mail_transport, 'send_via_smtp', lambda *a: calls.append('smtp'))
+        assert mail_transport.deliver(self._message(), None, env, smtp) == 'relay' and calls == ['relay']
+
+        def broken(config, msg):
+            calls.append('relay')
+            raise mail_transport.MailError('panne')
+        monkeypatch.setattr(mail_transport, 'send_via_relay', broken)
+        calls.clear()
+        assert mail_transport.deliver(self._message(), None, env, smtp) == 'smtp' and calls == ['relay', 'smtp']
+        calls.clear()
+        with pytest.raises(mail_transport.MailError):
+            mail_transport.deliver(self._message(), None, env, {**smtp, 'password': ''})
+        assert calls == ['relay']
