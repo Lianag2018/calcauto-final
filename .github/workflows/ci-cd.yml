@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [ main ]
 
+# Une seule exécution à la fois par branche : deux fusions rapprochées dans main
+# se mettent en ligne l'une après l'autre, la plus récente en dernier. Sans cela,
+# la mise en ligne la plus ancienne pouvait finir après l'autre et la remplacer.
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   test-backend:
     runs-on: ubuntu-latest
