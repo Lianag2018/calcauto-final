@@ -132,6 +132,8 @@ export default function HomeScreen() {
   
   // Email modal
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [printNotice, setPrintNotice] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
@@ -1141,7 +1143,7 @@ export default function HomeScreen() {
 
   // Un texto envoyé devient un suivi : la soumission est enregistrée au CRM,
   // avec son rappel de relance, au nom du client du calcul.
-  const recordSmsFollowup = async (): Promise<boolean> => {
+  const recordSmsFollowup = async (sentBy: 'sms' | 'print' = 'sms'): Promise<boolean> => {
     try {
       const token = await getToken();
       if (!token || !selectedProgram || !localResult || !vehiclePrice) return false;
@@ -1163,7 +1165,7 @@ export default function HomeScreen() {
         program_month: currentPeriod?.month || 0,
         program_year: currentPeriod?.year || 0,
         calculator_state: {
-          sentBy: 'sms',
+          sentBy,
           vehicleMode,
           usedRate,
           ...(isUsed ? {} : { selectedProgram, checkedOffers, selectedOption, customBonusCash }),
@@ -1575,6 +1577,36 @@ export default function HomeScreen() {
     }
   };
 
+  // Imprimer : on demande d'abord à qui va la soumission, pour qu'elle soit au CRM
+  const openPrint = () => {
+    if (!selectedProgram || !localResult || !vehiclePrice) { handlePrint(); return; }
+    setPrintNotice('');
+    setShowPrintModal(true);
+  };
+  const printForClient = (save: boolean) => {
+    if (save) {
+      const hasContact = (clientPhone || '').trim().length >= 7 || (clientEmail || '').includes('@');
+      if (!(clientName || '').trim() || !hasContact) {
+        setPrintNotice(lang === 'fr'
+          ? 'Pour enregistrer au CRM : le nom, et un téléphone ou un courriel.'
+          : 'To save to the CRM: a name, and a phone or an email.');
+        return;
+      }
+    }
+    setShowPrintModal(false);
+    // La fenêtre d'impression s'ouvre tout de suite (sinon le navigateur la bloque) ;
+    // l'enregistrement au CRM se fait en même temps.
+    handlePrint();
+    if (save) {
+      recordSmsFollowup('print').then((ok) => {
+        if (!ok) {
+          const msg = lang === 'fr' ? "La soumission est imprimée, mais elle n'a pas pu être enregistrée au CRM." : 'Printed, but the submission could not be saved to the CRM.';
+          Platform.OS === 'web' ? alert(msg) : Alert.alert('CRM', msg);
+        }
+      });
+    }
+  };
+
   // Handle Print
   const handlePrint = async () => {
     if (!selectedProgram || !localResult || !vehiclePrice) {
@@ -1622,18 +1654,7 @@ export default function HomeScreen() {
     const fmt = (v: number) => v.toLocaleString('fr-CA', { maximumFractionDigits: 0 });
     const fmt2 = (v: number) => v.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    // Build rates table rows
     const terms = availableTerms;
-    const ratesRows = terms.map(t => {
-      const r1 = hasOption1 ? getRateForTerm(selectedProgram.option1_rates, t) : 0;
-      const r2 = selectedProgram.option2_rates ? getRateForTerm(selectedProgram.option2_rates, t) : null;
-      const isSelected = t === selectedTerm;
-      return `<tr style="${isSelected ? 'background:#e8f5e9; font-weight:bold;' : ''}">
-        <td style="text-align:left; padding:8px; border-bottom:1px solid #eee;">${t} ${lang === 'fr' ? 'mois' : 'mo'}${isSelected ? ' ✓' : ''}</td>
-        ${hasOption1 ? `<td style="text-align:center; padding:8px; border-bottom:1px solid #eee; color:#c0392b;">${r1.toFixed(2)}%</td>` : ''}
-        ${hasOption2 ? `<td style="text-align:center; padding:8px; border-bottom:1px solid #eee; color:#1565C0;">${r2 !== null ? r2.toFixed(2) + '%' : '-'}</td>` : ''}
-      </tr>`;
-    }).join('');
 
     // Option 1 payment details
     const o1Monthly = localResult.option1Monthly;
@@ -1649,7 +1670,59 @@ export default function HomeScreen() {
     const o2Total = localResult.option2Total || 0;
     const o2Payment = paymentFrequency === 'biweekly' ? o2Biweekly : paymentFrequency === 'weekly' ? o2Weekly : o2Monthly;
 
-    // Create full professional print HTML (matching email format)
+    // Feuille d'une seule page (format lettre) : client, véhicule, paiement retenu,
+    // détails, taux, options de financement et location côte à côte.
+    const F = lang === 'fr';
+    const esc = (s: any) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as any)[c]);
+    const mo = F ? 'mois' : 'mo';
+    const perFreq = (o: any) => (paymentFrequency === 'biweekly' ? o.biweekly : paymentFrequency === 'weekly' ? o.weekly : o.monthly) || 0;
+    const perFreqBeforeTax = (o: any) => (paymentFrequency === 'weekly' ? o.weeklyBeforeTax : paymentFrequency === 'biweekly' ? o.biweeklyBeforeTax : o.monthlyBeforeTax) || 0;
+    const taxPerFreq = (v: number) => (paymentFrequency === 'weekly' ? v * 12 / 52 : paymentFrequency === 'biweekly' ? v * 12 / 26 : v) || 0;
+    const hasLeasePrint = !!(showLease && leaseResult && (leaseResult.standard || leaseResult.alternative));
+    const bestLeaseOpt: any = hasLeasePrint ? (leaseResult.bestLease === 'standard' ? leaseResult.standard : leaseResult.alternative) || leaseResult.standard || leaseResult.alternative : null;
+    const bestFinPayment = bestOpt === '2' && hasOption2 ? o2Payment : o1Payment;
+    const clientLines = [clientName, clientPhone, clientEmail].map((v) => (v || '').trim()).filter(Boolean);
+    const stockNo = selectedInventory?.stock_no || '';
+    const ratesHead = terms.map((t) => `<th class="${t === selectedTerm ? 'sel' : ''}">${t} ${mo}</th>`).join('');
+    const ratesLine = (label: string, rates: any) => `<tr><td class="lbl">${label}</td>${terms.map((t) => {
+      const r = rates ? getRateForTerm(rates, t) : null;
+      return `<td class="${t === selectedTerm ? 'sel' : ''}">${r !== null && r !== undefined ? Number(r).toFixed(2) + ' %' : '–'}</td>`;
+    }).join('')}</tr>`;
+    const row = (label: string, value: string, cls = '') => `<tr><td>${label}</td><td class="${cls}">${value}</td></tr>`;
+    const finCard = (n: '1' | '2', title: string, rebate: number, principal: number, rateV: any, pay: number, total: number) => `
+      <div class="card ${bestOpt === n && hasOption2 ? 'best' : ''} ${option === n ? 'chosen' : ''}">
+        <div class="card-top"><span class="card-name">Option ${n}</span>${bestOpt === n && hasOption2 ? `<span class="tag">${F ? 'Meilleur choix' : 'Best choice'}</span>` : ''}</div>
+        <div class="card-sub">${title}</div>
+        <div class="pay">${fmt2(pay)} $<small>${paymentLabel.toLowerCase()}</small></div>
+        <table class="mini">
+          ${row(F ? 'Rabais' : 'Rebate', rebate > 0 ? '−' + fmt(rebate) + ' $' : '0 $', rebate > 0 ? 'good' : '')}
+          ${row(F ? 'Capital financé' : 'Principal', fmt(principal) + ' $')}
+          ${row(F ? 'Taux' : 'Rate', rateV + ' %')}
+          ${row(`Total ${selectedTerm} ${mo}`, fmt(total) + ' $')}
+        </table>
+      </div>`;
+    const leaseCard = (key: 'standard' | 'alternative', title: string) => {
+      const o: any = (leaseResult as any)[key];
+      if (!o) return '';
+      const cash = o.leaseCash - leaseResult.offersBeforeTax;
+      const isBest = leaseResult.bestLease === key && leaseResult.standard && leaseResult.alternative;
+      return `
+      <div class="card lease ${isBest ? 'best' : ''}">
+        <div class="card-top"><span class="card-name">${title}</span>${isBest ? `<span class="tag">${F ? 'Meilleur choix' : 'Best choice'}</span>` : ''}</div>
+        <div class="card-sub">${F ? 'Location' : 'Lease'} ${leaseTerm} ${mo}</div>
+        <div class="pay">${fmt2(perFreq(o))} $<small>${paymentLabel.toLowerCase()}</small></div>
+        <table class="mini">
+          ${row('Lease Cash', cash > 0 ? '−' + fmt(cash) + ' $' : '0 $', cash > 0 ? 'good' : '')}
+          ${leaseResult.offersBeforeTax > 0 ? row(F ? 'Promos avant taxes' : 'Before-tax offers', '−' + fmt(leaseResult.offersBeforeTax) + ' $', 'good') : ''}
+          ${row(F ? 'Taux' : 'Rate', o.rate + ' %')}
+          ${row(F ? 'Avant taxes' : 'Before tax', fmt2(perFreqBeforeTax(o)) + ' $')}
+          ${row('TPS + TVQ', fmt2(taxPerFreq(o.tpsOnPayment) + taxPerFreq(o.tvqOnPayment)) + ' $')}
+          ${row(`Total ${leaseTerm} ${mo}`, fmt(Math.round(o.total)) + ' $')}
+          ${row(F ? "Coût d'emprunt" : 'Borrowing cost', fmt2(o.coutEmprunt) + ' $')}
+        </table>
+      </div>`;
+    };
+
     const printContent = `
       <!DOCTYPE html>
       <html>
@@ -1658,270 +1731,185 @@ export default function HomeScreen() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>CalcAuto AiPro - Soumission</title>
         <style>
+          @page { size: letter portrait; margin: 9mm; }
           * { box-sizing: border-box; margin: 0; padding: 0; }
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
-          .container { max-width: 640px; margin: 0 auto; background: #fff; }
-          .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 25px 20px; text-align: center; }
-          .header h1 { color: #fff; font-size: 26px; margin: 0; }
-          .header h1 span { color: #4ECDC4; }
-          .header p { color: rgba(255,255,255,0.7); font-size: 13px; margin-top: 4px; }
-          .content { padding: 20px; }
-          .section { margin-bottom: 20px; }
-          .section-title { font-size: 13px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; border-bottom: 2px solid #4ECDC4; padding-bottom: 5px; display: inline-block; }
-          
-          .vehicle-box { background: #f8f9fa; border-radius: 10px; padding: 15px; border-left: 4px solid #4ECDC4; }
-          .vehicle-brand { font-size: 13px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-          .vehicle-model { font-size: 22px; font-weight: 700; color: #1a1a2e; margin: 4px 0; }
-          .vehicle-price { font-size: 20px; color: #4ECDC4; font-weight: 700; }
-          .vehicle-vin { font-size: 11px; color: #888; font-family: monospace; margin-top: 4px; }
-          
-          .rates-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-          .rates-table th { background: #1a1a2e; color: #fff; padding: 10px; font-size: 12px; }
-          .rates-table td { padding: 8px; border-bottom: 1px solid #eee; }
-          
-          .info-table { width: 100%; font-size: 13px; }
-          .info-table td { padding: 8px 4px; border-bottom: 1px solid #f0f0f0; }
-          .info-table td:last-child { text-align: right; font-weight: 600; }
-          
-          .best-choice { background: #e8f5e9; border: 2px solid #4CAF50; border-radius: 10px; padding: 12px; text-align: center; margin-bottom: 20px; }
-          .best-choice-title { font-size: 16px; font-weight: 700; color: #2E7D32; }
-          .best-choice-savings { font-size: 13px; color: #388E3C; margin-top: 4px; }
-          
-          .options-grid { display: flex; gap: 10px; }
-          .option-card { flex: 1; border-radius: 10px; padding: 15px; border: 2px solid #ddd; }
-          .option-card.winner { border-color: #4CAF50; background: #f0fff4; }
-          .option-title { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
-          .option-title.opt1 { color: #c0392b; }
-          .option-title.opt2 { color: #1565C0; }
-          .option-detail { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; color: #555; }
-          .winner-badge { display: inline-block; background: #4CAF50; color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: 5px; }
-          
-          .payment-box { background: #f8f9fa; border-radius: 8px; padding: 12px; margin-top: 10px; text-align: center; }
-          .payment-box.opt1 { border-top: 3px solid #c0392b; }
-          .payment-box.opt2 { border-top: 3px solid #1565C0; }
-          .payment-label { font-size: 11px; color: #666; }
-          .payment-amount { font-size: 24px; font-weight: 700; margin: 4px 0; }
-          .payment-amount.opt1 { color: #c0392b; }
-          .payment-amount.opt2 { color: #1565C0; }
-          .payment-total { font-size: 11px; color: #666; }
-          
-          .bonus-note { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 10px; font-size: 12px; color: #856404; margin-top: 15px; }
-          
-          .footer { background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #eee; margin-top: 20px; }
-          .footer .disclaimer { font-size: 10px; color: #999; margin-top: 8px; line-height: 1.4; }
-          
+          html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          body { font-family: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 12px; line-height: 1.35; color: #10182B; background: #E9ECF1; font-variant-numeric: tabular-nums; }
+          .sheet { width: 7.75in; margin: 16px auto; background: #fff; padding: 22px 24px 16px; }
+          .top { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #10182B; padding-bottom: 10px; }
+          .top h1 { font-size: 25px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.1; }
+          .top .brand { font-size: 12px; font-weight: 700; color: #0B7A75; }
+          .top .meta { text-align: right; font-size: 11px; color: #5B6577; }
+          .hero { display: flex; gap: 14px; margin-top: 12px; }
+          .veh { flex: 1.25; }
+          .veh .make { font-size: 11px; color: #5B6577; }
+          .veh .model { font-size: 19px; font-weight: 700; line-height: 1.15; margin: 1px 0 4px; }
+          .veh .ids { font-size: 10.5px; color: #5B6577; font-family: Menlo, Consolas, monospace; }
+          .veh .price { font-size: 15px; font-weight: 700; margin-top: 4px; }
+          .who { flex: 0.9; border-left: 1px solid #D9DEE7; padding-left: 14px; font-size: 11.5px; }
+          .who .t, .h2 { font-size: 10.5px; font-weight: 700; color: #5B6577; margin-bottom: 3px; }
+          .who .name { font-size: 14px; font-weight: 700; }
+          .who .blank { border-bottom: 1px solid #9AA3B1; height: 17px; margin-bottom: 3px; }
+          .chosen-box { flex: 1; background: #10182B; color: #fff; border-radius: 6px; padding: 10px 14px; }
+          .chosen-box .t { font-size: 10.5px; color: #B9C2D0; }
+          .chosen-box .amt { font-size: 29px; font-weight: 700; line-height: 1.1; letter-spacing: -0.5px; }
+          .chosen-box .d { font-size: 11px; color: #D7DDE6; }
+          .cols { display: flex; gap: 16px; margin-top: 12px; }
+          .cols > div { flex: 1; min-width: 0; }
+          .h2 { border-bottom: 1px solid #10182B; padding-bottom: 2px; margin-bottom: 4px; }
+          table { width: 100%; border-collapse: collapse; }
+          .det td { padding: 2.5px 0; border-bottom: 1px solid #EEF0F4; font-size: 11.5px; }
+          .det td:last-child, .mini td:last-child { text-align: right; font-weight: 600; white-space: nowrap; }
+          .good { color: #0E7C4A; }
+          .rates th, .rates td { text-align: center; padding: 3px 2px; font-size: 10.5px; border-bottom: 1px solid #EEF0F4; }
+          .rates th { font-weight: 700; color: #5B6577; }
+          .rates td.lbl { text-align: left; font-weight: 700; }
+          .rates .sel { background: #10182B; color: #fff; font-weight: 700; }
+          .cards { display: flex; gap: 10px; margin-top: 6px; }
+          .card { flex: 1; border: 1px solid #D9DEE7; border-top: 3px solid #5B6577; border-radius: 4px; padding: 7px 9px 5px; min-width: 0; }
+          .card.chosen { border-top-color: #10182B; }
+          .card.best { border-color: #0E7C4A; border-top-color: #0E7C4A; background: #F3FAF6; }
+          .card.lease { border-top-color: #B4690E; }
+          .card.lease.best { border-color: #B4690E; background: #FDF8F0; }
+          .card-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+          .card-name { font-size: 12.5px; font-weight: 700; }
+          .tag { font-size: 9.5px; font-weight: 700; color: #fff; background: #0E7C4A; border-radius: 3px; padding: 1px 6px; white-space: nowrap; }
+          .card.lease .tag { background: #B4690E; }
+          .card-sub { font-size: 10px; color: #5B6577; }
+          .pay { font-size: 20px; font-weight: 700; margin: 3px 0 3px; letter-spacing: -0.3px; white-space: nowrap; line-height: 1.15; }
+          .pay small { display: block; font-size: 10px; font-weight: 400; color: #5B6577; letter-spacing: 0; }
+          .mini td { padding: 1.5px 0; font-size: 10.5px; border-top: 1px solid #EEF0F4; }
+          .na { display: flex; align-items: center; justify-content: center; text-align: center; color: #9AA3B1; font-size: 11px; background: #F6F7F9; }
+          .lease-line { display: flex; gap: 18px; font-size: 11.5px; margin: 2px 0 0; }
+          .lease-line b { font-weight: 700; }
+          .versus { display: flex; margin-top: 10px; border: 1px solid #10182B; border-radius: 4px; }
+          .versus > div { flex: 1; padding: 6px 12px; }
+          .versus > div + div { border-left: 1px solid #10182B; }
+          .versus .t { font-size: 10.5px; color: #5B6577; }
+          .versus .v { font-size: 17px; font-weight: 700; }
+          .versus .v small { font-size: 10px; font-weight: 400; color: #5B6577; margin-left: 5px; }
+          .note { font-size: 10.5px; color: #7A4B00; background: #FFF6DF; border-left: 3px solid #B4690E; padding: 3px 8px; margin-top: 6px; }
+          .foot { margin-top: 10px; border-top: 1px solid #D9DEE7; padding-top: 5px; font-size: 7.5px; line-height: 1.3; color: #7B8494; }
+          .back-btn { display: block; margin: 14px auto; padding: 10px 26px; background: #10182B; color: #fff; border: 0; border-radius: 6px; font-size: 15px; font-weight: 700; cursor: pointer; }
           @media print {
             body { background: #fff; }
-            .container { box-shadow: none; }
+            .sheet { margin: 0 auto; padding: 0; width: 100%; }
             .no-print { display: none !important; }
+            .card, .versus, .cols, .hero { break-inside: avoid; }
           }
-          .back-btn {
-            display: block;
-            margin: 10px auto 15px;
-            padding: 12px 30px;
-            background: #1a1a2e;
-            color: #4ECDC4;
-            border: 2px solid #4ECDC4;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            text-align: center;
-          }
-          .back-btn:hover { background: #4ECDC4; color: #1a1a2e; }
         </style>
       </head>
       <body>
-        <div class="container">
-          <div class="header">
-            <h1>CalcAuto <span>AiPro</span></h1>
-            <p>${lang === 'fr' ? 'Soumission de financement' : 'Financing Submission'}</p>
+        <div class="sheet" id="sheet">
+          <div class="top">
+            <div>
+              <div class="brand">CalcAuto AiPro</div>
+              <h1>${F ? 'Soumission de financement' : 'Financing submission'}</h1>
+            </div>
+            <div class="meta">${F ? 'Préparée le' : 'Prepared on'} ${new Date().toLocaleDateString(F ? 'fr-CA' : 'en-CA')}</div>
           </div>
-          
-          <div class="content">
-            <!-- VEHICLE -->
-            <div class="section">
-              <div class="section-title">${lang === 'fr' ? 'Véhicule' : 'Vehicle'}</div>
-              <div class="vehicle-box">
-                <div class="vehicle-brand">${selectedProgram.brand}</div>
-                <div class="vehicle-model">${selectedProgram.model} ${selectedProgram.trim || ''} ${selectedProgram.year}</div>
-                <div class="vehicle-price">${fmt(price)} $</div>
-                ${vin ? `<div class="vehicle-vin">VIN: ${vin}</div>` : ''}
-              </div>
-            </div>
-            
-            <!-- RATES TABLE -->
-            <div class="section">
-              <div class="section-title">${lang === 'fr' ? 'Tableau des taux' : 'Rate Table'}</div>
-              <table class="rates-table">
-                <thead>
-                  <tr>
-                    <th style="text-align:left;">${lang === 'fr' ? 'Terme' : 'Term'}</th>
-                    ${hasOption1 ? '<th>Option 1</th>' : ''}
-                    ${hasOption2 ? '<th>Option 2</th>' : ''}
-                  </tr>
-                </thead>
-                <tbody>${ratesRows}</tbody>
-              </table>
-            </div>
-            
-            <!-- FINANCING DETAILS -->
-            <div class="section">
-              <div class="section-title">${lang === 'fr' ? 'Détails du financement' : 'Financing Details'}</div>
-              <table class="info-table">
-                <tr><td>${lang === 'fr' ? 'Prix du véhicule' : 'Vehicle price'}</td><td>${fmt(price)} $</td></tr>
-                ${consumerCash > 0 ? `<tr><td>${lang === 'fr' ? 'Rabais (avant taxes)' : 'Rebate (before tax)'}</td><td style="color:#2E7D32;">-${fmt(consumerCash)} $</td></tr>` : ''}
-                ${beforeTaxRebates.map(r => `<tr><td>${r.label} ${lang === 'fr' ? '(avant taxes)' : '(before tax)'}</td><td style="color:#2E7D32;">-${fmt(r.amount)} $</td></tr>`).join('')}
-                ${afterTaxRebates.map(r => `<tr><td>${r.label} ${lang === 'fr' ? '(après taxes)' : '(after tax)'}</td><td style="color:#2E7D32;">-${fmt(r.amount)} $</td></tr>`).join('')}
-                ${dossier > 0 ? `<tr><td>${lang === 'fr' ? 'Frais dossier' : 'Admin fees'}</td><td>${fmt2(dossier)} $</td></tr>` : ''}
-                ${pneus > 0 ? `<tr><td>${lang === 'fr' ? 'Taxe pneus' : 'Tire tax'}</td><td>${fmt(pneus)} $</td></tr>` : ''}
-                ${rdprm > 0 ? `<tr><td>RDPRM</td><td>${fmt(rdprm)} $</td></tr>` : ''}
-                ${pareBrise > 0 ? `<tr><td>${lang === 'fr' ? 'Assurance pare-brise' : 'Windshield insurance'}</td><td>${fmt2(pareBrise)} $</td></tr>` : ''}
-                ${divers > 0 ? `<tr><td>${lang === 'fr' ? 'Frais divers' : 'Other fees'}</td><td>${fmt2(divers)} $</td></tr>` : ''}
-                ${valeurEchange > 0 ? `<tr><td>${lang === 'fr' ? 'Valeur échange' : 'Trade-in value'}</td><td style="color:#2E7D32;">-${fmt(valeurEchange)} $</td></tr>` : ''}
-                ${comptant > 0 ? `<tr><td>${lang === 'fr' ? 'Comptant (tx inclus)' : 'Down payment (tax incl.)'}</td><td>-${fmt(comptant)} $</td></tr>` : ''}
-                <tr><td>${lang === 'fr' ? 'Terme sélectionné' : 'Selected term'}</td><td><strong>${selectedTerm} ${lang === 'fr' ? 'mois' : 'months'}</strong></td></tr>
-                <tr><td>${lang === 'fr' ? 'Fréquence' : 'Frequency'}</td><td><strong>${paymentLabel}</strong></td></tr>
-              </table>
-            </div>
 
-            <!-- BEST CHOICE BANNER -->
-            ${hasOption2 && savingsAmt > 0 ? `
-            <div class="best-choice">
-              <div class="best-choice-title">Option ${bestOpt} = ${lang === 'fr' ? 'Meilleur choix!' : 'Best choice!'}</div>
-              <div class="best-choice-savings">${lang === 'fr' ? 'Économies de' : 'Savings of'} <strong>${fmt(savingsAmt)} $</strong> ${lang === 'fr' ? 'sur le coût total' : 'on total cost'}</div>
-            </div>` : ''}
-
-            <!-- OPTIONS COMPARISON -->
-            <div class="section">
-              <div class="section-title">${lang === 'fr' ? 'Comparaison des options' : 'Options Comparison'}</div>
-              <div class="options-grid">
-                <!-- OPTION 1 -->
-                <div class="option-card ${bestOpt === '1' ? 'winner' : ''}" style="${hasOption1 ? '' : 'display:none;'}">
-                  <div class="option-title opt1">Option 1 ${bestOpt === '1' ? '<span class="winner-badge">✓</span>' : ''}</div>
-                  <div style="font-size:11px; color:#666; margin-bottom:8px;">${lang === 'fr' ? 'Rabais + Taux standard' : 'Rebate + Standard rate'}</div>
-                  <div class="option-detail"><span>${lang === 'fr' ? 'Rabais:' : 'Rebate:'}</span><span style="color:#2E7D32; font-weight:600;">${consumerCash > 0 ? '-' + fmt(consumerCash) + ' $' : '$0'}</span></div>
-                  <div class="option-detail"><span>${lang === 'fr' ? 'Capital:' : 'Principal:'}</span><span>${fmt(localResult.principalOption1 || 0)} $</span></div>
-                  <div class="option-detail"><span>${lang === 'fr' ? 'Taux:' : 'Rate:'}</span><span style="color:#c0392b;">${localResult.option1Rate}%</span></div>
-                  <div class="payment-box opt1">
-                    <div class="payment-label">${paymentLabel}</div>
-                    <div class="payment-amount opt1">${fmt2(o1Payment)} $</div>
-                    <div class="payment-total">Total (${selectedTerm} ${lang === 'fr' ? 'mois' : 'mo'}): <strong>${fmt(o1Total)} $</strong></div>
-                  </div>
-                </div>
-                
-                <!-- OPTION 2 -->
-                ${hasOption2 ? `
-                <div class="option-card ${bestOpt === '2' ? 'winner' : ''}">
-                  <div class="option-title opt2">Option 2 ${bestOpt === '2' ? '<span class="winner-badge">✓</span>' : ''}</div>
-                  <div style="font-size:11px; color:#666; margin-bottom:8px;">${altConsumerCashPrint > 0 ? fmt(altConsumerCashPrint) + ' $ ' : '$0 '}${lang === 'fr' ? 'rabais + Taux réduit' : 'rebate + Reduced rate'}</div>
-                  <div class="option-detail"><span>${lang === 'fr' ? 'Rabais:' : 'Rebate:'}</span><span${altConsumerCashPrint > 0 ? ' style="color:#2E7D32; font-weight:600;"' : ''}>${altConsumerCashPrint > 0 ? '-' + fmt(altConsumerCashPrint) + ' $' : '$0'}</span></div>
-                  <div class="option-detail"><span>${lang === 'fr' ? 'Capital:' : 'Principal:'}</span><span>${fmt(localResult.principalOption2 || 0)} $</span></div>
-                  <div class="option-detail"><span>${lang === 'fr' ? 'Taux:' : 'Rate:'}</span><span style="color:#1565C0;">${localResult.option2Rate}%</span></div>
-                  <div class="payment-box opt2">
-                    <div class="payment-label">${paymentLabel}</div>
-                    <div class="payment-amount opt2">${fmt2(o2Payment)} $</div>
-                    <div class="payment-total">Total (${selectedTerm} ${lang === 'fr' ? 'mois' : 'mo'}): <strong>${fmt(o2Total)} $</strong></div>
-                  </div>
-                </div>
-                ` : `
-                <div class="option-card" style="background:#f5f5f5; text-align:center; color:#999;">
-                  <div class="option-title" style="color:#999;">Option 2</div>
-                  <div style="padding:30px 0;">${lang === 'fr' ? 'Non disponible' : 'Not available'}<br/>${lang === 'fr' ? 'pour ce véhicule' : 'for this vehicle'}</div>
-                </div>
-                `}
-              </div>
+          <div class="hero">
+            <div class="veh">
+              <div class="make">${esc(selectedProgram.brand)} ${esc(selectedProgram.year)}</div>
+              <div class="model">${esc(selectedProgram.model)} ${esc(selectedProgram.trim || '')}</div>
+              ${vin || stockNo ? `<div class="ids">${stockNo ? (F ? 'Inventaire ' : 'Stock ') + esc(stockNo) : ''}${vin && stockNo ? ' &nbsp; ' : ''}${vin ? 'NIV ' + esc(vin) : ''}</div>` : ''}
+              <div class="price">${fmt(price)} $</div>
             </div>
-            
-            ${afterTaxRebates.map(r => `<div class="bonus-note">${r.label} : ${fmt(r.amount)} $ ${lang === 'fr' ? 'déduit après taxes, à part du comptant du client' : 'deducted after tax, separate from the customer\'s cash down'}</div>`).join('')}
-            
-            ${showLease && leaseResult && (leaseResult.standard || leaseResult.alternative) ? `
-            <!-- LOCATION SCI -->
-            <div class="section" style="margin-top:20px;">
-              <div class="section-title" style="border-color:#FFD700;">
-                ${lang === 'fr' ? 'Location SCI' : 'SCI Lease'}
-              </div>
-              
-              <table class="info-table" style="margin-bottom:12px;">
-                <tr><td>${lang === 'fr' ? 'Kilométrage / an' : 'Km / year'}</td><td><strong>${(leaseKmPerYear/1000).toFixed(0)}k km</strong></td></tr>
-                <tr><td>${lang === 'fr' ? 'Terme location' : 'Lease term'}</td><td><strong>${leaseTerm} ${lang === 'fr' ? 'mois' : 'months'}</strong></td></tr>
-                <tr><td>${lang === 'fr' ? 'Résiduel' : 'Residual'}</td><td><strong>${leaseResult.residualPct}%${leaseResult.kmAdjustment ? ` (+${leaseResult.kmAdjustment}%)` : ''} = ${fmt(Math.round(leaseResult.residualValue))} $</strong></td></tr>
-              </table>
-              
-              ${leaseResult.bestLease && leaseResult.standard && leaseResult.alternative ? `
-              <div class="best-choice" style="border-color:#FFD700; background:#fffde7;">
-                <div class="best-choice-title" style="color:#F57F17;">
-                  ${leaseResult.bestLease === 'standard' ? 'Std + Lease Cash' : (lang === 'fr' ? 'Taux Alternatif' : 'Alt. Rate')} = ${lang === 'fr' ? 'Meilleur choix location!' : 'Best lease choice!'}
-                </div>
-                ${leaseResult.leaseSavings > 0 ? `<div class="best-choice-savings" style="color:#F9A825;">${lang === 'fr' ? 'Économies de' : 'Savings of'} <strong>${fmt(Math.round(leaseResult.leaseSavings))} $</strong></div>` : ''}
-              </div>
-              ` : ''}
-              
-              <div class="options-grid">
-                ${leaseResult.standard ? `
-                <div class="option-card ${leaseResult.bestLease === 'standard' ? 'winner' : ''}">
-                  <div class="option-title" style="color:#E65100;">Std + Lease Cash ${leaseResult.bestLease === 'standard' ? '<span class="winner-badge" style="background:#FFD700;color:#000;">✓</span>' : ''}</div>
-                  ${leaseResult.standard.leaseCash - leaseResult.offersBeforeTax > 0 ? `<div class="option-detail"><span>Lease Cash:</span><span style="color:#2E7D32; font-weight:600;">-${fmt(leaseResult.standard.leaseCash - leaseResult.offersBeforeTax)} $</span></div>` : ''}
-                  ${leaseResult.offersBeforeTax > 0 ? `<div class="option-detail"><span>${lang === 'fr' ? 'Promos avant taxes:' : 'Before-tax offers:'}</span><span style="color:#2E7D32; font-weight:600;">-${fmt(leaseResult.offersBeforeTax)} $</span></div>` : ''}
-                  <div class="option-detail"><span>${lang === 'fr' ? 'Taux:' : 'Rate:'}</span><span style="color:#E65100;">${leaseResult.standard.rate}%</span></div>
-                  <div class="payment-box" style="border-top:3px solid #E65100;">
-                    <div class="payment-label">${paymentLabel}</div>
-                    <div class="payment-amount" style="color:#E65100;">${fmt2(paymentFrequency === 'biweekly' ? leaseResult.standard.biweekly : paymentFrequency === 'weekly' ? leaseResult.standard.weekly : leaseResult.standard.monthly)} $</div>
-                    <div class="payment-total">${lang === 'fr' ? 'Avant taxes' : 'Before tax'}: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.standard.weeklyBeforeTax : paymentFrequency === 'biweekly' ? leaseResult.standard.biweeklyBeforeTax : leaseResult.standard.monthlyBeforeTax)} $ | TPS: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.standard.tpsOnPayment * 12/52 : paymentFrequency === 'biweekly' ? leaseResult.standard.tpsOnPayment * 12/26 : leaseResult.standard.tpsOnPayment)} $ | TVQ: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.standard.tvqOnPayment * 12/52 : paymentFrequency === 'biweekly' ? leaseResult.standard.tvqOnPayment * 12/26 : leaseResult.standard.tvqOnPayment)} $</div>
-                    <div class="payment-total">Total (${leaseTerm} ${lang === 'fr' ? 'mois' : 'mo'}): <strong>${fmt(Math.round(leaseResult.standard.total))} $</strong></div>
-                    <div class="payment-total" style="color:#c00;">${lang === 'fr' ? "Coût d'emprunt" : 'Borrowing cost'}: <strong>${fmt2(leaseResult.standard.coutEmprunt)} $</strong></div>
-                  </div>
-                </div>
-                ` : ''}
-                
-                ${leaseResult.alternative ? `
-                <div class="option-card ${leaseResult.bestLease === 'alternative' ? 'winner' : ''}">
-                  <div class="option-title" style="color:#0277BD;">${lang === 'fr' ? 'Taux Alternatif' : 'Alt. Rate'} ${leaseResult.bestLease === 'alternative' ? '<span class="winner-badge" style="background:#FFD700;color:#000;">✓</span>' : ''}</div>
-                  <div class="option-detail"><span>Lease Cash:</span><span>${leaseResult.alternative.leaseCash - leaseResult.offersBeforeTax > 0 ? `-${fmt(leaseResult.alternative.leaseCash - leaseResult.offersBeforeTax)} $` : '$0'}</span></div>
-                  ${leaseResult.offersBeforeTax > 0 ? `<div class="option-detail"><span>${lang === 'fr' ? 'Promos avant taxes:' : 'Before-tax offers:'}</span><span style="color:#2E7D32; font-weight:600;">-${fmt(leaseResult.offersBeforeTax)} $</span></div>` : ''}
-                  <div class="option-detail"><span>${lang === 'fr' ? 'Taux:' : 'Rate:'}</span><span style="color:#0277BD;">${leaseResult.alternative.rate}%</span></div>
-                  <div class="payment-box" style="border-top:3px solid #0277BD;">
-                    <div class="payment-label">${paymentLabel}</div>
-                    <div class="payment-amount" style="color:#0277BD;">${fmt2(paymentFrequency === 'biweekly' ? leaseResult.alternative.biweekly : paymentFrequency === 'weekly' ? leaseResult.alternative.weekly : leaseResult.alternative.monthly)} $</div>
-                    <div class="payment-total">${lang === 'fr' ? 'Avant taxes' : 'Before tax'}: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.alternative.weeklyBeforeTax : paymentFrequency === 'biweekly' ? leaseResult.alternative.biweeklyBeforeTax : leaseResult.alternative.monthlyBeforeTax)} $ | TPS: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.alternative.tpsOnPayment * 12/52 : paymentFrequency === 'biweekly' ? leaseResult.alternative.tpsOnPayment * 12/26 : leaseResult.alternative.tpsOnPayment)} $ | TVQ: ${fmt2(paymentFrequency === 'weekly' ? leaseResult.alternative.tvqOnPayment * 12/52 : paymentFrequency === 'biweekly' ? leaseResult.alternative.tvqOnPayment * 12/26 : leaseResult.alternative.tvqOnPayment)} $</div>
-                    <div class="payment-total">Total (${leaseTerm} ${lang === 'fr' ? 'mois' : 'mo'}): <strong>${fmt(Math.round(leaseResult.alternative.total))} $</strong></div>
-                    <div class="payment-total" style="color:#c00;">${lang === 'fr' ? "Coût d'emprunt" : 'Borrowing cost'}: <strong>${fmt2(leaseResult.alternative.coutEmprunt)} $</strong></div>
-                  </div>
-                </div>
-                ` : ''}
-              </div>
-              
-              <!-- Lease vs Finance summary -->
-              <div style="margin-top:15px; background:#f8f9fa; border-radius:10px; padding:15px; text-align:center;">
-                <div style="font-size:14px; font-weight:700; color:#F57F17; margin-bottom:10px;">${lang === 'fr' ? 'Location vs Financement' : 'Lease vs Finance'}</div>
-                <div style="display:flex; gap:20px; justify-content:center;">
-                  <div>
-                    <div style="font-size:11px; color:#666;">${lang === 'fr' ? 'Meilleure Location' : 'Best Lease'}</div>
-                    <div style="font-size:20px; font-weight:700; color:#E65100;">${fmt2(paymentFrequency === 'biweekly' ? (leaseResult.bestLease === 'standard' ? leaseResult.standard?.biweekly : leaseResult.alternative?.biweekly) || 0 : paymentFrequency === 'weekly' ? (leaseResult.bestLease === 'standard' ? leaseResult.standard?.weekly : leaseResult.alternative?.weekly) || 0 : (leaseResult.bestLease === 'standard' ? leaseResult.standard?.monthly : leaseResult.alternative?.monthly) || 0)} $</div>
-                    <div style="font-size:10px; color:#999;">${leaseTerm} ${lang === 'fr' ? 'mois' : 'mo'}</div>
-                  </div>
-                  <div style="width:1px; background:#ddd;"></div>
-                  <div>
-                    <div style="font-size:11px; color:#666;">${lang === 'fr' ? 'Meilleur Financement' : 'Best Finance'}</div>
-                    <div style="font-size:20px; font-weight:700; color:#4ECDC4;">${fmt2(paymentFrequency === 'biweekly' ? (localResult.bestOption === '2' && localResult.option2Biweekly ? localResult.option2Biweekly : localResult.option1Biweekly) : paymentFrequency === 'weekly' ? (localResult.bestOption === '2' && localResult.option2Weekly ? localResult.option2Weekly : localResult.option1Weekly) : (localResult.bestOption === '2' && localResult.option2Monthly ? localResult.option2Monthly : localResult.option1Monthly))} $</div>
-                    <div style="font-size:10px; color:#999;">${selectedTerm} ${lang === 'fr' ? 'mois' : 'mo'}</div>
-                  </div>
-                </div>
-              </div>
+            <div class="who">
+              <div class="t">${F ? 'Préparée pour' : 'Prepared for'}</div>
+              ${clientLines.length
+                ? `<div class="name">${esc(clientLines[0])}</div>${clientLines.slice(1).map((l) => `<div>${esc(l)}</div>`).join('')}`
+                : '<div class="blank"></div><div class="blank"></div>'}
             </div>
-            ` : ''}
+            <div class="chosen-box">
+              <div class="t">${F ? 'Paiement retenu' : 'Selected payment'} (Option ${option})</div>
+              <div class="amt">${fmt2(payment)} $</div>
+              <div class="d">${paymentLabel}, ${selectedTerm} ${mo} ${F ? 'à' : 'at'} ${rate} %</div>
+            </div>
           </div>
-          
-          <div class="footer">
-            <button class="back-btn no-print" onclick="window.close(); if(!window.closed) history.back();">${lang === 'fr' ? 'Retour au calculateur' : 'Back to calculator'}</button>
-            <div style="font-size:12px; color:#666;">${lang === 'fr' ? 'Généré le' : 'Generated on'} ${new Date().toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA')}</div>
-            <div class="disclaimer">
-              ${lang === 'fr' 
-                ? 'AVIS IMPORTANT: Les montants de paiements présentés dans cette soumission sont fournis à titre indicatif seulement et ne constituent en aucun cas une offre de financement ou de location officielle. Les versements réels peuvent différer en fonction de l\'évaluation de crédit, des programmes en vigueur au moment de la transaction, des ajustements de résiduel et des frais applicables. Le concessionnaire et ses représentants ne peuvent être tenus responsables de toute erreur de calcul ou d\'écart entre la présente estimation et les conditions finales du contrat. Toute transaction est sujette à l\'approbation du crédit par l\'institution financière.'
-                : 'IMPORTANT NOTICE: Payment amounts shown in this submission are provided for informational purposes only and do not constitute an official financing or lease offer. Actual payments may differ based on credit evaluation, programs in effect at the time of transaction, residual adjustments and applicable fees. The dealer and its representatives cannot be held responsible for any calculation errors or discrepancies between this estimate and the final contract terms. All transactions are subject to credit approval by the financial institution.'}
+
+          <div class="cols">
+            <div>
+              <div class="h2">${F ? 'Détails du financement' : 'Financing details'}</div>
+              <table class="det">
+                ${row(F ? 'Prix du véhicule' : 'Vehicle price', fmt(price) + ' $')}
+                ${consumerCash > 0 ? row(F ? 'Rabais (avant taxes)' : 'Rebate (before tax)', '−' + fmt(consumerCash) + ' $', 'good') : ''}
+                ${beforeTaxRebates.map(r => row(`${esc(r.label)} ${F ? '(avant taxes)' : '(before tax)'}`, '−' + fmt(r.amount) + ' $', 'good')).join('')}
+                ${afterTaxRebates.map(r => row(`${esc(r.label)} ${F ? '(après taxes)' : '(after tax)'}`, '−' + fmt(r.amount) + ' $', 'good')).join('')}
+                ${dossier > 0 ? row(F ? 'Frais de dossier' : 'Admin fees', fmt2(dossier) + ' $') : ''}
+                ${pneus > 0 ? row(F ? 'Taxe sur les pneus' : 'Tire tax', fmt(pneus) + ' $') : ''}
+                ${rdprm > 0 ? row('RDPRM', fmt(rdprm) + ' $') : ''}
+                ${pareBrise > 0 ? row(F ? 'Assurance pare-brise' : 'Windshield insurance', fmt2(pareBrise) + ' $') : ''}
+                ${divers > 0 ? row(F ? 'Frais divers' : 'Other fees', fmt2(divers) + ' $') : ''}
+                ${valeurEchange > 0 ? row(F ? "Valeur d'échange" : 'Trade-in value', '−' + fmt(valeurEchange) + ' $', 'good') : ''}
+                ${comptant > 0 ? row(F ? 'Comptant (taxes incluses)' : 'Down payment (tax incl.)', '−' + fmt(comptant) + ' $') : ''}
+                ${row(F ? 'Terme et fréquence' : 'Term and frequency', `${selectedTerm} ${mo}, ${paymentLabel.toLowerCase()}`)}
+              </table>
             </div>
+            <div>
+              <div class="h2">${F ? 'Taux selon le terme' : 'Rates by term'}</div>
+              <table class="rates">
+                <tr><th></th>${ratesHead}</tr>
+                ${hasOption1 ? ratesLine('Option 1', selectedProgram.option1_rates) : ''}
+                ${hasOption2 ? ratesLine('Option 2', selectedProgram.option2_rates) : ''}
+              </table>
+              <div class="cards">
+                ${hasOption1 ? finCard('1', F ? 'Rabais et taux standard' : 'Rebate and standard rate', consumerCash, localResult.principalOption1 || 0, localResult.option1Rate, o1Payment, o1Total) : ''}
+                ${hasOption2
+                  ? finCard('2', F ? 'Taux réduit' : 'Reduced rate', altConsumerCashPrint, localResult.principalOption2 || 0, localResult.option2Rate, o2Payment, o2Total)
+                  : `<div class="card na">Option 2<br/>${F ? 'non offerte pour ce véhicule' : 'not offered for this vehicle'}</div>`}
+              </div>
+              ${hasOption2 && savingsAmt > 0 ? `<div class="note" style="color:#0B5A37;background:#EAF6EF;border-color:#0E7C4A;">Option ${bestOpt} : ${F ? 'économie de' : 'saves'} <b>${fmt(savingsAmt)} $</b> ${F ? 'sur le coût total' : 'on total cost'}</div>` : ''}
+            </div>
+          </div>
+
+          ${afterTaxRebates.map(r => `<div class="note">${esc(r.label)} : ${fmt(r.amount)} $ ${F ? 'déduit après taxes, à part du comptant du client' : 'deducted after tax, separate from the customer\'s cash down'}</div>`).join('')}
+
+          ${hasLeasePrint ? `
+          <div class="cols">
+            <div>
+              <div class="h2">${F ? 'Location SCI' : 'SCI lease'}</div>
+              <div class="lease-line">
+                <span>${F ? 'Kilométrage' : 'Mileage'} <b>${(leaseKmPerYear/1000).toFixed(0)} 000 km/${F ? 'an' : 'yr'}</b></span>
+                <span>${F ? 'Terme' : 'Term'} <b>${leaseTerm} ${mo}</b></span>
+              </div>
+              <div class="lease-line">
+                <span>${F ? 'Résiduel' : 'Residual'} <b>${leaseResult.residualPct} %${leaseResult.kmAdjustment ? ` (+${leaseResult.kmAdjustment} %)` : ''}, ${fmt(Math.round(leaseResult.residualValue))} $</b></span>
+              </div>
+              ${leaseResult.leaseSavings > 0 && leaseResult.standard && leaseResult.alternative ? `<div class="note">${leaseResult.bestLease === 'standard' ? 'Std + Lease Cash' : (F ? 'Taux alternatif' : 'Alt. rate')} : ${F ? 'économie de' : 'saves'} <b>${fmt(Math.round(leaseResult.leaseSavings))} $</b></div>` : ''}
+              <div class="versus">
+                <div><div class="t">${F ? 'Meilleure location' : 'Best lease'}</div><div class="v">${fmt2(perFreq(bestLeaseOpt))} $<small>${leaseTerm} ${mo}</small></div></div>
+                <div><div class="t">${F ? 'Meilleur financement' : 'Best financing'}</div><div class="v">${fmt2(bestFinPayment)} $<small>${selectedTerm} ${mo}</small></div></div>
+              </div>
+            </div>
+            <div>
+              <div class="cards" style="margin-top:0;">
+                ${leaseCard('standard', 'Std + Lease Cash')}
+                ${leaseCard('alternative', F ? 'Taux alternatif' : 'Alt. rate')}
+              </div>
+            </div>
+          </div>` : ''}
+
+          <div class="foot">
+            ${F
+              ? 'AVIS IMPORTANT : Les montants de paiements présentés dans cette soumission sont fournis à titre indicatif seulement et ne constituent en aucun cas une offre de financement ou de location officielle. Les versements réels peuvent différer en fonction de l\'évaluation de crédit, des programmes en vigueur au moment de la transaction, des ajustements de résiduel et des frais applicables. Le concessionnaire et ses représentants ne peuvent être tenus responsables de toute erreur de calcul ou d\'écart entre la présente estimation et les conditions finales du contrat. Toute transaction est sujette à l\'approbation du crédit par l\'institution financière.'
+              : 'IMPORTANT NOTICE: Payment amounts shown in this submission are provided for informational purposes only and do not constitute an official financing or lease offer. Actual payments may differ based on credit evaluation, programs in effect at the time of transaction, residual adjustments and applicable fees. The dealer and its representatives cannot be held responsible for any calculation errors or discrepancies between this estimate and the final contract terms. All transactions are subject to credit approval by the financial institution.'}
           </div>
         </div>
+        <button class="back-btn no-print" onclick="window.close(); if(!window.closed) history.back();">${F ? 'Retour au calculateur' : 'Back to calculator'}</button>
+        <script>
+          // Toujours une seule page : la feuille est réduite si elle dépasse la hauteur utile.
+          (function () {
+            var fit = function () {
+              var s = document.getElementById('sheet'); if (!s) return;
+              s.style.zoom = 1;
+              var max = 980, h = s.scrollHeight;
+              if (h > max) s.style.zoom = (max / h).toFixed(3);
+            };
+            window.addEventListener('beforeprint', fit); window.addEventListener('load', fit); fit();
+          })();
+        </script>
       </body>
       </html>
     `;
@@ -3397,7 +3385,7 @@ export default function HomeScreen() {
                 {/* Print Button */}
                 <TouchableOpacity
                   style={styles.printButton}
-                  onPress={handlePrint}
+                  onPress={openPrint}
                   data-testid="print-btn"
                 >
                   <Ionicons name="print-outline" size={18} color="#f4f1ea" />
@@ -4034,7 +4022,7 @@ export default function HomeScreen() {
                         
                         <TouchableOpacity
                           style={styles.printButton}
-                          onPress={handlePrint}
+                          onPress={openPrint}
                           data-testid="lease-print-btn"
                         >
                           <Ionicons name="print-outline" size={18} color="#f4f1ea" />
@@ -4192,6 +4180,42 @@ export default function HomeScreen() {
         </Modal>
 
         {/* Email Modal */}
+        <Modal
+          visible={showPrintModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowPrintModal(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}>
+            <View testID="print-client-modal" style={{ backgroundColor: '#1b202a', borderRadius: 12, width: '90%', maxWidth: 420, overflow: 'hidden' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#303744' }}>
+                <Ionicons name="print" size={22} color="#e6c65a" style={{ marginRight: 10 }} />
+                <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#f4f1ea', flex: 1 }}>
+                  {lang === 'fr' ? 'Pour qui est cette soumission ?' : 'Who is this submission for?'}
+                </Text>
+                <TouchableOpacity onPress={() => setShowPrintModal(false)} style={{ padding: 4 }}>
+                  <Ionicons name="close" size={22} color="#9aa3b1" />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.emailModalBody}>
+                <Text style={styles.emailModalLabel}>{t.email.clientName}</Text>
+                <TextInput testID="print-client-name" style={styles.emailModalInput} placeholder="Ex: Jean Dupont" placeholderTextColor="#8a93a1" value={clientName} onChangeText={setClientName} />
+                <Text style={styles.emailModalLabel}>{t.email.clientPhone}</Text>
+                <TextInput testID="print-client-phone" style={styles.emailModalInput} placeholder="514-555-1234" placeholderTextColor="#8a93a1" value={clientPhone} onChangeText={setClientPhone} keyboardType="phone-pad" />
+                <Text style={styles.emailModalLabel}>{t.email.clientEmail}</Text>
+                <TextInput testID="print-client-email" style={styles.emailModalInput} placeholder="client@email.com" placeholderTextColor="#8a93a1" value={clientEmail} onChangeText={setClientEmail} keyboardType="email-address" autoCapitalize="none" />
+                {!!printNotice && <Text testID="print-client-notice" style={{ color: '#ff8a80', fontSize: 13, marginTop: 8 }}>{printNotice}</Text>}
+                <TouchableOpacity testID="print-save-and-print" onPress={() => printForClient(true)} style={{ backgroundColor: '#e6c65a', borderRadius: 8, paddingVertical: 12, alignItems: 'center', marginTop: 14 }}>
+                  <Text style={{ color: '#1b202a', fontWeight: 'bold', fontSize: 15 }}>{lang === 'fr' ? 'Enregistrer au CRM et imprimer' : 'Save to CRM and print'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity testID="print-without-saving" onPress={() => printForClient(false)} style={{ paddingVertical: 12, alignItems: 'center' }}>
+                  <Text style={{ color: '#9aa3b1', fontSize: 14 }}>{lang === 'fr' ? 'Imprimer sans enregistrer' : 'Print without saving'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
         <Modal
           visible={showEmailModal}
           transparent
