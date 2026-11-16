@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="%LANG_ISO_CODE%">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>%WEB_TITLE%</title>
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
+    <style id="expo-reset">
+      /* These styles make the body full-height */
+      html,
+      body {
+        height: 100%;
+      }
+      /* These styles disable body scrolling if you are using <ScrollView> */
+      body {
+        overflow: hidden;
+      }
+      /* These styles make the root element full-height */
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+    </style>
+    <!-- Témoin de démarrage : si l'application ne démarre pas, on affiche pourquoi au lieu d'un écran noir. -->
+    <script>
+      (function () {
+        var seen = [];
+        function note(text) { if (text && seen.length < 4) seen.push(String(text).slice(0, 160)); }
+        window.addEventListener('error', function (e) {
+          var t = e && e.target;
+          if (t && t.tagName === 'SCRIPT') note('fichier non chargé : ' + String(t.src || '').split('/').pop());
+          else note((e && e.message) || 'erreur');
+        }, true);
+        window.addEventListener('unhandledrejection', function (e) {
+          note('promesse : ' + ((e && e.reason && (e.reason.message || e.reason)) || ''));
+        });
+        function check(attempt) {
+          var root = document.getElementById('root');
+          if (root && root.childNodes.length) return;
+          if (attempt < 3 && !seen.length) return setTimeout(function () { check(attempt + 1); }, 4000);
+          var reason = seen.length ? seen.join(' | ') : 'aucune erreur signalée, le programme ne s\'est pas exécuté';
+          try { new Image().src = '/api/boot-diag?r=' + encodeURIComponent(reason) + '&f=' + (window.top === window ? 0 : 1); } catch (x) {}
+          var box = document.createElement('div');
+          box.setAttribute('data-testid', 'temoin-demarrage');
+          box.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#07090e;color:#e5e7eb;font:16px/1.5 system-ui,sans-serif;text-align:center';
+          var h = document.createElement('div'); h.style.cssText = 'font-size:20px;font-weight:700'; h.textContent = 'CalcAuto n\'a pas démarré';
+          var p = document.createElement('div'); p.style.cssText = 'max-width:560px;color:#9ca3af;font-size:14px;word-break:break-word'; p.textContent = 'Raison : ' + reason;
+          var b = document.createElement('button'); b.textContent = 'Recharger';
+          b.style.cssText = 'min-height:44px;padding:0 22px;border-radius:8px;border:1px solid #e5c558;background:transparent;color:#e5c558;font-size:16px;font-weight:600;cursor:pointer';
+          b.onclick = function () { location.reload(); };
+          box.appendChild(h); box.appendChild(p); box.appendChild(b); document.body.appendChild(box);
+        }
+        window.addEventListener('load', function () { setTimeout(function () { check(0); }, 6000); });
+      })();
+    </script>
+  </head>
+
+  <body>
+    <!-- Use static rendering with Expo Router to support running without JavaScript. -->
+    <noscript>
+      You need to enable JavaScript to run this app.
+    </noscript>
+    <!-- The root element for your Expo app. -->
+    <div id="root"></div>
+  </body>
+</html>
