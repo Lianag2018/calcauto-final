@@ -398,9 +398,14 @@ def _decode_code_by_pattern(code: str) -> Optional[Dict[str, str]]:
 
 
 def get_all_codes() -> Dict[str, Dict[str, Any]]:
-    """Retourne tous les codes master."""
+    """Retourne tous les codes connus : la base générale, plus ceux qui n'existent que par année."""
     _load_master_codes()
-    return _MASTER_CODES.copy()
+    codes = _MASTER_CODES.copy()
+    for dated in _year_codes().values():
+        for code in dated:
+            if code not in codes:
+                codes[code] = _year_entry(code, None, None)
+    return codes
 
 
 def get_codes_count() -> int:

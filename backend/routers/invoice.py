@@ -1051,7 +1051,7 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
             model_code = parsed.get("model_code", "")
             
             # ==== DOUBLE VÉRIFICATION AVEC BASE MASTER ====
-            master_lookup = lookup_product_code(model_code) if model_code else None
+            master_lookup = lookup_product_code(model_code, vin_info.get("year"), [o.get("product_code") for o in parsed.get("options", []) if isinstance(o, dict)]) if model_code else None
             product_info = master_lookup or (decode_product_code(model_code) if model_code else {})
             
             if master_lookup:
@@ -1098,7 +1098,7 @@ async def scan_invoice(request: InvoiceScanRequest, authorization: Optional[str]
             
             # ==== DOUBLE VÉRIFICATION AVEC BASE MASTER ====
             # 1. Lookup dans la base master des 131 codes officiels
-            master_lookup = lookup_product_code(model_code) if model_code else None
+            master_lookup = lookup_product_code(model_code, vin_info.get("year"), [o.get("product_code") for o in parsed.get("options", []) if isinstance(o, dict)]) if model_code else None
             
             # 2. Fallback vers decode_product_code si non trouvé dans master
             product_info = master_lookup or (decode_product_code(model_code) if model_code else {})
@@ -1323,7 +1323,7 @@ Retourne UNIQUEMENT un JSON valide (pas de markdown, pas de commentaires):
                     from product_code_lookup import get_all_codes
                     master_codes = get_all_codes()
                     model_code = structured_data.get("model_code", "") or parse_model_code(full_text, master_codes) or ""
-                    master_lookup = lookup_product_code(model_code) if model_code else None
+                    master_lookup = lookup_product_code(model_code, vin_info.get("year")) if model_code else None
                     product_info = master_lookup or (decode_product_code(model_code) if model_code else {})
                     
                     # Financier: GPT-4o
@@ -1419,7 +1419,7 @@ Retourne UNIQUEMENT un JSON valide (pas de markdown, pas de commentaires):
                     from product_code_lookup import get_all_codes
                     master_codes = get_all_codes()
                     model_code = parse_model_code(full_text, master_codes) or ""
-                    master_lookup = lookup_product_code(model_code) if model_code else None
+                    master_lookup = lookup_product_code(model_code, vin_info.get("year")) if model_code else None
                     product_info = master_lookup or (decode_product_code(model_code) if model_code else {})
                     
                     financial = parse_financial_data(full_text)
