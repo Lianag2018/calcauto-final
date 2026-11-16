@@ -1628,6 +1628,10 @@ export default function HomeScreen() {
     if (!selectedProgram || !localResult || !vehiclePrice) return null;
 
     const vehicle = `${selectedProgram.brand} ${selectedProgram.model} ${selectedProgram.trim || ''} ${selectedProgram.year}`.trim();
+    // Sous le nom de la concession : le conseiller qui prépare la soumission et son téléphone
+    // (celui de son compte eTradeValue) ; sans téléphone connu, celui de la concession.
+    const advisorName = String(user?.etv_name || user?.name || '').trim();
+    const advisorPhone = String(user?.etv_phone || '').trim();
     const option = selectedOption === '2' || !hasOption1 ? '2' : '1';
     const rate = option === '1' ? localResult.option1Rate : localResult.option2Rate;
     
@@ -1746,12 +1750,15 @@ export default function HomeScreen() {
           body { font-family: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 12px; line-height: 1.35; color: #10182B; background: #E9ECF1; font-variant-numeric: tabular-nums; }
           .sheet { width: 7.75in; margin: 16px auto; background: #fff; padding: 22px 24px 16px; }
           .band { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding-bottom: 10px; border-bottom: 3px solid #10182B; }
-          .dealer { display: flex; align-items: center; gap: 14px; min-width: 0; }
-          .dealer img { height: 58px; max-width: 3.1in; object-fit: contain; }
+          .dealer { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1 1 auto; }
+          .dealer > div { min-width: 0; }
+          .dealer img { height: 54px; max-width: 2.5in; object-fit: contain; flex-shrink: 0; }
           .dealer .dn { font-size: 21px; font-weight: 700; line-height: 1.12; letter-spacing: -0.3px; }
-          .dealer .dp { font-size: 12px; color: #5B6577; margin-top: 2px; }
-          .etv { display: flex; align-items: center; gap: 8px; text-align: right; flex-shrink: 0; }
-          .etv img { height: 62px; width: auto; border-radius: 5px; display: block; }
+          .dealer .da { font-size: 13px; font-weight: 700; margin-top: 4px; white-space: nowrap; }
+          .dealer .dp { font-size: 12px; color: #5B6577; margin-top: 1px; white-space: nowrap; }
+          .etv { display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 3px; text-align: right; flex-shrink: 0; }
+          .etv img { height: 54px; width: auto; border-radius: 5px; display: block; }
+          .etv .by b { margin-right: 4px; }
           .etv .by { font-size: 10.5px; color: #5B6577; line-height: 1.3; }
           .etv .by b { display: block; font-size: 13px; color: #10182B; }
           .top { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px; }
@@ -1823,7 +1830,8 @@ export default function HomeScreen() {
               ${dealerBranding?.logoUrl ? `<img src="${esc(dealerBranding.logoUrl)}" alt="${esc(dealerBranding.name)}" />` : ''}
               <div>
                 ${dealerBranding?.name ? `<div class="dn" style="${dealerBranding.logoUrl ? 'font-size:14px;' : ''}">${esc(dealerBranding.name)}</div>` : ''}
-                ${dealerBranding?.phone ? `<div class="dp">${esc(dealerBranding.phone)}</div>` : ''}
+                ${advisorName ? `<div class="da">${esc(advisorName)}</div>` : ''}
+                ${(advisorPhone || dealerBranding?.phone) ? `<div class="dp">${esc(advisorPhone || dealerBranding?.phone || '')}</div>` : ''}
               </div>
             </div>
             <div class="etv">

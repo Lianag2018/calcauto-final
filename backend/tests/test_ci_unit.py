@@ -1178,6 +1178,13 @@ class TestEtvLink:
                                          dealer_name='Garage "Essai" <x>\nBcc: z@exemple.test'), now=1000)
         assert odd["email"] == "" and odd["dealer_name"] == "Garage Essai xBcc: z@exemple.test"
 
+    def test_ticket_carries_the_advisor_phone(self, monkeypatch):
+        from services.etv_link import etv_profile_fields, verify_ticket
+        fields = etv_profile_fields(verify_ticket(self._ticket(monkeypatch, phone="418 555-0100"), now=1000))
+        assert fields["etv_phone"] == "418 555-0100"
+        assert etv_profile_fields(verify_ticket(self._ticket(monkeypatch), now=1000))["etv_phone"] == ""
+        assert verify_ticket(self._ticket(monkeypatch, phone="<script>1</script>"), now=1000)["phone"] == ""
+
     def test_quote_is_sent_in_the_advisor_name(self):
         from services.etv_link import mail_sender
         etv = {"etv_username": "william", "email": "william@garage.etradevalue"}

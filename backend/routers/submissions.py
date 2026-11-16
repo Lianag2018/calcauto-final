@@ -8,18 +8,16 @@ from dependencies import get_current_user, calculate_monthly_payment
 router = APIRouter()
 
 from services.email_service import send_email
+from services.followup import first_reminder, next_reminder
 
 # ============ CRM Endpoints ============
 
 @router.post("/submissions")
 async def create_submission(submission: SubmissionCreate, authorization: Optional[str] = Header(None)):
-    """Créer une nouvelle soumission avec rappel automatique 24h"""
-    from datetime import timedelta
-    
+    """Créer une nouvelle soumission avec ses suivis : 2 jours, puis 7, puis 30"""
     user = await get_current_user(authorization)
     
-    # Set default reminder to 24h from now
-    reminder_date = datetime.utcnow() + timedelta(hours=24)
+    reminder_date = first_reminder(datetime.utcnow())
     
     new_submission = Submission(
         client_name=submission.client_name,
@@ -42,9 +40,11 @@ async def create_submission(submission: SubmissionCreate, authorization: Optiona
         calculator_state=submission.calculator_state
     )
     
-    await db.submissions.insert_one(new_submission.dict())
+    # followup_step : numéro du suivi en cours (0 = 2 jours, 1 = 7 jours, 2 = 30 jours)
+    record = {**new_submission.dict(), "followup_step": 0}
+    await db.submissions.insert_one(dict(record))
     
-    return {"success": True, "submission": new_submission.dict(), "message": "Soumission enregistrée - Rappel dans 24h"}
+    return {"success": True, "submission": record, "message": "Soumission enregistrée - Suivis dans 2, 7 et 30 jours"}
 
 @router.get("/submissions")
 async def get_submissions(search: Optional[str] = None, status: Optional[str] = None, authorization: Optional[str] = Header(None)):
@@ -145,6 +145,13 @@ async def mark_reminder_done(submission_id: str, authorization: Optional[str] = 
     if new_reminder_date:
         update_data["reminder_date"] = datetime.fromisoformat(new_reminder_date.replace('Z', '+00:00'))
         update_data["reminder_done"] = False
+    else:
+        # Suite 2-7-30 jours : le suivi fait, le prochain se planifie seul.
+        current = await db.submissions.find_one({"id": submission_id, "owner_id": user["id"]})
+        following = next_reminder((current or {}).get("submission_date"), (current or {}).get("followup_step"), datetime.utcnow()) if current else None
+        if following:
+            update_data.update({"reminder_date": following[0], "followup_step": following[1], "reminder_done": False})
+            new_reminder_date = following[0].isoformat()
     
     result = await db.submissions.update_one(
         {"id": submission_id, "owner_id": user["id"]},
@@ -154,7 +161,8 @@ async def mark_reminder_done(submission_id: str, authorization: Optional[str] = 
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Soumission non trouvée")
     
-    return {"success": True, "message": "Rappel marqué comme fait" + (" - Nouveau rappel planifié" if new_reminder_date else "")}
+    return {"success": True, "message": "Rappel marqué comme fait" + (" - Nouveau rappel planifié" if new_reminder_date else ""),
+            "next_reminder_date": new_reminder_date or None}
 
 @router.put("/submissions/{submission_id}/status")
 async def update_submission_status(submission_id: str, status: str, authorization: Optional[str] = Header(None)):

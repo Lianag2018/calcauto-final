@@ -14,6 +14,8 @@ interface User {
   dealer_slug?: string;
   etv_username?: string;
   etv_role?: string;
+  etv_name?: string;
+  etv_phone?: string;
 }
 
 interface AuthContextType {
