@@ -66,7 +66,9 @@ const formatPrice = (price: number) => {
 };
 
 export default function InventoryScreen() {
-  const { getToken } = useAuth();
+  const { getToken, user } = useAuth();
+  // Le code et la version décident des taux : administrateur ou directeur seulement
+  const canEditIdentity = !!user?.is_admin || ['admin', 'directeur'].includes((user?.etv_role || '').toLowerCase());
   const [vehicles, setVehicles] = useState<InventoryVehicle[]>([]);
   const [stats, setStats] = useState<InventoryStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -982,9 +984,11 @@ export default function InventoryScreen() {
         >
           <Ionicons name="car" size={18} color={item.status === 'vendu' ? '#FF6B6B' : '#8a93a1'} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => openEdit(item)} data-testid={`inv-edit-${item.stock_no}`}>
-          <Ionicons name="create-outline" size={18} color="#e6c65a" />
-        </TouchableOpacity>
+        {canEditIdentity && (
+          <TouchableOpacity style={styles.actionBtn} onPress={() => openEdit(item)} data-testid={`inv-edit-${item.stock_no}`}>
+            <Ionicons name="create-outline" size={18} color="#e6c65a" />
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.stock_no)}>
           <Ionicons name="trash-outline" size={18} color="#FF6B6B" />
         </TouchableOpacity>

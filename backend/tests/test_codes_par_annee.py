@@ -116,3 +116,10 @@ def test_la_banque_ecarte_une_version_enregistree_impossible():
     # Une version choisie à la main n'est jamais remplacée, même par un forfait
     assert dated_identity('KMJM74', 2027, ['23F'], 'Limited', manual=True)['trim'] == 'Limited'
     assert dated_identity('DT6L98', 2026, [], 'Warlock', manual=True)['trim'] == 'Warlock'
+
+
+def test_seuls_admin_et_directeur_modifient_le_code_et_la_version():
+    from services.etv_link import can_edit_vehicle_identity as ok
+    assert ok({"etv_role": "directeur"}) and ok({"etv_role": "Admin"}) and ok({"is_admin": True})
+    assert ok({"email": "a@exemple.test"}, "a@exemple.test")
+    assert not ok({"etv_role": "conseiller"}) and not ok({}) and not ok({"email": "b@exemple.test"}, "a@exemple.test")
