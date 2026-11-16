@@ -29,7 +29,7 @@ import html2canvas from 'html2canvas';
 // Import components and i18n
 import { AnimatedSplashScreen } from '../../components/AnimatedSplashScreen';
 import { GaugeMark } from '../../components/GaugeMark';
-import { Dossier, dossierFromContact, takeQueuedDossier, takeEvalId, syncDossiers, fetchListingUrl, usedQuoteSms, smsHref, windowStickerUrl, smsLinks } from '../../utils/etvDossier';
+import { Dossier, dossierFromContact, takeQueuedDossier, takeEvalId, syncDossiers, fetchListingUrl, usedQuoteSms, smsHref, windowStickerUrl, smsLinks, tradeDetail, dossierFeeForMode, otherFees, DOSSIER_FEE, WINDSHIELD_FEE } from '../../utils/etvDossier';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { Language, saveLanguage, loadLanguage, getTranslation, TranslationKeys } from '../../utils/i18n';
 import { useAuth } from '../../contexts/AuthContext';
@@ -297,6 +297,11 @@ export default function HomeScreen() {
   const [fraisDossier, setFraisDossier] = useState('259.95');
   const [taxePneus, setTaxePneus] = useState('15');
   const [fraisRDPRM, setFraisRDPRM] = useState('100');
+  const [assurancePareBrise, setAssurancePareBrise] = useState<string>(WINDSHIELD_FEE);
+  const [fraisDivers, setFraisDivers] = useState('');
+  const fraisAutres = otherFees(assurancePareBrise, fraisDivers);
+  // Reprise du dossier eTradeValue chargé : décrite dans la section Échange.
+  const [tradeInfo, setTradeInfo] = useState<{ client: string; vehicle: string } | null>(null);
   
   // Échange
   const [prixEchange, setPrixEchange] = useState('');
@@ -362,6 +367,7 @@ export default function HomeScreen() {
     fraisDossier,
     taxePneus,
     fraisRDPRM,
+    fraisAutres,
     prixEchange,
     montantDuEchange,
     accessories,
@@ -659,6 +665,9 @@ export default function HomeScreen() {
         if (s.fraisDossier !== undefined) setFraisDossier(s.fraisDossier);
         if (s.taxePneus !== undefined) setTaxePneus(s.taxePneus);
         if (s.fraisRDPRM !== undefined) setFraisRDPRM(s.fraisRDPRM);
+        // Soumission d'avant ces frais : ils n'en faisaient pas partie.
+        setAssurancePareBrise(s.assurancePareBrise !== undefined ? s.assurancePareBrise : '');
+        setFraisDivers(s.fraisDivers !== undefined ? s.fraisDivers : '');
         if (s.prixEchange !== undefined) setPrixEchange(s.prixEchange);
         if (s.montantDuEchange !== undefined) setMontantDuEchange(s.montantDuEchange);
         if (s.accessories) setAccessories(s.accessories);
@@ -957,6 +966,7 @@ export default function HomeScreen() {
     setClientEmail(d.email);
     setPrixEchange(d.trade?.value ? String(Math.round(d.trade.value)) : '');
     setMontantDuEchange(d.trade?.balance_owed ? String(Math.round(d.trade.balance_owed)) : '');
+    setTradeInfo(d.trade ? { client: d.name, vehicle: tradeDetail(d) } : null);
     const fr = lang === 'fr';
     let note = fr ? `Dossier de ${d.name} chargé.` : `${d.name}'s file loaded.`;
     if (wanted) {
@@ -965,6 +975,7 @@ export default function HomeScreen() {
         note += fr ? ` Le véhicule convoité #${wanted.stock} n'est plus dans l'inventaire.` : ` Wanted vehicle #${wanted.stock} is no longer in stock.`;
       } else if (vehicle.type === 'occasion') {
         setVehicleMode('usage');
+        setFraisDossier(current => dossierFeeForMode(current, 'usage'));
         setCheckedOffers({});
         setResults(null);
         setSelectedInventory(vehicle);
@@ -973,6 +984,7 @@ export default function HomeScreen() {
       } else {
         const program = programs.find(p => matchesInventoryToProgram(vehicle, p));
         setVehicleMode('neuf');
+        setFraisDossier(current => dossierFeeForMode(current, 'neuf'));
         if (program) {
           selectProgram(program);
           setSelectedInventory(vehicle);
@@ -1017,6 +1029,7 @@ export default function HomeScreen() {
   const switchVehicleMode = (mode: 'neuf' | 'usage') => {
     if (mode === vehicleMode) return;
     setVehicleMode(mode);
+    setFraisDossier(current => dossierFeeForMode(current, mode));
     setSelectedProgram(null);
     setSelectedInventory(null);
     setVehiclePrice('');
@@ -1145,7 +1158,7 @@ export default function HomeScreen() {
           usedRate,
           ...(isUsed ? {} : { selectedProgram, checkedOffers, selectedOption, customBonusCash }),
           vehiclePrice, selectedTerm, paymentFrequency, comptantTxInclus,
-          fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, manualVin,
+          fraisDossier, taxePneus, fraisRDPRM, assurancePareBrise, fraisDivers, prixEchange, montantDuEchange, manualVin,
           selectedInventory: selectedInventory ? {
             id: selectedInventory.id, stock_no: selectedInventory.stock_no, vin: selectedInventory.vin,
             type: selectedInventory.type, brand: selectedInventory.brand, model: selectedInventory.model,
@@ -1259,6 +1272,8 @@ export default function HomeScreen() {
       const dossier = parseFloat(fraisDossier) || 0;
       const pneus = parseFloat(taxePneus) || 0;
       const rdprm = parseFloat(fraisRDPRM) || 0;
+      const pareBrise = otherFees(assurancePareBrise, '');
+      const divers = otherFees('', fraisDivers);
       const valeurEchange = parseFloat(prixEchange) || 0;
       const comptant = parseFloat(comptantTxInclus) || 0;
       const altConsumerCash = selectedProgram.alternative_consumer_cash || 0;
@@ -1319,6 +1334,8 @@ export default function HomeScreen() {
                 ${dossier > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Frais dossier</td><td style="padding:4px 0;text-align:right;">${fmt(dossier)} $</td></tr>` : ''}
                 ${pneus > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Taxe pneus</td><td style="padding:4px 0;text-align:right;">${fmt(pneus)} $</td></tr>` : ''}
                 ${rdprm > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Frais RDPRM</td><td style="padding:4px 0;text-align:right;">${fmt(rdprm)} $</td></tr>` : ''}
+                ${pareBrise > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Assurance pare-brise</td><td style="padding:4px 0;text-align:right;">${fmt(pareBrise)} $</td></tr>` : ''}
+                ${divers > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Frais divers</td><td style="padding:4px 0;text-align:right;">${fmt(divers)} $</td></tr>` : ''}
                 ${valeurEchange > 0 ? `<tr style="border-bottom:1px solid #eee;"><td style="padding:4px 0;color:#666;">Échange</td><td style="padding:4px 0;text-align:right;">-${fmt(valeurEchange)} $</td></tr>` : ''}
                 <tr><td style="padding:4px 0;color:#666;">Terme</td><td style="padding:4px 0;text-align:right;font-weight:700;">${selectedTerm} mois</td></tr>
                 <tr><td style="padding:4px 0;color:#666;">Fréquence</td><td style="padding:4px 0;text-align:right;font-weight:700;">${payLabel}</td></tr>
@@ -1582,6 +1599,8 @@ export default function HomeScreen() {
     const dossier = parseFloat(fraisDossier) || 0;
     const pneus = parseFloat(taxePneus) || 0;
     const rdprm = parseFloat(fraisRDPRM) || 0;
+    const pareBrise = otherFees(assurancePareBrise, '');
+    const divers = otherFees('', fraisDivers);
     const valeurEchange = parseFloat(prixEchange) || 0;
     const comptant = parseFloat(comptantTxInclus) || 0;
     const altConsumerCashPrint = selectedProgram.alternative_consumer_cash || 0;
@@ -1747,6 +1766,8 @@ export default function HomeScreen() {
                 ${dossier > 0 ? `<tr><td>${lang === 'fr' ? 'Frais dossier' : 'Admin fees'}</td><td>${fmt2(dossier)} $</td></tr>` : ''}
                 ${pneus > 0 ? `<tr><td>${lang === 'fr' ? 'Taxe pneus' : 'Tire tax'}</td><td>${fmt(pneus)} $</td></tr>` : ''}
                 ${rdprm > 0 ? `<tr><td>RDPRM</td><td>${fmt(rdprm)} $</td></tr>` : ''}
+                ${pareBrise > 0 ? `<tr><td>${lang === 'fr' ? 'Assurance pare-brise' : 'Windshield insurance'}</td><td>${fmt2(pareBrise)} $</td></tr>` : ''}
+                ${divers > 0 ? `<tr><td>${lang === 'fr' ? 'Frais divers' : 'Other fees'}</td><td>${fmt2(divers)} $</td></tr>` : ''}
                 ${valeurEchange > 0 ? `<tr><td>${lang === 'fr' ? 'Valeur échange' : 'Trade-in value'}</td><td style="color:#2E7D32;">-${fmt(valeurEchange)} $</td></tr>` : ''}
                 ${comptant > 0 ? `<tr><td>${lang === 'fr' ? 'Comptant (tx inclus)' : 'Down payment (tax incl.)'}</td><td>-${fmt(comptant)} $</td></tr>` : ''}
                 <tr><td>${lang === 'fr' ? 'Terme sélectionné' : 'Selected term'}</td><td><strong>${selectedTerm} ${lang === 'fr' ? 'mois' : 'months'}</strong></td></tr>
@@ -2917,7 +2938,7 @@ export default function HomeScreen() {
                       <Text style={styles.feeSymbol}>$</Text>
                       <TextInput
                         style={styles.feeInput}
-                        placeholder="259.95"
+                        placeholder={DOSSIER_FEE[vehicleMode]}
                         placeholderTextColor="#8a93a1"
                         keyboardType="decimal-pad"
                         value={fraisDossier}
@@ -2954,11 +2975,49 @@ export default function HomeScreen() {
                     </View>
                   </View>
                 </View>
+                <View style={[styles.feesRow, { marginTop: 10 }]}>
+                  <View style={styles.feeField}>
+                    <Text style={styles.feeLabel}>{lang === 'fr' ? 'Ass. pare-brise' : 'Windshield ins.'}</Text>
+                    <View style={styles.feeInputContainer}>
+                      <Text style={styles.feeSymbol}>$</Text>
+                      <TextInput
+                        style={styles.feeInput}
+                        placeholder="0"
+                        placeholderTextColor="#8a93a1"
+                        keyboardType="decimal-pad"
+                        value={assurancePareBrise}
+                        onChangeText={setAssurancePareBrise}
+                        data-testid="fee-windshield"
+                      />
+                    </View>
+                  </View>
+                  <View style={styles.feeField}>
+                    <Text style={styles.feeLabel}>{lang === 'fr' ? 'Frais divers' : 'Other fees'}</Text>
+                    <View style={styles.feeInputContainer}>
+                      <Text style={styles.feeSymbol}>$</Text>
+                      <TextInput
+                        style={styles.feeInput}
+                        placeholder="0"
+                        placeholderTextColor="#8a93a1"
+                        keyboardType="decimal-pad"
+                        value={fraisDivers}
+                        onChangeText={setFraisDivers}
+                        data-testid="fee-misc"
+                      />
+                    </View>
+                  </View>
+                  <View style={styles.feeField} />
+                </View>
               </View>
 
               {/* Échange */}
               <View style={styles.feesSection}>
                 <Text style={styles.feesSectionTitle}>{t.exchange.title}</Text>
+                {tradeInfo && (
+                  <Text style={[styles.feeNote, { marginBottom: 8, fontSize: 13 }]} data-testid="trade-info">
+                    {lang === 'fr' ? 'Reprise de ' : 'Trade-in from '}{tradeInfo.client}{tradeInfo.vehicle ? ` : ${tradeInfo.vehicle}` : ''}
+                  </Text>
+                )}
                 <View style={styles.exchangeRow}>
                   <View style={styles.exchangeField}>
                     <Text style={styles.feeLabel}>{t.exchange.value}</Text>
@@ -3553,8 +3612,8 @@ export default function HomeScreen() {
                     <Ionicons name="information-circle" size={14} color="#e6c65a" />
                     <Text style={styles.leaseInfoText}>
                       {lang === 'fr' 
-                        ? `Capitalisé: ${formatCurrency(parseFloat(fraisDossier) || 0)} dossier | Pneus (${formatCurrency(parseFloat(taxePneus) || 0)}) + RDPRM (${formatCurrency(parseFloat(fraisRDPRM) || 0)}) payés à la livraison`
-                        : `Capitalized: ${formatCurrency(parseFloat(fraisDossier) || 0)} admin | Tires (${formatCurrency(parseFloat(taxePneus) || 0)}) + RDPRM (${formatCurrency(parseFloat(fraisRDPRM) || 0)}) paid at delivery`}
+                        ? `Capitalisé: ${formatCurrency(parseFloat(fraisDossier) || 0)} dossier | Pneus (${formatCurrency(parseFloat(taxePneus) || 0)}) + RDPRM (${formatCurrency(parseFloat(fraisRDPRM) || 0)})${fraisAutres > 0 ? ` + pare-brise et divers (${formatCurrency(fraisAutres)})` : ''} payés à la livraison`
+                        : `Capitalized: ${formatCurrency(parseFloat(fraisDossier) || 0)} admin | Tires (${formatCurrency(parseFloat(taxePneus) || 0)}) + RDPRM (${formatCurrency(parseFloat(fraisRDPRM) || 0)})${fraisAutres > 0 ? ` + windshield and other (${formatCurrency(fraisAutres)})` : ''} paid at delivery`}
                     </Text>
                   </View>
 
@@ -4323,6 +4382,8 @@ export default function HomeScreen() {
                             frais_dossier: parseFloat(fraisDossier) || 0,
                             taxe_pneus: parseFloat(taxePneus) || 0,
                             frais_rdprm: parseFloat(fraisRDPRM) || 0,
+                            assurance_pare_brise: otherFees(assurancePareBrise, ''),
+                            frais_divers: otherFees('', fraisDivers),
                           },
                           trade_in: {
                             valeur_echange: parseFloat(prixEchange) || 0,
@@ -4456,6 +4517,8 @@ export default function HomeScreen() {
                                 fraisDossier,
                                 taxePneus,
                                 fraisRDPRM,
+                                assurancePareBrise,
+                                fraisDivers,
                                 prixEchange,
                                 montantDuEchange,
                                 accessories,

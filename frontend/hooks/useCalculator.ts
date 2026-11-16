@@ -63,6 +63,8 @@ interface CalculatorInputs {
   fraisDossier: string;
   taxePneus: string;
   fraisRDPRM: string;
+  /** Autres frais taxables (assurance pare-brise, frais divers). */
+  fraisAutres?: number;
   prixEchange: string;
   montantDuEchange: string;
   accessories: Array<{ description: string; price: string }>;
@@ -116,7 +118,7 @@ export function useCalculator(inputs: CalculatorInputs) {
 
   const {
     selectedProgram, vehiclePrice, selectedTerm, customBonusCash,
-    comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM,
+    comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, fraisAutres = 0,
     prixEchange, montantDuEchange, accessories, rabaisConcess,
     loyaltyRate = 0,
     loyaltyBonus = 0,
@@ -146,7 +148,7 @@ export function useCalculator(inputs: CalculatorInputs) {
     const dossier = parseFloat(fraisDossier) || 0;
     const pneus = parseFloat(taxePneus) || 0;
     const rdprm = parseFloat(fraisRDPRM) || 0;
-    const fraisTaxables = dossier + pneus + rdprm;
+    const fraisTaxables = dossier + pneus + rdprm + (fraisAutres || 0);
 
     // Echange
     const valeurEchange = parseFloat(prixEchange) || 0;
@@ -250,7 +252,7 @@ export function useCalculator(inputs: CalculatorInputs) {
       deferredActive: canDefer,
       soldeReporte,
     });
-  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, prixEchange, montantDuEchange, accessories, rabaisConcess, loyaltyRate, loyaltyBonus, offersBeforeTax, deferredPayment, soldeReporteLocation]);
+  }, [selectedProgram, vehiclePrice, selectedTerm, customBonusCash, comptantTxInclus, fraisDossier, taxePneus, fraisRDPRM, fraisAutres, prixEchange, montantDuEchange, accessories, rabaisConcess, loyaltyRate, loyaltyBonus, offersBeforeTax, deferredPayment, soldeReporteLocation]);
 
   useEffect(() => {
     calculateForTerm();

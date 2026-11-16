@@ -85,6 +85,29 @@ export const tradeLabel = (dossier: Dossier): string => {
   return parts.join(' · ');
 };
 
+/** La reprise telle qu'on la décrit dans le calculateur : « 2020 RAM 1500 SXT · 85 000 km ». */
+export const tradeDetail = (dossier: Dossier): string => {
+  const trade: any = dossier.trade;
+  if (!trade) return '';
+  const vehicle = [trade.year, trade.make, trade.model, trade.trim].filter(Boolean).join(' ');
+  const km = Number(trade.km) > 0 ? `${Math.round(Number(trade.km)).toLocaleString('fr-CA')} km` : '';
+  return [vehicle, km].filter(Boolean).join(' · ');
+};
+
+/** Frais de dossier proposés : 159,95 $ pour l'occasion, 259,95 $ pour le neuf. */
+export const DOSSIER_FEE = { neuf: '259.95', usage: '159.95' } as const;
+export const WINDSHIELD_FEE = '65';
+
+/** Au changement neuf/occasion : le montant proposé suit, un montant entré à la main reste. */
+export const dossierFeeForMode = (current: string, mode: 'neuf' | 'usage'): string => {
+  const value = (current || '').trim();
+  return value === '' || value === DOSSIER_FEE.neuf || value === DOSSIER_FEE.usage ? DOSSIER_FEE[mode] : current;
+};
+
+/** Assurance pare-brise et frais divers : ajoutés aux frais taxables du financement. */
+export const otherFees = (windshield: string, misc: string): number =>
+  Math.max(0, parseFloat((windshield || '').replace(',', '.')) || 0) + Math.max(0, parseFloat((misc || '').replace(',', '.')) || 0);
+
 export const desiredLabel = (dossier: Dossier): string => {
   const first = dossier.desired[0];
   if (!first) return '';

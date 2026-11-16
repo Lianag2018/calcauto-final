@@ -250,6 +250,8 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
         frais_dossier = fees.get('frais_dossier', 0)
         taxe_pneus = fees.get('taxe_pneus', 0)
         frais_rdprm = fees.get('frais_rdprm', 0)
+        assurance_pare_brise = fees.get('assurance_pare_brise', 0)
+        frais_divers = fees.get('frais_divers', 0)
         valeur_echange = trade.get('valeur_echange', 0)
         montant_du = trade.get('montant_du', 0)
         
@@ -373,6 +375,8 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
                             {f"<tr><td>Frais dossier</td><td>{fmt2(frais_dossier)} $</td></tr>" if frais_dossier > 0 else ""}
                             {f"<tr><td>Taxe pneus</td><td>{fmt(taxe_pneus)} $</td></tr>" if taxe_pneus > 0 else ""}
                             {f"<tr><td>Frais RDPRM</td><td>{fmt(frais_rdprm)} $</td></tr>" if frais_rdprm > 0 else ""}
+                            {f"<tr><td>Assurance pare-brise</td><td>{fmt2(assurance_pare_brise)} $</td></tr>" if assurance_pare_brise > 0 else ""}
+                            {f"<tr><td>Frais divers</td><td>{fmt2(frais_divers)} $</td></tr>" if frais_divers > 0 else ""}
                             {f"<tr><td>Valeur échange</td><td>-{fmt(valeur_echange)} $</td></tr>" if valeur_echange > 0 else ""}
                             <tr><td>Terme sélectionné</td><td><strong>{term} mois</strong></td></tr>
                             <tr><td>Fréquence de paiement</td><td><strong>{freq_label}</strong></td></tr>
