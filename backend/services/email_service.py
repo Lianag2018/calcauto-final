@@ -5,12 +5,12 @@ from email.mime.base import MIMEBase
 from email.mime.image import MIMEImage
 from email import encoders
 from database import SMTP_EMAIL, SMTP_PASSWORD, SMTP_HOST, SMTP_PORT
-from services.mail_transport import SMTP_TIMEOUT, deliver, gmail_config  # noqa: F401
+from services.mail_transport import SMTP_TIMEOUT, deliver, gmail_config, relay_config  # noqa: F401
 
 
 def mail_ready() -> bool:
-    """Vrai quand un courriel peut partir : adresse d'envoi, et l'API Gmail ou le mot de passe SMTP."""
-    return bool(SMTP_EMAIL and (gmail_config(os.environ) or SMTP_PASSWORD))
+    """Vrai quand un courriel peut partir : adresse d'envoi, et l'API Gmail, le relais d'eTradeValue ou le mot de passe SMTP."""
+    return bool(SMTP_EMAIL and (gmail_config(os.environ) or relay_config(os.environ) or SMTP_PASSWORD))
 
 
 def deliver_message(msg, recipients=None):
