@@ -52,6 +52,8 @@ async def _apply_overrides(vehicles: List[Dict[str, Any]]) -> None:
         for field, value in (override.get("fields") or {}).items():
             if field in SHARED_EDITABLE and value:
                 vehicle[field] = value
+                if field == "trim":
+                    vehicle["trim_manual"] = True  # correction faite à la main : elle prime
 
 
 async def _on_site_only(vehicles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -151,7 +153,8 @@ def _vehicle_for_matching(vehicle: Dict[str, Any], options: List[Dict[str, Any]]
         code = next((c for c in codes[:1] if is_model_code(c)), "")
     master = lookup_product_code(code, vehicle.get("year"), codes) if code else None
     # Fiche datée : le code dit le modèle, et écarte une version qu'il ne peut pas être
-    sure = dated_identity(code, vehicle.get("year"), codes, vehicle.get("trim") or "") or {}
+    sure = dated_identity(code, vehicle.get("year"), codes, vehicle.get("trim") or "",
+                          bool(vehicle.get("trim_manual"))) or {}
     return describe_vehicle(
         brand=sure.get("brand") or vehicle.get("brand") or (master or {}).get("brand", ""),
         model=sure.get("model") or vehicle.get("model") or (master or {}).get("model", ""),
@@ -428,6 +431,9 @@ async def update_inventory_vehicle(stock_no: str, update: InventoryUpdate, autho
     update_data = {k: v for k, v in update.dict().items() if v is not None}
     if "model_code" in update_data:
         update_data["model_code"] = update_data["model_code"].upper().strip()
+    if update_data.get("trim"):
+        # Version choisie à la main : la banque de codes ne la remplacera pas
+        update_data["trim_manual"] = True
     update_data["updated_at"] = datetime.utcnow()
     
     # Recalculate net_cost if ep_cost changed
