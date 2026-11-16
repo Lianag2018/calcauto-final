@@ -1,4 +1,13 @@
 {
+  "2026": {
+    "KMJM74": {"brand": "Jeep", "model": "Cherokee", "trim": "", "drive": "4x4", "packages": {"23F": "Laredo", "23G": "Limited", "23X": "Limited Altitude", "23J": "85th Anniversary"}},
+    "KMJP74": {"brand": "Jeep", "model": "Cherokee", "trim": "Overland", "drive": "4x4", "packages": {"23Q": "Overland"}},
+    "JTJL98": {"brand": "Jeep", "model": "Gladiator", "trim": "Sport", "drive": "4x4", "packages": {"24S": "Sport S", "24W": "Willys", "24X": "Nighthawk", "24H": "Sahara", "24F": "85th Anniversary", "24T": "Willys '41"}},
+    "JTJH98": {"brand": "Jeep", "model": "Gladiator", "trim": "Mojave", "drive": "4x4", "packages": {"24D": "Mojave", "24A": "Mojave X"}},
+    "JTJS98": {"brand": "Jeep", "model": "Gladiator", "trim": "Rubicon", "drive": "4x4", "packages": {"24R": "Rubicon", "24Y": "Rubicon X"}},
+    "WLJH74": {"brand": "Jeep", "model": "Grand Cherokee", "trim": "", "drive": "4x4", "packages": {"22L": "Laredo", "22P": "Laredo X", "2B5": "Altitude", "2C6": "Limited", "2C7": "85th Anniversary", "2C1": "Limited Reserve", "2C3": "Summit"}},
+    "WLJH75": {"brand": "Jeep", "model": "Grand Cherokee L", "trim": "", "drive": "4x4", "packages": {"22L": "Laredo", "22P": "Laredo X", "2B5": "Altitude", "2C6": "Limited", "2C7": "85th Anniversary", "2C1": "Limited Reserve", "2C3": "Summit"}}
+  },
   "2027": {
     "KMJM74": {"brand": "Jeep", "model": "Cherokee", "trim": "Laredo", "drive": "4x4", "packages": {"23F": "Laredo"}},
     "KMJP74": {"brand": "Jeep", "model": "Cherokee", "trim": "Limited", "drive": "4x4", "packages": {"23G": "Limited", "23X": "Limited Altitude"}},

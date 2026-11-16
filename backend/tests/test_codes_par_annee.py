@@ -17,7 +17,7 @@ def test_cherokee_2027_codes_follow_the_2027_order_guide():
 
 
 def test_other_years_keep_the_general_bank():
-    assert lookup_product_code('KMJM74', 2026)['trim'] == 'Limited'
+    assert lookup_product_code('KMJM74', 2025)['trim'] == 'Limited'
     assert lookup_product_code('KMJM74')['trim'] == 'Limited'
     assert lookup_product_code('D28H92', 2027) == lookup_product_code('D28H92')
     assert lookup_product_code('ZZZZ99', 2027) is None
@@ -40,7 +40,7 @@ def test_reference_for_a_year_overlays_only_that_year():
     merged = codes_for_year(base, 2027)
     assert merged['KMJM74']['trim'] == 'Laredo' and merged['X'] == {'trim': 'Y'}
     assert 'KMJS74' in merged and 'KMJS74' not in base
-    assert codes_for_year(base, 2026) is base
+    assert codes_for_year(base, 2025) is base
 
 
 def test_ram_1500_and_grand_wagoneer_2027():
@@ -68,3 +68,13 @@ def test_charger_chrysler_and_fiat_2027():
     assert lookup_product_code('RUFH53', 2027)['full_description'] == 'Chrysler Pacifica Select AWD'
     assert lookup_product_code('RUCL53', 2027)['model'] == 'Grand Caravan'
     assert lookup_product_code('FGEP24', 2027, ['21R'])['full_description'] == 'Fiat 500e Icona'
+
+
+def test_2026_packages_name_the_version():
+    assert lookup_product_code('KMJM74', 2026, ['23F'])['trim'] == 'Laredo'
+    assert lookup_product_code('KMJM74', 2026, ['23G'])['trim'] == 'Limited'
+    assert lookup_product_code('KMJM74', 2026)['trim'] == ''  # Laredo ou Limited : le forfait décide
+    assert lookup_product_code('JTJL98', 2026, ['24H'])['trim'] == 'Sahara'
+    assert lookup_product_code('JTJL98', 2027)['trim'] == 'Sport'
+    assert lookup_product_code('WLJH75', 2026, ['2C3'])['full_description'] == 'Jeep Grand Cherokee L Summit 4x4'
+    assert lookup_product_code('WLJH74', 2026, ['2B5'])['trim'] == 'Altitude'
