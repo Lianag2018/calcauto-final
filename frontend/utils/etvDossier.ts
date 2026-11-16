@@ -30,6 +30,8 @@ export interface Dossier {
   evalId: string;
   /** Conseiller qui a fait l'évaluation (utile au directeur et à l'administrateur). */
   advisor: string;
+  /** Moment où l'évaluation a été faite (texte ISO), vide si inconnu. */
+  createdAt: string;
   name: string;
   phone: string;
   email: string;
@@ -44,6 +46,7 @@ export const dossierFromContact = (contact: any): Dossier | null => {
   return {
     evalId: String(contact.etv_eval_id),
     advisor: String(contact.etv_advisor || ''),
+    createdAt: String(contact.etv_created_at || ''),
     name: contact.name || '',
     phone: contact.phone || '',
     email: contact.email || '',
@@ -51,6 +54,22 @@ export const dossierFromContact = (contact: any): Dossier | null => {
     desired: Array.isArray(contact.desired) ? contact.desired.filter((d: any) => d && d.stock) : [],
     paired: !!contact.desired_paired,
   };
+};
+
+const instant = (value: string | undefined): number => {
+  const time = value ? new Date(value).getTime() : NaN;
+  return Number.isFinite(time) ? time : 0;
+};
+
+// Évaluations de la plus récente à la plus vieille ; sans date, à la fin.
+export const byNewestEvaluation = <T extends { dossier?: Dossier | null }>(items: T[]): T[] =>
+  [...items].sort((a, b) => instant(b.dossier?.createdAt) - instant(a.dossier?.createdAt));
+
+// « 15 nov. 2026 » ; vide si la date est inconnue.
+export const evaluationDateLabel = (dossier: Dossier, lang: 'fr' | 'en' = 'fr'): string => {
+  const time = instant(dossier.createdAt);
+  if (!time) return '';
+  return new Date(time).toLocaleDateString(lang === 'en' ? 'en-CA' : 'fr-CA', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
 const money = (value: number) => `${Math.round(value).toLocaleString('fr-CA')} $`;
