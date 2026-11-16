@@ -1388,3 +1388,98 @@ class TestDesiredPairingAndListing:
         for bad in ("http://exemple.test/x", "javascript:alert(1)", "https://exemple.test/a b", "https://", "", None,
                     "https://localhost/x", "https://exemple.test/" + "a" * 600):
             assert safe_listing_url(bad) == ""
+
+
+class TestMailTransport:
+    """Courriel par le web (API Gmail) quand les ports SMTP sont fermés chez l'hébergeur."""
+
+    class _Answer:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self):
+            import json
+            return json.dumps(self.payload).encode()
+
+    def _message(self):
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        msg = MIMEMultipart('related')
+        msg['From'] = 'CalcAuto <envoi@exemple.test>'
+        msg['To'] = 'client@exemple.test'
+        msg['Cc'] = 'conseiller@exemple.test'
+        msg['Subject'] = 'Soumission'
+        msg.attach(MIMEText('<p>Bonjour</p>', 'html', 'utf-8'))
+        return msg
+
+    def _config(self, suffix=''):
+        return {'client_id': 'id' + suffix, 'client_secret': 'secret', 'refresh_token': 'refresh' + suffix}
+
+    def test_gmail_settings_need_all_three_values(self):
+        from services.mail_transport import gmail_config
+        assert gmail_config({}) is None
+        assert gmail_config({'GMAIL_CLIENT_ID': 'a', 'GMAIL_CLIENT_SECRET': 'b', 'GMAIL_REFRESH_TOKEN': '  '}) is None
+        assert gmail_config({'GMAIL_CLIENT_ID': ' a ', 'GMAIL_CLIENT_SECRET': 'b', 'GMAIL_REFRESH_TOKEN': 'c'}) == {
+            'client_id': 'a', 'client_secret': 'b', 'refresh_token': 'c'}
+
+    def test_message_goes_out_whole_over_https_and_token_is_reused(self):
+        import base64
+        import json
+        from services import mail_transport
+        calls = []
+
+        def opener(request, timeout=None):
+            calls.append(request)
+            if request.full_url == mail_transport.TOKEN_URL:
+                return self._Answer({'access_token': 'jeton-1', 'expires_in': 3600})
+            return self._Answer({'id': 'msg-1'})
+
+        clock = [1000.0]
+        config = self._config('-reuse')
+        assert mail_transport.send_via_gmail(config, self._message(), opener, lambda: clock[0]) == 'msg-1'
+        token_call, send_call = calls
+        assert b'grant_type=refresh_token' in token_call.data
+        assert send_call.full_url == mail_transport.SEND_URL
+        assert send_call.get_header('Authorization') == 'Bearer jeton-1'
+        sent = base64.urlsafe_b64decode(json.loads(send_call.data)['raw'])
+        assert b'To: client@exemple.test' in sent and b'Cc: conseiller@exemple.test' in sent
+
+        clock[0] += 600
+        mail_transport.send_via_gmail(config, self._message(), opener, lambda: clock[0])
+        assert len(calls) == 3  # un seul nouvel appel : le jeton est encore bon
+
+        clock[0] += 3600
+        mail_transport.send_via_gmail(config, self._message(), opener, lambda: clock[0])
+        assert len(calls) == 5  # jeton expiré : on en redemande un
+
+    def test_refusal_is_reported_without_any_secret(self):
+        import io
+        import urllib.error
+        from services import mail_transport
+
+        def opener(request, timeout=None):
+            raise urllib.error.HTTPError(request.full_url, 400, 'Bad Request', {},
+                                         io.BytesIO(b'{"error":"invalid_grant","error_description":"Token has been expired or revoked."}'))
+
+        with pytest.raises(mail_transport.MailError) as caught:
+            mail_transport.send_via_gmail(self._config('-refus'), self._message(), opener)
+        text = str(caught.value)
+        assert '400' in text and 'expired or revoked' in text
+        assert 'secret' not in text and 'refresh-refus' not in text
+
+    def test_unreachable_service_and_missing_settings_raise_a_clear_error(self):
+        from services import mail_transport
+
+        def opener(request, timeout=None):
+            raise OSError(101, 'Network is unreachable')
+
+        with pytest.raises(mail_transport.MailError):
+            mail_transport.send_via_gmail(self._config('-panne'), self._message(), opener)
+        with pytest.raises(mail_transport.MailError):
+            mail_transport.deliver(self._message(), None, {}, {'host': 'h', 'port': 587, 'username': '', 'password': ''})

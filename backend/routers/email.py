@@ -547,7 +547,7 @@ async def test_email():
         html_body = """
         <div style="font-family: Arial; padding: 20px; text-align: center;">
             <h1 style="color: #4ECDC4;">✅ Test Email Réussi!</h1>
-            <p>Votre configuration Gmail SMTP fonctionne correctement.</p>
+            <p>Votre configuration de courriel fonctionne correctement.</p>
             <p style="color: #666;">CalcAuto AiPro</p>
         </div>
         """

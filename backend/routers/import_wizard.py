@@ -14,7 +14,7 @@ from models import (
     SaveProgramsRequest, FinancingRates, VehicleProgram
 )
 from dependencies import get_current_user, require_admin_or_password
-from services.email_service import send_email, SMTP_TIMEOUT
+from services.email_service import send_email, deliver_message, mail_ready
 
 _background_tasks = set()   # garde une référence aux tâches lancées sans attente
 
@@ -655,7 +655,6 @@ def generate_excel_from_programs(programs: List[Dict[str, Any]], program_month: 
 
 def send_excel_email(excel_data: bytes, admin_email: str, program_month: int, program_year: int, program_count: int):
     """Envoie le fichier Excel par email"""
-    import smtplib
     from email.mime.multipart import MIMEMultipart
     from email.mime.text import MIMEText
     from email.mime.base import MIMEBase
@@ -698,11 +697,7 @@ CalcAuto AiPro
     
     # Send email
     try:
-        server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT)
-        server.starttls()
-        server.login(SMTP_EMAIL, SMTP_PASSWORD)
-        server.send_message(msg)
-        server.quit()
+        deliver_message(msg)
         return True
     except Exception as e:
         logger.error(f"Error sending Excel email: {str(e)}")
@@ -1541,9 +1536,8 @@ async def upload_residual_guide(
         
         # Send verification email
         email_sent = False
-        if SMTP_EMAIL and SMTP_PASSWORD:
+        if mail_ready():
             try:
-                import smtplib
                 from email.mime.multipart import MIMEMultipart
                 from email.mime.text import MIMEText
                 from email.mime.base import MIMEBase
@@ -1588,11 +1582,7 @@ CalcAuto AiPro"""
                 attachment.add_header('Content-Disposition', f'attachment; filename={att_filename}')
                 msg.attach(attachment)
                 
-                server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT)
-                server.starttls()
-                server.login(SMTP_EMAIL, SMTP_PASSWORD)
-                server.send_message(msg)
-                server.quit()
+                deliver_message(msg)
                 email_sent = True
                 logger.info(f"Residual guide email sent to {SMTP_EMAIL}")
             except Exception as e:
