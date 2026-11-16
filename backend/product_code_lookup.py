@@ -14,7 +14,7 @@ import json
 import os
 import re
 import logging
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, Iterable, List
 
 logger = logging.getLogger(__name__)
 
@@ -127,12 +127,69 @@ def _load_master_codes():
     _CODES_LOADED = True
 
 
-def lookup_product_code(code: str) -> Optional[Dict[str, Any]]:
+YEAR_CODES_FILE = os.path.join(os.path.dirname(__file__), 'data', 'model_codes_by_year.json')
+_YEAR_CODES: Optional[Dict[str, Dict[str, Dict[str, Any]]]] = None
+
+
+def _year_codes() -> Dict[str, Dict[str, Dict[str, Any]]]:
+    """Codes dont le sens dépend de l'année-modèle (ex. KMJM74 : Laredo en 2027)."""
+    global _YEAR_CODES
+    if _YEAR_CODES is None:
+        try:
+            with open(YEAR_CODES_FILE, 'r', encoding='utf-8') as f:
+                loaded = json.load(f)
+            _YEAR_CODES = loaded if isinstance(loaded, dict) else {}
+        except Exception as e:
+            logger.warning(f"[ProductCodeLookup] Codes par année illisibles: {e}")
+            _YEAR_CODES = {}
+    return _YEAR_CODES
+
+
+def _year_entry(code: str, year: Any, packages: Optional[Iterable[str]]) -> Optional[Dict[str, Any]]:
+    by_year = _year_codes()
+    year = str(year or '').strip()
+    if year in by_year:
+        found = by_year[year].get(code)
+    elif year:
+        found = None  # année connue mais sans fiche propre : la base générale décide
+    else:
+        # Année inconnue : seulement pour un code absent de la base générale
+        found = None if code in _MASTER_CODES else next(
+            (by_year[y][code] for y in sorted(by_year, reverse=True) if code in by_year[y]), None)
+        year = next((y for y in sorted(by_year, reverse=True) if code in by_year[y]), '')
+    if not found:
+        return None
+    entry = {"code": code, "year": year, "cab": "", **{k: v for k, v in found.items() if k != "packages"}}
+    wanted = {str(p).upper().strip() for p in (packages or [])}
+    trims = [trim for cpos, trim in (found.get("packages") or {}).items() if cpos in wanted]
+    if len(trims) == 1:
+        entry["trim"] = trims[0]
+    entry["full_description"] = " ".join(
+        part for part in (entry.get("brand"), entry.get("model"), entry.get("trim"), entry.get("cab"), entry.get("drive")) if part)
+    return entry
+
+
+def codes_for_year(reference: Dict[str, Dict[str, Any]], year: Any) -> Dict[str, Dict[str, Any]]:
+    """Le référentiel, avec les fiches propres à cette année-modèle par-dessus."""
+    dated = _year_codes().get(str(year or '').strip()) or {}
+    if not dated:
+        return reference
+    merged = dict(reference)
+    for code in dated:
+        merged[code] = _year_entry(code, year, None)
+    return merged
+
+
+def lookup_product_code(code: str, year: Any = None,
+                        packages: Optional[Iterable[str]] = None) -> Optional[Dict[str, Any]]:
     """
     Recherche un code produit dans la base master.
 
     Args:
         code: Code produit FCA (ex: D28H92, DJ7L92)
+        year: année-modèle, quand elle est connue : un même code peut changer
+              de version d'une année à l'autre
+        packages: codes d'option du véhicule ; le forfait (CPOS) précise la version
 
     Returns:
         Dict avec les infos du véhicule si trouvé, None sinon
@@ -144,6 +201,10 @@ def lookup_product_code(code: str) -> Optional[Dict[str, Any]]:
         return None
 
     code = code.upper().strip()
+
+    dated = _year_entry(code, year, packages)
+    if dated:
+        return dated
 
     if code in _MASTER_CODES:
         entry = _MASTER_CODES[code] or {}

@@ -11,7 +11,7 @@ from models import (
 from dependencies import get_current_user, require_admin
 from services.window_sticker import fetch_window_sticker, save_window_sticker_to_db
 from routers.invoice import get_full_vehicle_info, _CODE_PROGRAM_MAPPING
-from product_code_lookup import lookup_product_code
+from product_code_lookup import codes_for_year, lookup_product_code
 from services.program_matching import describe_vehicle, match_program, is_model_code
 from services.model_code_suggest import (
     trim_from_title, suggest_codes, trims_of_program, known_trims, is_known_code)
@@ -149,7 +149,7 @@ def _vehicle_for_matching(vehicle: Dict[str, Any], options: List[Dict[str, Any]]
     if not code:
         # Sur la facture, la première ligne d'options est le code de produit
         code = next((c for c in codes[:1] if is_model_code(c)), "")
-    master = lookup_product_code(code) if code else None
+    master = lookup_product_code(code, vehicle.get("year"), codes) if code else None
     return describe_vehicle(
         brand=vehicle.get("brand") or (master or {}).get("brand", ""),
         model=vehicle.get("model") or (master or {}).get("model", ""),
@@ -599,7 +599,7 @@ async def get_program_model_codes(program_id: str, authorization: Optional[str] 
                 str(x) for x in (vehicle.get("model"), vehicle.get("trim"), vehicle.get("body_style")) if x)
 
     # 2. Référentiel des codes de produit
-    master = await _reference_codes()
+    master = codes_for_year(await _reference_codes(), program.get("year"))
     # Le référentiel n'a pas toujours l'année du programme (2027) : les codes
     # se reportent d'une année à l'autre, on prend alors toutes les années.
     brand_low = (program.get("brand") or "").lower()
@@ -668,7 +668,7 @@ async def get_code_suggestions(stock_no: str, trim: Optional[str] = None,
     vehicle = found[0]
     decoded = await _decode_vin(vehicle.get("vin"))
     title_trim = _title_trim(vehicle)
-    master = await _reference_codes()
+    master = codes_for_year(await _reference_codes(), vehicle.get("year"))
     programs = await _latest_programs()
     cab = vehicle.get("body_style") or decoded.get("cab") or ""
     drive = decoded.get("drive") or ""
@@ -767,8 +767,8 @@ async def get_product_code_financing(
 
     programs = await _latest_programs()
     if programs:
-        master = lookup_product_code(code) or {}
         options = (await _options_by_stock([stock_no])).get(stock_no, []) if stock_no else []
+        master = lookup_product_code(code, year, [o.get("product_code") for o in options]) or {}
         vehicle = _vehicle_for_matching({
             "model_code": code,
             "brand": brand or master.get("brand", ""),
