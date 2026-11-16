@@ -1749,7 +1749,7 @@ export default function HomeScreen() {
           .dealer .dn { font-size: 21px; font-weight: 700; line-height: 1.12; letter-spacing: -0.3px; }
           .dealer .dp { font-size: 12px; color: #5B6577; margin-top: 2px; }
           .etv { display: flex; align-items: center; gap: 8px; text-align: right; flex-shrink: 0; }
-          .etv img { height: 84px; width: 84px; object-fit: contain; }
+          .etv img { height: 62px; width: auto; border-radius: 5px; display: block; }
           .etv .by { font-size: 10.5px; color: #5B6577; line-height: 1.3; }
           .etv .by b { display: block; font-size: 13px; color: #10182B; }
           .top { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px; }
