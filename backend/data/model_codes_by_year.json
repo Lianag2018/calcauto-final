@@ -26,11 +26,11 @@
     "DT6H98": {"brand": "Ram", "model": "1500", "trim": "Big Horn", "cab": "Crew Cab", "box": "5'7\"", "drive": "4x4", "packages": {"21Z": "Big Horn"}},
     "DT6H91": {"brand": "Ram", "model": "1500", "trim": "Big Horn", "cab": "Crew Cab", "box": "6'4\"", "drive": "4x4", "packages": {"21Z": "Big Horn"}},
     "DT6T98": {"brand": "Ram", "model": "1500", "trim": "Sport", "cab": "Crew Cab", "box": "5'7\"", "drive": "4x4"},
-    "DT6T91": {"brand": "Ram", "model": "1500", "trim": "Sport", "cab": "Crew Cab", "box": "6'4\"", "drive": "4x4"},
-    "DT6X98": {"brand": "Ram", "model": "1500", "trim": "Rebel", "cab": "Crew Cab", "box": "5'7\"", "drive": "4x4"},
-    "DT6P98": {"brand": "Ram", "model": "1500", "trim": "Laramie", "cab": "Crew Cab", "box": "5'7\"", "drive": "4x4"},
+    "DT6T91": {"brand": "Ram", "model": "1500", "trim": "Sport", "cab": "Crew Cab", "box": "6'4\"", "drive": "4x4", "packages": {"21L": "Sport"}},
+    "DT6X98": {"brand": "Ram", "model": "1500", "trim": "Rebel", "cab": "Crew Cab", "box": "5'7\"", "drive": "4x4", "packages": {"21W": "Rebel", "25W": "Rebel"}},
+    "DT6P98": {"brand": "Ram", "model": "1500", "trim": "Laramie", "cab": "Crew Cab", "box": "5'7\"", "drive": "4x4", "packages": {"21H": "Laramie", "25H": "Laramie"}},
     "DT6P91": {"brand": "Ram", "model": "1500", "trim": "Laramie", "cab": "Crew Cab", "box": "6'4\"", "drive": "4x4"},
-    "DT6M98": {"brand": "Ram", "model": "1500", "trim": "Limited/Longhorn", "cab": "Crew Cab", "box": "5'7\"", "drive": "4x4"},
-    "DT6M91": {"brand": "Ram", "model": "1500", "trim": "Limited/Longhorn", "cab": "Crew Cab", "box": "6'4\"", "drive": "4x4"}
+    "DT6M98": {"brand": "Ram", "model": "1500", "trim": "Limited/Longhorn", "cab": "Crew Cab", "box": "5'7\"", "drive": "4x4", "packages": {"22M": "Limited", "25M": "Limited", "22K": "Longhorn", "25K": "Longhorn"}},
+    "DT6M91": {"brand": "Ram", "model": "1500", "trim": "Limited/Longhorn", "cab": "Crew Cab", "box": "6'4\"", "drive": "4x4", "packages": {"22M": "Limited", "22K": "Longhorn"}}
   }
 }

@@ -52,3 +52,6 @@ def test_ram_1500_and_grand_wagoneer_2027():
     assert lookup_product_code('WSJM75', 2027, ['29V'])['trim'] == 'Upland'
     assert lookup_product_code('WSJM76', 2027)['model'] == 'Grand Wagoneer L'
     assert lookup_product_code('WSJM76', 2025)['model'] == 'Wagoneer L'
+    assert lookup_product_code('DT6M98', 2027, ['25K'])['trim'] == 'Longhorn'
+    assert lookup_product_code('DT6M91', 2027, ['22M'])['trim'] == 'Limited'
+    assert lookup_product_code('DT6M98', 2027)['trim'] == 'Limited/Longhorn'
