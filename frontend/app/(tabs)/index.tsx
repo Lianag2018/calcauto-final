@@ -570,6 +570,16 @@ export default function HomeScreen() {
     && (!pickedCode || !v.model_code || (v.model_code || '').toUpperCase() === pickedCode)
   ), [inventoryList, selectedProgram, pickedCode, matchesInventoryToProgram]);
 
+  // Nombre de véhicules neufs en inventaire pour chaque ligne de programme affichée
+  const stockByProgram = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const fresh = inventoryList.filter((v: any) => v.type !== 'occasion');
+    filteredPrograms.forEach((program: any) => {
+      counts[program.id] = fresh.filter((v: any) => matchesInventoryToProgram(v, program)).length;
+    });
+    return counts;
+  }, [inventoryList, filteredPrograms, matchesInventoryToProgram]);
+
   // Le conseiller choisit un code pour un véhicule dont la fiche n'en a pas :
   // on l'inscrit sur la fiche, pour les prochains calculs de tout le monde.
   const [codeSavedFor, setCodeSavedFor] = useState<string>('');
@@ -2373,6 +2383,14 @@ export default function HomeScreen() {
                           {program.option2_rates.rate_36}%
                         </Text>
                       </View>
+                    )}
+                    {inventoryLoaded && (
+                      <Text
+                        style={{ marginTop: 6, fontSize: 12, fontWeight: '600', color: (stockByProgram[program.id] || 0) > 0 ? '#4ECDC4' : '#6b7280' }}
+                        data-testid={`program-stock-${program.id}`}
+                      >
+                        {stockByProgram[program.id] || 0} {lang === 'fr' ? 'en stock' : 'in stock'}
+                      </Text>
                     )}
                   </TouchableOpacity>
                 ))}
