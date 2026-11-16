@@ -49,6 +49,7 @@ import { EventBanner } from '../../components/EventBanner';
 import { styles, loadingStyles } from './styles/homeStyles';
 
 import { API_URL } from '../../utils/api';
+import { ETV_LOGO, fetchDealerBranding, DealerBranding } from '../../utils/printBranding';
 
 const SUBMISSIONS_KEY = 'calcauto_submissions';
 
@@ -133,6 +134,12 @@ export default function HomeScreen() {
   // Email modal
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
+  const [dealerBranding, setDealerBranding] = useState<DealerBranding | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetchDealerBranding(user?.dealer_slug).then((b) => { if (alive) setDealerBranding(b); });
+    return () => { alive = false; };
+  }, [user?.dealer_slug]);
   const [printNotice, setPrintNotice] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [clientName, setClientName] = useState('');
@@ -1736,9 +1743,17 @@ export default function HomeScreen() {
           html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           body { font-family: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 12px; line-height: 1.35; color: #10182B; background: #E9ECF1; font-variant-numeric: tabular-nums; }
           .sheet { width: 7.75in; margin: 16px auto; background: #fff; padding: 22px 24px 16px; }
-          .top { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #10182B; padding-bottom: 10px; }
-          .top h1 { font-size: 25px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.1; }
-          .top .brand { font-size: 12px; font-weight: 700; color: #0B7A75; }
+          .band { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding-bottom: 10px; border-bottom: 3px solid #10182B; }
+          .dealer { display: flex; align-items: center; gap: 14px; min-width: 0; }
+          .dealer img { height: 58px; max-width: 3.1in; object-fit: contain; }
+          .dealer .dn { font-size: 21px; font-weight: 700; line-height: 1.12; letter-spacing: -0.3px; }
+          .dealer .dp { font-size: 12px; color: #5B6577; margin-top: 2px; }
+          .etv { display: flex; align-items: center; gap: 8px; text-align: right; flex-shrink: 0; }
+          .etv img { height: 84px; width: 84px; object-fit: contain; }
+          .etv .by { font-size: 10.5px; color: #5B6577; line-height: 1.3; }
+          .etv .by b { display: block; font-size: 13px; color: #10182B; }
+          .top { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px; }
+          .top h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.1; }
           .top .meta { text-align: right; font-size: 11px; color: #5B6577; }
           .hero { display: flex; gap: 14px; margin-top: 12px; }
           .veh { flex: 1.25; }
@@ -1801,11 +1816,21 @@ export default function HomeScreen() {
       </head>
       <body>
         <div class="sheet" id="sheet">
-          <div class="top">
-            <div>
-              <div class="brand">CalcAuto AiPro</div>
-              <h1>${F ? 'Soumission de financement' : 'Financing submission'}</h1>
+          <div class="band">
+            <div class="dealer">
+              ${dealerBranding?.logoUrl ? `<img src="${esc(dealerBranding.logoUrl)}" alt="${esc(dealerBranding.name)}" />` : ''}
+              <div>
+                ${dealerBranding?.name ? `<div class="dn" style="${dealerBranding.logoUrl ? 'font-size:14px;' : ''}">${esc(dealerBranding.name)}</div>` : ''}
+                ${dealerBranding?.phone ? `<div class="dp">${esc(dealerBranding.phone)}</div>` : ''}
+              </div>
             </div>
+            <div class="etv">
+              <div class="by"><b>CalcAuto AiPro</b>${F ? 'par eTradeValue' : 'by eTradeValue'}</div>
+              <img src="${ETV_LOGO}" alt="eTradeValue" />
+            </div>
+          </div>
+          <div class="top">
+            <h1>${F ? 'Soumission de financement' : 'Financing submission'}</h1>
             <div class="meta">${F ? 'Préparée le' : 'Prepared on'} ${new Date().toLocaleDateString(F ? 'fr-CA' : 'en-CA')}</div>
           </div>
 
@@ -1921,9 +1946,14 @@ export default function HomeScreen() {
         printWindow.document.write(printContent);
         printWindow.document.close();
         printWindow.focus();
-        setTimeout(() => {
-          printWindow.print();
-        }, 250);
+        // On attend les logos (2 s au plus) pour qu'ils sortent sur la feuille
+        const started = Date.now();
+        const whenReady = () => {
+          const imgs = Array.from(printWindow.document.images || []);
+          if (imgs.every((im) => im.complete) || Date.now() - started > 2000) printWindow.print();
+          else setTimeout(whenReady, 100);
+        };
+        setTimeout(whenReady, 250);
       }
     } else {
       // On mobile, use expo-print for native print dialog
