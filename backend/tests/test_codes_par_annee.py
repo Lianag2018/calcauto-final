@@ -90,3 +90,10 @@ def test_2026_packages_name_the_version():
     assert lookup_product_code('DJ7L91', 2026, ['24B'])['trim'] == 'Warlock'
     assert lookup_product_code('D28M81', 2026)['cab'] == 'Mega Cab'
     assert lookup_product_code('DP0L94', 2026)['model'] == '5500 Chassis Cab'
+
+
+def test_les_codes_propres_a_une_annee_sont_reconnus_sur_une_facture():
+    from product_code_lookup import get_all_codes
+    codes = get_all_codes()
+    assert 'VF3L19' in codes and 'KMJM74' in codes
+    assert codes['DP0L94']['brand'] == 'Ram'
