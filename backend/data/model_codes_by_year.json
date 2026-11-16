@@ -31,6 +31,10 @@
     "DT6P98": {"brand": "Ram", "model": "1500", "trim": "Laramie", "cab": "Crew Cab", "box": "5'7\"", "drive": "4x4", "packages": {"21H": "Laramie", "25H": "Laramie"}},
     "DT6P91": {"brand": "Ram", "model": "1500", "trim": "Laramie", "cab": "Crew Cab", "box": "6'4\"", "drive": "4x4"},
     "DT6M98": {"brand": "Ram", "model": "1500", "trim": "Limited/Longhorn", "cab": "Crew Cab", "box": "5'7\"", "drive": "4x4", "packages": {"22M": "Limited", "25M": "Limited", "22K": "Longhorn", "25K": "Longhorn"}},
-    "DT6M91": {"brand": "Ram", "model": "1500", "trim": "Limited/Longhorn", "cab": "Crew Cab", "box": "6'4\"", "drive": "4x4", "packages": {"22M": "Limited", "22K": "Longhorn"}}
+    "DT6M91": {"brand": "Ram", "model": "1500", "trim": "Limited/Longhorn", "cab": "Crew Cab", "box": "6'4\"", "drive": "4x4", "packages": {"22M": "Limited", "22K": "Longhorn"}},
+    "DT6S98": {"brand": "Ram", "model": "1500", "trim": "RHO", "cab": "Crew Cab", "box": "5'7\"", "drive": "4x4", "packages": {"22Y": "RHO"}},
+    "DT6R98": {"brand": "Ram", "model": "1500", "trim": "Tungsten", "cab": "Crew Cab", "box": "5'7\"", "drive": "4x4", "packages": {"22V": "Tungsten"}},
+    "DT6S48": {"brand": "Ram", "model": "1500", "trim": "Sport Truck", "cab": "Quad Cab", "box": "5'7\"", "drive": "4x4"},
+    "DT6L41": {"brand": "Ram", "model": "1500", "trim": "Tradesman", "cab": "Quad Cab", "box": "6'4\"", "drive": "4x4"}
   }
 }

@@ -55,3 +55,5 @@ def test_ram_1500_and_grand_wagoneer_2027():
     assert lookup_product_code('DT6M98', 2027, ['25K'])['trim'] == 'Longhorn'
     assert lookup_product_code('DT6M91', 2027, ['22M'])['trim'] == 'Limited'
     assert lookup_product_code('DT6M98', 2027)['trim'] == 'Limited/Longhorn'
+    assert lookup_product_code('DT6L41', 2027)['cab'] == 'Quad Cab'
+    assert lookup_product_code('DT6S98', 2027, ['22Y'])['full_description'] == 'Ram 1500 RHO Crew Cab 4x4'
