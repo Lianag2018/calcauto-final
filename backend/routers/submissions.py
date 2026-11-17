@@ -8,7 +8,7 @@ from dependencies import get_current_user, calculate_monthly_payment
 router = APIRouter()
 
 from services.email_service import send_email
-from services.followup import first_reminder, next_reminder
+from services.followup import first_reminder, is_repeat_done, next_reminder
 
 # ============ CRM Endpoints ============
 
@@ -140,29 +140,45 @@ async def mark_reminder_done(submission_id: str, authorization: Optional[str] = 
     """Marquer un rappel comme fait, optionnellement planifier un nouveau"""
     user = await get_current_user(authorization)
     
-    update_data = {"reminder_done": True, "status": "contacted"}
-    
+    now = datetime.utcnow()
+    update_data = {"reminder_done": True, "status": "contacted", "followup_done_at": now}
+    match = {"id": submission_id, "owner_id": user["id"]}
+
     if new_reminder_date:
         update_data["reminder_date"] = datetime.fromisoformat(new_reminder_date.replace('Z', '+00:00'))
         update_data["reminder_done"] = False
     else:
         # Suite 2-7-30 jours : le suivi fait, le prochain se planifie seul.
-        current = await db.submissions.find_one({"id": submission_id, "owner_id": user["id"]})
-        following = next_reminder((current or {}).get("submission_date"), (current or {}).get("followup_step"), datetime.utcnow()) if current else None
+        current = await db.submissions.find_one(match)
+        if not current:
+            raise HTTPException(status_code=404, detail="Soumission non trouvée")
+        if is_repeat_done(current.get("followup_done_at"), now):
+            # Double clic : le premier « Fait » a déjà planifié la suite, on ne saute pas une étape.
+            return _done_reply(current)
+        # Deux demandes au même instant : une seule avance l'étape qu'elle a lue.
+        match["followup_step"] = current.get("followup_step")
+        following = next_reminder(current.get("submission_date"), current.get("followup_step"), now)
         if following:
             update_data.update({"reminder_date": following[0], "followup_step": following[1], "reminder_done": False})
             new_reminder_date = following[0].isoformat()
     
-    result = await db.submissions.update_one(
-        {"id": submission_id, "owner_id": user["id"]},
-        {"$set": update_data}
-    )
-    
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Soumission non trouvée")
-    
+    result = await db.submissions.update_one(match, {"$set": update_data})
+
+    if result.matched_count == 0:
+        latest = await db.submissions.find_one({"id": submission_id, "owner_id": user["id"]})
+        if not latest:
+            raise HTTPException(status_code=404, detail="Soumission non trouvée")
+        return _done_reply(latest)  # l'autre demande est passée la première
+
     return {"success": True, "message": "Rappel marqué comme fait" + (" - Nouveau rappel planifié" if new_reminder_date else ""),
             "next_reminder_date": new_reminder_date or None}
+
+
+def _done_reply(submission: dict) -> dict:
+    """Réponse d'un « Fait » déjà enregistré : l'état en place, sans rien avancer."""
+    pending = None if submission.get("reminder_done") else submission.get("reminder_date")
+    return {"success": True, "message": "Rappel déjà marqué comme fait",
+            "next_reminder_date": pending.isoformat() if isinstance(pending, datetime) else None}
 
 @router.put("/submissions/{submission_id}/status")
 async def update_submission_status(submission_id: str, status: str, authorization: Optional[str] = Header(None)):
