@@ -30,6 +30,11 @@ _WORD = re.compile(r"[a-z0-9.']+")
 _STOP_WORDS = {'models', 'model', 'all', 'and', 'the', 'engine', 'package',
                'only', 'cpos', 'value', 'of'}
 _NOT_GAS = ('diesel', 'cummins', 'phev', 'hybrid', '4xe', 'bev', 'electric')
+# Motorisations électrifiées nommées dans une ligne, et leurs indices dans la fiche
+_ELECTRIFIED = {'bev', 'phev', 'hybrid', '4xe'}
+_ELECTRIC_SIGNS = ('electric', 'électrique', 'electrique')
+_HYBRID_SIGNS = ('phev', 'hybrid', '4xe', 'plug-in', 'plug in', 'branchable')
+_COMBUSTION_WORDS = {'gas', 'ice', 'hemi', 'diesel', 'cummins', 'hurricane', 'pentastar'}
 
 Target = Tuple[Optional[str], Tuple[str, ...]]
 
@@ -252,9 +257,29 @@ def _eval_target(target: Target, vehicle: Dict[str, Any]) -> Tuple[Optional[bool
     return True, ''
 
 
-def _eval_name(words: List[str], vehicle: Dict[str, Any]) -> Optional[bool]:
+def _eval_name(words: List[str], vehicle: Dict[str, Any],
+               absent: Optional[bool] = None) -> Optional[bool]:
+    """`absent` : réponse quand la ligne nomme une motorisation électrifiée
+    (BEV, PHEV, Hybrid, 4xe) et que la fiche du véhicule n'en dit rien."""
     if not words:
         return None
+    if any(w in _ELECTRIFIED for w in words):
+        # « BEV », « PHEV », « 4xe » décrivent la motorisation, pas une version :
+        # une Fiat 500e « RED » appartient bien à la ligne « 500e BEV ».
+        rest = [w for w in words if w not in _ELECTRIFIED]
+        if rest and not all(w in vehicle['words'] for w in rest):
+            return False
+        text = vehicle['text']
+        electric = 'bev' in vehicle['words'] or any(s in text for s in _ELECTRIC_SIGNS)
+        hybrid = any(s in text for s in _HYBRID_SIGNS)
+        combustion = bool(vehicle['words'] & _COMBUSTION_WORDS)
+        if 'bev' in words:
+            if electric:
+                return True
+            return False if (hybrid or combustion) else absent
+        if hybrid:
+            return True
+        return False if (electric or combustion) else absent
     if any(w in ('gas', 'ice', 'diesel') for w in words):
         rest = [w for w in words if w not in ('gas', 'ice', 'diesel')]
         if rest and not all(w in vehicle['words'] for w in rest):
@@ -286,7 +311,8 @@ def _eval_item(item: Dict[str, Any], vehicle: Dict[str, Any]) -> Tuple[Optional[
         return (None, cause) if cause else (False, '')
     if not vehicle['has_trim']:
         return None, 'version'
-    named = [_eval_name(words, vehicle) for words in item['names']]
+    # Exclusion « sauf Hybrid / 4xe » : une fiche qui n'en dit rien n'est pas exclue
+    named = [_eval_name(words, vehicle, absent=False) for words in item['names']]
     if any(n is True for n in named):
         return (None, 'options') if item['feature'] else (True, '')
     if any(n is None for n in named):
@@ -357,8 +383,16 @@ def evaluate_line(program: Dict[str, Any], vehicle: Dict[str, Any]) -> Optional[
     unknown.discard('options')
     if best_name:
         return {'score': 10 + best_name, 'unknown': unknown}
-    if any(n is None for n in names):
+    doubtful = [words for words, ok in zip(conditions['names'], names) if ok is None]
+    if doubtful:
         unknown.add('moteur' if name_known else 'version')
+        # Motorisation électrifiée non confirmée par la fiche : la ligne reste
+        # possible, mais passe après toute ligne qui s'applique sans ce doute.
+        if all(set(words) & _ELECTRIFIED for words in doubtful):
+            named = max(len([w for w in words if w not in _ELECTRIFIED]) for words in doubtful)
+            return {'score': 0.5 + min(named, 40) / 100, 'unknown': unknown,
+                    'guess': 'bev' if any('bev' in words for words in doubtful) else 'hybrid',
+                    'bare': named == 0}
         return {'score': 5, 'unknown': unknown}
     if not name_known:
         unknown.add('version')
@@ -388,12 +422,12 @@ def match_program(vehicle: Dict[str, Any], programs: Iterable[Dict[str, Any]]) -
             siblings += 1
         verdict = evaluate_line(program, vehicle)
         if verdict:
-            survivors.append((verdict['score'], verdict['unknown'], program))
+            survivors.append((verdict['score'], verdict['unknown'], program, verdict))
     if not survivors:
         return {'program': None, 'certain': False, 'candidates': [],
                 'reason': 'aucune ligne du programme ne correspond'}
     survivors.sort(key=lambda s: -s[0])
-    top_score, top_unknown, top = survivors[0]
+    top_score, top_unknown, top, top_verdict = survivors[0]
     tied = [s for s in survivors if s[0] == top_score]
     others_unknown = set().union(*[s[1] for s in survivors[1:]]) if len(survivors) > 1 else set()
     doubt = set(top_unknown)
@@ -412,6 +446,16 @@ def match_program(vehicle: Dict[str, Any], programs: Iterable[Dict[str, Any]]) -
         doubt -= {'moteur'}
         if siblings == 1:
             doubt -= {'version'}
+    if top_verdict.get('guess') and len(tied) == 1:
+        # La ligne retenue suppose une motorisation électrifiée que la fiche ne
+        # confirme pas. Sans conséquence si toutes les lignes possibles supposent
+        # la même (Hornet R/T, toujours PHEV) ; mais une ligne qui ne nomme que
+        # la motorisation (« BEV », « 4xe ») n'est sûre que seule pour son modèle.
+        same = all(s[3].get('guess') == top_verdict['guess'] for s in survivors)
+        if same and not (top_verdict.get('bare') and siblings > 1):
+            doubt.discard('moteur')
+        else:
+            doubt.add('moteur')
     if doubt:
         return {
             'program': None, 'certain': False,

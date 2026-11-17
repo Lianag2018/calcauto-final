@@ -658,6 +658,78 @@ class TestProgramMatching:
         assert condition_signature('Sport, Rebel (DT)') == condition_signature('Sport, Rebel')
 
 
+
+class TestElectrifiedLines:
+    """« BEV », « PHEV », « 4xe » nomment une motorisation, pas une version :
+    la fiche d'inventaire ne les répète presque jamais."""
+    FIAT = [_line('BEV', '500e', 'Fiat')]
+    HORNET = [
+        _line('R/T PHEV', 'Hornet', 'Dodge'), _line('R/T Plus PHEV', 'Hornet', 'Dodge'),
+        _line('GT (Gas)', 'Hornet', 'Dodge'), _line('GT Plus (Gas)', 'Hornet', 'Dodge'),
+    ]
+    PACIFICA = [
+        _line('Select PHEV', 'Pacifica', 'Chrysler'),
+        _line('Pinnacle PHEV', 'Pacifica', 'Chrysler'),
+        _line('Select Models (excl. Hybrid)', 'Pacifica', 'Chrysler'),
+        _line('(excl. Select & Hybrid)', 'Pacifica', 'Chrysler'),
+    ]
+    GRAND_CHEROKEE = [
+        _line('4xe (WL)', 'Grand Cherokee', 'Jeep', 2025),
+        _line('(WL) (excludes Laredo, Summit, and 4xe)', 'Grand Cherokee', 'Jeep', 2025),
+    ]
+
+    def _trim(self, programs, **vehicle):
+        result = _match(programs, **vehicle)
+        return (result['program'] or {}).get('trim'), result
+
+    def test_fiat_500e_whatever_its_version(self):
+        """Le cas signalé : des 500e en inventaire, « 0 en stock » sur la ligne."""
+        for trim in ('', 'RED', 'La Prima', 'Giorgio Armani', 'BEV'):
+            found, result = self._trim(self.FIAT, brand='Fiat', model='500e', trim=trim, year=2026)
+            assert found == 'BEV', trim
+            assert result['certain'], trim
+
+    def test_fiat_500e_other_year_is_not_matched(self):
+        found, _ = self._trim(self.FIAT, brand='Fiat', model='500e', trim='RED', year=2025)
+        assert found is None
+
+    def test_hornet_rt_is_the_phev_line(self):
+        assert self._trim(self.HORNET, brand='Dodge', model='Hornet', trim='R/T', year=2026)[0] == 'R/T PHEV'
+        assert self._trim(self.HORNET, brand='Dodge', model='Hornet', trim='R/T Plus', year=2026)[0] == 'R/T Plus PHEV'
+
+    def test_hornet_gt_stays_on_the_gas_line(self):
+        assert self._trim(self.HORNET, brand='Dodge', model='Hornet', trim='GT', year=2026)[0] == 'GT (Gas)'
+        assert self._trim(self.HORNET, brand='Dodge', model='Hornet', trim='GT Plus', year=2026)[0] == 'GT Plus (Gas)'
+
+    def test_pacifica_gas_is_not_sent_to_the_phev_line(self):
+        assert self._trim(self.PACIFICA, brand='Chrysler', model='Pacifica', trim='Select', year=2026)[0] \
+            == 'Select Models (excl. Hybrid)'
+        assert self._trim(self.PACIFICA, brand='Chrysler', model='Pacifica', trim='Limited', year=2026)[0] \
+            == '(excl. Select & Hybrid)'
+
+    def test_pacifica_hybrid_is_recognised_under_its_other_names(self):
+        for model, trim in (('Pacifica Hybrid', 'Select'), ('Pacifica', 'Hybrid Select'),
+                            ('Pacifica', 'Select Plug-In Hybrid'), ('Pacifica', 'Select PHEV')):
+            assert self._trim(self.PACIFICA, brand='Chrysler', model=model, trim=trim, year=2026)[0] \
+                == 'Select PHEV', (model, trim)
+
+    def test_grand_cherokee_without_4xe_keeps_its_general_line(self):
+        assert self._trim(self.GRAND_CHEROKEE, brand='Jeep', model='Grand Cherokee', trim='Limited', year=2025)[0] \
+            == '(WL) (excludes Laredo, Summit, and 4xe)'
+        assert self._trim(self.GRAND_CHEROKEE, brand='Jeep', model='Grand Cherokee', trim='Overland 4xe', year=2025)[0] \
+            == '4xe (WL)'
+
+    def test_motor_only_line_is_not_certain_when_the_model_has_other_lines(self):
+        """Un Laredo sans autre ligne possible n'est pas déclaré 4xe d'office."""
+        found, result = self._trim(self.GRAND_CHEROKEE, brand='Jeep', model='Grand Cherokee',
+                                   trim='Laredo', year=2025)
+        assert found is None and not result['certain']
+        assert [c['trim'] for c in result['candidates']] == ['4xe (WL)']
+
+    def test_a_gas_vehicle_never_matches_a_bev_line(self):
+        found, result = self._trim(self.FIAT, brand='Fiat', model='500e', trim='Hybrid', year=2026)
+        assert found is None and result['candidates'] == []
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Guide des valeurs résiduelles (lecture par position, kilométrage, période)
 # ═══════════════════════════════════════════════════════════════════════════════
