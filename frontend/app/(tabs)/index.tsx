@@ -30,6 +30,7 @@ import html2canvas from 'html2canvas';
 import { AnimatedSplashScreen } from '../../components/AnimatedSplashScreen';
 import { GaugeMark } from '../../components/GaugeMark';
 import { Dossier, dossierFromContact, takeQueuedDossier, takeEvalId, syncDossiers, fetchListingUrl, usedQuoteSms, smsHref, windowStickerUrl, smsLinks, tradeDetail, dossierFeeForMode, otherFees, DOSSIER_FEE, WINDSHIELD_FEE } from '../../utils/etvDossier';
+import { newQuoteSms, plainVehicle, hasNameAndPhone } from '../../utils/quoteSms';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { Language, saveLanguage, loadLanguage, getTranslation, TranslationKeys } from '../../utils/i18n';
 import { useAuth } from '../../contexts/AuthContext';
@@ -141,6 +142,7 @@ export default function HomeScreen() {
     return () => { alive = false; };
   }, [user?.dealer_slug]);
   const [printNotice, setPrintNotice] = useState('');
+  const [clientAskFor, setClientAskFor] = useState<'print' | 'sms'>('print');
   const [clientEmail, setClientEmail] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
@@ -1071,81 +1073,37 @@ export default function HomeScreen() {
     // localResult se réinitialise automatiquement via useCalculator quand selectedProgram = null
   };
 
-  // Generate submission text for sharing
-  const generateSubmissionText = () => {
+  // Nom du véhicule tel qu'un client le lit : celui de l'inventaire choisi, sinon
+  // celui du programme sans ses précisions entre parenthèses.
+  const clientVehicleName = (): string => {
+    const unit = selectedInventory;
+    if (unit?.brand && unit?.model) return plainVehicle(unit.brand, unit.model, unit.trim, unit.year);
+    return plainVehicle(selectedProgram?.brand, selectedProgram?.model, selectedProgram?.trim, selectedProgram?.year);
+  };
+
+  // Le texto d'une soumission de véhicule neuf, écrit pour le client.
+  const buildQuoteSms = (links: string): string => {
     if (!selectedProgram || !localResult || !vehiclePrice) return '';
-    
-    const vehicle = `${selectedProgram.brand} ${selectedProgram.model} ${selectedProgram.trim || ''} ${selectedProgram.year}`.trim();
-    const option = selectedOption === '2' || !hasOption1 ? '2' : '1';
-    const rate = option === '1' ? localResult.option1Rate : localResult.option2Rate;
-    
-    let payment: number;
-    if (paymentFrequency === 'biweekly') {
-      payment = option === '1' ? localResult.option1Biweekly : (localResult.option2Biweekly || 0);
-    } else if (paymentFrequency === 'weekly') {
-      payment = option === '1' ? localResult.option1Weekly : (localResult.option2Weekly || 0);
-    } else {
-      payment = option === '1' ? localResult.option1Monthly : (localResult.option2Monthly || 0);
-    }
-    
-    const frequencyText = paymentFrequency === 'biweekly' 
-      ? (lang === 'fr' ? 'aux 2 sem.' : 'bi-weekly')
-      : paymentFrequency === 'weekly'
-        ? (lang === 'fr' ? 'hebdo' : 'weekly')
-        : (lang === 'fr' ? 'mensuel' : 'monthly');
-    
-    const vin = selectedInventory?.vin || (manualVin && manualVin.length === 17 ? manualVin : '');
-    
-    // Build lease section for SMS
-    let leaseSection = '';
-    if (showLease && leaseResult && (leaseResult.standard || leaseResult.alternative)) {
-      const bestLease = leaseResult.bestLease === 'standard' ? leaseResult.standard : leaseResult.alternative;
-      const bestLeaseLabel = leaseResult.bestLease === 'standard' 
-        ? (lang === 'fr' ? 'Std + Lease Cash' : 'Std + Lease Cash')
-        : (lang === 'fr' ? 'Taux Alternatif' : 'Alt. Rate');
-      const bestLeasePayment = paymentFrequency === 'biweekly' ? bestLease.biweekly :
-        paymentFrequency === 'weekly' ? bestLease.weekly : bestLease.monthly;
-      
-      leaseSection = lang === 'fr'
-        ? `\n\n📋 LOCATION SCI (${bestLeaseLabel})\n` +
-          `Terme: ${leaseTerm} mois • ${leaseKmPerYear/1000}k km/an\n` +
-          `Résiduel: ${leaseResult.residualPct}% (${formatCurrency(leaseResult.residualValue)})\n` +
-          `Taux: ${bestLease.rate}%\n` +
-          `Paiement ${frequencyText}: ${formatCurrencyDecimal(bestLeasePayment)}`
-        : `\n\n📋 SCI LEASE (${bestLeaseLabel})\n` +
-          `Term: ${leaseTerm} mo • ${leaseKmPerYear/1000}k km/yr\n` +
-          `Residual: ${leaseResult.residualPct}% (${formatCurrency(leaseResult.residualValue)})\n` +
-          `Rate: ${bestLease.rate}%\n` +
-          `${frequencyText} payment: ${formatCurrencyDecimal(bestLeasePayment)}`;
-    }
-    
-    const rebateForOption = option === '2' ? (selectedProgram.alternative_consumer_cash || 0) : (selectedProgram.consumer_cash || 0);
-    
-    const text = lang === 'fr' 
-      ? `SOUMISSION CalcAuto AiPro\n\n` +
-        `Véhicule: ${vehicle}\n` +
-        `Prix: ${formatCurrency(parseFloat(vehiclePrice))}\n` +
-        (vin ? `VIN: ${vin}\n` : '') +
-        `\nFINANCEMENT Option ${option}\n` +
-        `Terme: ${selectedTerm} mois\n` +
-        `Taux: ${rate}%\n` +
-        `Paiement ${frequencyText}: ${formatCurrencyDecimal(payment)}\n` +
-        (rebateForOption > 0 ? `Rabais: ${formatCurrency(rebateForOption)}\n` : '') +
-        leaseSection +
-        `\n\nEnvoyé via CalcAuto AiPro`
-      : `CalcAuto AiPro SUBMISSION\n\n` +
-        `Vehicle: ${vehicle}\n` +
-        `Price: ${formatCurrency(parseFloat(vehiclePrice))}\n` +
-        (vin ? `VIN: ${vin}\n` : '') +
-        `\nFINANCING Option ${option}\n` +
-        `Term: ${selectedTerm} months\n` +
-        `Rate: ${rate}%\n` +
-        `${frequencyText} payment: ${formatCurrencyDecimal(payment)}\n` +
-        (rebateForOption > 0 ? `Rebate: ${formatCurrency(rebateForOption)}\n` : '') +
-        leaseSection +
-        `\n\nSent via CalcAuto AiPro`;
-    
-    return text;
+    const two = selectedOption === '2' || !hasOption1;
+    const pick = (monthly: number | null, biweekly: number | null, weekly: number | null) =>
+      (paymentFrequency === 'biweekly' ? biweekly : paymentFrequency === 'weekly' ? weekly : monthly) || 0;
+    const payment = two
+      ? pick(localResult.option2Monthly, localResult.option2Biweekly, localResult.option2Weekly)
+      : pick(localResult.option1Monthly, localResult.option1Biweekly, localResult.option1Weekly);
+    const bestLease = showLease && leaseResult
+      ? (leaseResult.bestLease === 'standard' ? leaseResult.standard : leaseResult.alternative)
+      : null;
+    return newQuoteSms({
+      clientName,
+      vehicle: clientVehicleName(),
+      price: parseFloat(vehiclePrice) || 0,
+      frequency: paymentFrequency,
+      financing: payment > 0 ? { payment, term: selectedTerm, rate: (two ? localResult.option2Rate : localResult.option1Rate) || 0 } : null,
+      lease: bestLease ? { payment: pick(bestLease.monthly, bestLease.biweekly, bestLease.weekly), term: leaseTerm, kmPerYear: leaseKmPerYear } : null,
+      advisorName: user?.name || undefined,
+      links,
+      lang,
+    });
   };
 
   // Un texto envoyé devient un suivi : la soumission est enregistrée au CRM,
@@ -1237,8 +1195,20 @@ export default function HomeScreen() {
     return /^https:\/\//i.test(known) ? known : '';
   };
 
-  // Handle Share via SMS - Open preview modal
-  const handleShareSMS = async () => {
+  // Texto : le nom et le téléphone du client d'abord, pour que la soumission
+  // entre au CRM à son nom (suivis du conseiller, vue du directeur).
+  const handleShareSMS = () => {
+    const ready = isUsed ? !!localResult && !!vehiclePrice : !!selectedProgram && !!localResult && !!vehiclePrice;
+    if (ready && !hasNameAndPhone(clientName, clientPhone)) {
+      setPrintNotice('');
+      setClientAskFor('sms');
+      setShowPrintModal(true);
+      return;
+    }
+    return shareSms();
+  };
+
+  const shareSms = async () => {
     if (isUsed) return handleUsedSms();
     if (!selectedProgram || !localResult || !vehiclePrice) {
       if (Platform.OS === 'web') {
@@ -1476,33 +1446,17 @@ export default function HomeScreen() {
 
       // Convert canvas to blob
       const blob: Blob = await new Promise((resolve) => canvas.toBlob((b: any) => resolve(b), 'image/png'));
-      const file = new File([blob], `soumission_${vehicle.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
+      const fileLabel = clientVehicleName().replace(/\s+/g, '_');
+      const file = new File([blob], `soumission_${fileLabel}.png`, { type: 'image/png' });
       
       // La feuille d'une page en PDF prend la place de l'image quand le téléphone l'accepte
       const pdfBlob = await buildSubmissionPdf();
-      const pdfFile = pdfBlob ? new File([pdfBlob], `Soumission_${vehicle.replace(/\s+/g, '_')}.pdf`, { type: 'application/pdf' }) : null;
+      const pdfFile = pdfBlob ? new File([pdfBlob], `Soumission_${fileLabel}.pdf`, { type: 'application/pdf' }) : null;
       const pdfShareable = !!pdfFile && !!navigator.canShare && navigator.canShare({ files: [pdfFile] });
       const filesToShare: File[] = pdfShareable && pdfFile ? [pdfFile] : [file];
       
-      // Build text message with sticker link
-      let shareText = `${vehicle} - ${fmt(price)} $\n`;
-      if (hasOption1) {
-        shareText += `${payLabel}: Option 1 = ${fmt2(o1Pay)} $ (${selectedTerm}m)`;
-        if (hasOption2) shareText += ` | Option 2 = ${fmt2(o2Pay)} $`;
-      } else if (hasOption2) {
-        shareText += `${payLabel}: Option 2 = ${fmt2(o2Pay)} $ (${selectedTerm}m)`;
-      }
-      if (showLease && leaseResult) {
-        const bestLease = leaseResult.bestLease === 'standard' ? leaseResult.standard : leaseResult.alternative;
-        if (bestLease) {
-          const leasePayment = paymentFrequency === 'weekly' ? bestLease.weekly : paymentFrequency === 'biweekly' ? bestLease.biweekly : bestLease.monthly;
-          const freqSuffix = paymentFrequency === 'weekly' ? '/sem' : paymentFrequency === 'biweekly' ? '/2sem' : '/mois';
-          shareText += `\nLocation ${leaseTerm}m: ${fmt2(leasePayment)} $${freqSuffix}`;
-        }
-      }
-      shareText += `\n\n---\nAVIS: Montants à titre indicatif seulement. Sujet à l'approbation du crédit. Le concessionnaire ne peut être tenu responsable d'erreurs de calcul.`;
-      shareText += `\n- CalcAuto AiPro`;
-      if (endLinks) shareText += `\n\n${endLinks}`;
+      // Le message écrit pour le client, liens à la fin
+      const shareText = buildQuoteSms(endLinks);
 
       // 5. Share via native share sheet
       if (navigator.share && navigator.canShare && navigator.canShare({ files: filesToShare })) {
@@ -1533,8 +1487,7 @@ export default function HomeScreen() {
       console.error('Share error:', error);
       setShowSmsPreview(false);
       // Fallback to text-only SMS
-      const message = generateSubmissionText();
-      setSmsPreviewText(endLinks ? `${message}\n\n${endLinks}` : message);
+      setSmsPreviewText(buildQuoteSms(endLinks));
       setShowSmsPreview(true);
     }
   };
@@ -1596,7 +1549,18 @@ export default function HomeScreen() {
   const openPrint = () => {
     if (!selectedProgram || !localResult || !vehiclePrice) { handlePrint(); return; }
     setPrintNotice('');
+    setClientAskFor('print');
     setShowPrintModal(true);
+  };
+  const smsForClient = () => {
+    if (!hasNameAndPhone(clientName, clientPhone)) {
+      setPrintNotice(lang === 'fr'
+        ? 'Pour le texto : le nom du client et son téléphone à 10 chiffres.'
+        : 'For the text: the client name and a 10-digit phone number.');
+      return;
+    }
+    setShowPrintModal(false);
+    shareSms();
   };
   const printForClient = (save: boolean) => {
     if (save) {
@@ -4271,7 +4235,7 @@ export default function HomeScreen() {
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}>
             <View testID="print-client-modal" style={{ backgroundColor: '#1b202a', borderRadius: 12, width: '90%', maxWidth: 420, overflow: 'hidden' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#303744' }}>
-                <Ionicons name="print" size={22} color="#e6c65a" style={{ marginRight: 10 }} />
+                <Ionicons name={clientAskFor === 'sms' ? 'chatbubble-ellipses' : 'print'} size={22} color="#e6c65a" style={{ marginRight: 10 }} />
                 <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#f4f1ea', flex: 1 }}>
                   {lang === 'fr' ? 'Pour qui est cette soumission ?' : 'Who is this submission for?'}
                 </Text>
@@ -4287,12 +4251,20 @@ export default function HomeScreen() {
                 <Text style={styles.emailModalLabel}>{t.email.clientEmail}</Text>
                 <TextInput testID="print-client-email" style={styles.emailModalInput} placeholder="client@email.com" placeholderTextColor="#8a93a1" value={clientEmail} onChangeText={setClientEmail} keyboardType="email-address" autoCapitalize="none" />
                 {!!printNotice && <Text testID="print-client-notice" style={{ color: '#ff8a80', fontSize: 13, marginTop: 8 }}>{printNotice}</Text>}
-                <TouchableOpacity testID="print-save-and-print" onPress={() => printForClient(true)} style={{ backgroundColor: '#e6c65a', borderRadius: 8, paddingVertical: 12, alignItems: 'center', marginTop: 14 }}>
-                  <Text style={{ color: '#1b202a', fontWeight: 'bold', fontSize: 15 }}>{lang === 'fr' ? 'Enregistrer au CRM et imprimer' : 'Save to CRM and print'}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity testID="print-without-saving" onPress={() => printForClient(false)} style={{ paddingVertical: 12, alignItems: 'center' }}>
-                  <Text style={{ color: '#9aa3b1', fontSize: 14 }}>{lang === 'fr' ? 'Imprimer sans enregistrer' : 'Print without saving'}</Text>
-                </TouchableOpacity>
+                {clientAskFor === 'sms' ? (
+                  <TouchableOpacity testID="sms-save-and-send" onPress={smsForClient} style={{ backgroundColor: '#e6c65a', borderRadius: 8, paddingVertical: 12, alignItems: 'center', marginTop: 14, marginBottom: 12 }}>
+                    <Text style={{ color: '#1b202a', fontWeight: 'bold', fontSize: 15 }}>{lang === 'fr' ? 'Enregistrer au CRM et préparer le texto' : 'Save to CRM and prepare the text'}</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <>
+                    <TouchableOpacity testID="print-save-and-print" onPress={() => printForClient(true)} style={{ backgroundColor: '#e6c65a', borderRadius: 8, paddingVertical: 12, alignItems: 'center', marginTop: 14 }}>
+                      <Text style={{ color: '#1b202a', fontWeight: 'bold', fontSize: 15 }}>{lang === 'fr' ? 'Enregistrer au CRM et imprimer' : 'Save to CRM and print'}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity testID="print-without-saving" onPress={() => printForClient(false)} style={{ paddingVertical: 12, alignItems: 'center' }}>
+                      <Text style={{ color: '#9aa3b1', fontSize: 14 }}>{lang === 'fr' ? 'Imprimer sans enregistrer' : 'Print without saving'}</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
               </View>
             </View>
           </View>
