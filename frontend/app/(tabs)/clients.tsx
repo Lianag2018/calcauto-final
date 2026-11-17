@@ -24,6 +24,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Language, saveLanguage, loadLanguage } from '../../utils/i18n';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { useAuth } from '../../contexts/AuthContext';
+import { TeamReport } from '../../components/TeamReport';
 import { Dossier, dossierFromContact, byNewestEvaluation, evaluationDateLabel, tradeLabel, desiredLabel, queueDossier, syncDossiers, pairDesired, DossierDesired, Followup, fetchFollowups, completeFollowup, followupCalendarUrl } from '../../utils/etvDossier';
 
 import { API_URL } from '../../utils/api';
@@ -120,7 +121,7 @@ const crmTranslations = {
   fr: {
     title: 'CRM',
     remindersCount: 'rappel(s) à faire',
-    tabs: { clients: 'Clients', reminders: 'Rappels', offers: 'Offres', history: 'Hist.' },
+    tabs: { clients: 'Clients', reminders: 'Rappels', offers: 'Offres', history: 'Hist.', team: 'Équipe' },
     search: 'Rechercher par nom ou téléphone...',
     add: 'Ajouter',
     import: 'Importer',
@@ -187,7 +188,7 @@ const crmTranslations = {
   en: {
     title: 'CRM',
     remindersCount: 'reminder(s) to do',
-    tabs: { clients: 'Clients', reminders: 'Reminders', offers: 'Offers', history: 'Hist.' },
+    tabs: { clients: 'Clients', reminders: 'Reminders', offers: 'Offers', history: 'Hist.', team: 'Team' },
     search: 'Search by name or phone...',
     add: 'Add',
     import: 'Import',
@@ -253,12 +254,14 @@ const crmTranslations = {
   }
 };
 
-type TabType = 'clients' | 'reminders' | 'offers' | 'history';
+type TabType = 'clients' | 'reminders' | 'offers' | 'history' | 'team';
 
 export default function ClientsScreen() {
   const router = useRouter();
   const { getToken, user, linkEtvAccount } = useAuth();
   // Compte provisoire créé par l'entrée eTradeValue : on propose de le relier au compte existant.
+  // Le directeur (ou l'administrateur) d'une concession voit les soumissions de son équipe.
+  const seesTeam = !!user?.dealer_slug && ['admin', 'directeur'].includes(String(user?.etv_role || '').toLowerCase());
   const canLinkAccount = !!user?.etv_username && !!user?.email?.endsWith('.etradevalue');
   // Relances d'évaluation (2, 7 et 15 jours) et leur calendrier
   const [followups, setFollowups] = useState<Followup[]>([]);
@@ -1753,6 +1756,16 @@ export default function ClientsScreen() {
           <Ionicons name="document-text" size={18} color={activeTab === 'history' ? '#e6c65a' : '#9aa3b1'} />
           <Text style={[styles.tabText, activeTab === 'history' && styles.tabTextActive]}>{crm.tabs.history}</Text>
         </TouchableOpacity>
+        {seesTeam && (
+          <TouchableOpacity
+            testID="crm-tab-team"
+            style={[styles.tab, activeTab === 'team' && styles.tabActive]}
+            onPress={() => setActiveTab('team')}
+          >
+            <Ionicons name="bar-chart" size={18} color={activeTab === 'team' ? '#e6c65a' : '#9aa3b1'} />
+            <Text style={[styles.tabText, activeTab === 'team' && styles.tabTextActive]}>{crm.tabs.team}</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Search Bar */}
@@ -1853,6 +1866,7 @@ export default function ClientsScreen() {
       {activeTab === 'reminders' && renderRemindersTab()}
       {activeTab === 'offers' && renderOffersTab()}
       {activeTab === 'history' && renderHistoryTab()}
+      {activeTab === 'team' && seesTeam && <TeamReport getToken={getToken} lang={lang === 'en' ? 'en' : 'fr'} />}
       
       {/* Offer Detail Modal */}
       {renderOfferDetailModal()}

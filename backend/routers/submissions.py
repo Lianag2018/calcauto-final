@@ -9,6 +9,7 @@ router = APIRouter()
 
 from services.email_service import send_email
 from services.followup import first_reminder, is_repeat_done, next_reminder
+from services.team_report import can_see_team, team_report
 
 # ============ CRM Endpoints ============
 
@@ -114,6 +115,25 @@ async def get_reminders(authorization: Optional[str] = Header(None)):
         "due_count": len(reminders_due),
         "upcoming_count": len(reminders_upcoming)
     }
+
+@router.get("/submissions/team")
+async def get_team_report(days: int = 30, authorization: Optional[str] = Header(None)):
+    """Directeur : les soumissions de tous les conseillers de sa concession."""
+    user = await get_current_user(authorization)
+    if not can_see_team(user):
+        raise HTTPException(status_code=403, detail="Réservé au directeur")
+    dealer = str(user.get("dealer_slug") or "").strip()
+    members = await db.users.find({"dealer_slug": dealer}).to_list(500)
+    advisors = {str(m.get("id")): str(m.get("etv_name") or m.get("name") or m.get("etv_username") or "Conseiller")
+                for m in members if m.get("id")}
+    now = datetime.utcnow()
+    since = now - timedelta(days=max(1, min(int(days), 365)))
+    submissions = await db.submissions.find({
+        "owner_id": {"$in": list(advisors)},
+        "submission_date": {"$gte": since},
+    }).sort("submission_date", -1).to_list(2000)
+    return {"days": max(1, min(int(days), 365)), **team_report(submissions, advisors, now)}
+
 
 @router.put("/submissions/{submission_id}/reminder")
 async def update_reminder(submission_id: str, reminder: ReminderUpdate, authorization: Optional[str] = Header(None)):
