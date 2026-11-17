@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from database import db, ADMIN_EMAIL
 from dependencies import generate_token, get_current_user, hash_password
-from services.etv_link import (LinkError, account_email, etv_profile_fields, browser_key_hash, calendar_feed, contact_from_dossier,
+from services.etv_link import (ETV_PROFILE_KEYS, LinkError, account_email, etv_profile_fields, browser_key_hash, calendar_feed, contact_from_dossier,
                                dossiers_request, effective_desired, followup_plan, is_calcauto_admin,
                                is_etv_only_account, link_refusal, listing_request, owns_followups, pairing,
                                safe_listing_url, same_browser, trade_summary, verify_ticket)
@@ -171,8 +171,7 @@ async def link_account(body: AccountLink, authorization: Optional[str] = Header(
     if reason:
         raise HTTPException(status_code=403, detail=reason)
 
-    etv_fields = {field: user.get(field) for field in ("dealer_slug", "etv_username", "etv_role",
-                                                         "etv_name", "etv_email", "etv_dealer_name")}
+    etv_fields = {field: user.get(field) for field in ETV_PROFILE_KEYS}
     await db.users.update_one({"id": target["id"]}, {"$set": {"etv_link_key": user["email"], **etv_fields,
                                                               "last_login": datetime.utcnow()}})
     # Les dossiers déjà recopiés suivent ; le compte provisoire ne sert plus.

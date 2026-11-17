@@ -93,6 +93,12 @@ def _phone(value) -> str:
     return text if sum(c.isdigit() for c in text) >= 7 else ""
 
 
+# Champs du profil eTradeValue gardés sur le compte. Le jumelage d'un compte existant
+# recopie exactement cette liste : un champ ajouté ici suit partout.
+ETV_PROFILE_KEYS = ("dealer_slug", "etv_username", "etv_role", "etv_name", "etv_email",
+                    "etv_dealer_name", "etv_phone")
+
+
 def etv_profile_fields(identity) -> dict:
     """Ce que la session garde du billet, pour signer les courriels au nom du conseiller."""
     return {"dealer_slug": identity["dealer_slug"], "etv_username": identity["username"],

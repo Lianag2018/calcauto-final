@@ -9,6 +9,16 @@ def first_reminder(now: datetime) -> datetime:
     return now + timedelta(days=FOLLOWUP_DAYS[0])
 
 
+# Deux « Fait » rapprochés (double clic, réseau lent qui renvoie la demande) comptent pour un seul.
+DOUBLE_DONE_SECONDS = 15
+
+
+def is_repeat_done(last_done_at: Optional[datetime], now: datetime) -> bool:
+    if not isinstance(last_done_at, datetime):
+        return False
+    return 0 <= (now - last_done_at).total_seconds() < DOUBLE_DONE_SECONDS
+
+
 def next_reminder(sent_at: Optional[datetime], step, now: datetime) -> Optional[Tuple[datetime, int]]:
     """Rappel suivant une fois celui de l'étape `step` fait : (date, étape), ou None après le dernier.
 
