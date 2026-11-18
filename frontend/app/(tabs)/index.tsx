@@ -143,6 +143,8 @@ export default function HomeScreen() {
     return () => { alive = false; };
   }, [user?.dealer_slug]);
   const [printNotice, setPrintNotice] = useState('');
+  const [printBusy, setPrintBusy] = useState(false);
+  const [printReadyFile, setPrintReadyFile] = useState<any>(null);
   const [clientAskFor, setClientAskFor] = useState<'print' | 'sms'>('print');
   const [clientEmail, setClientEmail] = useState('');
   const [clientName, setClientName] = useState('');
@@ -1947,6 +1949,17 @@ export default function HomeScreen() {
     }
   };
 
+  // Vrai dans un cadre sur un téléphone ou une tablette (Bureau web de l'application eTradeValue) :
+  // là, window.open() vide l'écran et window.print() ne fait rien.
+  const printNeedsShareSheet = (): boolean => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+    let framed = true;
+    try { framed = window.self !== window.top; } catch { framed = true; }
+    const ua = navigator.userAgent || '';
+    const handheld = /iPhone|iPad|iPod|Android/i.test(ua) || (/Macintosh/i.test(ua) && (navigator.maxTouchPoints || 0) > 1);
+    return framed && handheld;
+  };
+
   // Handle Print
   const handlePrint = async () => {
     const printContent = buildPrintHtml();
@@ -1955,6 +1968,32 @@ export default function HomeScreen() {
         alert(lang === 'fr' ? 'Aucune soumission à imprimer' : 'No submission to print');
       } else {
         Alert.alert('Erreur', lang === 'fr' ? 'Aucune soumission à imprimer' : 'No submission to print');
+      }
+      return;
+    }
+
+    if (Platform.OS === 'web' && printNeedsShareSheet()) {
+      // Dans l'application du cellulaire, une nouvelle fenêtre remplace tout l'écran par une
+      // page blanche. La feuille part donc en PDF par la feuille de partage (« Imprimer » y est).
+      setPrintBusy(true);
+      try {
+        const pdf = await buildSubmissionPdf();
+        const label = (clientName || 'client').trim().replace(/[^\p{L}\p{N}]+/gu, '_') || 'client';
+        const file = pdf ? new File([pdf], `Soumission_${label}.pdf`, { type: 'application/pdf' }) : null;
+        if (!file || !navigator.share || !navigator.canShare || !navigator.canShare({ files: [file] })) {
+          alert(lang === 'fr'
+            ? "L'impression n'est pas offerte dans cette application. Envoyez la soumission par courriel, ou ouvrez CalcAuto dans Safari pour l'imprimer."
+            : 'Printing is not available in this app. Email the submission, or open CalcAuto in Safari to print it.');
+          return;
+        }
+        try {
+          await navigator.share({ files: [file] });
+        } catch (e: any) {
+          // Le téléphone exige un toucher juste avant le partage : on garde le PDF et on le redemande.
+          if (e && e.name !== 'AbortError') setPrintReadyFile(file);
+        }
+      } finally {
+        setPrintBusy(false);
       }
       return;
     }
@@ -4225,6 +4264,39 @@ export default function HomeScreen() {
                   </Text>
                 </TouchableOpacity>
               </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Impression dans l'application : le PDF est prêt, un toucher l'envoie à la feuille de partage */}
+        <Modal visible={printBusy || !!printReadyFile} transparent animationType="fade" onRequestClose={() => setPrintReadyFile(null)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}>
+            <View testID="print-share-modal" style={{ backgroundColor: '#1b202a', borderRadius: 12, width: '90%', maxWidth: 420, padding: 20 }}>
+              <Text style={{ color: '#f4f1ea', fontSize: 16, fontWeight: '700', marginBottom: 14 }}>
+                {printReadyFile
+                  ? (lang === 'fr' ? 'La soumission est prête.' : 'The submission is ready.')
+                  : (lang === 'fr' ? 'Préparation de la soumission…' : 'Preparing the submission…')}
+              </Text>
+              {printReadyFile ? (
+                <>
+                  <TouchableOpacity
+                    testID="print-share-go"
+                    style={{ backgroundColor: '#e6c65a', borderRadius: 8, paddingVertical: 12, alignItems: 'center' }}
+                    onPress={async () => {
+                      const file = printReadyFile;
+                      try { await (navigator as any).share({ files: [file] }); setPrintReadyFile(null); }
+                      catch (e: any) { if (e && e.name === 'AbortError') setPrintReadyFile(null); }
+                    }}
+                  >
+                    <Text style={{ color: '#07090e', fontSize: 15, fontWeight: '700' }}>{lang === 'fr' ? 'Imprimer ou partager le PDF' : 'Print or share the PDF'}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={{ paddingVertical: 12, alignItems: 'center' }} onPress={() => setPrintReadyFile(null)}>
+                    <Text style={{ color: '#9aa3b1', fontSize: 14 }}>{lang === 'fr' ? 'Fermer' : 'Close'}</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <ActivityIndicator color="#e6c65a" />
+              )}
             </View>
           </View>
         </Modal>

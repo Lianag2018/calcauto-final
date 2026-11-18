@@ -17,7 +17,9 @@ export default function TabsLayout() {
           borderTopWidth: 1,
           height: Platform.OS === 'ios' ? 88 : Platform.OS === 'web' ? 70 : 65,
           paddingBottom: Platform.OS === 'ios' ? 28 : Platform.OS === 'web' ? 10 : 10,
-          paddingTop: 10,
+          // Sur le web la barre est plus basse : avec 10 de marge en haut, les noms des onglets
+          // étaient écrasés à 3 px de haut (seul « Admin », rendu comme un lien, restait lisible).
+          paddingTop: Platform.OS === 'web' ? 4 : 10,
           position: 'absolute',
           bottom: 0,
           left: 0,
@@ -28,10 +30,10 @@ export default function TabsLayout() {
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
-          marginTop: 4,
+          marginTop: Platform.OS === 'web' ? 2 : 4,
         },
         tabBarIconStyle: {
-          marginTop: 4,
+          marginTop: Platform.OS === 'web' ? 0 : 4,
         },
       }}
     >

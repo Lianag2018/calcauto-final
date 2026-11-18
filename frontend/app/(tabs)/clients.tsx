@@ -2166,6 +2166,15 @@ export default function ClientsScreen() {
                         <Ionicons name="trash-outline" size={18} color="#FF6B6B" />
                       </TouchableOpacity>
                     </View>
+                    {/* Rouvrir la soumission dans le calculateur, pour la réimprimer ou la renvoyer */}
+                    <TouchableOpacity
+                      style={styles.openCalcBtn}
+                      onPress={(e) => { e.stopPropagation(); setShowClientModal(false); openSubmissionInCalculator(sub); }}
+                      data-testid={`client-open-submission-${idx}`}
+                    >
+                      <Ionicons name="print-outline" size={16} color="#07090e" />
+                      <Text style={styles.openCalcBtnText}>{lang === 'fr' ? 'Ouvrir et réimprimer' : 'Open and print again'}</Text>
+                    </TouchableOpacity>
                   </TouchableOpacity>
                 ))}
                 {selectedClient.submissions.length > 0 && (
