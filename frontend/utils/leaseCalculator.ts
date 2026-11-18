@@ -2,6 +2,7 @@
  * Moteur de calcul Location SCI Québec
  * Méthode: Annuité en avance (paiement début de période)
  * Validé le 2 mars 2026 — match parfait avec formules SCI
+ * Échange, solde reporté, comptant et boni alignés sur TAQ Auto le 17 novembre 2026.
  */
 
 // Constantes fiscales Québec
@@ -21,11 +22,11 @@ export interface LeaseInputs {
   fraisDossier: number;     // Frais de dossier
   totalAccessoires: number; // Total accessoires
   rabaisConcess: number;    // Rabais concessionnaire
-  soldeReporte: number;     // Solde reporté (négatif = dette)
+  soldeReporte: number;     // Solde reporté (dette, entrée en positif ou en négatif)
   tradeValue: number;       // Valeur échange
   tradeOwed: number;        // Montant dû sur échange
-  comptant: number;         // Comptant taxes incluses
-  bonusCash: number;        // Bonus cash (après taxes, taxes incluses)
+  comptant: number;         // Comptant taxes incluses (sa part avant taxes réduit le montant financé)
+  bonusCash: number;        // Bonus cash (après taxes) : réduit le montant financé de sa pleine valeur
 }
 
 export interface LeaseResult {
@@ -59,23 +60,21 @@ export function computeCapCost(inputs: LeaseInputs): number {
   return sellingPrice + inputs.fraisDossier - inputs.leaseCash;
 }
 
-/** 2. Solde reporté net (positif = ajouter, négatif = dette avec taxes) */
+/** 2. Solde reporté net : une dette s'ajoute telle quelle, qu'elle soit entrée en positif ou en négatif. */
 export function computeSoldeNet(soldeReporte: number): number {
-  if (soldeReporte < 0) return Math.abs(soldeReporte) * (1 + TAUX_TAXE);
-  if (soldeReporte > 0) return soldeReporte;
-  return 0;
+  return Math.abs(soldeReporte);
 }
 
-/** Part avant taxes d'un rabais après taxes (Bonus Cash) : le montant annoncé inclut les taxes. */
-export function bonusBeforeTax(bonusCash: number): number {
-  return bonusCash / (1 + TAUX_TAXE);
+/** Part avant taxes du comptant : le client remet un montant taxes incluses, les taxes ne réduisent pas le montant financé. */
+export function comptantBeforeTax(comptant: number): number {
+  return comptant / (1 + TAUX_TAXE);
 }
 
-/** 3. Net cap cost = cap + solde + dû échange - valeur échange - comptant - bonus (ramené avant taxes) */
+/** 3. Net cap cost = cap + solde + dû échange - valeur échange - comptant (avant taxes) - bonus */
 export function computeNetCapCost(inputs: LeaseInputs): number {
   const capCost = computeCapCost(inputs);
   const soldeNet = computeSoldeNet(inputs.soldeReporte);
-  return capCost + soldeNet + inputs.tradeOwed - inputs.tradeValue - inputs.comptant - bonusBeforeTax(inputs.bonusCash);
+  return capCost + soldeNet + inputs.tradeOwed - inputs.tradeValue - comptantBeforeTax(inputs.comptant) - inputs.bonusCash;
 }
 
 /**
@@ -120,14 +119,14 @@ export function computeTaxesQC(monthlyBeforeTax: number): { tps: number; tvq: nu
   return { tps, tvq, total: tps + tvq };
 }
 
-/** 7. Crédit taxe échange réparti sur les paiements */
-export function computeTradeTaxCredit(tradeValue: number, term: number, taxesMensuelles: number): { creditParMois: number; creditPerdu: number } {
-  if (tradeValue <= 0) return { creditParMois: 0, creditPerdu: 0 };
-  const depreciation = tradeValue / term;
-  const creditPotentiel = depreciation * TAUX_TAXE;
-  const creditParMois = Math.min(creditPotentiel, taxesMensuelles);
-  const creditPerdu = Math.max(0, creditPotentiel - taxesMensuelles);
-  return { creditParMois, creditPerdu };
+/**
+ * 7. Taxes du paiement. L'échange a déjà baissé le paiement, donc ses taxes : aucun autre crédit.
+ * La part du paiement qui rembourse le montant dû sur l'échange n'est pas taxée.
+ */
+export function computePaymentTaxes(inputs: LeaseInputs, netCapCost: number, residualValue: number, monthlyBeforeTax: number): { tps: number; tvq: number; total: number } {
+  if (!(inputs.tradeOwed > 0)) return computeTaxesQC(Math.max(0, monthlyBeforeTax));
+  const taxable = computePMTAdvance(netCapCost - inputs.tradeOwed, residualValue, inputs.rate, inputs.term).monthlyBeforeTax;
+  return computeTaxesQC(Math.max(0, taxable));
 }
 
 /** Calcul complet d'une location SCI (version détaillée) */
@@ -136,10 +135,9 @@ export function computeLeasePayment(inputs: LeaseInputs): LeaseResult {
   const netCapCost = computeNetCapCost(inputs);
   const residualValue = computeResidual(inputs.pdsf, inputs.residualPct);
   const { monthlyBeforeTax, financeCharge } = computePMTAdvance(netCapCost, residualValue, inputs.rate, inputs.term);
-  const taxes = computeTaxesQC(monthlyBeforeTax);
-  const tradeTaxCredit = computeTradeTaxCredit(inputs.tradeValue, inputs.term, taxes.total);
+  const taxes = computePaymentTaxes(inputs, netCapCost, residualValue, monthlyBeforeTax);
 
-  const monthlyAfterTax = monthlyBeforeTax + taxes.total - tradeTaxCredit.creditParMois;
+  const monthlyAfterTax = monthlyBeforeTax + taxes.total;
 
   return {
     monthly: Math.max(0, monthlyAfterTax),
@@ -156,8 +154,8 @@ export function computeLeasePayment(inputs: LeaseInputs): LeaseResult {
     capCost,
     tpsOnPayment: Math.round(taxes.tps * 100) / 100,
     tvqOnPayment: Math.round(taxes.tvq * 100) / 100,
-    creditTaxeParMois: Math.round(tradeTaxCredit.creditParMois * 100) / 100,
-    creditPerdu: Math.round(tradeTaxCredit.creditPerdu * 100) / 100,
+    creditTaxeParMois: 0,
+    creditPerdu: 0,
     pdsf: inputs.pdsf,
     rabaisConcess: inputs.rabaisConcess,
     coutEmprunt: Math.round(financeCharge * inputs.term * 100) / 100,
@@ -265,9 +263,8 @@ export function computeLeaseForGrid(inputs: LeaseInputs): {
   const netCapCost = computeNetCapCost(inputs);
   const residualValue = computeResidual(inputs.pdsf, inputs.residualPct);
   const { monthlyBeforeTax, financeCharge } = computePMTAdvance(netCapCost, residualValue, inputs.rate, inputs.term);
-  const taxes = computeTaxesQC(monthlyBeforeTax);
-  const tradeTaxCredit = computeTradeTaxCredit(inputs.tradeValue, inputs.term, taxes.total);
-  const monthly = monthlyBeforeTax + taxes.total - tradeTaxCredit.creditParMois;
+  const taxes = computePaymentTaxes(inputs, netCapCost, residualValue, monthlyBeforeTax);
+  const monthly = monthlyBeforeTax + taxes.total;
 
   return {
     monthly: Math.max(0, monthly),

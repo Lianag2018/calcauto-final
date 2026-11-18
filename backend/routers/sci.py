@@ -140,11 +140,13 @@ async def calculate_lease(payload: dict):
     
     Methode:
     1. Cap cost = prix + frais dossier - lease cash
-    2. Net cap cost = cap + solde + du_echange - val_echange - comptant - bonus
+    2. Net cap cost = cap + solde + du_echange - val_echange - comptant (avant taxes) - bonus
     3. PMT arriere = (ncc * mr * factor - residuel * mr) / (factor - 1)
     4. PMT avance = PMT arriere / (1 + mr)
     5. Taxes QC SUR le paiement (5% TPS + 9.975% TVQ)
-    6. Credit taxe echange reparti sur les paiements
+    6. Aucun autre credit de taxe d'echange : l'echange a deja baisse le paiement.
+       La part du paiement qui rembourse le montant du sur l'echange n'est pas taxee.
+    Echange, solde, comptant et boni alignes sur TAQ Auto le 17 novembre 2026.
     """
     import math
     
@@ -193,45 +195,20 @@ async def calculate_lease(payload: dict):
         sp = selling_price + accessoires - rabais_concess
         cap_cost = sp + frais_dossier - lease_cash
         
-        # 3. Solde reporte
-        solde_net = 0
-        if solde_reporte < 0:
-            solde_net = abs(solde_reporte) * (1 + TAUX_TAXE)
-        elif solde_reporte > 0:
-            solde_net = solde_reporte
-        
-        # 4. Net cap cost
-        # La prime (après taxes) est annoncée taxes incluses : seule sa part avant taxes réduit le montant financé.
-        net_cap_cost = cap_cost + solde_net + trade_owed - trade_value - cash_down - bonus_cash / (1 + TAUX_TAXE)
-        
-        # 5. PMT en avance (formule SCI exacte)
-        monthly_rate = annual_rate / 100 / 12
-        
-        if monthly_rate == 0:
-            monthly_before_tax = (net_cap_cost - residual_value) / term
-            finance_charge = 0
-        else:
-            factor = math.pow(1 + monthly_rate, term)
-            pmt_arrears = (net_cap_cost * monthly_rate * factor - residual_value * monthly_rate) / (factor - 1)
-            monthly_before_tax = pmt_arrears / (1 + monthly_rate)
-            finance_charge = monthly_before_tax - (net_cap_cost - residual_value) / term
-        
-        # 6. Taxes SUR le paiement
-        tps_on_payment = monthly_before_tax * TPS
-        tvq_on_payment = monthly_before_tax * TVQ
-        taxes_mensuelles = tps_on_payment + tvq_on_payment
-        
-        # 7. Credit taxe echange
+        # 3 à 8. Montant financé, paiement et taxes (règles alignées sur TAQ Auto)
+        from services.lease_math import lease_payment
+        calc = lease_payment(cap_cost, residual_value, annual_rate, term, bonus_cash=bonus_cash,
+                             cash_down=cash_down, trade_value=trade_value, trade_owed=trade_owed,
+                             solde_reporte=solde_reporte)
+        net_cap_cost = calc["net_cap_cost"]
+        monthly_before_tax = calc["monthly_before_tax"]
+        finance_charge = calc["finance_charge"]
+        tps_on_payment = calc["tps_on_payment"]
+        tvq_on_payment = calc["tvq_on_payment"]
+        monthly_payment = calc["monthly_payment"]
+        # Champs gardés à zéro pour les anciens écrans : plus de crédit de taxe d'échange à part.
         credit_taxe = 0
         credit_perdu = 0
-        if trade_value > 0:
-            depreciation_trade = trade_value / term
-            credit_potentiel = depreciation_trade * TAUX_TAXE
-            credit_taxe = min(credit_potentiel, taxes_mensuelles)
-            credit_perdu = max(0, credit_potentiel - taxes_mensuelles)
-        
-        # 8. Paiement final
-        monthly_payment = max(0, monthly_before_tax + taxes_mensuelles - credit_taxe)
         biweekly_payment = monthly_payment * 12 / 26
         weekly_payment = monthly_payment * 12 / 52
         total_cost = monthly_payment * term
