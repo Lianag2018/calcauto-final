@@ -1,7 +1,7 @@
 /**
  * Rabais de location : avant taxes (Lease Cash) et après taxes (Bonus Cash).
  */
-import { bonusBeforeTax, computeNetCapCost, findRateEntry, leaseCashFor, LeaseInputs } from '../utils/leaseCalculator';
+import { computeLeasePayment, computeNetCapCost, findRateEntry, leaseCashFor, LeaseInputs } from '../utils/leaseCalculator';
 
 const base: LeaseInputs = {
   price: 50000, pdsf: 52000, leaseCash: 0, rate: 5.99, term: 48, residualPct: 50,
@@ -14,9 +14,8 @@ describe('Rabais de location', () => {
     expect(computeNetCapCost({ ...base, leaseCash: 1000 })).toBeCloseTo(49000, 2);
   });
 
-  test('le Bonus Cash (après taxes) est ramené avant taxes', () => {
-    expect(bonusBeforeTax(1149.75)).toBeCloseTo(1000, 2);
-    expect(computeNetCapCost({ ...base, bonusCash: 1149.75 })).toBeCloseTo(49000, 2);
+  test('le Bonus Cash (après taxes) réduit le montant financé de sa pleine valeur', () => {
+    expect(computeNetCapCost({ ...base, bonusCash: 1500 })).toBeCloseTo(48500, 2);
   });
 
   test('taux standard : Lease Cash + Lease Cash du taux standard', () => {
@@ -29,6 +28,41 @@ describe('Rabais de location', () => {
     expect(leaseCashFor(entry, 'alternative')).toBe(8000);
     expect(leaseCashFor({ lease_cash: 3500 }, 'alternative')).toBe(0);
     expect(leaseCashFor(null, 'standard')).toBe(0);
+  });
+});
+
+// Chiffres relevés dans TAQ Auto le 17 novembre 2026 (48 mois, 3,99 %, résiduel 47 %, frais 259 $).
+describe('Location comparée à TAQ Auto', () => {
+  const taq: LeaseInputs = {
+    price: 47412, pdsf: 47412, leaseCash: 0, rate: 3.99, term: 48, residualPct: 47,
+    fraisDossier: 259, totalAccessoires: 0, rabaisConcess: 0, soldeReporte: 0,
+    tradeValue: 0, tradeOwed: 0, comptant: 0, bonusCash: 0,
+  };
+  const monthly = (extra: Partial<LeaseInputs>) => computeLeasePayment({ ...taq, ...extra }).monthly;
+
+  test('sans rien : 741,65 $', () => {
+    expect(monthly({})).toBeCloseTo(741.65, 1);
+  });
+
+  test('échange de 10 000 $ : 482,96 $, sans autre crédit de taxe', () => {
+    expect(monthly({ tradeValue: 10000 })).toBeCloseTo(482.96, 1);
+  });
+
+  test('échange de 10 000 $ avec 4 000 $ dû : 572,96 $', () => {
+    expect(monthly({ tradeValue: 10000, tradeOwed: 4000 })).toBeCloseTo(572.96, 1);
+  });
+
+  test('solde reporté de 3 000 $, entré en positif ou en négatif : 819,27 $', () => {
+    expect(monthly({ soldeReporte: 3000 })).toBeCloseTo(819.27, 1);
+    expect(monthly({ soldeReporte: -3000 })).toBeCloseTo(819.27, 1);
+  });
+
+  test('comptant de 2 299,50 $ taxes incluses : 689,92 $', () => {
+    expect(monthly({ comptant: 2299.5 })).toBeCloseTo(689.92, 1);
+  });
+
+  test('boni après taxes de 1 500 $ : 702,86 $', () => {
+    expect(monthly({ bonusCash: 1500 })).toBeCloseTo(702.86, 1);
   });
 });
 

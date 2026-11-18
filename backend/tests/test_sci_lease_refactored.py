@@ -116,7 +116,7 @@ class TestSCILeaseRefactored:
         print(f"  cout_emprunt: ${data['cout_emprunt']:.2f} (expected 0.00)")
     
     def test_trade_in_credit_taxe_echange(self):
-        """Test: trade_value > 0 should generate credit_taxe_echange"""
+        """Test: l'échange baisse le paiement et ses taxes, sans autre crédit de taxe (comme TAQ Auto)"""
         payload = {
             "msrp": 60000,
             "selling_price": 60000,
@@ -141,19 +141,15 @@ class TestSCILeaseRefactored:
         data = response.json()
         assert data["success"] == True, f"Trade-in calculation failed: {data}"
         
-        # With trade_value=15000, there should be a tax credit
+        # L'échange a déjà réduit le montant financé : aucun crédit de taxe en plus
         credit_taxe = data["credit_taxe_echange"]
-        assert credit_taxe > 0, f"Expected credit_taxe_echange > 0 with trade_value={payload['trade_value']}, got {credit_taxe}"
+        assert credit_taxe == 0, f"Expected credit_taxe_echange == 0, got {credit_taxe}"
+        expected_payment = data["monthly_before_tax"] * (1 + 0.14975)
+        assert abs(data["monthly_payment"] - expected_payment) < 0.02, \
+            f"Expected payment ~{expected_payment:.2f}, got {data['monthly_payment']}"
         
-        # Credit calculation: trade_value / term * TAUX_TAXE = 15000/48 * 0.14975 = 46.79
-        # But limited to taxes_mensuelles
-        expected_max_credit = (15000 / 48) * 0.14975
-        assert credit_taxe <= expected_max_credit + 0.1, \
-            f"Credit should not exceed {expected_max_credit:.2f}, got {credit_taxe}"
-        
-        print(f"SUCCESS: Trade-in tax credit verified")
+        print(f"SUCCESS: Trade-in verified, no extra tax credit")
         print(f"  trade_value: ${payload['trade_value']}")
-        print(f"  credit_taxe_echange: ${credit_taxe:.2f} (max possible: ~${expected_max_credit:.2f})")
         print(f"  monthly_payment: ${data['monthly_payment']:.2f}")
     
     def test_trade_in_reduces_net_cap_cost(self):
@@ -200,7 +196,7 @@ class TestSCILeaseRefactored:
         print(f"  difference: ${ncc_diff:.2f} (expected: $15,000)")
     
     def test_negative_solde_reporte_increases_net_cap_cost(self):
-        """Test: solde_reporte < 0 (debt) increases net_cap_cost by abs(solde) * 1.14975"""
+        """Test: solde_reporte < 0 (debt) increases net_cap_cost by abs(solde), sans taxes (comme TAQ Auto)"""
         TAUX_TAXE = 0.14975
         
         # Calculation without solde reporte
@@ -235,8 +231,8 @@ class TestSCILeaseRefactored:
         data_no_solde = resp_no_solde.json()
         data_with_solde = resp_with_solde.json()
         
-        # With negative solde_reporte, net_cap_cost increases by abs(solde) * (1 + TAUX_TAXE)
-        expected_increase = abs(solde_debt) * (1 + TAUX_TAXE)  # 5000 * 1.14975 = 5748.75
+        # With negative solde_reporte, net_cap_cost increases by abs(solde)
+        expected_increase = abs(solde_debt)  # 5000
         actual_increase = data_with_solde["net_cap_cost"] - data_no_solde["net_cap_cost"]
         
         assert abs(actual_increase - expected_increase) < 1.0, \
