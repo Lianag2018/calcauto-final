@@ -71,6 +71,9 @@ async def get_sci_residuals(month: int = None, year: int = None):
         raise HTTPException(status_code=404, detail="Residual data not found" + (f" for {month}/{year}" if month else ""))
     with open(residuals_path, 'r') as f:
         data = json.load(f)
+    # Résiduels relevés dans TAQ Auto pour ce mois (fichier d'ajustements, s'il existe)
+    from services.residual_overrides import apply_overrides
+    data = apply_overrides(data, ROOT_DIR / "data")
 
     # Override km_adjustments with the latest dynamic file if available
     km_path = _get_latest_data_file("km_adjustments", month, year)
