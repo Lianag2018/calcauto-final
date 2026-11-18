@@ -66,6 +66,69 @@ describe('Location comparée à TAQ Auto', () => {
   });
 });
 
+// Fréquences, montant dû et kilométrage élevé : relevés TAQ Auto du 17 novembre 2026.
+describe('Fréquences et kilométrage comparés à TAQ Auto', () => {
+  const { paymentCount, extraKmReduction } = require('../utils/leaseCalculator');
+  const base: LeaseInputs = {
+    price: 47412, pdsf: 47412, leaseCash: 0, rate: 3.99, term: 48, residualPct: 47,
+    fraisDossier: 259, totalAccessoires: 0, rabaisConcess: 0, soldeReporte: 0,
+    tradeValue: 0, tradeOwed: 0, comptant: 0, bonusCash: 0,
+  };
+  const ram = { ...base, price: 75000, pdsf: 75000 };
+
+  test('nombre de paiements : une fraction de période compte pour un paiement', () => {
+    expect([paymentCount(48, 26), paymentCount(48, 52), paymentCount(27, 26), paymentCount(39, 26), paymentCount(51, 26)])
+      .toEqual([104, 208, 59, 85, 111]);
+    expect([paymentCount(27, 52), paymentCount(51, 52), paymentCount(27)]).toEqual([117, 221, 27]);
+  });
+
+  test('Cherokee 48 mois : 342,66 $ aux deux semaines, 171,40 $ à la semaine', () => {
+    const r = computeLeasePayment(base);
+    expect(r.biweekly).toBeCloseTo(342.66, 1);
+    expect(r.weekly).toBeCloseTo(171.40, 1);
+    expect(r.biweeklyBeforeTax).toBeCloseTo(298.03, 1);
+    expect(r.weeklyBeforeTax).toBeCloseTo(149.08, 1);
+  });
+
+  test('Cherokee 36 mois à 2,99 % : 387,06 $ et 193,60 $', () => {
+    const r = computeLeasePayment({ ...base, term: 36, rate: 2.99, residualPct: 52 });
+    expect(r.monthly).toBeCloseTo(838.01, 1);
+    expect(r.biweekly).toBeCloseTo(387.06, 1);
+    expect(r.weekly).toBeCloseTo(193.60, 1);
+  });
+
+  test('Ram 1500, termes de 27, 39 et 51 mois', () => {
+    const r27 = computeLeasePayment({ ...ram, term: 27, rate: 9.49, residualPct: 47 });
+    expect(r27.monthly).toBeCloseTo(2201.89, 1);
+    expect(r27.biweekly).toBeCloseTo(1012.27, 1);
+    expect(r27.weekly).toBeCloseTo(510.03, 1);
+    expect(computeLeasePayment({ ...ram, term: 39, rate: 8.99, residualPct: 42 }).biweekly).toBeCloseTo(806.60, 1);
+    const r51 = computeLeasePayment({ ...ram, term: 51, rate: 8.99, residualPct: 37 });
+    expect(r51.biweekly).toBeCloseTo(701.30, 1);
+    expect(r51.weekly).toBeCloseTo(352.14, 1);
+  });
+
+  test('montant dû sur l\'échange, 36 mois : 745,26 $ et 932,32 $', () => {
+    const at36 = { ...base, term: 36, rate: 2.99, residualPct: 52 };
+    expect(computeLeasePayment({ ...at36, tradeValue: 8000, tradeOwed: 6000 }).monthly).toBeCloseTo(745.26, 1);
+    expect(computeLeasePayment({ ...at36, tradeValue: 5000, tradeOwed: 9000 }).monthly).toBeCloseTo(932.32, 1);
+  });
+
+  test('plus de 24 000 km : 0,12 $ par km de plus sur la durée', () => {
+    expect(extraKmReduction(24000, 36)).toBe(0);
+    expect(extraKmReduction(12000, 36)).toBe(0);
+    expect(extraKmReduction(25000, 36)).toBeCloseTo(360, 2);
+    expect(extraKmReduction(36000, 36)).toBeCloseTo(4320, 2);
+    expect(extraKmReduction(36000, 60)).toBeCloseTo(7200, 2);
+  });
+
+  test('Durango 60 mois à 36 000 km : 1 107,02 $ avant taxes', () => {
+    const r = computeLeasePayment({ ...base, price: 60000, pdsf: 60000, term: 60, rate: 8.99, residualPct: 29, kmPerYear: 36000 });
+    expect(r.residualValue).toBeCloseTo(10200, 2);
+    expect(r.monthlyBeforeTax).toBeCloseTo(1107.02, 1);
+  });
+});
+
 describe('Ligne de location d\'un programme d\'achat', () => {
   const row = (model: string, brand = 'Jeep') => ({ brand, model });
   const rows = [

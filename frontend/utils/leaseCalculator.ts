@@ -3,12 +3,31 @@
  * Méthode: Annuité en avance (paiement début de période)
  * Validé le 2 mars 2026 — match parfait avec formules SCI
  * Échange, solde reporté, comptant et boni alignés sur TAQ Auto le 17 novembre 2026.
+ * Paiements aux deux semaines et à la semaine, et kilométrage de plus de 24 000 km, alignés sur TAQ Auto le même jour.
  */
 
 // Constantes fiscales Québec
 const TPS = 0.05;
 const TVQ = 0.09975;
 const TAUX_TAXE = TPS + TVQ; // 14.975%
+
+// Kilométrage : la base est 24 000 km par année. Au-delà, le pourcentage ne change pas :
+// le résiduel baisse de 0,12 $ par kilomètre de plus, sur toute la durée.
+export const STANDARD_KM = 24000;
+export const EXTRA_KM_RATE = 0.12;
+/** Kilométrages offerts au-dessus de la base (ceux de TAQ Auto). */
+export const HIGH_KM_OPTIONS = [25000, 26000, 27000, 28000, 29000, 30000, 36000];
+
+/** Baisse du résiduel, en dollars, pour un kilométrage de plus de 24 000 km par année. */
+export function extraKmReduction(kmPerYear: number | undefined, term: number): number {
+  const extra = (kmPerYear || STANDARD_KM) - STANDARD_KM;
+  return extra > 0 ? extra * (term / 12) * EXTRA_KM_RATE : 0;
+}
+
+/** Nombre de paiements : 12, 26 ou 52 par année ; une fraction de période compte pour un paiement. */
+export function paymentCount(term: number, periodsPerYear: number = 12): number {
+  return periodsPerYear === 12 ? term : Math.ceil(term * periodsPerYear / 12 - 1e-9);
+}
 
 // === Types ===
 
@@ -27,6 +46,7 @@ export interface LeaseInputs {
   tradeOwed: number;        // Montant dû sur échange
   comptant: number;         // Comptant taxes incluses (sa part avant taxes réduit le montant financé)
   bonusCash: number;        // Bonus cash (après taxes) : réduit le montant financé de sa pleine valeur
+  kmPerYear?: number;       // Kilométrage par année ; au-delà de 24 000, le résiduel baisse de 0,12 $ par km
 }
 
 export interface LeaseResult {
@@ -88,26 +108,31 @@ export function leaseCashFor(rateEntry: any, option: 'standard' | 'alternative',
   return (rateEntry.lease_cash || 0) + (withStandardRateCash ? (rateEntry.standard_rate_lease_cash || 0) : 0);
 }
 
-/** 4. Valeur résiduelle = PDSF × (% résiduel ajusté / 100) */
-export function computeResidual(pdsf: number, adjustedResidualPct: number): number {
-  return pdsf * (adjustedResidualPct / 100);
+/** 4. Valeur résiduelle = PDSF × (% résiduel ajusté / 100), moins le redressement de kilométrage élevé */
+export function computeResidual(pdsf: number, adjustedResidualPct: number, kmPerYear?: number, term: number = 0): number {
+  return pdsf * (adjustedResidualPct / 100) - extraKmReduction(kmPerYear, term);
 }
 
-/** 5. PMT en avance (formule SCI exacte) */
-export function computePMTAdvance(netCapCost: number, residualValue: number, rate: number, term: number): { monthlyBeforeTax: number; financeCharge: number } {
-  const monthlyRate = rate / 100 / 12;
+/**
+ * 5. PMT en avance (formule SCI exacte).
+ * periodsPerYear : 12 (mensuel), 26 (aux deux semaines) ou 52 (à la semaine). L'intérêt est
+ * recalculé sur ce nombre de périodes ; `monthlyBeforeTax` est alors le paiement de la période.
+ */
+export function computePMTAdvance(netCapCost: number, residualValue: number, rate: number, term: number, periodsPerYear: number = 12): { monthlyBeforeTax: number; financeCharge: number } {
+  const periodRate = rate / 100 / periodsPerYear;
+  const count = paymentCount(term, periodsPerYear);
 
-  if (monthlyRate === 0) {
+  if (periodRate === 0) {
     return {
-      monthlyBeforeTax: (netCapCost - residualValue) / term,
+      monthlyBeforeTax: (netCapCost - residualValue) / count,
       financeCharge: 0,
     };
   }
 
-  const factor = Math.pow(1 + monthlyRate, term);
-  const pmtArrears = (netCapCost * monthlyRate * factor - residualValue * monthlyRate) / (factor - 1);
-  const monthlyBeforeTax = pmtArrears / (1 + monthlyRate);
-  const financeCharge = monthlyBeforeTax - (netCapCost - residualValue) / term;
+  const factor = Math.pow(1 + periodRate, count);
+  const pmtArrears = (netCapCost * periodRate * factor - residualValue * periodRate) / (factor - 1);
+  const monthlyBeforeTax = pmtArrears / (1 + periodRate);
+  const financeCharge = monthlyBeforeTax - (netCapCost - residualValue) / count;
 
   return { monthlyBeforeTax, financeCharge };
 }
@@ -123,9 +148,9 @@ export function computeTaxesQC(monthlyBeforeTax: number): { tps: number; tvq: nu
  * 7. Taxes du paiement. L'échange a déjà baissé le paiement, donc ses taxes : aucun autre crédit.
  * La part du paiement qui rembourse le montant dû sur l'échange n'est pas taxée.
  */
-export function computePaymentTaxes(inputs: LeaseInputs, netCapCost: number, residualValue: number, monthlyBeforeTax: number): { tps: number; tvq: number; total: number } {
+export function computePaymentTaxes(inputs: LeaseInputs, netCapCost: number, residualValue: number, monthlyBeforeTax: number, periodsPerYear: number = 12): { tps: number; tvq: number; total: number } {
   if (!(inputs.tradeOwed > 0)) return computeTaxesQC(Math.max(0, monthlyBeforeTax));
-  const taxable = computePMTAdvance(netCapCost - inputs.tradeOwed, residualValue, inputs.rate, inputs.term).monthlyBeforeTax;
+  const taxable = computePMTAdvance(netCapCost - inputs.tradeOwed, residualValue, inputs.rate, inputs.term, periodsPerYear).monthlyBeforeTax;
   return computeTaxesQC(Math.max(0, taxable));
 }
 
@@ -133,19 +158,28 @@ export function computePaymentTaxes(inputs: LeaseInputs, netCapCost: number, res
 export function computeLeasePayment(inputs: LeaseInputs): LeaseResult {
   const capCost = computeCapCost(inputs);
   const netCapCost = computeNetCapCost(inputs);
-  const residualValue = computeResidual(inputs.pdsf, inputs.residualPct);
+  const residualValue = computeResidual(inputs.pdsf, inputs.residualPct, inputs.kmPerYear, inputs.term);
   const { monthlyBeforeTax, financeCharge } = computePMTAdvance(netCapCost, residualValue, inputs.rate, inputs.term);
   const taxes = computePaymentTaxes(inputs, netCapCost, residualValue, monthlyBeforeTax);
 
   const monthlyAfterTax = monthlyBeforeTax + taxes.total;
 
+  // Aux deux semaines et à la semaine : même calcul refait sur 26 ou 52 périodes par année.
+  const perPeriod = (periodsPerYear: number) => {
+    const beforeTax = computePMTAdvance(netCapCost, residualValue, inputs.rate, inputs.term, periodsPerYear).monthlyBeforeTax;
+    const tax = computePaymentTaxes(inputs, netCapCost, residualValue, beforeTax, periodsPerYear).total;
+    return { beforeTax: Math.max(0, beforeTax), afterTax: Math.max(0, beforeTax + tax) };
+  };
+  const biweekly = perPeriod(26);
+  const weekly = perPeriod(52);
+
   return {
     monthly: Math.max(0, monthlyAfterTax),
-    biweekly: Math.max(0, monthlyAfterTax * 12 / 26),
-    weekly: Math.max(0, monthlyAfterTax * 12 / 52),
+    biweekly: biweekly.afterTax,
+    weekly: weekly.afterTax,
     monthlyBeforeTax: Math.max(0, monthlyBeforeTax),
-    weeklyBeforeTax: Math.max(0, monthlyBeforeTax * 12 / 52),
-    biweeklyBeforeTax: Math.max(0, monthlyBeforeTax * 12 / 26),
+    weeklyBeforeTax: weekly.beforeTax,
+    biweeklyBeforeTax: biweekly.beforeTax,
     total: Math.max(0, monthlyAfterTax * inputs.term),
     rate: inputs.rate,
     netCapCost: Math.max(0, netCapCost),
@@ -261,7 +295,7 @@ export function computeLeaseForGrid(inputs: LeaseInputs): {
   kmPerYear: number;
 } & { kmPerYear: number } {
   const netCapCost = computeNetCapCost(inputs);
-  const residualValue = computeResidual(inputs.pdsf, inputs.residualPct);
+  const residualValue = computeResidual(inputs.pdsf, inputs.residualPct, inputs.kmPerYear, inputs.term);
   const { monthlyBeforeTax, financeCharge } = computePMTAdvance(netCapCost, residualValue, inputs.rate, inputs.term);
   const taxes = computePaymentTaxes(inputs, netCapCost, residualValue, monthlyBeforeTax);
   const monthly = monthlyBeforeTax + taxes.total;
