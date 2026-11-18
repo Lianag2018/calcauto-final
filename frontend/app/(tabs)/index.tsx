@@ -41,6 +41,7 @@ import { useCalculator, resolveBonus, offersOf, offerKey, checkedOffersTotal, ge
 import { 
   computeLeasePayment, computeLeaseForGrid, leaseCashFor, 
   findResidualVehicle, findRateEntry, getKmAdjustment, residualCandidates,
+  extraKmReduction, HIGH_KM_OPTIONS,
   LeaseInputs 
 } from '../../utils/leaseCalculator';
 import type { FinancingRates, VehicleProgram, PaymentComparison, CalculationResult, LocalResult, ProgramPeriod, PaymentFrequency } from '../../types/calculator';
@@ -332,7 +333,7 @@ export default function HomeScreen() {
   const [bestLeaseOption, setBestLeaseOption] = useState<any>(null);  // Meilleur choix calculé
   const [leaseAnalysisGrid, setLeaseAnalysisGrid] = useState<any[]>([]);  // Grille complète d'analyse
   const leaseTerms = [24, 27, 36, 39, 42, 48, 51, 54, 60];
-  const leaseKmOptions = [12000, 18000, 24000];
+  const leaseKmOptions = [12000, 18000, 24000, ...HIGH_KM_OPTIONS];
 
   // Calcul de financement (logique extraite dans useCalculator)
   const specialOffers = offersOf(selectedProgram);
@@ -799,6 +800,7 @@ export default function HomeScreen() {
       pdsf,
       term: leaseTerm,
       residualPct: adjustedResidualPct,
+      kmPerYear: leaseKmPerYear,
       fraisDossier: parseFloat(fraisDossier) || 0,
       totalAccessoires,
       rabaisConcess: parseFloat(leaseRabaisConcess) || 0,
@@ -812,7 +814,7 @@ export default function HomeScreen() {
     const results: any = {
       vehicleName: `${residualVehicle.brand} ${residualVehicle.model_name} ${residualVehicle.trim}`,
       residualPct: adjustedResidualPct,
-      residualValue: pdsf * (adjustedResidualPct / 100),
+      residualValue: pdsf * (adjustedResidualPct / 100) - extraKmReduction(leaseKmPerYear, leaseTerm),
       kmAdjustment,
       // Promotions avant taxes cochées : comprises dans le montant déduit, affichées à part
       offersBeforeTax: leaseOffersBeforeTax,
@@ -3625,10 +3627,12 @@ export default function HomeScreen() {
                             <Text style={styles.residualKmHeaderText}>$</Text>
                           </View>
                         </View>
-                        {[12000, 18000, 24000].map(km => {
-                          const adj = km === 24000 ? 0 : (kmAdj[String(km)]?.[String(leaseTerm)] || 0);
+                        {[12000, 18000, 24000, ...(leaseKmPerYear > 24000 ? [leaseKmPerYear] : [])].map(km => {
+                          const adj = km >= 24000 ? 0 : (kmAdj[String(km)]?.[String(leaseTerm)] || 0);
                           const pct = basePct + adj;
-                          const val = pdsf * (pct / 100);
+                          // Plus de 24 000 km : même pourcentage, moins 0,12 $ par km de plus sur la durée
+                          const kmCut = extraKmReduction(km, leaseTerm);
+                          const val = pdsf * (pct / 100) - kmCut;
                           const isSelected = km === leaseKmPerYear;
                           return (
                             <TouchableOpacity
@@ -3644,7 +3648,7 @@ export default function HomeScreen() {
                               </View>
                               <View style={styles.residualKmCell}>
                                 <Text style={[styles.residualKmText, isSelected && styles.residualKmTextSelected]}>
-                                  {pct}%{adj !== 0 ? ` (+${adj})` : ''}
+                                  {pct}%{adj !== 0 ? ` (+${adj})` : ''}{kmCut > 0 ? ` (−${formatCurrency(kmCut)})` : ''}
                                 </Text>
                               </View>
                               <View style={styles.residualKmCell}>

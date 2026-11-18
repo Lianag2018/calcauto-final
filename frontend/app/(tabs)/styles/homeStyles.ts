@@ -1730,6 +1730,9 @@ export const styles = StyleSheet.create({
   },
   leaseKmButtons: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    flex: 1,
     gap: 6,
   },
   leaseKmBtn: {

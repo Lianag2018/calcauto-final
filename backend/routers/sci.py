@@ -140,13 +140,15 @@ async def calculate_lease(payload: dict):
     
     Methode:
     1. Cap cost = prix + frais dossier - lease cash
+    1b. Plus de 24 000 km par annee : residuel moins 0,12 $ par km de plus sur la duree
     2. Net cap cost = cap + solde + du_echange - val_echange - comptant (avant taxes) - bonus
     3. PMT arriere = (ncc * mr * factor - residuel * mr) / (factor - 1)
     4. PMT avance = PMT arriere / (1 + mr)
     5. Taxes QC SUR le paiement (5% TPS + 9.975% TVQ)
     6. Aucun autre credit de taxe d'echange : l'echange a deja baisse le paiement.
        La part du paiement qui rembourse le montant du sur l'echange n'est pas taxee.
-    Echange, solde, comptant et boni alignes sur TAQ Auto le 17 novembre 2026.
+    7. Aux deux semaines et a la semaine : interet recalcule sur 26 ou 52 periodes par annee.
+    Echange, solde, comptant, boni, frequences et kilometrage alignes sur TAQ Auto le 17 novembre 2026.
     """
     import math
     
@@ -189,7 +191,12 @@ async def calculate_lease(payload: dict):
         
         # 1. Residuel ajuste
         adjusted_residual_pct = residual_pct + km_adj
-        residual_value = msrp * (adjusted_residual_pct / 100)
+        # Plus de 24 000 km par annee : le pourcentage ne change pas, le residuel baisse de 0,12 $ par km de plus.
+        from services.lease_math import extra_km_reduction, MAX_KM
+        if km_per_year > MAX_KM:
+            raise HTTPException(status_code=400, detail="Kilometrage maximal : 36 000 km par annee")
+        km_residual_reduction = extra_km_reduction(km_per_year, term)
+        residual_value = msrp * (adjusted_residual_pct / 100) - km_residual_reduction
         
         # 2. Cout capitalise
         sp = selling_price + accessoires - rabais_concess
@@ -209,8 +216,9 @@ async def calculate_lease(payload: dict):
         # Champs gardés à zéro pour les anciens écrans : plus de crédit de taxe d'échange à part.
         credit_taxe = 0
         credit_perdu = 0
-        biweekly_payment = monthly_payment * 12 / 26
-        weekly_payment = monthly_payment * 12 / 52
+        # Interet recalcule sur 26 ou 52 periodes par annee, comme TAQ Auto.
+        biweekly_payment = calc["biweekly_payment"]
+        weekly_payment = calc["weekly_payment"]
         total_cost = monthly_payment * term
         cout_emprunt = finance_charge * term
         
@@ -223,6 +231,7 @@ async def calculate_lease(payload: dict):
             "residual_pct": round(adjusted_residual_pct, 2),
             "residual_value": round(residual_value, 2),
             "km_adjustment": km_adj,
+            "km_residual_reduction": round(km_residual_reduction, 2),
             "annual_rate": annual_rate,
             "term": term,
             "cap_cost": round(cap_cost, 2),
