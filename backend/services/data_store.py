@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict
 
-PREFIXES = ("sci_residuals_", "sci_lease_rates_", "km_adjustments_",
+PREFIXES = ("sci_residuals_", "sci_lease_rates_", "km_adjustments_", "residual_overrides_",
             "key_incentives_", "program_meta_")
 COLLECTION = "data_files"
 _known: Dict[str, str] = {}

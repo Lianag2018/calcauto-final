@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Header
+from fastapi import APIRouter, Body, HTTPException, UploadFile, File, Form, Header
 from fastapi.responses import StreamingResponse
 from database import db, ROOT_DIR, logger
 import json
@@ -86,6 +86,53 @@ async def get_sci_residuals(month: int = None, year: int = None):
             pass  # Keep existing km_adjustments from residuals file
 
     return data
+
+@router.post("/sci/residual-overrides")
+async def update_residual_overrides(payload: dict = Body(...), dry_run: bool = False,
+                                    authorization: str = Header(None), x_admin_password: str = Header("")):
+    """Met à jour les résiduels TAQ du mois (programme de relevé sur le Mac, ou administrateur).
+
+    Tout ou rien : le relevé est validé contre le guide du MÊME mois (versions connues, 9 termes, résiduels
+    qui descendent avec le terme, écart borné, pas de relevé plus petit de moitié). `dry_run=true` valide sans
+    écrire. L'ancien fichier est gardé (`residual_overrides_taq_prev.json`) pour revenir en arrière.
+    """
+    import os
+    import re
+    from dependencies import require_admin_or_password
+    from services.residual_overrides import FILENAME, validate_update
+
+    await require_admin_or_password(authorization, x_admin_password or "")
+    month = re.fullmatch(r"(\d{4})-(\d{2})(?:-\d{2})?", str(payload.get("effective_from", "")))
+    if not month:
+        raise HTTPException(status_code=422, detail="effective_from attendu (AAAA-MM-01).")
+    year, mon = int(month.group(1)), int(month.group(2))
+    guide_path = _get_latest_data_file("sci_residuals", mon, year)
+    if not guide_path:
+        raise HTTPException(status_code=404, detail="Aucun guide pour ce mois : le relevé n'est pas appliqué.")
+    with open(guide_path, "r", encoding="utf-8") as f:
+        guide = json.load(f)
+    path = ROOT_DIR / "data" / FILENAME
+    previous = None
+    if path.is_file():
+        try:
+            previous = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            previous = None
+    clean, problems, summary = validate_update(payload, guide, previous)
+    if problems:
+        logger.warning(f"[ResidualOverrides] relevé refusé ({len(problems)} problème(s)) : {problems[:3]}")
+        raise HTTPException(status_code=422, detail={"message": "Relevé refusé : rien n'a été modifié.",
+                                                     "problems": problems[:50], "summary": summary})
+    if dry_run:
+        return {"ok": True, "written": False, **summary}
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(clean, ensure_ascii=False, indent=1), encoding="utf-8")
+    if path.is_file():
+        (ROOT_DIR / "data" / "residual_overrides_taq_prev.json").write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
+    os.replace(tmp, path)
+    logger.info(f"[ResidualOverrides] relevé TAQ appliqué : {summary}")
+    return {"ok": True, "written": True, **summary}
+
 
 @router.get("/sci/lease-rates")
 async def get_sci_lease_rates(month: int = None, year: int = None):
