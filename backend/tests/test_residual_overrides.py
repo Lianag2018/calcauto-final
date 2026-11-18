@@ -69,3 +69,55 @@ def test_fichier_taq_de_novembre_est_complet_et_coherent():
         key = (v["brand"], v["model_name"], v["trim"], v["body_style"])
         assert key not in keys, key
         keys.add(key)
+
+
+# ───────── mise à jour automatique : garde-fous ─────────
+from services.residual_overrides import validate_update, MIN_VERSIONS  # noqa: E402
+
+
+def _guide(n=30, month="2026-11-01"):
+    return {"effective_from": month, "vehicles": [
+        {"brand": "Ram", "model_year": 2027, "model_name": "1500", "trim": f"T{i}", "body_style": "Crew",
+         "residual_percentages": {"24": 55, "27": 53, "36": 48, "39": 46, "42": 44, "48": 40, "51": 38, "54": 36, "60": 33}}
+        for i in range(n)]}
+
+
+def _update(guide, delta=-2, **over):
+    rows = []
+    for v in guide["vehicles"]:
+        pct = {t: p + delta for t, p in v["residual_percentages"].items()}
+        rows.append({k: v[k] for k in ("brand", "model_year", "model_name", "trim", "body_style")} | {"residual_percentages": pct})
+    return {"effective_from": guide["effective_from"], "source": "TAQ", "vehicles": rows, **over}
+
+
+def test_releve_valide_est_accepte_et_nettoye():
+    g = _guide()
+    out, problems, summary = validate_update(_update(g), g)
+    assert not problems and out and len(out["vehicles"]) == 30 and summary["max_gap_points"] == 2.0
+
+
+def test_mauvais_mois_ou_trop_petit_ou_inconnu_sont_refuses():
+    g = _guide()
+    assert validate_update(_update(g, ) | {"effective_from": "2026-12-01"}, g)[0] is None
+    small = _update(_guide(MIN_VERSIONS - 1), delta=-1)
+    assert validate_update(small, _guide(MIN_VERSIONS - 1))[0] is None
+    u = _update(g); u["vehicles"][0]["trim"] = "Inconnue"
+    out, problems, _ = validate_update(u, g)
+    assert out is None and any("Absente du guide" in p for p in problems)
+
+
+def test_ecart_trop_grand_ou_residuels_qui_montent_refuses_tout_ou_rien():
+    g = _guide()
+    out, problems, _ = validate_update(_update(g, delta=-9), g)
+    assert out is None and any("Écart" in p for p in problems)
+    u = _update(g); u["vehicles"][3]["residual_percentages"]["60"] = 70
+    out, problems, _ = validate_update(u, g)
+    assert out is None and any("incohérents" in p for p in problems)
+
+
+def test_releve_qui_retire_la_moitie_des_versions_est_refuse():
+    g = _guide(60)
+    previous = _update(g)
+    shrunk = _update(g); shrunk["vehicles"] = shrunk["vehicles"][:25]
+    out, problems, _ = validate_update(shrunk, g, previous)
+    assert out is None and any("retire trop" in p for p in problems)
