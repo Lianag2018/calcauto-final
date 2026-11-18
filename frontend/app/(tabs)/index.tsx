@@ -668,8 +668,10 @@ export default function HomeScreen() {
     loadLeaseData();
   }, []);
 
-  // Check for submission state to restore (from CRM "Ouvrir" button)
-  useEffect(() => {
+  // Check for submission state to restore (from CRM "Ouvrir" button).
+  // À chaque retour sur l'écran, pas seulement à son premier affichage : l'onglet Calcul reste en
+  // mémoire, et la soumission demandée depuis le CRM n'y était alors jamais chargée.
+  useFocusEffect(useCallback(() => {
     const checkForRestore = async () => {
       try {
         const stateJson = await AsyncStorage.getItem('calcauto_restore_state');
@@ -707,6 +709,10 @@ export default function HomeScreen() {
         if (s.selectedInventory) setSelectedInventory(s.selectedInventory);
         if (s.vehicleMode === 'usage') setVehicleMode('usage');
         if (s.usedRate) setUsedRate(String(s.usedRate));
+        // Le client de la fiche CRM d'où vient la soumission
+        if (s.clientName) setClientName(String(s.clientName));
+        if (s.clientEmail) setClientEmail(String(s.clientEmail));
+        if (s.clientPhone) setClientPhone(String(s.clientPhone));
         
         console.log('Calculator state restored from submission');
       } catch (e) {
@@ -714,7 +720,7 @@ export default function HomeScreen() {
       }
     };
     checkForRestore();
-  }, []);
+  }, []));
 
   // Résiduel du véhicule choisi. Le guide contient plusieurs années-modèles
   // (2025, 2026, 2027) avec des pourcentages différents : on ne cherche que
