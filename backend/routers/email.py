@@ -95,6 +95,51 @@ async def get_window_sticker(vin: str, authorization: Optional[str] = Header(Non
     return {"success": False, "error": result.get("error", "Window Sticker non disponible")}
 
 
+@router.get("/window-sticker/{vin}/details")
+async def get_window_sticker_details(vin: str, authorization: Optional[str] = Header(None)):
+    """
+    Détails techniques lus sur le Window Sticker (options d'usine avec prix, équipement principal,
+    consommation, garantie) pour la soumission imprimée. Lecture du PDF en cache, sinon du fabricant.
+    Ne lève jamais : sans fiche lisible, la réponse est {"success": False}.
+    """
+    await get_current_user(authorization)
+    vin = (vin or "").strip().upper()
+    if len(vin) != 17:
+        return {"success": False, "error": "VIN invalide"}
+    try:
+        doc = await db.window_stickers.find_one({"vin": vin})
+        if doc and isinstance(doc.get("details"), dict) and doc["details"] and doc.get("description_jpeg_base64"):
+            return {"success": True, "vin": vin, "details": {**doc["details"], "description_image": "data:image/jpeg;base64," + doc["description_jpeg_base64"]}}
+        pdf_b64 = (doc or {}).get("pdf_base64")
+        if not pdf_b64:
+            result = await fetch_window_sticker(vin)
+            if not result.get("success"):
+                return {"success": False, "error": result.get("error", "Window Sticker non disponible")}
+            pdf_b64 = result["pdf_base64"]
+            user = await get_current_user(authorization)
+            await save_window_sticker_to_db(vin, pdf_b64, user["id"])
+        import fitz  # PyMuPDF
+        from services.sticker_details import parse_sticker_words
+        pdf = fitz.open(stream=base64.b64decode(pdf_b64), filetype="pdf")
+        words = [(w[0], w[1], w[2], w[3], w[4]) for w in pdf[0].get_text("words")]
+        details = parse_sticker_words(words)
+        if not details:
+            return {"success": False, "error": "Fiche illisible"}
+        from services.sticker_details import render_description_jpeg
+        pdf_bytes = base64.b64decode(pdf_b64)
+        jpeg = render_description_jpeg(pdf_bytes)
+        jpeg_b64 = base64.b64encode(jpeg).decode("ascii") if jpeg else ""
+        await db.window_stickers.update_one({"vin": vin}, {"$set": {"details": details, "description_jpeg_base64": jpeg_b64}})
+        if jpeg_b64:
+            details = {**details, "description_image": "data:image/jpeg;base64," + jpeg_b64}
+        return {"success": True, "vin": vin, "details": details}
+    except HTTPException:
+        raise
+    except Exception as error:
+        logger.warning(f"[WindowSticker] détails impossibles pour {vin}: {error}")
+        return {"success": False, "error": "Détails non disponibles"}
+
+
 @router.get("/window-sticker/{vin}/pdf")
 async def get_window_sticker_pdf(vin: str):
     """

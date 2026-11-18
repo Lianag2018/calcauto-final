@@ -245,6 +245,7 @@ export function useCalculator(inputs: CalculatorInputs) {
       principalOption2,
       fraisTaxables,
       taxes: taxesO1,
+      taxesOption2: taxesO2,
       echangeNet,
       comptant,
       bonusCash,

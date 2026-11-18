@@ -137,6 +137,7 @@ export default function HomeScreen() {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [dealerBranding, setDealerBranding] = useState<DealerBranding | null>(null);
+  const [stickerDetails, setStickerDetails] = useState<any>(null);
   useEffect(() => {
     let alive = true;
     fetchDealerBranding(user?.dealer_slug).then((b) => { if (alive) setDealerBranding(b); });
@@ -667,6 +668,27 @@ export default function HomeScreen() {
     };
     loadLeaseData();
   }, []);
+
+  // Fiche technique du véhicule (Window Sticker) pour la soumission imprimée : lue dès que le NIV est connu.
+  const stickerVin = selectedInventory?.vin || (manualVin && manualVin.length === 17 ? manualVin : '');
+  useEffect(() => {
+    setStickerDetails(null);
+    if (!stickerVin || stickerVin.length !== 17) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const res = await axios.get(`${API_URL}/api/window-sticker/${stickerVin}/details`, {
+          headers: { Authorization: `Bearer ${token}` }, timeout: 30000,
+        });
+        if (!cancelled && res.data?.success && res.data.details) setStickerDetails(res.data.details);
+      } catch (e) {
+        // Sans fiche, la soumission s'imprime comme avant.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [stickerVin]);
 
   // Check for submission state to restore (from CRM "Ouvrir" button).
   // À chaque retour sur l'écran, pas seulement à son premier affichage : l'onglet Calcul reste en
@@ -1597,7 +1619,8 @@ export default function HomeScreen() {
   };
 
   // La feuille d'une page : la même pour l'impression, le texto et le courriel
-  const buildPrintHtml = (): string | null => {
+  const buildPrintHtml = (opts: { description?: boolean } = {}): string | null => {
+    const withDescription = opts.description !== false;
     if (!selectedProgram || !localResult || !vehiclePrice) return null;
 
     const vehicle = `${selectedProgram.brand} ${selectedProgram.model} ${selectedProgram.trim || ''} ${selectedProgram.year}`.trim();
@@ -1631,9 +1654,14 @@ export default function HomeScreen() {
     const divers = otherFees('', fraisDivers);
     const valeurEchange = parseFloat(prixEchange) || 0;
     const comptant = parseFloat(comptantTxInclus) || 0;
+    const tradeOwed = parseFloat(montantDuEchange) || 0;
     const altConsumerCashPrint = selectedProgram.alternative_consumer_cash || 0;
     const hasOption2 = selectedProgram.option2_rates !== null && localResult.option2Monthly !== null;
     const bestOpt = localResult.bestOption;
+    // Montants de l'option retenue : la feuille doit s'additionner de haut en bas
+    const principalChosen = option === '1' ? (localResult.principalOption1 || 0) : (localResult.principalOption2 || 0);
+    const taxesChosen = option === '1' ? (localResult.taxes || 0) : (localResult.taxesOption2 || 0);
+    const accessoriesTotal = accessories.reduce((sum: number, acc: any) => sum + (parseFloat(acc.price) || 0), 0);
     const savingsAmt = localResult.savings || 0;
 
     // Format currency helper for inline HTML
@@ -1646,14 +1674,12 @@ export default function HomeScreen() {
     const o1Monthly = localResult.option1Monthly;
     const o1Biweekly = localResult.option1Biweekly;
     const o1Weekly = localResult.option1Weekly;
-    const o1Total = localResult.option1Total;
     const o1Payment = paymentFrequency === 'biweekly' ? o1Biweekly : paymentFrequency === 'weekly' ? o1Weekly : o1Monthly;
 
     // Option 2 payment details
     const o2Monthly = localResult.option2Monthly || 0;
     const o2Biweekly = localResult.option2Biweekly || 0;
     const o2Weekly = localResult.option2Weekly || 0;
-    const o2Total = localResult.option2Total || 0;
     const o2Payment = paymentFrequency === 'biweekly' ? o2Biweekly : paymentFrequency === 'weekly' ? o2Weekly : o2Monthly;
 
     // Feuille d'une seule page (format lettre) : client, véhicule, paiement retenu,
@@ -1675,7 +1701,7 @@ export default function HomeScreen() {
       return `<td class="${t === selectedTerm ? 'sel' : ''}">${r !== null && r !== undefined ? Number(r).toFixed(2) + ' %' : '–'}</td>`;
     }).join('')}</tr>`;
     const row = (label: string, value: string, cls = '') => `<tr><td>${label}</td><td class="${cls}">${value}</td></tr>`;
-    const finCard = (n: '1' | '2', title: string, rebate: number, principal: number, rateV: any, pay: number, total: number) => `
+    const finCard = (n: '1' | '2', title: string, rebate: number, principal: number, rateV: any, pay: number) => `
       <div class="card ${bestOpt === n && hasOption2 ? 'best' : ''} ${option === n ? 'chosen' : ''}">
         <div class="card-top"><span class="card-name">Option ${n}</span>${bestOpt === n && hasOption2 ? `<span class="tag">${F ? 'Meilleur choix' : 'Best choice'}</span>` : ''}</div>
         <div class="card-sub">${title}</div>
@@ -1684,7 +1710,6 @@ export default function HomeScreen() {
           ${row(F ? 'Rabais' : 'Rebate', rebate > 0 ? '−' + fmt(rebate) + ' $' : '0 $', rebate > 0 ? 'good' : '')}
           ${row(F ? 'Capital financé' : 'Principal', fmt(principal) + ' $')}
           ${row(F ? 'Taux' : 'Rate', rateV + ' %')}
-          ${row(`Total ${selectedTerm} ${mo}`, fmt(total) + ' $')}
         </table>
       </div>`;
     const leaseCard = (key: 'standard' | 'alternative', title: string) => {
@@ -1703,102 +1728,12 @@ export default function HomeScreen() {
           ${row(F ? 'Taux' : 'Rate', o.rate + ' %')}
           ${row(F ? 'Avant taxes' : 'Before tax', fmt2(perFreqBeforeTax(o)) + ' $')}
           ${row('TPS + TVQ', fmt2(taxPerFreq(o.tpsOnPayment) + taxPerFreq(o.tvqOnPayment)) + ' $')}
-          ${row(`Total ${leaseTerm} ${mo}`, fmt(Math.round(o.total)) + ' $')}
-          ${row(F ? "Coût d'emprunt" : 'Borrowing cost', fmt2(o.coutEmprunt) + ' $')}
         </table>
       </div>`;
     };
 
-    const printContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>CalcAuto AiPro - Soumission</title>
-        <style>
-          @page { size: letter portrait; margin: 9mm; }
-          * { box-sizing: border-box; margin: 0; padding: 0; }
-          html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          body { font-family: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 12px; line-height: 1.35; color: #10182B; background: #E9ECF1; font-variant-numeric: tabular-nums; }
-          .sheet { width: 7.75in; margin: 16px auto; background: #fff; padding: 22px 24px 16px; }
-          .band { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding-bottom: 10px; border-bottom: 3px solid #10182B; }
-          .dealer { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1 1 auto; }
-          .dealer > div { min-width: 0; }
-          .dealer img { height: 54px; max-width: 2.5in; object-fit: contain; flex-shrink: 0; }
-          .dealer .dn { font-size: 21px; font-weight: 700; line-height: 1.12; letter-spacing: -0.3px; }
-          .dealer .da { font-size: 13px; font-weight: 700; margin-top: 4px; white-space: nowrap; }
-          .dealer .dp { font-size: 12px; color: #5B6577; margin-top: 1px; white-space: nowrap; }
-          .etv { display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 3px; text-align: right; flex-shrink: 0; }
-          .etv img { height: 54px; width: auto; border-radius: 5px; display: block; }
-          .etv .by b { margin-right: 4px; }
-          .etv .by { font-size: 10.5px; color: #5B6577; line-height: 1.3; }
-          .etv .by b { display: block; font-size: 13px; color: #10182B; }
-          .top { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px; }
-          .top h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.1; }
-          .top .meta { text-align: right; font-size: 11px; color: #5B6577; }
-          .hero { display: flex; gap: 14px; margin-top: 12px; }
-          .veh { flex: 1.25; }
-          .veh .make { font-size: 11px; color: #5B6577; }
-          .veh .model { font-size: 19px; font-weight: 700; line-height: 1.15; margin: 1px 0 4px; }
-          .veh .ids { font-size: 10.5px; color: #5B6577; font-family: Menlo, Consolas, monospace; }
-          .veh .price { font-size: 15px; font-weight: 700; margin-top: 4px; }
-          .who { flex: 0.9; border-left: 1px solid #D9DEE7; padding-left: 14px; font-size: 11.5px; }
-          .who .t, .h2 { font-size: 10.5px; font-weight: 700; color: #5B6577; margin-bottom: 3px; }
-          .who .name { font-size: 14px; font-weight: 700; }
-          .who .blank { border-bottom: 1px solid #9AA3B1; height: 17px; margin-bottom: 3px; }
-          .chosen-box { flex: 1; background: #10182B; color: #fff; border-radius: 6px; padding: 10px 14px; }
-          .chosen-box .t { font-size: 10.5px; color: #B9C2D0; }
-          .chosen-box .amt { font-size: 29px; font-weight: 700; line-height: 1.1; letter-spacing: -0.5px; }
-          .chosen-box .d { font-size: 11px; color: #D7DDE6; }
-          .cols { display: flex; gap: 16px; margin-top: 12px; }
-          .cols > div { flex: 1; min-width: 0; }
-          .h2 { border-bottom: 1px solid #10182B; padding-bottom: 2px; margin-bottom: 4px; }
-          table { width: 100%; border-collapse: collapse; }
-          .det td { padding: 2.5px 0; border-bottom: 1px solid #EEF0F4; font-size: 11.5px; }
-          .det td:last-child, .mini td:last-child { text-align: right; font-weight: 600; white-space: nowrap; }
-          .good { color: #0E7C4A; }
-          .rates th, .rates td { text-align: center; padding: 3px 2px; font-size: 10.5px; border-bottom: 1px solid #EEF0F4; }
-          .rates th { font-weight: 700; color: #5B6577; }
-          .rates td.lbl { text-align: left; font-weight: 700; }
-          .rates .sel { background: #10182B; color: #fff; font-weight: 700; }
-          .cards { display: flex; gap: 10px; margin-top: 6px; }
-          .card { flex: 1; border: 1px solid #D9DEE7; border-top: 3px solid #5B6577; border-radius: 4px; padding: 7px 9px 5px; min-width: 0; }
-          .card.chosen { border-top-color: #10182B; }
-          .card.best { border-color: #0E7C4A; border-top-color: #0E7C4A; background: #F3FAF6; }
-          .card.lease { border-top-color: #B4690E; }
-          .card.lease.best { border-color: #B4690E; background: #FDF8F0; }
-          .card-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
-          .card-name { font-size: 12.5px; font-weight: 700; }
-          .tag { font-size: 9.5px; font-weight: 700; color: #fff; background: #0E7C4A; border-radius: 3px; padding: 1px 6px; white-space: nowrap; }
-          .card.lease .tag { background: #B4690E; }
-          .card-sub { font-size: 10px; color: #5B6577; }
-          .pay { font-size: 20px; font-weight: 700; margin: 3px 0 3px; letter-spacing: -0.3px; white-space: nowrap; line-height: 1.15; }
-          .pay small { display: block; font-size: 10px; font-weight: 400; color: #5B6577; letter-spacing: 0; }
-          .mini td { padding: 1.5px 0; font-size: 10.5px; border-top: 1px solid #EEF0F4; }
-          .na { display: flex; align-items: center; justify-content: center; text-align: center; color: #9AA3B1; font-size: 11px; background: #F6F7F9; }
-          .lease-line { display: flex; gap: 18px; font-size: 11.5px; margin: 2px 0 0; }
-          .lease-line b { font-weight: 700; }
-          .versus { display: flex; margin-top: 10px; border: 1px solid #10182B; border-radius: 4px; }
-          .versus > div { flex: 1; padding: 6px 12px; }
-          .versus > div + div { border-left: 1px solid #10182B; }
-          .versus .t { font-size: 10.5px; color: #5B6577; }
-          .versus .v { font-size: 17px; font-weight: 700; }
-          .versus .v small { font-size: 10px; font-weight: 400; color: #5B6577; margin-left: 5px; }
-          .note { font-size: 10.5px; color: #7A4B00; background: #FFF6DF; border-left: 3px solid #B4690E; padding: 3px 8px; margin-top: 6px; }
-          .foot { margin-top: 10px; border-top: 1px solid #D9DEE7; padding-top: 5px; font-size: 7.5px; line-height: 1.3; color: #7B8494; }
-          .back-btn { display: block; margin: 14px auto; padding: 10px 26px; background: #10182B; color: #fff; border: 0; border-radius: 6px; font-size: 15px; font-weight: 700; cursor: pointer; }
-          @media print {
-            body { background: #fff; }
-            .sheet { margin: 0 auto; padding: 0; width: 100%; }
-            .no-print { display: none !important; }
-            .card, .versus, .cols, .hero { break-inside: avoid; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="sheet" id="sheet">
-          <div class="band">
+    const bandHtml = `
+<div class="band">
             <div class="dealer">
               ${dealerBranding?.logoUrl ? `<img src="${esc(dealerBranding.logoUrl)}" alt="${esc(dealerBranding.name)}" />` : ''}
               <div>
@@ -1812,6 +1747,107 @@ export default function HomeScreen() {
               <img src="${ETV_LOGO}" alt="eTradeValue" />
             </div>
           </div>
+`;
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CalcAuto AiPro - Soumission</title>
+        <style>
+          @page { size: letter portrait; margin: 9mm; }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          body { font-family: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; line-height: 1.35; color: #0B1220; background: #E9ECF1; font-variant-numeric: tabular-nums; }
+          .sheet { width: 7.75in; margin: 16px auto; background: #fff; padding: 22px 24px 16px; }
+          .band { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding-bottom: 10px; border-bottom: 3px solid #10182B; }
+          .dealer { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1 1 auto; }
+          .dealer > div { min-width: 0; }
+          .dealer img { height: 54px; max-width: 2.5in; object-fit: contain; flex-shrink: 0; }
+          .dealer .dn { font-size: 21px; font-weight: 700; line-height: 1.12; letter-spacing: -0.3px; }
+          .dealer .da { font-size: 13px; font-weight: 700; margin-top: 4px; white-space: nowrap; }
+          .dealer .dp { font-size: 12px; color: #333D4F; margin-top: 1px; white-space: nowrap; }
+          .etv { display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 3px; text-align: right; flex-shrink: 0; }
+          .etv img { height: 54px; width: auto; border-radius: 5px; display: block; }
+          .etv .by b { margin-right: 4px; }
+          .etv .by { font-size: 10.5px; color: #333D4F; line-height: 1.3; }
+          .etv .by b { display: block; font-size: 13px; color: #10182B; }
+          .top { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px; }
+          .top h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.1; }
+          .top .meta { text-align: right; font-size: 11px; color: #333D4F; }
+          .hero { display: flex; gap: 14px; margin-top: 12px; }
+          .veh { flex: 1.25; }
+          .veh .make { font-size: 11px; color: #333D4F; }
+          .veh .model { font-size: 21px; font-weight: 700; line-height: 1.15; margin: 1px 0 4px; }
+          .veh .ids { font-size: 10.5px; color: #333D4F; font-family: Menlo, Consolas, monospace; }
+          .veh .price { font-size: 15px; font-weight: 700; margin-top: 4px; }
+          .who { flex: 0.9; border-left: 1px solid #D9DEE7; padding-left: 14px; font-size: 11.5px; }
+          .who .t, .h2 { font-size: 10.5px; font-weight: 700; color: #333D4F; margin-bottom: 3px; }
+          .who .name { font-size: 14px; font-weight: 700; }
+          .who .blank { border-bottom: 1px solid #9AA3B1; height: 17px; margin-bottom: 3px; }
+          .chosen-box { flex: 1; background: #10182B; color: #fff; border-radius: 6px; padding: 10px 14px; }
+          .chosen-box .t { font-size: 11.5px; color: #E3E8F0; }
+          .chosen-box .amt { font-size: 34px; font-weight: 700; line-height: 1.1; letter-spacing: -0.5px; }
+          .chosen-box .d { font-size: 12px; color: #F0F3F8; }
+          .cols { display: flex; gap: 16px; margin-top: 12px; }
+          .cols > div { flex: 1; min-width: 0; }
+          .h2 { border-bottom: 1px solid #10182B; padding-bottom: 2px; margin-bottom: 4px; }
+          table { width: 100%; border-collapse: collapse; }
+          .det td { padding: 3px 0; border-bottom: 1px solid #D9DEE7; font-size: 12.5px; }
+          .det td:last-child, .mini td:last-child { text-align: right; font-weight: 600; white-space: nowrap; }
+          .good { color: #0E7C4A; }
+          .det tr.grand td { font-size: 13.5px; font-weight: 700; padding: 5px 0 4px; border-top: 2px solid #10182B; border-bottom: 2px solid #10182B; }
+          .rates th, .rates td { text-align: center; padding: 3px 2px; font-size: 11.5px; border-bottom: 1px solid #D9DEE7; }
+          .rates th { font-weight: 700; color: #333D4F; }
+          .rates td.lbl { text-align: left; font-weight: 700; }
+          .rates .sel { background: #10182B; color: #fff; font-weight: 700; }
+          .cards { display: flex; gap: 10px; margin-top: 6px; }
+          .card { flex: 1; border: 1px solid #D9DEE7; border-top: 3px solid #5B6577; border-radius: 4px; padding: 7px 9px 5px; min-width: 0; }
+          .card.chosen { border-top-color: #10182B; }
+          .card.best { border-color: #0E7C4A; border-top-color: #0E7C4A; background: #F3FAF6; }
+          .card.lease { border-top-color: #B4690E; }
+          .card.lease.best { border-color: #B4690E; background: #FDF8F0; }
+          .card-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+          .card-name { font-size: 12.5px; font-weight: 700; }
+          .tag { font-size: 9.5px; font-weight: 700; color: #fff; background: #0E7C4A; border-radius: 3px; padding: 1px 6px; white-space: nowrap; }
+          .card.lease .tag { background: #B4690E; }
+          .card-sub { font-size: 11px; color: #333D4F; }
+          .pay { font-size: 22px; font-weight: 700; margin: 3px 0 3px; letter-spacing: -0.3px; white-space: nowrap; line-height: 1.15; }
+          .pay small { display: block; font-size: 11px; font-weight: 400; color: #333D4F; letter-spacing: 0; }
+          .mini td { padding: 2px 0; font-size: 11.5px; border-top: 1px solid #D9DEE7; }
+          .na { display: flex; align-items: center; justify-content: center; text-align: center; color: #9AA3B1; font-size: 11px; background: #F6F7F9; }
+          .lease-line { display: flex; gap: 18px; font-size: 11.5px; margin: 2px 0 0; }
+          .lease-line b { font-weight: 700; }
+          .versus { display: flex; margin-top: 10px; border: 1px solid #10182B; border-radius: 4px; }
+          .versus > div { flex: 1; padding: 6px 12px; }
+          .versus > div + div { border-left: 1px solid #10182B; }
+          .versus .t { font-size: 10.5px; color: #333D4F; }
+          .versus .v { font-size: 17px; font-weight: 700; }
+          .versus .v small { font-size: 10px; font-weight: 400; color: #333D4F; margin-left: 5px; }
+          .note { font-size: 10.5px; color: #7A4B00; background: #FFF6DF; border-left: 3px solid #B4690E; padding: 3px 8px; margin-top: 6px; }
+          .foot { margin-top: 10px; border-top: 1px solid #9AA3B1; padding-top: 5px; font-size: 8.5px; line-height: 1.3; color: #3E4757; }
+          .seepage { margin-top: 6px; font-size: 11px; font-style: italic; color: #333D4F; }
+          .page2 { page-break-before: always; break-before: page; margin-top: 16px; }
+          .page2 img.desc { display: block; width: 100%; height: auto; margin-top: 8px; border: 1px solid #9AA3B1; }
+          .page2 .cap { font-size: 11px; color: #333D4F; margin-top: 6px; }
+          .eq { list-style: none; columns: 2; column-gap: 14px; font-size: 12px; }
+          .eq li { padding: 1.5px 0 1.5px 14px; position: relative; break-inside: avoid; }
+          .eq li::before { content: '✓'; position: absolute; left: 0; color: #0E7C4A; font-weight: 700; }
+          .back-btn { display: block; margin: 14px auto; padding: 10px 26px; background: #10182B; color: #fff; border: 0; border-radius: 6px; font-size: 15px; font-weight: 700; cursor: pointer; }
+          @media print {
+            body { background: #fff; }
+            .sheet { margin: 0 auto; padding: 0; width: 100%; }
+            .page2 { margin-top: 0; }
+            .no-print { display: none !important; }
+            .card, .versus, .cols, .hero { break-inside: avoid; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="sheet" id="sheet">
+          ${bandHtml}
           <div class="top">
             <h1>${F ? 'Soumission de financement' : 'Financing submission'}</h1>
             <div class="meta">${F ? 'Préparée le' : 'Prepared on'} ${new Date().toLocaleDateString(F ? 'fr-CA' : 'en-CA')}</div>
@@ -1845,13 +1881,17 @@ export default function HomeScreen() {
                 ${consumerCash > 0 ? row(F ? 'Rabais (avant taxes)' : 'Rebate (before tax)', '−' + fmt(consumerCash) + ' $', 'good') : ''}
                 ${beforeTaxRebates.map(r => row(`${esc(r.label)} ${F ? '(avant taxes)' : '(before tax)'}`, '−' + fmt(r.amount) + ' $', 'good')).join('')}
                 ${afterTaxRebates.map(r => row(`${esc(r.label)} ${F ? '(après taxes)' : '(after tax)'}`, '−' + fmt(r.amount) + ' $', 'good')).join('')}
+                ${accessoriesTotal > 0 ? row(F ? 'Accessoires' : 'Accessories', fmt2(accessoriesTotal) + ' $') : ''}
                 ${dossier > 0 ? row(F ? 'Frais de dossier' : 'Admin fees', fmt2(dossier) + ' $') : ''}
                 ${pneus > 0 ? row(F ? 'Taxe sur les pneus' : 'Tire tax', fmt(pneus) + ' $') : ''}
                 ${rdprm > 0 ? row('RDPRM', fmt(rdprm) + ' $') : ''}
                 ${pareBrise > 0 ? row(F ? 'Assurance pare-brise' : 'Windshield insurance', fmt2(pareBrise) + ' $') : ''}
                 ${divers > 0 ? row(F ? 'Frais divers' : 'Other fees', fmt2(divers) + ' $') : ''}
                 ${valeurEchange > 0 ? row(F ? "Valeur d'échange" : 'Trade-in value', '−' + fmt(valeurEchange) + ' $', 'good') : ''}
+                ${taxesChosen > 0 ? row(F ? 'Taxes (TPS + TVQ)' : 'Taxes (GST + QST)', fmt2(taxesChosen) + ' $') : ''}
+                ${tradeOwed > 0 ? row(F ? "Solde dû sur l'échange (ajouté au financement)" : 'Trade-in balance owing (added to financing)', fmt2(tradeOwed) + ' $') : ''}
                 ${comptant > 0 ? row(F ? 'Comptant (taxes incluses)' : 'Down payment (tax incl.)', '−' + fmt(comptant) + ' $') : ''}
+                <tr class="grand"><td>${F ? 'Montant financé' : 'Amount financed'}</td><td>${fmt2(principalChosen)} $</td></tr>
                 ${row(F ? 'Terme et fréquence' : 'Term and frequency', `${selectedTerm} ${mo}, ${paymentLabel.toLowerCase()}`)}
               </table>
             </div>
@@ -1863,14 +1903,50 @@ export default function HomeScreen() {
                 ${hasOption2 ? ratesLine('Option 2', selectedProgram.option2_rates) : ''}
               </table>
               <div class="cards">
-                ${hasOption1 ? finCard('1', F ? 'Rabais et taux standard' : 'Rebate and standard rate', consumerCash, localResult.principalOption1 || 0, localResult.option1Rate, o1Payment, o1Total) : ''}
+                ${hasOption1 ? finCard('1', F ? 'Rabais et taux standard' : 'Rebate and standard rate', consumerCash, localResult.principalOption1 || 0, localResult.option1Rate, o1Payment) : ''}
                 ${hasOption2
-                  ? finCard('2', F ? 'Taux réduit' : 'Reduced rate', altConsumerCashPrint, localResult.principalOption2 || 0, localResult.option2Rate, o2Payment, o2Total)
+                  ? finCard('2', F ? 'Taux réduit' : 'Reduced rate', altConsumerCashPrint, localResult.principalOption2 || 0, localResult.option2Rate, o2Payment)
                   : `<div class="card na">Option 2<br/>${F ? 'non offerte pour ce véhicule' : 'not offered for this vehicle'}</div>`}
               </div>
-              ${hasOption2 && savingsAmt > 0 ? `<div class="note" style="color:#0B5A37;background:#EAF6EF;border-color:#0E7C4A;">Option ${bestOpt} : ${F ? 'économie de' : 'saves'} <b>${fmt(savingsAmt)} $</b> ${F ? 'sur le coût total' : 'on total cost'}</div>` : ''}
+              ${hasOption2 && savingsAmt > 0 ? `<div class="note" style="color:#0B5A37;background:#EAF6EF;border-color:#0E7C4A;">Option ${bestOpt} : ${F ? 'paiement plus bas de' : 'payment lower by'} <b>${fmt2(Math.abs(o1Payment - o2Payment))} $</b> ${paymentLabel.toLowerCase()}</div>` : ''}
             </div>
           </div>
+
+          ${(() => {
+            const sd: any = stickerDetails;
+            if (!sd) return '';
+            const onPage2 = withDescription && !!sd.description_image;
+            const items: string[] = (sd.highlights || []).slice(0, hasLeasePrint ? 8 : 16);
+            const opts: any[] = [...(sd.options || [])];
+            const col1 = opts.map((o: any) => `<tr><td>${esc(o.label)}</td><td>${fmt(o.price)} $</td></tr>`).join('')
+              + (sd.unlabeled_options_total ? `<tr><td>${F ? "Autres options d'usine" : 'Other factory options'}</td><td>${fmt(sd.unlabeled_options_total)} $</td></tr>` : '');
+            const fuel = sd.fuel_l100;
+            const spec: string[] = [];
+            if (fuel?.combined) spec.push(`<tr><td>${F ? 'Consommation' : 'Fuel use'}</td><td>${String(fuel.combined).replace('.', ',')} L/100 km</td></tr>`);
+            if (fuel?.city && fuel?.highway) spec.push(`<tr><td>${F ? 'Ville / route' : 'City / highway'}</td><td>${String(fuel.city).replace('.', ',')} / ${String(fuel.highway).replace('.', ',')}</td></tr>`);
+            if (sd.fuel_annual_cost) spec.push(`<tr><td>${F ? 'Coût annuel en carburant' : 'Annual fuel cost'}</td><td>${fmt(sd.fuel_annual_cost)} $</td></tr>`);
+            if (sd.powertrain_warranty) spec.push(`<tr><td>${F ? 'Garantie groupe motopropulseur' : 'Powertrain warranty'}</td><td>${sd.powertrain_warranty.years} ${F ? 'ans' : 'yr'} / ${fmt(sd.powertrain_warranty.km)} km</td></tr>`);
+            if (onPage2) {
+              // La description complète est en page 2 : ici, seulement l'essentiel, en une bande.
+              if (!col1 && !spec.length) return '';
+              return `<div class="cols tech">
+                <div>${col1 ? `<div class="h2">${F ? "Options d'usine" : 'Factory options'}</div><table class="det">${col1}</table>` : ''}</div>
+                <div>${spec.length ? `<div class="h2">${F ? 'Fiche technique' : 'Specifications'}</div><table class="det">${spec.join('')}</table>` : ''}
+                <div class="seepage">${F ? 'Description complète du véhicule en page 2.' : 'Full vehicle description on page 2.'}</div></div>
+              </div>`;
+            }
+            if (!items.length && !col1 && !spec.length) return '';
+            return `<div class="cols tech">
+              <div>
+                <div class="h2">${F ? 'Équipement principal' : 'Key equipment'}</div>
+                <ul class="eq">${items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>
+              </div>
+              <div>
+                ${col1 ? `<div class="h2">${F ? "Options d'usine" : 'Factory options'}</div><table class="det">${col1}</table>` : ''}
+                ${spec.length ? `<div class="h2" style="margin-top:8px;">${F ? 'Fiche technique' : 'Specifications'}</div><table class="det">${spec.join('')}</table>` : ''}
+              </div>
+            </div>`;
+          })()}
 
           ${afterTaxRebates.map(r => `<div class="note">${esc(r.label)} : ${fmt(r.amount)} $ ${F ? 'déduit après taxes, à part du comptant du client' : 'deducted after tax, separate from the customer\'s cash down'}</div>`).join('')}
 
@@ -1885,7 +1961,7 @@ export default function HomeScreen() {
               <div class="lease-line">
                 <span>${F ? 'Résiduel' : 'Residual'} <b>${leaseResult.residualPct} %${leaseResult.kmAdjustment ? ` (+${leaseResult.kmAdjustment} %)` : ''}, ${fmt(Math.round(leaseResult.residualValue))} $</b></span>
               </div>
-              ${leaseResult.leaseSavings > 0 && leaseResult.standard && leaseResult.alternative ? `<div class="note">${leaseResult.bestLease === 'standard' ? 'Std + Lease Cash' : (F ? 'Taux alternatif' : 'Alt. rate')} : ${F ? 'économie de' : 'saves'} <b>${fmt(Math.round(leaseResult.leaseSavings))} $</b></div>` : ''}
+              ${leaseResult.leaseSavings > 0 && leaseResult.standard && leaseResult.alternative ? `<div class="note">${leaseResult.bestLease === 'standard' ? 'Std + Lease Cash' : (F ? 'Taux alternatif' : 'Alt. rate')} : ${F ? 'paiement plus bas de' : 'payment lower by'} <b>${fmt2(Math.abs(perFreq(leaseResult.standard) - perFreq(leaseResult.alternative)))} $</b> ${paymentLabel.toLowerCase()}</div>` : ''}
               <div class="versus">
                 <div><div class="t">${F ? 'Meilleure location' : 'Best lease'}</div><div class="v">${fmt2(perFreq(bestLeaseOpt))} $<small>${leaseTerm} ${mo}</small></div></div>
                 <div><div class="t">${F ? 'Meilleur financement' : 'Best financing'}</div><div class="v">${fmt2(bestFinPayment)} $<small>${selectedTerm} ${mo}</small></div></div>
@@ -1905,6 +1981,16 @@ export default function HomeScreen() {
               : 'IMPORTANT NOTICE: Payment amounts shown in this submission are provided for informational purposes only and do not constitute an official financing or lease offer. Actual payments may differ based on credit evaluation, programs in effect at the time of transaction, residual adjustments and applicable fees. The dealer and its representatives cannot be held responsible for any calculation errors or discrepancies between this estimate and the final contract terms. All transactions are subject to credit approval by the financial institution.'}
           </div>
         </div>
+        ${withDescription && stickerDetails?.description_image ? `
+        <div class="sheet page2">
+          ${bandHtml}
+          <div class="top">
+            <h1>${F ? 'Description du véhicule' : 'Vehicle description'}</h1>
+            <div class="meta">${esc(selectedProgram.brand)} ${esc(selectedProgram.model)} ${esc(selectedProgram.trim || '')} ${esc(selectedProgram.year)}${stockNo ? ' · ' + (F ? 'Inventaire ' : 'Stock ') + esc(stockNo) : ''}${vin ? ' · NIV ' + esc(vin) : ''}</div>
+          </div>
+          <img class="desc" src="${esc(stickerDetails.description_image)}" alt="${F ? 'Description du véhicule, fiche du fabricant' : 'Vehicle description, manufacturer sticker'}" />
+          <div class="cap">${F ? "Équipement de série et accessoires optionnels, tels que publiés par le fabricant sur la fiche du véhicule (Window Sticker). Frais d'immatriculation, taxes et accessoires installés par le concessionnaire en sus." : 'Standard equipment and optional accessories as published by the manufacturer on the vehicle sticker. Registration fees, taxes and dealer-installed accessories extra.'}</div>
+        </div>` : ''}
         <button class="back-btn no-print" onclick="window.close(); if(!window.closed) history.back();">${F ? 'Retour au calculateur' : 'Back to calculator'}</button>
         <script>
           // Toujours une seule page : la feuille est réduite si elle dépasse la hauteur utile.
@@ -1912,7 +1998,7 @@ export default function HomeScreen() {
             var fit = function () {
               var s = document.getElementById('sheet'); if (!s) return;
               s.style.zoom = 1;
-              var max = 980, h = s.scrollHeight;
+              var max = 1010, h = s.scrollHeight;
               if (h > max) s.style.zoom = (max / h).toFixed(3);
             };
             window.addEventListener('beforeprint', fit); window.addEventListener('load', fit); fit();
@@ -1927,7 +2013,7 @@ export default function HomeScreen() {
 
   // La feuille en PDF (navigateur seulement) : jointe au texto et au courriel.
   const buildSubmissionPdf = async (): Promise<Blob | null> => {
-    const html = buildPrintHtml();
+    const html = buildPrintHtml({ description: false });   // le PDF joint reste d'une page
     if (!html || Platform.OS !== 'web' || typeof document === 'undefined') return null;
     const frame = document.createElement('iframe');
     frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:816px;height:1056px;border:0;';
