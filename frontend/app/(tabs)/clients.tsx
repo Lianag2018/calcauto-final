@@ -1605,9 +1605,16 @@ export default function ClientsScreen() {
     );
   };
 
+  // Le client de la soumission suit dans le calculateur : on ne le redemande pas à l'impression.
+  const clientOf = (sub: Submission) => ({
+    clientName: sub.client_name || '',
+    clientEmail: sub.client_email || '',
+    clientPhone: sub.client_phone || '',
+  });
+
   const openSubmissionInCalculator = async (sub: Submission) => {
     if (sub.calculator_state && typeof sub.calculator_state === 'object') {
-      await AsyncStorage.setItem('calcauto_restore_state', JSON.stringify(sub.calculator_state));
+      await AsyncStorage.setItem('calcauto_restore_state', JSON.stringify({ ...sub.calculator_state, ...clientOf(sub) }));
       router.push('/(tabs)');
     } else {
       // Old submission without full state - reconstruct partial state from available fields
@@ -1649,7 +1656,7 @@ export default function ClientsScreen() {
           };
         }
         
-        await AsyncStorage.setItem('calcauto_restore_state', JSON.stringify(partialState));
+        await AsyncStorage.setItem('calcauto_restore_state', JSON.stringify({ ...partialState, ...clientOf(sub) }));
         router.push('/(tabs)');
       } catch (e) {
         console.error('Error restoring old submission:', e);
