@@ -1631,9 +1631,14 @@ export default function HomeScreen() {
     const divers = otherFees('', fraisDivers);
     const valeurEchange = parseFloat(prixEchange) || 0;
     const comptant = parseFloat(comptantTxInclus) || 0;
+    const tradeOwed = parseFloat(montantDuEchange) || 0;
     const altConsumerCashPrint = selectedProgram.alternative_consumer_cash || 0;
     const hasOption2 = selectedProgram.option2_rates !== null && localResult.option2Monthly !== null;
     const bestOpt = localResult.bestOption;
+    // Montants de l'option retenue : la feuille doit s'additionner de haut en bas
+    const principalChosen = option === '1' ? (localResult.principalOption1 || 0) : (localResult.principalOption2 || 0);
+    const taxesChosen = option === '1' ? (localResult.taxes || 0) : (localResult.taxesOption2 || 0);
+    const accessoriesTotal = accessories.reduce((sum: number, acc: any) => sum + (parseFloat(acc.price) || 0), 0);
     const savingsAmt = localResult.savings || 0;
 
     // Format currency helper for inline HTML
@@ -1646,14 +1651,12 @@ export default function HomeScreen() {
     const o1Monthly = localResult.option1Monthly;
     const o1Biweekly = localResult.option1Biweekly;
     const o1Weekly = localResult.option1Weekly;
-    const o1Total = localResult.option1Total;
     const o1Payment = paymentFrequency === 'biweekly' ? o1Biweekly : paymentFrequency === 'weekly' ? o1Weekly : o1Monthly;
 
     // Option 2 payment details
     const o2Monthly = localResult.option2Monthly || 0;
     const o2Biweekly = localResult.option2Biweekly || 0;
     const o2Weekly = localResult.option2Weekly || 0;
-    const o2Total = localResult.option2Total || 0;
     const o2Payment = paymentFrequency === 'biweekly' ? o2Biweekly : paymentFrequency === 'weekly' ? o2Weekly : o2Monthly;
 
     // Feuille d'une seule page (format lettre) : client, véhicule, paiement retenu,
@@ -1675,7 +1678,7 @@ export default function HomeScreen() {
       return `<td class="${t === selectedTerm ? 'sel' : ''}">${r !== null && r !== undefined ? Number(r).toFixed(2) + ' %' : '–'}</td>`;
     }).join('')}</tr>`;
     const row = (label: string, value: string, cls = '') => `<tr><td>${label}</td><td class="${cls}">${value}</td></tr>`;
-    const finCard = (n: '1' | '2', title: string, rebate: number, principal: number, rateV: any, pay: number, total: number) => `
+    const finCard = (n: '1' | '2', title: string, rebate: number, principal: number, rateV: any, pay: number) => `
       <div class="card ${bestOpt === n && hasOption2 ? 'best' : ''} ${option === n ? 'chosen' : ''}">
         <div class="card-top"><span class="card-name">Option ${n}</span>${bestOpt === n && hasOption2 ? `<span class="tag">${F ? 'Meilleur choix' : 'Best choice'}</span>` : ''}</div>
         <div class="card-sub">${title}</div>
@@ -1684,7 +1687,6 @@ export default function HomeScreen() {
           ${row(F ? 'Rabais' : 'Rebate', rebate > 0 ? '−' + fmt(rebate) + ' $' : '0 $', rebate > 0 ? 'good' : '')}
           ${row(F ? 'Capital financé' : 'Principal', fmt(principal) + ' $')}
           ${row(F ? 'Taux' : 'Rate', rateV + ' %')}
-          ${row(`Total ${selectedTerm} ${mo}`, fmt(total) + ' $')}
         </table>
       </div>`;
     const leaseCard = (key: 'standard' | 'alternative', title: string) => {
@@ -1703,8 +1705,6 @@ export default function HomeScreen() {
           ${row(F ? 'Taux' : 'Rate', o.rate + ' %')}
           ${row(F ? 'Avant taxes' : 'Before tax', fmt2(perFreqBeforeTax(o)) + ' $')}
           ${row('TPS + TVQ', fmt2(taxPerFreq(o.tpsOnPayment) + taxPerFreq(o.tvqOnPayment)) + ' $')}
-          ${row(`Total ${leaseTerm} ${mo}`, fmt(Math.round(o.total)) + ' $')}
-          ${row(F ? "Coût d'emprunt" : 'Borrowing cost', fmt2(o.coutEmprunt) + ' $')}
         </table>
       </div>`;
     };
@@ -1758,6 +1758,7 @@ export default function HomeScreen() {
           .det td { padding: 2.5px 0; border-bottom: 1px solid #EEF0F4; font-size: 11.5px; }
           .det td:last-child, .mini td:last-child { text-align: right; font-weight: 600; white-space: nowrap; }
           .good { color: #0E7C4A; }
+          .det tr.grand td { font-size: 13.5px; font-weight: 700; padding: 5px 0 4px; border-top: 2px solid #10182B; border-bottom: 2px solid #10182B; }
           .rates th, .rates td { text-align: center; padding: 3px 2px; font-size: 10.5px; border-bottom: 1px solid #EEF0F4; }
           .rates th { font-weight: 700; color: #5B6577; }
           .rates td.lbl { text-align: left; font-weight: 700; }
@@ -1845,13 +1846,17 @@ export default function HomeScreen() {
                 ${consumerCash > 0 ? row(F ? 'Rabais (avant taxes)' : 'Rebate (before tax)', '−' + fmt(consumerCash) + ' $', 'good') : ''}
                 ${beforeTaxRebates.map(r => row(`${esc(r.label)} ${F ? '(avant taxes)' : '(before tax)'}`, '−' + fmt(r.amount) + ' $', 'good')).join('')}
                 ${afterTaxRebates.map(r => row(`${esc(r.label)} ${F ? '(après taxes)' : '(after tax)'}`, '−' + fmt(r.amount) + ' $', 'good')).join('')}
+                ${accessoriesTotal > 0 ? row(F ? 'Accessoires' : 'Accessories', fmt2(accessoriesTotal) + ' $') : ''}
                 ${dossier > 0 ? row(F ? 'Frais de dossier' : 'Admin fees', fmt2(dossier) + ' $') : ''}
                 ${pneus > 0 ? row(F ? 'Taxe sur les pneus' : 'Tire tax', fmt(pneus) + ' $') : ''}
                 ${rdprm > 0 ? row('RDPRM', fmt(rdprm) + ' $') : ''}
                 ${pareBrise > 0 ? row(F ? 'Assurance pare-brise' : 'Windshield insurance', fmt2(pareBrise) + ' $') : ''}
                 ${divers > 0 ? row(F ? 'Frais divers' : 'Other fees', fmt2(divers) + ' $') : ''}
                 ${valeurEchange > 0 ? row(F ? "Valeur d'échange" : 'Trade-in value', '−' + fmt(valeurEchange) + ' $', 'good') : ''}
+                ${taxesChosen > 0 ? row(F ? 'Taxes (TPS + TVQ)' : 'Taxes (GST + QST)', fmt2(taxesChosen) + ' $') : ''}
+                ${tradeOwed > 0 ? row(F ? "Solde dû sur l'échange (ajouté au financement)" : 'Trade-in balance owing (added to financing)', fmt2(tradeOwed) + ' $') : ''}
                 ${comptant > 0 ? row(F ? 'Comptant (taxes incluses)' : 'Down payment (tax incl.)', '−' + fmt(comptant) + ' $') : ''}
+                <tr class="grand"><td>${F ? 'Montant financé' : 'Amount financed'}</td><td>${fmt2(principalChosen)} $</td></tr>
                 ${row(F ? 'Terme et fréquence' : 'Term and frequency', `${selectedTerm} ${mo}, ${paymentLabel.toLowerCase()}`)}
               </table>
             </div>
@@ -1863,12 +1868,12 @@ export default function HomeScreen() {
                 ${hasOption2 ? ratesLine('Option 2', selectedProgram.option2_rates) : ''}
               </table>
               <div class="cards">
-                ${hasOption1 ? finCard('1', F ? 'Rabais et taux standard' : 'Rebate and standard rate', consumerCash, localResult.principalOption1 || 0, localResult.option1Rate, o1Payment, o1Total) : ''}
+                ${hasOption1 ? finCard('1', F ? 'Rabais et taux standard' : 'Rebate and standard rate', consumerCash, localResult.principalOption1 || 0, localResult.option1Rate, o1Payment) : ''}
                 ${hasOption2
-                  ? finCard('2', F ? 'Taux réduit' : 'Reduced rate', altConsumerCashPrint, localResult.principalOption2 || 0, localResult.option2Rate, o2Payment, o2Total)
+                  ? finCard('2', F ? 'Taux réduit' : 'Reduced rate', altConsumerCashPrint, localResult.principalOption2 || 0, localResult.option2Rate, o2Payment)
                   : `<div class="card na">Option 2<br/>${F ? 'non offerte pour ce véhicule' : 'not offered for this vehicle'}</div>`}
               </div>
-              ${hasOption2 && savingsAmt > 0 ? `<div class="note" style="color:#0B5A37;background:#EAF6EF;border-color:#0E7C4A;">Option ${bestOpt} : ${F ? 'économie de' : 'saves'} <b>${fmt(savingsAmt)} $</b> ${F ? 'sur le coût total' : 'on total cost'}</div>` : ''}
+              ${hasOption2 && savingsAmt > 0 ? `<div class="note" style="color:#0B5A37;background:#EAF6EF;border-color:#0E7C4A;">Option ${bestOpt} : ${F ? 'paiement plus bas de' : 'payment lower by'} <b>${fmt2(Math.abs(o1Payment - o2Payment))} $</b> ${paymentLabel.toLowerCase()}</div>` : ''}
             </div>
           </div>
 
@@ -1885,7 +1890,7 @@ export default function HomeScreen() {
               <div class="lease-line">
                 <span>${F ? 'Résiduel' : 'Residual'} <b>${leaseResult.residualPct} %${leaseResult.kmAdjustment ? ` (+${leaseResult.kmAdjustment} %)` : ''}, ${fmt(Math.round(leaseResult.residualValue))} $</b></span>
               </div>
-              ${leaseResult.leaseSavings > 0 && leaseResult.standard && leaseResult.alternative ? `<div class="note">${leaseResult.bestLease === 'standard' ? 'Std + Lease Cash' : (F ? 'Taux alternatif' : 'Alt. rate')} : ${F ? 'économie de' : 'saves'} <b>${fmt(Math.round(leaseResult.leaseSavings))} $</b></div>` : ''}
+              ${leaseResult.leaseSavings > 0 && leaseResult.standard && leaseResult.alternative ? `<div class="note">${leaseResult.bestLease === 'standard' ? 'Std + Lease Cash' : (F ? 'Taux alternatif' : 'Alt. rate')} : ${F ? 'paiement plus bas de' : 'payment lower by'} <b>${fmt2(Math.abs(perFreq(leaseResult.standard) - perFreq(leaseResult.alternative)))} $</b> ${paymentLabel.toLowerCase()}</div>` : ''}
               <div class="versus">
                 <div><div class="t">${F ? 'Meilleure location' : 'Best lease'}</div><div class="v">${fmt2(perFreq(bestLeaseOpt))} $<small>${leaseTerm} ${mo}</small></div></div>
                 <div><div class="t">${F ? 'Meilleur financement' : 'Best financing'}</div><div class="v">${fmt2(bestFinPayment)} $<small>${selectedTerm} ${mo}</small></div></div>

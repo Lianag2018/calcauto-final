@@ -73,6 +73,7 @@ export interface LocalResult {
   principalOption2: number;
   fraisTaxables: number;
   taxes: number;
+  taxesOption2?: number;
   echangeNet: number;
   comptant: number;
   bonusCash: number;
