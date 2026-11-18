@@ -163,3 +163,22 @@ def parse_sticker_words(words):
     except Exception:
         return {k: v for k, v in out.items() if v not in (None, [], {})}
     return {k: v for k, v in out.items() if v not in (None, [], {})}
+
+
+# Zone « description » de la fiche (équipement de série et accessoires optionnels), en fractions
+# de la page : la même gabarit pour les fiches Chrysler, Dodge, Jeep et Ram.
+DESCRIPTION_BOX = (0.04, 0.17, 0.515, 0.85)
+
+
+def render_description_jpeg(pdf_bytes, zoom=2.0, quality=82):
+    """La partie description de la fiche, en image JPEG (octets), ou None. Ne lève jamais."""
+    try:
+        import fitz  # PyMuPDF
+        page = fitz.open(stream=pdf_bytes, filetype="pdf")[0]
+        w, h = page.rect.width, page.rect.height
+        left, top, right, bottom = DESCRIPTION_BOX
+        clip = fitz.Rect(w * left, h * top, w * right, h * bottom)
+        pixmap = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), clip=clip, alpha=False)
+        return pixmap.tobytes("jpeg", jpg_quality=quality)
+    except Exception:
+        return None

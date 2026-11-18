@@ -1619,7 +1619,8 @@ export default function HomeScreen() {
   };
 
   // La feuille d'une page : la même pour l'impression, le texto et le courriel
-  const buildPrintHtml = (): string | null => {
+  const buildPrintHtml = (opts: { description?: boolean } = {}): string | null => {
+    const withDescription = opts.description !== false;
     if (!selectedProgram || !localResult || !vehiclePrice) return null;
 
     const vehicle = `${selectedProgram.brand} ${selectedProgram.model} ${selectedProgram.trim || ''} ${selectedProgram.year}`.trim();
@@ -1731,6 +1732,23 @@ export default function HomeScreen() {
       </div>`;
     };
 
+    const bandHtml = `
+<div class="band">
+            <div class="dealer">
+              ${dealerBranding?.logoUrl ? `<img src="${esc(dealerBranding.logoUrl)}" alt="${esc(dealerBranding.name)}" />` : ''}
+              <div>
+                ${dealerBranding?.name ? `<div class="dn" style="${dealerBranding.logoUrl ? 'font-size:14px;' : ''}">${esc(dealerBranding.name)}</div>` : ''}
+                ${advisorName ? `<div class="da">${esc(advisorName)}</div>` : ''}
+                ${(advisorPhone || dealerBranding?.phone) ? `<div class="dp">${esc(advisorPhone || dealerBranding?.phone || '')}</div>` : ''}
+              </div>
+            </div>
+            <div class="etv">
+              <div class="by"><b>CalcAuto AiPro</b>${F ? 'par eTradeValue' : 'by eTradeValue'}</div>
+              <img src="${ETV_LOGO}" alt="eTradeValue" />
+            </div>
+          </div>
+`;
+
     const printContent = `
       <!DOCTYPE html>
       <html>
@@ -1810,6 +1828,10 @@ export default function HomeScreen() {
           .versus .v small { font-size: 10px; font-weight: 400; color: #333D4F; margin-left: 5px; }
           .note { font-size: 10.5px; color: #7A4B00; background: #FFF6DF; border-left: 3px solid #B4690E; padding: 3px 8px; margin-top: 6px; }
           .foot { margin-top: 10px; border-top: 1px solid #9AA3B1; padding-top: 5px; font-size: 8.5px; line-height: 1.3; color: #3E4757; }
+          .seepage { margin-top: 6px; font-size: 11px; font-style: italic; color: #333D4F; }
+          .page2 { page-break-before: always; break-before: page; margin-top: 16px; }
+          .page2 img.desc { display: block; width: 100%; height: auto; margin-top: 8px; border: 1px solid #9AA3B1; }
+          .page2 .cap { font-size: 11px; color: #333D4F; margin-top: 6px; }
           .eq { list-style: none; columns: 2; column-gap: 14px; font-size: 12px; }
           .eq li { padding: 1.5px 0 1.5px 14px; position: relative; break-inside: avoid; }
           .eq li::before { content: '✓'; position: absolute; left: 0; color: #0E7C4A; font-weight: 700; }
@@ -1817,6 +1839,7 @@ export default function HomeScreen() {
           @media print {
             body { background: #fff; }
             .sheet { margin: 0 auto; padding: 0; width: 100%; }
+            .page2 { margin-top: 0; }
             .no-print { display: none !important; }
             .card, .versus, .cols, .hero { break-inside: avoid; }
           }
@@ -1824,20 +1847,7 @@ export default function HomeScreen() {
       </head>
       <body>
         <div class="sheet" id="sheet">
-          <div class="band">
-            <div class="dealer">
-              ${dealerBranding?.logoUrl ? `<img src="${esc(dealerBranding.logoUrl)}" alt="${esc(dealerBranding.name)}" />` : ''}
-              <div>
-                ${dealerBranding?.name ? `<div class="dn" style="${dealerBranding.logoUrl ? 'font-size:14px;' : ''}">${esc(dealerBranding.name)}</div>` : ''}
-                ${advisorName ? `<div class="da">${esc(advisorName)}</div>` : ''}
-                ${(advisorPhone || dealerBranding?.phone) ? `<div class="dp">${esc(advisorPhone || dealerBranding?.phone || '')}</div>` : ''}
-              </div>
-            </div>
-            <div class="etv">
-              <div class="by"><b>CalcAuto AiPro</b>${F ? 'par eTradeValue' : 'by eTradeValue'}</div>
-              <img src="${ETV_LOGO}" alt="eTradeValue" />
-            </div>
-          </div>
+          ${bandHtml}
           <div class="top">
             <h1>${F ? 'Soumission de financement' : 'Financing submission'}</h1>
             <div class="meta">${F ? 'Préparée le' : 'Prepared on'} ${new Date().toLocaleDateString(F ? 'fr-CA' : 'en-CA')}</div>
@@ -1905,6 +1915,7 @@ export default function HomeScreen() {
           ${(() => {
             const sd: any = stickerDetails;
             if (!sd) return '';
+            const onPage2 = withDescription && !!sd.description_image;
             const items: string[] = (sd.highlights || []).slice(0, hasLeasePrint ? 8 : 16);
             const opts: any[] = [...(sd.options || [])];
             const col1 = opts.map((o: any) => `<tr><td>${esc(o.label)}</td><td>${fmt(o.price)} $</td></tr>`).join('')
@@ -1915,6 +1926,15 @@ export default function HomeScreen() {
             if (fuel?.city && fuel?.highway) spec.push(`<tr><td>${F ? 'Ville / route' : 'City / highway'}</td><td>${String(fuel.city).replace('.', ',')} / ${String(fuel.highway).replace('.', ',')}</td></tr>`);
             if (sd.fuel_annual_cost) spec.push(`<tr><td>${F ? 'Coût annuel en carburant' : 'Annual fuel cost'}</td><td>${fmt(sd.fuel_annual_cost)} $</td></tr>`);
             if (sd.powertrain_warranty) spec.push(`<tr><td>${F ? 'Garantie groupe motopropulseur' : 'Powertrain warranty'}</td><td>${sd.powertrain_warranty.years} ${F ? 'ans' : 'yr'} / ${fmt(sd.powertrain_warranty.km)} km</td></tr>`);
+            if (onPage2) {
+              // La description complète est en page 2 : ici, seulement l'essentiel, en une bande.
+              if (!col1 && !spec.length) return '';
+              return `<div class="cols tech">
+                <div>${col1 ? `<div class="h2">${F ? "Options d'usine" : 'Factory options'}</div><table class="det">${col1}</table>` : ''}</div>
+                <div>${spec.length ? `<div class="h2">${F ? 'Fiche technique' : 'Specifications'}</div><table class="det">${spec.join('')}</table>` : ''}
+                <div class="seepage">${F ? 'Description complète du véhicule en page 2.' : 'Full vehicle description on page 2.'}</div></div>
+              </div>`;
+            }
             if (!items.length && !col1 && !spec.length) return '';
             return `<div class="cols tech">
               <div>
@@ -1961,6 +1981,16 @@ export default function HomeScreen() {
               : 'IMPORTANT NOTICE: Payment amounts shown in this submission are provided for informational purposes only and do not constitute an official financing or lease offer. Actual payments may differ based on credit evaluation, programs in effect at the time of transaction, residual adjustments and applicable fees. The dealer and its representatives cannot be held responsible for any calculation errors or discrepancies between this estimate and the final contract terms. All transactions are subject to credit approval by the financial institution.'}
           </div>
         </div>
+        ${withDescription && stickerDetails?.description_image ? `
+        <div class="sheet page2">
+          ${bandHtml}
+          <div class="top">
+            <h1>${F ? 'Description du véhicule' : 'Vehicle description'}</h1>
+            <div class="meta">${esc(selectedProgram.brand)} ${esc(selectedProgram.model)} ${esc(selectedProgram.trim || '')} ${esc(selectedProgram.year)}${stockNo ? ' · ' + (F ? 'Inventaire ' : 'Stock ') + esc(stockNo) : ''}${vin ? ' · NIV ' + esc(vin) : ''}</div>
+          </div>
+          <img class="desc" src="${esc(stickerDetails.description_image)}" alt="${F ? 'Description du véhicule, fiche du fabricant' : 'Vehicle description, manufacturer sticker'}" />
+          <div class="cap">${F ? "Équipement de série et accessoires optionnels, tels que publiés par le fabricant sur la fiche du véhicule (Window Sticker). Frais d'immatriculation, taxes et accessoires installés par le concessionnaire en sus." : 'Standard equipment and optional accessories as published by the manufacturer on the vehicle sticker. Registration fees, taxes and dealer-installed accessories extra.'}</div>
+        </div>` : ''}
         <button class="back-btn no-print" onclick="window.close(); if(!window.closed) history.back();">${F ? 'Retour au calculateur' : 'Back to calculator'}</button>
         <script>
           // Toujours une seule page : la feuille est réduite si elle dépasse la hauteur utile.
@@ -1983,7 +2013,7 @@ export default function HomeScreen() {
 
   // La feuille en PDF (navigateur seulement) : jointe au texto et au courriel.
   const buildSubmissionPdf = async (): Promise<Blob | null> => {
-    const html = buildPrintHtml();
+    const html = buildPrintHtml({ description: false });   // le PDF joint reste d'une page
     if (!html || Platform.OS !== 'web' || typeof document === 'undefined') return null;
     const frame = document.createElement('iframe');
     frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:816px;height:1056px;border:0;';

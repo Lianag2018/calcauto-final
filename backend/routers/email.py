@@ -108,8 +108,8 @@ async def get_window_sticker_details(vin: str, authorization: Optional[str] = He
         return {"success": False, "error": "VIN invalide"}
     try:
         doc = await db.window_stickers.find_one({"vin": vin})
-        if doc and isinstance(doc.get("details"), dict) and doc["details"]:
-            return {"success": True, "vin": vin, "details": doc["details"]}
+        if doc and isinstance(doc.get("details"), dict) and doc["details"] and doc.get("description_jpeg_base64"):
+            return {"success": True, "vin": vin, "details": {**doc["details"], "description_image": "data:image/jpeg;base64," + doc["description_jpeg_base64"]}}
         pdf_b64 = (doc or {}).get("pdf_base64")
         if not pdf_b64:
             result = await fetch_window_sticker(vin)
@@ -125,7 +125,13 @@ async def get_window_sticker_details(vin: str, authorization: Optional[str] = He
         details = parse_sticker_words(words)
         if not details:
             return {"success": False, "error": "Fiche illisible"}
-        await db.window_stickers.update_one({"vin": vin}, {"$set": {"details": details}})
+        from services.sticker_details import render_description_jpeg
+        pdf_bytes = base64.b64decode(pdf_b64)
+        jpeg = render_description_jpeg(pdf_bytes)
+        jpeg_b64 = base64.b64encode(jpeg).decode("ascii") if jpeg else ""
+        await db.window_stickers.update_one({"vin": vin}, {"$set": {"details": details, "description_jpeg_base64": jpeg_b64}})
+        if jpeg_b64:
+            details = {**details, "description_image": "data:image/jpeg;base64," + jpeg_b64}
         return {"success": True, "vin": vin, "details": details}
     except HTTPException:
         raise
