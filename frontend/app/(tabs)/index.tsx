@@ -137,6 +137,7 @@ export default function HomeScreen() {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [dealerBranding, setDealerBranding] = useState<DealerBranding | null>(null);
+  const [stickerDetails, setStickerDetails] = useState<any>(null);
   useEffect(() => {
     let alive = true;
     fetchDealerBranding(user?.dealer_slug).then((b) => { if (alive) setDealerBranding(b); });
@@ -667,6 +668,27 @@ export default function HomeScreen() {
     };
     loadLeaseData();
   }, []);
+
+  // Fiche technique du véhicule (Window Sticker) pour la soumission imprimée : lue dès que le NIV est connu.
+  const stickerVin = selectedInventory?.vin || (manualVin && manualVin.length === 17 ? manualVin : '');
+  useEffect(() => {
+    setStickerDetails(null);
+    if (!stickerVin || stickerVin.length !== 17) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const res = await axios.get(`${API_URL}/api/window-sticker/${stickerVin}/details`, {
+          headers: { Authorization: `Bearer ${token}` }, timeout: 30000,
+        });
+        if (!cancelled && res.data?.success && res.data.details) setStickerDetails(res.data.details);
+      } catch (e) {
+        // Sans fiche, la soumission s'imprime comme avant.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [stickerVin]);
 
   // Check for submission state to restore (from CRM "Ouvrir" button).
   // À chaque retour sur l'écran, pas seulement à son premier affichage : l'onglet Calcul reste en
@@ -1720,7 +1742,7 @@ export default function HomeScreen() {
           @page { size: letter portrait; margin: 9mm; }
           * { box-sizing: border-box; margin: 0; padding: 0; }
           html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          body { font-family: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 12px; line-height: 1.35; color: #10182B; background: #E9ECF1; font-variant-numeric: tabular-nums; }
+          body { font-family: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; line-height: 1.35; color: #0B1220; background: #E9ECF1; font-variant-numeric: tabular-nums; }
           .sheet { width: 7.75in; margin: 16px auto; background: #fff; padding: 22px 24px 16px; }
           .band { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding-bottom: 10px; border-bottom: 3px solid #10182B; }
           .dealer { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1 1 auto; }
@@ -1728,39 +1750,39 @@ export default function HomeScreen() {
           .dealer img { height: 54px; max-width: 2.5in; object-fit: contain; flex-shrink: 0; }
           .dealer .dn { font-size: 21px; font-weight: 700; line-height: 1.12; letter-spacing: -0.3px; }
           .dealer .da { font-size: 13px; font-weight: 700; margin-top: 4px; white-space: nowrap; }
-          .dealer .dp { font-size: 12px; color: #5B6577; margin-top: 1px; white-space: nowrap; }
+          .dealer .dp { font-size: 12px; color: #333D4F; margin-top: 1px; white-space: nowrap; }
           .etv { display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 3px; text-align: right; flex-shrink: 0; }
           .etv img { height: 54px; width: auto; border-radius: 5px; display: block; }
           .etv .by b { margin-right: 4px; }
-          .etv .by { font-size: 10.5px; color: #5B6577; line-height: 1.3; }
+          .etv .by { font-size: 10.5px; color: #333D4F; line-height: 1.3; }
           .etv .by b { display: block; font-size: 13px; color: #10182B; }
           .top { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px; }
           .top h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.1; }
-          .top .meta { text-align: right; font-size: 11px; color: #5B6577; }
+          .top .meta { text-align: right; font-size: 11px; color: #333D4F; }
           .hero { display: flex; gap: 14px; margin-top: 12px; }
           .veh { flex: 1.25; }
-          .veh .make { font-size: 11px; color: #5B6577; }
-          .veh .model { font-size: 19px; font-weight: 700; line-height: 1.15; margin: 1px 0 4px; }
-          .veh .ids { font-size: 10.5px; color: #5B6577; font-family: Menlo, Consolas, monospace; }
+          .veh .make { font-size: 11px; color: #333D4F; }
+          .veh .model { font-size: 21px; font-weight: 700; line-height: 1.15; margin: 1px 0 4px; }
+          .veh .ids { font-size: 10.5px; color: #333D4F; font-family: Menlo, Consolas, monospace; }
           .veh .price { font-size: 15px; font-weight: 700; margin-top: 4px; }
           .who { flex: 0.9; border-left: 1px solid #D9DEE7; padding-left: 14px; font-size: 11.5px; }
-          .who .t, .h2 { font-size: 10.5px; font-weight: 700; color: #5B6577; margin-bottom: 3px; }
+          .who .t, .h2 { font-size: 10.5px; font-weight: 700; color: #333D4F; margin-bottom: 3px; }
           .who .name { font-size: 14px; font-weight: 700; }
           .who .blank { border-bottom: 1px solid #9AA3B1; height: 17px; margin-bottom: 3px; }
           .chosen-box { flex: 1; background: #10182B; color: #fff; border-radius: 6px; padding: 10px 14px; }
-          .chosen-box .t { font-size: 10.5px; color: #B9C2D0; }
-          .chosen-box .amt { font-size: 29px; font-weight: 700; line-height: 1.1; letter-spacing: -0.5px; }
-          .chosen-box .d { font-size: 11px; color: #D7DDE6; }
+          .chosen-box .t { font-size: 11.5px; color: #E3E8F0; }
+          .chosen-box .amt { font-size: 34px; font-weight: 700; line-height: 1.1; letter-spacing: -0.5px; }
+          .chosen-box .d { font-size: 12px; color: #F0F3F8; }
           .cols { display: flex; gap: 16px; margin-top: 12px; }
           .cols > div { flex: 1; min-width: 0; }
           .h2 { border-bottom: 1px solid #10182B; padding-bottom: 2px; margin-bottom: 4px; }
           table { width: 100%; border-collapse: collapse; }
-          .det td { padding: 2.5px 0; border-bottom: 1px solid #EEF0F4; font-size: 11.5px; }
+          .det td { padding: 3px 0; border-bottom: 1px solid #D9DEE7; font-size: 12.5px; }
           .det td:last-child, .mini td:last-child { text-align: right; font-weight: 600; white-space: nowrap; }
           .good { color: #0E7C4A; }
           .det tr.grand td { font-size: 13.5px; font-weight: 700; padding: 5px 0 4px; border-top: 2px solid #10182B; border-bottom: 2px solid #10182B; }
-          .rates th, .rates td { text-align: center; padding: 3px 2px; font-size: 10.5px; border-bottom: 1px solid #EEF0F4; }
-          .rates th { font-weight: 700; color: #5B6577; }
+          .rates th, .rates td { text-align: center; padding: 3px 2px; font-size: 11.5px; border-bottom: 1px solid #D9DEE7; }
+          .rates th { font-weight: 700; color: #333D4F; }
           .rates td.lbl { text-align: left; font-weight: 700; }
           .rates .sel { background: #10182B; color: #fff; font-weight: 700; }
           .cards { display: flex; gap: 10px; margin-top: 6px; }
@@ -1773,21 +1795,24 @@ export default function HomeScreen() {
           .card-name { font-size: 12.5px; font-weight: 700; }
           .tag { font-size: 9.5px; font-weight: 700; color: #fff; background: #0E7C4A; border-radius: 3px; padding: 1px 6px; white-space: nowrap; }
           .card.lease .tag { background: #B4690E; }
-          .card-sub { font-size: 10px; color: #5B6577; }
-          .pay { font-size: 20px; font-weight: 700; margin: 3px 0 3px; letter-spacing: -0.3px; white-space: nowrap; line-height: 1.15; }
-          .pay small { display: block; font-size: 10px; font-weight: 400; color: #5B6577; letter-spacing: 0; }
-          .mini td { padding: 1.5px 0; font-size: 10.5px; border-top: 1px solid #EEF0F4; }
+          .card-sub { font-size: 11px; color: #333D4F; }
+          .pay { font-size: 22px; font-weight: 700; margin: 3px 0 3px; letter-spacing: -0.3px; white-space: nowrap; line-height: 1.15; }
+          .pay small { display: block; font-size: 11px; font-weight: 400; color: #333D4F; letter-spacing: 0; }
+          .mini td { padding: 2px 0; font-size: 11.5px; border-top: 1px solid #D9DEE7; }
           .na { display: flex; align-items: center; justify-content: center; text-align: center; color: #9AA3B1; font-size: 11px; background: #F6F7F9; }
           .lease-line { display: flex; gap: 18px; font-size: 11.5px; margin: 2px 0 0; }
           .lease-line b { font-weight: 700; }
           .versus { display: flex; margin-top: 10px; border: 1px solid #10182B; border-radius: 4px; }
           .versus > div { flex: 1; padding: 6px 12px; }
           .versus > div + div { border-left: 1px solid #10182B; }
-          .versus .t { font-size: 10.5px; color: #5B6577; }
+          .versus .t { font-size: 10.5px; color: #333D4F; }
           .versus .v { font-size: 17px; font-weight: 700; }
-          .versus .v small { font-size: 10px; font-weight: 400; color: #5B6577; margin-left: 5px; }
+          .versus .v small { font-size: 10px; font-weight: 400; color: #333D4F; margin-left: 5px; }
           .note { font-size: 10.5px; color: #7A4B00; background: #FFF6DF; border-left: 3px solid #B4690E; padding: 3px 8px; margin-top: 6px; }
-          .foot { margin-top: 10px; border-top: 1px solid #D9DEE7; padding-top: 5px; font-size: 7.5px; line-height: 1.3; color: #7B8494; }
+          .foot { margin-top: 10px; border-top: 1px solid #9AA3B1; padding-top: 5px; font-size: 8.5px; line-height: 1.3; color: #3E4757; }
+          .eq { list-style: none; columns: 2; column-gap: 14px; font-size: 12px; }
+          .eq li { padding: 1.5px 0 1.5px 14px; position: relative; break-inside: avoid; }
+          .eq li::before { content: '✓'; position: absolute; left: 0; color: #0E7C4A; font-weight: 700; }
           .back-btn { display: block; margin: 14px auto; padding: 10px 26px; background: #10182B; color: #fff; border: 0; border-radius: 6px; font-size: 15px; font-weight: 700; cursor: pointer; }
           @media print {
             body { background: #fff; }
@@ -1877,6 +1902,32 @@ export default function HomeScreen() {
             </div>
           </div>
 
+          ${(() => {
+            const sd: any = stickerDetails;
+            if (!sd) return '';
+            const items: string[] = (sd.highlights || []).slice(0, hasLeasePrint ? 8 : 16);
+            const opts: any[] = [...(sd.options || [])];
+            const col1 = opts.map((o: any) => `<tr><td>${esc(o.label)}</td><td>${fmt(o.price)} $</td></tr>`).join('')
+              + (sd.unlabeled_options_total ? `<tr><td>${F ? "Autres options d'usine" : 'Other factory options'}</td><td>${fmt(sd.unlabeled_options_total)} $</td></tr>` : '');
+            const fuel = sd.fuel_l100;
+            const spec: string[] = [];
+            if (fuel?.combined) spec.push(`<tr><td>${F ? 'Consommation' : 'Fuel use'}</td><td>${String(fuel.combined).replace('.', ',')} L/100 km</td></tr>`);
+            if (fuel?.city && fuel?.highway) spec.push(`<tr><td>${F ? 'Ville / route' : 'City / highway'}</td><td>${String(fuel.city).replace('.', ',')} / ${String(fuel.highway).replace('.', ',')}</td></tr>`);
+            if (sd.fuel_annual_cost) spec.push(`<tr><td>${F ? 'Coût annuel en carburant' : 'Annual fuel cost'}</td><td>${fmt(sd.fuel_annual_cost)} $</td></tr>`);
+            if (sd.powertrain_warranty) spec.push(`<tr><td>${F ? 'Garantie groupe motopropulseur' : 'Powertrain warranty'}</td><td>${sd.powertrain_warranty.years} ${F ? 'ans' : 'yr'} / ${fmt(sd.powertrain_warranty.km)} km</td></tr>`);
+            if (!items.length && !col1 && !spec.length) return '';
+            return `<div class="cols tech">
+              <div>
+                <div class="h2">${F ? 'Équipement principal' : 'Key equipment'}</div>
+                <ul class="eq">${items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>
+              </div>
+              <div>
+                ${col1 ? `<div class="h2">${F ? "Options d'usine" : 'Factory options'}</div><table class="det">${col1}</table>` : ''}
+                ${spec.length ? `<div class="h2" style="margin-top:8px;">${F ? 'Fiche technique' : 'Specifications'}</div><table class="det">${spec.join('')}</table>` : ''}
+              </div>
+            </div>`;
+          })()}
+
           ${afterTaxRebates.map(r => `<div class="note">${esc(r.label)} : ${fmt(r.amount)} $ ${F ? 'déduit après taxes, à part du comptant du client' : 'deducted after tax, separate from the customer\'s cash down'}</div>`).join('')}
 
           ${hasLeasePrint ? `
@@ -1917,7 +1968,7 @@ export default function HomeScreen() {
             var fit = function () {
               var s = document.getElementById('sheet'); if (!s) return;
               s.style.zoom = 1;
-              var max = 980, h = s.scrollHeight;
+              var max = 1010, h = s.scrollHeight;
               if (h > max) s.style.zoom = (max / h).toFixed(3);
             };
             window.addEventListener('beforeprint', fit); window.addEventListener('load', fit); fit();
