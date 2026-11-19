@@ -87,9 +87,23 @@ async def get_sci_residuals(month: int = None, year: int = None):
 
     return data
 
+async def _require_veille(authorization, x_admin_password, x_veille_key):
+    """Veille TAQ : la clé dédiée (empreinte SHA-256 dans TAQ_VEILLE_KEY_SHA256) ou l'accès administrateur."""
+    import hashlib
+    import hmac
+    import os
+    expected = (os.environ.get("TAQ_VEILLE_KEY_SHA256") or "").strip().lower()
+    key = (x_veille_key or "").strip()
+    if expected and len(key) >= 32 and hmac.compare_digest(hashlib.sha256(key.encode()).hexdigest(), expected):
+        return None
+    from dependencies import require_admin_or_password
+    return await require_admin_or_password(authorization, x_admin_password or "")
+
+
 @router.post("/sci/residual-overrides")
 async def update_residual_overrides(payload: dict = Body(...), dry_run: bool = False,
-                                    authorization: str = Header(None), x_admin_password: str = Header("")):
+                                    authorization: str = Header(None), x_admin_password: str = Header(""),
+                                    x_veille_key: str = Header("")):
     """Met à jour les résiduels TAQ du mois (programme de relevé sur le Mac, ou administrateur).
 
     Tout ou rien : le relevé est validé contre le guide du MÊME mois (versions connues, 9 termes, résiduels
@@ -101,7 +115,7 @@ async def update_residual_overrides(payload: dict = Body(...), dry_run: bool = F
     from dependencies import require_admin_or_password
     from services.residual_overrides import FILENAME, validate_update
 
-    await require_admin_or_password(authorization, x_admin_password or "")
+    await _require_veille(authorization, x_admin_password, x_veille_key)
     month = re.fullmatch(r"(\d{4})-(\d{2})(?:-\d{2})?", str(payload.get("effective_from", "")))
     if not month:
         raise HTTPException(status_code=422, detail="effective_from attendu (AAAA-MM-01).")
@@ -135,10 +149,11 @@ async def update_residual_overrides(payload: dict = Body(...), dry_run: bool = F
 
 
 @router.get("/sci/taq-check")
-async def taq_check_state(authorization: str = Header(None), x_admin_password: str = Header("")):
+async def taq_check_state(authorization: str = Header(None), x_admin_password: str = Header(""),
+                                    x_veille_key: str = Header("")):
     """Demande de comparaison avec TAQ en attente (lue par le programme du Mac)."""
     from dependencies import require_admin_or_password
-    await require_admin_or_password(authorization, x_admin_password or "")
+    await _require_veille(authorization, x_admin_password, x_veille_key)
     pending = await db["taq_checks"].find_one({"_id": "pending"}, {"_id": 0})
     last = await db["taq_checks"].find_one({"_id": "last_done"}, {"_id": 0})
     return {"pending": bool(pending and pending.get("status") == "pending"), "request": pending, "last_done": last}
@@ -146,21 +161,21 @@ async def taq_check_state(authorization: str = Header(None), x_admin_password: s
 
 @router.post("/sci/taq-check/request")
 async def taq_check_request(reason: str = "Demande manuelle", authorization: str = Header(None),
-                            x_admin_password: str = Header("")):
+                            x_admin_password: str = Header(""), x_veille_key: str = Header("")):
     from dependencies import require_admin_or_password
     from services.data_store import request_taq_check
-    await require_admin_or_password(authorization, x_admin_password or "")
+    await _require_veille(authorization, x_admin_password, x_veille_key)
     await request_taq_check(db, reason[:200])
     return {"ok": True}
 
 
 @router.post("/sci/taq-check/done")
 async def taq_check_done(payload: dict = Body(default={}), authorization: str = Header(None),
-                         x_admin_password: str = Header("")):
+                         x_admin_password: str = Header(""), x_veille_key: str = Header("")):
     """Le programme du Mac a fini : la demande est close et le résultat gardé."""
     from datetime import datetime
     from dependencies import require_admin_or_password
-    await require_admin_or_password(authorization, x_admin_password or "")
+    await _require_veille(authorization, x_admin_password, x_veille_key)
     done = {"finished_at": datetime.utcnow().isoformat(), "summary": str(payload.get("summary", ""))[:2000],
             "ok": bool(payload.get("ok"))}
     await db["taq_checks"].update_one({"_id": "pending"}, {"$set": {"status": "done"}})
