@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Body, HTTPException, Header
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
+import re
 import uuid
 import json
 from database import db, logger
@@ -434,14 +435,14 @@ async def apply_shared_model_codes(payload: dict = Body(...), dry_run: bool = Fa
     La correction est gardée dans inventory_overrides : la synchronisation du site ne l'écrase pas.
     """
     from routers.sci import _require_veille
-    from services.shared_inventory import plan_code_updates
+    from services.shared_inventory import plan_code_updates, is_dealerconnect_code
     await _require_veille(authorization, x_admin_password, x_veille_key)
     entries = payload.get("codes")
     if not isinstance(entries, list) or not entries or len(entries) > 500:
         raise HTTPException(status_code=422, detail="codes : liste de 1 à 500 entrées attendue")
     shared = await db.inventory.find({"owner_id": SHARED_OWNER}, {"_id": 0}).to_list(5000)
     await _apply_overrides(shared)
-    plan = plan_code_updates(shared, entries, is_model_code)
+    plan = plan_code_updates(shared, entries, is_dealerconnect_code)
     if not dry_run:
         for change in plan["changes"]:
             field = change["field"]
