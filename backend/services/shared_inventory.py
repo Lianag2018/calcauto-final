@@ -67,6 +67,14 @@ def calc_price(vehicle: Dict[str, Any]) -> Dict[str, Any]:
     return {"calc_price": max(msrp, asking, pdsf), "pdsf_confirmed": False}
 
 
+_DEALERCONNECT_CODE = re.compile(r"[A-Z][A-Z0-9]{3}[0-9]{2}")
+
+
+def is_dealerconnect_code(text: str) -> bool:
+    """Code de modèle tel que DealerConnect l'affiche (D28L92, DT6H98, JLJL72, WDEH75…) : 6 caractères."""
+    return bool(_DEALERCONNECT_CODE.fullmatch((text or "").upper().strip()))
+
+
 _COLOR = re.compile(r"[A-Z0-9]{2,3} [A-Z0-9]{2}")
 
 

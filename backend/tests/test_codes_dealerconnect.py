@@ -45,3 +45,11 @@ def test_couleur_appliquee_et_refusee():
 def test_code_et_couleur_ensemble():
     p = _plan([{"stock_no": "46260", "vin": VIN, "model_code": "WDEH75", "color": "PFP X9"}])
     assert sorted(c["field"] for c in p["changes"]) == ["color", "model_code"]
+
+
+def test_forme_dealerconnect_ram_3500():
+    from services.shared_inventory import is_dealerconnect_code as _is_dealerconnect_code
+    for good in ("D28L92", "D28H92", "DJ7X91", "DT6H98", "JLJL72", "WDEH75", "FGEP24"):
+        assert _is_dealerconnect_code(good), good
+    for bad in ("", "D28L9", "D28L922", "pas un code", "28L92D"):
+        assert not _is_dealerconnect_code(bad), bad
