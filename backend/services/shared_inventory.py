@@ -1,4 +1,5 @@
 """Inventaire partagé du concessionnaire, recopié du site par Kenbot."""
+import re
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
@@ -66,11 +67,15 @@ def calc_price(vehicle: Dict[str, Any]) -> Dict[str, Any]:
     return {"calc_price": max(msrp, asking, pdsf), "pdsf_confirmed": False}
 
 
+_COLOR = re.compile(r"[A-Z0-9]{2,3} [A-Z0-9]{2}")
+
+
 def plan_code_updates(shared_vehicles: List[Dict[str, Any]], entries: List[Dict[str, Any]], is_code) -> Dict[str, Any]:
-    """Prépare les corrections de code de modèle (relevé DealerConnect) sans rien écrire.
+    """Prépare les corrections de fiche (code de modèle, couleur) d'après DealerConnect, sans rien écrire.
 
     Une entrée est retenue seulement si le numéro de stock ET le NIV complet correspondent à une fiche
-    partagée et si le code a la forme d'un code de modèle ; le reste est refusé avec sa raison.
+    partagée et si chaque valeur a la bonne forme (code de modèle ; couleur « PW7 X9 » = peinture + intérieur) ;
+    le reste est refusé avec sa raison. Chaque changement porte sur un seul champ.
     """
     by_stock = {str(v.get("stock_no")): v for v in shared_vehicles if v.get("stock_no")}
     changes, same, refused = [], 0, []
@@ -78,19 +83,34 @@ def plan_code_updates(shared_vehicles: List[Dict[str, Any]], entries: List[Dict[
     for entry in entries or []:
         stock = str(entry.get("stock_no") or "").strip()
         vin = str(entry.get("vin") or "").strip().upper()
-        code = str(entry.get("model_code") or "").strip().upper()
         vehicle = by_stock.get(stock)
         if not stock or stock in seen:
             refused.append({"stock_no": stock, "reason": "numéro de stock manquant ou répété"})
-        elif not is_code(code):
-            refused.append({"stock_no": stock, "reason": f"code {code or 'vide'} n'a pas la forme d'un code de modèle"})
-        elif not vehicle:
-            refused.append({"stock_no": stock, "reason": "fiche partagée introuvable"})
-        elif len(vin) != 17 or str(vehicle.get("vin") or "").upper() != vin:
-            refused.append({"stock_no": stock, "reason": "NIV différent de la fiche"})
-        elif str(vehicle.get("model_code") or "").upper() == code:
-            same += 1
-        else:
-            changes.append({"stock_no": stock, "vin": vin, "old": vehicle.get("model_code") or "", "new": code})
+            continue
         seen.add(stock)
+        if not vehicle:
+            refused.append({"stock_no": stock, "reason": "fiche partagée introuvable"})
+            continue
+        if len(vin) != 17 or str(vehicle.get("vin") or "").upper() != vin:
+            refused.append({"stock_no": stock, "reason": "NIV différent de la fiche"})
+            continue
+        wanted = {}
+        code = str(entry.get("model_code") or "").strip().upper()
+        color = str(entry.get("color") or "").strip().upper()
+        if "model_code" in entry:
+            if is_code(code):
+                wanted["model_code"] = code
+            else:
+                refused.append({"stock_no": stock, "reason": f"code {code or 'vide'} n'a pas la forme d'un code de modèle"})
+        if "color" in entry:
+            if _COLOR.fullmatch(color):
+                wanted["color"] = color
+            else:
+                refused.append({"stock_no": stock, "reason": f"couleur {color or 'vide'} n'a pas la forme « PW7 X9 »"})
+        for field, value in wanted.items():
+            old = str(vehicle.get(field) or "")
+            if old.upper() == value:
+                same += 1
+            else:
+                changes.append({"stock_no": stock, "vin": vin, "field": field, "old": old, "new": value})
     return {"changes": changes, "unchanged": same, "refused": refused}

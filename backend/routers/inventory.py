@@ -427,9 +427,9 @@ async def create_inventory_bulk(vehicles: List[InventoryCreate], authorization: 
 async def apply_shared_model_codes(payload: dict = Body(...), dry_run: bool = False,
                                    authorization: Optional[str] = Header(None),
                                    x_admin_password: str = Header(""), x_veille_key: str = Header("")):
-    """Corrige les codes de modèle de l'inventaire Kennebec partagé d'après DealerConnect.
+    """Corrige le code de modèle et la couleur de l'inventaire Kennebec partagé d'après DealerConnect.
 
-    Chaque entrée : {stock_no, vin (17), model_code}. Tout ce qui ne correspond pas exactement (stock + NIV) ou
+    Chaque entrée : {stock_no, vin (17), model_code et/ou color}. Tout ce qui ne correspond pas exactement (stock + NIV) ou
     n'a pas la forme d'un code est refusé et rapporté ; le reste est appliqué (ou seulement validé si dry_run).
     La correction est gardée dans inventory_overrides : la synchronisation du site ne l'écrase pas.
     """
@@ -444,11 +444,12 @@ async def apply_shared_model_codes(payload: dict = Body(...), dry_run: bool = Fa
     plan = plan_code_updates(shared, entries, is_model_code)
     if not dry_run:
         for change in plan["changes"]:
+            field = change["field"]
             await db.inventory.update_one({"stock_no": change["stock_no"], "owner_id": SHARED_OWNER},
-                                          {"$set": {"model_code": change["new"], "updated_at": datetime.utcnow()}})
+                                          {"$set": {field: change["new"], "updated_at": datetime.utcnow()}})
             await db.inventory_overrides.update_one(
                 {"stock_no": change["stock_no"]},
-                {"$set": {"stock_no": change["stock_no"], "vin": change["vin"], "fields.model_code": change["new"],
+                {"$set": {"stock_no": change["stock_no"], "vin": change["vin"], f"fields.{field}": change["new"],
                           "updated_by": "relevé DealerConnect", "updated_at": datetime.utcnow()}}, upsert=True)
     return {"ok": True, "written": not dry_run, "changed": len(plan["changes"]), "unchanged": plan["unchanged"],
             "refused": plan["refused"], "changes": plan["changes"][:200]}
