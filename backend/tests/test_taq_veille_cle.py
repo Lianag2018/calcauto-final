@@ -29,6 +29,7 @@ def test_mauvaise_cle_refusee(monkeypatch, bad):
     assert err.value.status_code == 401
 
 
-def test_sans_empreinte_configuree_la_cle_ne_passe_pas(monkeypatch):
+def test_sans_variable_la_cle_de_test_ne_passe_pas(monkeypatch):
+    # sans variable d'environnement, seule l'empreinte codée compte : la clé de test n'y correspond pas
     with pytest.raises(HTTPException):
         _run(KEY, monkeypatch, env=False)

@@ -87,12 +87,17 @@ async def get_sci_residuals(month: int = None, year: int = None):
 
     return data
 
+# Empreinte (SHA-256) de la clé du programme de veille du Mac ; la clé elle-même n'est nulle part dans le code.
+# Pour la révoquer : remplacer cette valeur ou définir TAQ_VEILLE_KEY_SHA256 à une autre empreinte.
+_VEILLE_KEY_SHA256 = "ff1cfb401ed793eb52d4007506fd7e395049640be1c43b174f1832099574c286"
+
+
 async def _require_veille(authorization, x_admin_password, x_veille_key):
     """Veille TAQ : la clé dédiée (empreinte SHA-256 dans TAQ_VEILLE_KEY_SHA256) ou l'accès administrateur."""
     import hashlib
     import hmac
     import os
-    expected = (os.environ.get("TAQ_VEILLE_KEY_SHA256") or "").strip().lower()
+    expected = (os.environ.get("TAQ_VEILLE_KEY_SHA256") or _VEILLE_KEY_SHA256).strip().lower()
     key = (x_veille_key or "").strip()
     if expected and len(key) >= 32 and hmac.compare_digest(hashlib.sha256(key.encode()).hexdigest(), expected):
         return None
