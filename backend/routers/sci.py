@@ -134,6 +134,40 @@ async def update_residual_overrides(payload: dict = Body(...), dry_run: bool = F
     return {"ok": True, "written": True, **summary}
 
 
+@router.get("/sci/taq-check")
+async def taq_check_state(authorization: str = Header(None), x_admin_password: str = Header("")):
+    """Demande de comparaison avec TAQ en attente (lue par le programme du Mac)."""
+    from dependencies import require_admin_or_password
+    await require_admin_or_password(authorization, x_admin_password or "")
+    pending = await db["taq_checks"].find_one({"_id": "pending"}, {"_id": 0})
+    last = await db["taq_checks"].find_one({"_id": "last_done"}, {"_id": 0})
+    return {"pending": bool(pending and pending.get("status") == "pending"), "request": pending, "last_done": last}
+
+
+@router.post("/sci/taq-check/request")
+async def taq_check_request(reason: str = "Demande manuelle", authorization: str = Header(None),
+                            x_admin_password: str = Header("")):
+    from dependencies import require_admin_or_password
+    from services.data_store import request_taq_check
+    await require_admin_or_password(authorization, x_admin_password or "")
+    await request_taq_check(db, reason[:200])
+    return {"ok": True}
+
+
+@router.post("/sci/taq-check/done")
+async def taq_check_done(payload: dict = Body(default={}), authorization: str = Header(None),
+                         x_admin_password: str = Header("")):
+    """Le programme du Mac a fini : la demande est close et le résultat gardé."""
+    from datetime import datetime
+    from dependencies import require_admin_or_password
+    await require_admin_or_password(authorization, x_admin_password or "")
+    done = {"finished_at": datetime.utcnow().isoformat(), "summary": str(payload.get("summary", ""))[:2000],
+            "ok": bool(payload.get("ok"))}
+    await db["taq_checks"].update_one({"_id": "pending"}, {"$set": {"status": "done"}})
+    await db["taq_checks"].update_one({"_id": "last_done"}, {"$set": done}, upsert=True)
+    return {"ok": True}
+
+
 @router.get("/sci/lease-rates")
 async def get_sci_lease_rates(month: int = None, year: int = None):
     """Retourne les taux de location SCI et lease cash. month/year optionnels pour historique."""

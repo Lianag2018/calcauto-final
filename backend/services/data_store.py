@@ -17,6 +17,8 @@ from typing import Dict
 PREFIXES = ("sci_residuals_", "sci_lease_rates_", "km_adjustments_", "residual_overrides_",
             "key_incentives_", "program_meta_")
 COLLECTION = "data_files"
+# Un nouveau guide ou de nouveaux taux SCI (PDF déposé dans l'appli) demandent une comparaison avec TAQ.
+TAQ_TRIGGERS = ("sci_residuals_", "sci_lease_rates_")
 _known: Dict[str, str] = {}
 
 
@@ -56,6 +58,7 @@ async def save_changed_files(db, data_dir: Path) -> int:
     """Disque -> base pour les fichiers nouveaux ou modifiés depuis le
     dernier passage. Retourne le nombre de fichiers copiés."""
     saved = 0
+    triggered = []
     for path in _tracked(data_dir):
         content = path.read_text(encoding="utf-8")
         digest = _sha(content)
@@ -69,7 +72,22 @@ async def save_changed_files(db, data_dir: Path) -> int:
         )
         _known[path.name] = digest
         saved += 1
+        if path.name.startswith(TAQ_TRIGGERS):
+            triggered.append(path.name)
+    if triggered:
+        await request_taq_check(db, "Nouveau guide SCI déposé : " + ", ".join(triggered))
     return saved
+
+
+async def request_taq_check(db, reason: str) -> None:
+    """Laisse une demande de comparaison avec TAQ ; le programme du Mac la prend. Ne lève jamais."""
+    try:
+        await db["taq_checks"].update_one(
+            {"_id": "pending"},
+            {"$set": {"status": "pending", "reason": reason, "requested_at": datetime.utcnow().isoformat()}},
+            upsert=True)
+    except Exception:
+        pass
 
 
 async def watch(db, data_dir: Path, logger, interval: float = 15.0) -> None:
