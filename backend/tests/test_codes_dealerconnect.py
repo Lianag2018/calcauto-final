@@ -13,7 +13,7 @@ def _plan(entries):
 
 def test_changement_applique():
     p = _plan([{"stock_no": "46260", "vin": VIN, "model_code": "wdeh75"}])
-    assert p["changes"] == [{"stock_no": "46260", "vin": VIN, "old": "WDEE75", "new": "WDEH75"}]
+    assert p["changes"] == [{"stock_no": "46260", "vin": VIN, "field": "model_code", "old": "WDEE75", "new": "WDEH75"}]
     assert not p["refused"]
 
 
@@ -33,3 +33,15 @@ def test_stock_repete_refuse():
     p = _plan([{"stock_no": "46260", "vin": VIN, "model_code": "WDEH75"},
                {"stock_no": "46260", "vin": VIN, "model_code": "WDEE75"}])
     assert len(p["changes"]) == 1 and len(p["refused"]) == 1
+
+
+def test_couleur_appliquee_et_refusee():
+    ok = _plan([{"stock_no": "46260", "vin": VIN, "color": "pw7 x9"}])
+    assert ok["changes"] == [{"stock_no": "46260", "vin": VIN, "field": "color", "old": "", "new": "PW7 X9"}]
+    bad = _plan([{"stock_no": "46260", "vin": VIN, "color": "blanc"}])
+    assert not bad["changes"] and len(bad["refused"]) == 1
+
+
+def test_code_et_couleur_ensemble():
+    p = _plan([{"stock_no": "46260", "vin": VIN, "model_code": "WDEH75", "color": "PFP X9"}])
+    assert sorted(c["field"] for c in p["changes"]) == ["color", "model_code"]
