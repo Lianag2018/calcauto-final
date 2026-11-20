@@ -250,3 +250,36 @@ def test_une_autre_concession_ne_recoit_rien(monkeypatch):
 @pytest.mark.parametrize("filters", [{"type": "occasion"}, {"status": "vendu"}, {"year": 2026}, {"brand": "Jeep"}])
 def test_les_filtres_de_la_demande_sont_respectes(monkeypatch, filters):
     assert _add(monkeypatch, True, site=[], **filters) == []
+
+
+# ---------- le site donne le numéro de stock ----------
+
+def test_des_que_le_site_affiche_le_vehicule_sa_fiche_prend_le_numero_de_stock(monkeypatch):
+    """Règle de Daniel (20 nov. 2026) : une fiche sans numéro de stock dont le NIV apparaît
+    sur le site avec un numéro de stock est remplacée par la fiche du site, le jour même.
+    La recopie de nuit du site écrit le véhicule dans `inventory` ; rien d'autre à faire."""
+    rows = plan([entry(1), entry(2)])["vehicles"]
+    documents = [{**r, "owner_id": SHARED_OWNER} for r in rows]
+
+    async def reference():
+        return REFERENCE
+
+    monkeypatch.setattr(inventory, "sees_shared_inventory", lambda _user: True)
+    monkeypatch.setattr(inventory, "_reference_codes", reference)
+    filters = {"type": None, "status": None, "year": None, "brand": None}
+
+    # Avant : le site ne connaît pas le véhicule 2.
+    monkeypatch.setattr(inventory, "db", _Db(dealerconnect=documents, site=[{"vin": vin(1)}]))
+    before = [{"stock_no": "47043", "vin": vin(1), "owner_id": SHARED_OWNER}]
+    asyncio.run(inventory._add_dealerconnect(before, {"id": "u1"}, **filters))
+    assert [v["stock_no"] for v in before] == ["47043", f"DC-{vin(2)[-8:]}"]
+
+    # Après la recopie du site : même NIV (écrit en minuscules, avec un espace), numéro 47045.
+    scraped = f" {vin(2).lower()} "
+    monkeypatch.setattr(inventory, "db", _Db(dealerconnect=documents, site=[{"vin": vin(1)}, {"vin": scraped}]))
+    after = [{"stock_no": "47043", "vin": vin(1), "owner_id": SHARED_OWNER},
+             {"stock_no": "47045", "vin": scraped, "owner_id": SHARED_OWNER, "color": ""}]
+    asyncio.run(inventory._add_dealerconnect(after, {"id": "u1"}, **filters))
+    assert [v["stock_no"] for v in after] == ["47043", "47045"]
+    assert after[1]["dc_stage"] == dc.EN_STOCK and after[1]["color"] == "PR6 X9"
+    assert not after[1].get("stock_pending")

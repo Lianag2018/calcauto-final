@@ -576,6 +576,16 @@ en route ; `D` a `I` = en construction ; `B`, `C` = commande ; tout autre code =
 couleur sur la fiche, et « Stock a venir » a la place du repere `DC-…`, qui n'est jamais
 imprime sur une soumission.
 
+Regle « le site donne le numero de stock » : chaque nuit (3 h 30 UTC), la tache
+`kenbot-inventory-sync-daily` de Kenbot relit le site de la concession et recopie chaque
+vehicule (NIV + numero de stock) dans `inventory`. Des qu'un NIV de la liste DealerConnect
+s'y trouve, la fiche « Stock a venir » disparait et la fiche du site, avec son vrai numero
+de stock, la remplace en gardant l'etape et la couleur. Aucune ecriture de correction :
+le rapprochement se fait par NIV a chaque lecture de l'inventaire. Verrouille par
+`test_des_que_le_site_affiche_le_vehicule_sa_fiche_prend_le_numero_de_stock`.
+Limite : un vehicule mis sur le site le jour n'est rapproche qu'apres la recopie de nuit,
+ou apres une recopie lancee a la main dans Kenbot (« Inventaire unifie »).
+
 Recherche directe : en haut du calculateur, un champ cherche dans tout l'inventaire charge
 (neuf et occasion) par numero de stock, fin du NIV ou mots du modele
 (`searchInventory` dans `frontend/utils/vehicleCard.ts`) et ouvre le calcul sur le vehicule

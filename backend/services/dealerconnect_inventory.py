@@ -128,7 +128,7 @@ def attach(vehicles: List[Dict[str, Any]], rows_by_vin: Dict[str, Dict[str, Any]
     """Ajoute aux fiches déjà à l'inventaire ce que DealerConnect en dit : étape, statut,
     nom de la couleur ; et le code ou la couleur quand la fiche n'en a pas."""
     for vehicle in vehicles:
-        row = rows_by_vin.get(str(vehicle.get("vin") or "").upper())
+        row = rows_by_vin.get(str(vehicle.get("vin") or "").strip().upper())
         if not row:
             continue
         vehicle["dc_status"] = row.get("status") or ""
@@ -151,7 +151,7 @@ def cards(rows: Iterable[Dict[str, Any]], known_vins: Iterable[str], owner_id: s
     Le numéro de stock n'existe pas dans DealerConnect : la fiche porte un repère
     « DC-<8 derniers du NIV> » et `stock_pending`.
     """
-    known = {str(v or "").upper() for v in known_vins}
+    known = {str(v or "").strip().upper() for v in known_vins}
     out = []
     for row in rows:
         vin = str(row.get("vin") or "").upper()
