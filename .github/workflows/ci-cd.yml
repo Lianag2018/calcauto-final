@@ -28,13 +28,13 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install pytest pdfplumber pandas openpyxl
+        run: pip install -r requirements.txt pytest
 
-      - name: Run unit tests
-        run: pytest tests/test_ci_unit.py tests/test_codes_par_annee.py tests/test_soumission_pdf_courriel.py tests/test_suivis_2_7_30.py tests/test_rapport_directeur.py tests/test_sci_lease_taq.py -v --tb=short
-
-      - name: Run post-import validation tests
-        run: pytest tests/test_post_import.py -v --tb=short
+      # Tous les fichiers de test, sans liste à la main. Le tri (hors réseau,
+      # intégration, quarantaine) est dans tests/conftest.py ; les tests
+      # d'intégration ne partent jamais d'ici.
+      - name: Run all offline tests
+        run: pytest tests/ -v --tb=short -rsx
 
   deploy-render:
     needs: test-backend
