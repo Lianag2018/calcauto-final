@@ -1053,3 +1053,6 @@ android-sdk/ -e
 # Environment files
 *.env
 *.env.*
+
+# Caches de build : jamais dans le dépôt
+frontend/.metro-cache/

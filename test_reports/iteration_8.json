@@ -31,13 +31,13 @@
   "test_credentials": {
     "main_app_login": {
       "email": "danielgiroux007@gmail.com",
-      "password": "Liana2018$"
+      "password": "***"
     },
-    "import_admin_password": "Liana2018"
+    "import_admin_password": "***"
   },
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Residual guide upload system fully tested. Backend parses SCI PDF, extracts vehicle data (brand, model_year, model_name, trim, body_style, residual_percentages), saves to JSON, and sends Excel verification email. Frontend import page accessed via /import route, requires main app login first then admin password (Liana2018). Document type step offers two options: 'Programmes de financement' and 'Guide des valeurs résiduelles'.",
+  "context_for_next_testing_agent": "Residual guide upload system fully tested. Backend parses SCI PDF, extracts vehicle data (brand, model_year, model_name, trim, body_style, residual_percentages), saves to JSON, and sends Excel verification email. Frontend import page accessed via /import route, requires main app login first then admin password (***). Document type step offers two options: 'Programmes de financement' and 'Guide des valeurs résiduelles'.",
   "verified_features": {
     "backend_apis": {
       "POST_upload_residual_guide": {
@@ -62,7 +62,7 @@
       "POST_verify_password": {
         "status": "200 OK",
         "test_coverage": [
-          "Accepts correct password (Liana2018)",
+          "Accepts correct password (***)",
           "Rejects wrong password with 401"
         ]
       }

@@ -125,7 +125,7 @@ class TestInventoryWithBodyStyle:
         """Get authentication token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": "danielgiroux007@gmail.com",
-            "password": "Liana2018$"
+            "password": os.environ.get("CALCAUTO_TEST_PASSWORD", "")
         })
         assert response.status_code == 200, f"Login failed: {response.text}"
         return response.json()["token"]

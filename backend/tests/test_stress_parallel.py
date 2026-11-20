@@ -9,6 +9,7 @@ Usage:
 Requires: pip install aiohttp
 """
 
+import os
 import asyncio
 import aiohttp
 import argparse
@@ -26,7 +27,7 @@ DEFAULT_CONCURRENT = 5
 
 # Credentials
 EMAIL = "danielgiroux007@gmail.com"
-PASSWORD = "Liana2018$"
+PASSWORD = os.environ.get("CALCAUTO_TEST_PASSWORD", "")
 
 
 async def get_token(session: aiohttp.ClientSession, api_url: str) -> str:

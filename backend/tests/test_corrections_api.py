@@ -8,7 +8,7 @@ import requests
 import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://toc-extraction-fix.preview.emergentagent.com').rstrip('/')
-ADMIN_PASSWORD = "Liana2018"
+ADMIN_PASSWORD = os.environ.get("CALCAUTO_ADMIN_PASSWORD", "")
 
 
 class TestCorrectionsAPI:

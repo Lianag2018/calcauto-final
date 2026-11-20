@@ -104,13 +104,14 @@ ETM     6 CYL LI TURB DIESEL HR CUMMINS 6,7L         8,800.00
 '''
         options = parse_options(invoice_text)
         
-        expected_order = ['PW7', 'TXX8', 'AHU', 'ETM', '4CP', '801']
+        # 4CP (taxe d'accise) est un frais administratif : écarté des options.
+        expected_order = ['PW7', 'TXX8', 'AHU', 'ETM', '801']
         actual_order = [opt['product_code'] for opt in options[:6]]
         
         assert actual_order == expected_order, f"Ordre incorrect: {actual_order}"
     
     def test_all_options_extracted(self):
-        """Toutes les options doivent être extraites"""
+        """Toutes les options sont extraites, sans les frais administratifs"""
         invoice_text = '''
 PW7     BLANC ECLATANT                               66,770.00
 TXX8    BANQ AVANT 40-20-40 VINYLE RENFORCE          SANS FRAIS
@@ -123,8 +124,11 @@ ETM     6 CYL LI TURB DIESEL HR CUMMINS 6,7L         8,800.00
 '''
         options = parse_options(invoice_text)
         
-        # Vérifier qu'on a au moins 7 options
-        assert len(options) >= 7, f"Attendu >= 7 options, obtenu {len(options)}"
+        # Les frais administratifs (4CP, 92HC1, 92HC2) sont écartés ;
+        # la couleur, l'intérieur, les équipements et le transport restent.
+        codes = [opt['product_code'] for opt in options]
+        assert codes == ['PW7', 'TXX8', 'AHU', 'ETM', '801'], f"Options lues : {codes}"
+        assert not {'4CP', '92HC1', '92HC2'} & set(codes)
     
     def test_option_format(self):
         """Format des options: CODE - Description"""

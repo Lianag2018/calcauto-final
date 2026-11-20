@@ -208,7 +208,7 @@ class TestAsyncExtractionEndpoints:
         
     def test_verify_password_endpoint(self):
         """Test password verification endpoint"""
-        response = requests.post(f"{BASE_URL}/api/verify-password", data={"password": "Liana2018"})
+        response = requests.post(f"{BASE_URL}/api/verify-password", data={"password": os.environ.get("CALCAUTO_ADMIN_PASSWORD", "")})
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         data = response.json()
         assert data.get('success') == True, "Password verification should succeed"

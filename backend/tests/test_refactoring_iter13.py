@@ -22,7 +22,7 @@ BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials
 TEST_EMAIL = "danielgiroux007@gmail.com"
-TEST_PASSWORD = "Liana2018$"
+TEST_PASSWORD = os.environ.get("CALCAUTO_TEST_PASSWORD", "")
 
 
 class TestRootEndpoints:

@@ -13,7 +13,7 @@ BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://toc-extraction-fix
 
 # Test credentials
 TEST_EMAIL = "danielgiroux007@gmail.com"
-TEST_PASSWORD = "Liana2018$"
+TEST_PASSWORD = os.environ.get("CALCAUTO_TEST_PASSWORD", "")
 
 
 class TestCalculatorState:

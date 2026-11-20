@@ -44,7 +44,7 @@ DEFAULT_TOKEN = os.environ.get("TEST_TOKEN", "")
 # FONCTIONS UTILITAIRES
 # =========================
 
-def get_auth_token(email: str = "danielgiroux007@gmail.com", password: str = "Liana2018$") -> Optional[str]:
+def get_auth_token(email: str = "danielgiroux007@gmail.com", password: str = os.environ.get("CALCAUTO_TEST_PASSWORD", "")) -> Optional[str]:
     """Récupère un token JWT pour les tests"""
     login_url = API_URL.replace("/inventory/scan-invoice", "/auth/login")
     try:

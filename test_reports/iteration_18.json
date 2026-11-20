@@ -30,7 +30,7 @@
   },
   "test_credentials": {
     "email": "danielgiroux007@gmail.com",
-    "password": "Liana2018$",
+    "password": "***",
     "base_url": "https://toc-extraction-fix.preview.emergentagent.com"
   },
   "seed_data_creation": "None - tested with existing data",

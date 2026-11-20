@@ -39,7 +39,7 @@ app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 # Admin password for import (from .env)
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Liana2018')
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', '***')
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 
 # Gmail SMTP Configuration

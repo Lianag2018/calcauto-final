@@ -46,9 +46,9 @@ npx expo start --web
 
 | Acces | Email | Mot de passe |
 |-------|-------|-------------|
-| Admin | `danielgiroux007@gmail.com` | `Liana2018$` |
+| Admin | `danielgiroux007@gmail.com` | `***` |
 | Demo | Auto-login | *(aucun)* |
-| Import (mot de passe admin) | - | `Liana2018` |
+| Import (mot de passe admin) | - | `***` |
 
 ## Documentation
 

@@ -30,7 +30,7 @@
   },
   "test_credentials": {
     "email": "danielgiroux007@gmail.com",
-    "password": "Liana2018$"
+    "password": "***"
   },
   "seed_data_creation": "Used existing better offers data - 4 offers available",
   "retest_needed": false,

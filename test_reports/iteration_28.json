@@ -32,7 +32,7 @@
     "frontend": "100% (App loads correctly, km_adjustments integration verified)"
   },
   "test_credentials": {
-    "admin_password": "Liana2018",
+    "admin_password": "***",
     "demo_user": "demo@calcauto.ca",
     "backend_url": "https://toc-extraction-fix.preview.emergentagent.com",
     "february_pdf": "/app/pdf_source.pdf",

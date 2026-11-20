@@ -31,7 +31,7 @@ except ImportError:
 BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://toc-extraction-fix.preview.emergentagent.com').rstrip('/')
 
 # Admin password for import operations
-ADMIN_PASSWORD = "Liana2018"
+ADMIN_PASSWORD = os.environ.get("CALCAUTO_ADMIN_PASSWORD", "")
 
 
 @pytest.fixture(scope="module")

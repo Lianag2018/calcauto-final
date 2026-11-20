@@ -31,7 +31,7 @@
     "frontend": "N/A - Backend only testing requested"
   },
   "test_credentials": {
-    "admin_password": "Liana2018",
+    "admin_password": "***",
     "pdf_file": "/app/pdf_source.pdf"
   },
   "seed_data_creation": "Extraction already completed for March 2026 data",

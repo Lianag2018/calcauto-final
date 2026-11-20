@@ -626,7 +626,7 @@ index 2e37c60..e69de29 100644
 ------------+    status_history:
 ------------+        - working: true
 ------------+          agent: "testing"
-------------+          comment: "✅ TESTED SUCCESSFULLY: PDF extraction endpoint `/api/extract-pdf` accepts and processes page range parameters correctly. Tested with start_page=20, end_page=21, password=Liana2018, program_month=2, program_year=2026. Backend logs confirm page range processing: 'PDF has 25 pages. Extracting pages 20 to 21 (indices 19 to 21)' and 'Extracted 2 pages'. Both Python requests and curl tests returned HTTP 200 OK. Endpoint correctly handles multipart/form-data with all required parameters."
+------------+          comment: "✅ TESTED SUCCESSFULLY: PDF extraction endpoint `/api/extract-pdf` accepts and processes page range parameters correctly. Tested with start_page=20, end_page=21, password=***, program_month=2, program_year=2026. Backend logs confirm page range processing: 'PDF has 25 pages. Extracting pages 20 to 21 (indices 19 to 21)' and 'Extracted 2 pages'. Both Python requests and curl tests returned HTTP 200 OK. Endpoint correctly handles multipart/form-data with all required parameters."
 ------------+
 ------------+metadata:
 ------------+  created_by: "testing_agent"
@@ -688,7 +688,7 @@ index 2e37c60..e69de29 100644
 --------+#### ✅ Password Verification
 --------+- **Status**: PASS
 --------+- **Endpoint**: POST /api/verify-password
---------+- **Result**: Correct password (Liana2018) accepted, wrong password rejected with 401
+--------+- **Result**: Correct password (***) accepted, wrong password rejected with 401
 --------+
 --------+#### ✅ Ram 2500/3500 2025 Bonus Cash Validation
 --------+- **Status**: PASS
