@@ -70,9 +70,30 @@ Doublons encore en vie, a retirer selon le plan (un seul service) :
 
 | Doublon | Etat |
 |---------|------|
-| `calcauto-final-backend.onrender.com` | Meme code, meme base. Hors de l'espace Render accessible. |
+| `calcauto-final-backend.onrender.com` | Meme code, meme base. Compte Render de Daniel (courriel Gmail), espace « My Workspace », plan Starter (payant), deploiement auto sur `main`. Ne recoit plus le trafic. A suspendre une fois `calcauto-aipro` passe au plan payant et ses journaux restes vides quelques jours. |
 | `calcauto-app/` dans `kenbot-dashboard-api` (`/api/calc/*`) | Ancienne copie. Plus de trafic du cellulaire depuis le 15 novembre 2026. |
 | `calcauto-pro-luxurahair.vercel.app` | Redirige. |
+
+`calcauto-aipro` est dans l'autre compte Render (« Daniel's workspace »), plan gratuit.
+
+Qui parle a quel serveur (verifie le 20 novembre 2026) :
+
+| Appelant | Serveur vise |
+|----------|--------------|
+| Ecran CalcAuto (rewrite Vercel) | `calcauto-aipro` |
+| Lien eTradeValue (`calcauto_link.py` de Kenbot) | `calcauto-aipro` |
+| Outils du Mac : veille TAQ, planificateur TAQ, ecriture des codes DealerConnect | `calcauto-aipro` (depuis le 20 novembre 2026) |
+| Kenbot `CALCAUTO_BACKEND_URL` (passerelle `/api/proxy/calcauto/*`, page d'etat) | jumeau par defaut dans le code ; valeur sur Render a confirmer. Passerelle sans appel depuis le 13 novembre. |
+
+### Veille automatique TAQ (Mac de Daniel)
+
+- Tache `com.dgauto.taq-veille` (launchd), toutes les 30 minutes : `~/.dgauto-agent/taq/taq_planif.py`.
+- Lance le releve TAQ et l'ecriture des residuels si une demande est en attente sur le serveur
+  (`GET /api/sci/taq-check`, apres le depot d'un PDF SCI) ou le 15 et le 21 du mois, entre 7 h et 20 h.
+- Un seul lancement a la fois ; apres un echec, pas de nouvel essai avant 3 h.
+- Journal : `~/.dgauto-agent/taq/planif.out.log` ; rapports : `~/.dgauto-agent/taq/rapports/`.
+- La cle de veille est lue au trousseau du Mac ; le serveur n'en garde que l'empreinte.
+- Les codes de modele et couleurs DealerConnect ne sont pas encore automatiques.
 
 Cible : un depot, un serveur, un ecran, une base, multi-concession (rien de fige a
 Kennebec dans le nouveau code), avec un environnement d'essai avant la production.
