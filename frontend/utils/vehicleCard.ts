@@ -64,3 +64,35 @@ export function stageLabel(vehicle: CardVehicle, lang: Lang = 'fr'): { text: str
   }
   return { text, tone: known.tone };
 }
+
+const clean = (text: unknown) => String(text ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+/**
+ * Recherche directe d'un véhicule d'inventaire, neuf ou d'occasion : numéro de stock
+ * (avec ou sans « # »), fin du NIV, ou mots du modèle. Le numéro de stock exact vient
+ * en premier, puis ceux qui commencent par la saisie. Moins de 2 caractères : rien.
+ */
+export function searchInventory<T extends CardVehicle & Record<string, any>>(list: T[], query: string, limit = 8): T[] {
+  const words = String(query || '').trim().split(/\s+/).map(clean).filter(Boolean);
+  const whole = words.join('');
+  if (whole.length < 2) return [];
+  const scored: { vehicle: T; score: number }[] = [];
+  for (const vehicle of list || []) {
+    // Le repère interne « DC-… » n'est pas un numéro de stock : on cherche ces fiches par le NIV.
+    const stock = vehicle.stock_pending ? '' : clean(vehicle.stock_no);
+    const vin = clean(vehicle.vin);
+    let score = 0;
+    if (stock && stock === whole) score = 4;
+    else if (stock && stock.startsWith(whole)) score = 3;
+    else if (whole.length >= 4 && vin.endsWith(whole)) score = 3;
+    else if ((stock && stock.includes(whole)) || (whole.length >= 4 && vin.includes(whole))) score = 2;
+    else {
+      // Mot par mot : une saisie ne doit pas chevaucher deux mots (« DC » dans « Grand Cherokee »).
+      const parts = [vehicle.year, vehicle.brand, vehicle.model, vehicle.trim, vehicle.model_code]
+        .flatMap(part => String(part ?? '').split(/\s+/)).map(clean).filter(Boolean);
+      if (words.every(w => parts.some(part => part.includes(w)) || (stock && stock.includes(w)))) score = 1;
+    }
+    if (score) scored.push({ vehicle, score });
+  }
+  return scored.sort((a, b) => b.score - a.score).slice(0, limit).map(s => s.vehicle);
+}

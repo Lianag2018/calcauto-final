@@ -38,3 +38,51 @@ describe('fiche de véhicule', () => {
     expect(stageLabel({ dc_stage: 'inconnu' })?.text).toBe('Statut inconnu');
   });
 });
+
+import { searchInventory } from '../utils/vehicleCard';
+
+describe('recherche directe par stock', () => {
+  const list = [
+    { stock_no: '47043', vin: '1C6SRFLT1VN593101', year: 2027, brand: 'Ram', model: '1500', trim: 'Rebel', model_code: 'DT6X98' },
+    { stock_no: 'DC-VN593102', stock_pending: true, vin: '1C6SRFLTXVN593102', year: 2027, brand: 'Ram', model: '1500', trim: 'Rebel', model_code: 'DT6X98' },
+    { stock_no: '47050', vin: '1C4RJKBG5S8700001', year: 2025, brand: 'Jeep', model: 'Grand Cherokee', trim: 'Limited' },
+    { stock_no: '14704A', vin: '2C3CDXBG0NH100002', year: 2022, brand: 'Dodge', model: 'Charger', trim: 'SXT', type: 'occasion' },
+  ];
+  const stocks = (q: string) => searchInventory(list, q).map(v => v.stock_no);
+
+  it('trouve le numéro de stock exact, avec ou sans #', () => {
+    expect(stocks('47043')).toEqual(['47043']);
+    expect(stocks(' #47043 ')).toEqual(['47043']);
+  });
+
+  it('classe le stock exact, puis le début, puis le milieu', () => {
+    expect(stocks('4705')).toEqual(['47050']);
+    expect(stocks('470')).toEqual(['47043', '47050', '14704A']);
+  });
+
+  it('trouve un véhicule sans numéro de stock par la fin de son NIV', () => {
+    expect(stocks('593102')).toEqual(['DC-VN593102']);
+    expect(stocks('vn593102')).toEqual(['DC-VN593102']);
+  });
+
+  it('ne cherche pas dans le repère interne DC', () => {
+    expect(stocks('DC')).toEqual([]);
+  });
+
+  it('trouve aussi par les mots du modèle et le code', () => {
+    expect(stocks('rebel 2027')).toEqual(['47043', 'DC-VN593102']);
+    expect(stocks('dt6x98').length).toBe(2);
+    expect(stocks('charger')).toEqual(['14704A']);
+  });
+
+  it('ne propose rien pour une saisie trop courte ou sans résultat', () => {
+    expect(stocks('4')).toEqual([]);
+    expect(stocks('')).toEqual([]);
+    expect(stocks('99999')).toEqual([]);
+  });
+
+  it('limite le nombre de résultats', () => {
+    const many = Array.from({ length: 30 }, (_, i) => ({ stock_no: `48${String(i).padStart(3, '0')}` }));
+    expect(searchInventory(many, '48').length).toBe(8);
+  });
+});
