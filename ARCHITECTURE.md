@@ -1,7 +1,12 @@
 # CalcAuto AiPro - Architecture & Guide de Deploiement
 
 > Document complet pour comprendre, deployer et maintenir l'application de maniere independante.
-> Derniere mise a jour : Avril 2026
+> Derniere mise a jour : 20 novembre 2026
+>
+> **Regle : ce fichier est mis a jour dans la meme PR que tout changement** qui touche
+> l'hebergement, le deploiement, les tests, les routes, la base ou les acces.
+> Une PR qui change l'un de ces points sans toucher ce fichier n'est pas complete.
+> Aucun mot de passe, jeton ou cle n'est ecrit ici.
 
 ---
 
@@ -46,9 +51,31 @@
 | Base de donnees | MongoDB Atlas | MongoDB Atlas (cloud) |
 | Stockage fichiers | JSON locaux + Supabase | Supabase |
 
-**Repositories GitHub (compte `Lianag2018`):**
-- Backend : `Lianag2018/calcauto-backend`
-- Frontend : `Lianag2018/calcauto-frontend`
+**Depot GitHub (compte `Lianag2018`) :** un seul, `Lianag2018/calcauto-final`
+(`backend/` et `frontend/`). Le depot est public : jamais de PDF Stellantis ni de secret.
+
+### Etat reel de la production (verifie le 19 novembre 2026)
+
+Chemin suivi par le cellulaire et le Bureau web :
+
+```
+Appli eTradeValue -> Bureau web (app.etradevalue.ca)
+   -> calcauto-final.vercel.app            (ecran, Vercel)
+   -> /api/* (rewrite Vercel)
+   -> calcauto-aipro (Render, plan gratuit, deploiement auto sur main)
+   -> MongoDB Atlas
+```
+
+Doublons encore en vie, a retirer selon le plan (un seul service) :
+
+| Doublon | Etat |
+|---------|------|
+| `calcauto-final-backend.onrender.com` | Meme code, meme base. Hors de l'espace Render accessible. |
+| `calcauto-app/` dans `kenbot-dashboard-api` (`/api/calc/*`) | Ancienne copie. Plus de trafic du cellulaire depuis le 15 novembre 2026. |
+| `calcauto-pro-luxurahair.vercel.app` | Redirige. |
+
+Cible : un depot, un serveur, un ecran, une base, multi-concession (rien de fige a
+Kennebec dans le nouveau code), avec un environnement d'essai avant la production.
 
 ---
 
@@ -94,11 +121,10 @@ backend/
 │   ├── code_program_mapping.json             # Mapping codes FCA
 │   └── fca_product_codes*.json               # Codes produits FCA
 │
-├── tests/                    # Tests automatises
-│   ├── test_ci_unit.py       # Tests unitaires pour CI/CD (32 tests)
-│   ├── test_km_adjustments.py # Tests ajustements kilometrage (20 tests)
-│   ├── test_sci_lease.py     # Tests API SCI Lease (13 tests)
-│   └── ...
+├── tests/                    # Tests automatises (voir section 10)
+│   ├── conftest.py           # Tri : hors reseau / integration / quarantaine
+│   ├── test_tri_des_tests.py # Echoue si un test reseau n'est pas classe
+│   └── test_*.py             # 20 fichiers hors reseau, 28 d'integration
 │
 ├── requirements.txt          # Dependances Python
 ├── Procfile                  # Commande de demarrage (Render)
@@ -375,7 +401,7 @@ Dans la section **"Environment"** de Render, ajoutez :
 |----------|-------------|---------|
 | `MONGO_URL` | Chaine de connexion MongoDB Atlas | `mongodb+srv://user:pass@cluster.mongodb.net/` |
 | `DB_NAME` | Nom de la base de donnees | `calcauto_prod` |
-| `ADMIN_PASSWORD` | Mot de passe admin pour les imports | `Liana2018` |
+| `ADMIN_PASSWORD` | Mot de passe admin pour les imports | *(valeur secrete, dans Render)* |
 | `OPENAI_API_KEY` | Cle API OpenAI (pour OCR/IA) | `sk-proj-...` |
 | `GOOGLE_VISION_API_KEY` | Cle API Google Cloud Vision (OCR) | `AIzaSy...` |
 | `SMTP_EMAIL` | Email Gmail pour envoi | `danielgiroux007@gmail.com` |
@@ -453,7 +479,7 @@ Cette configuration fait en sorte que :
 ```env
 MONGO_URL=mongodb+srv://user:password@cluster.mongodb.net/
 DB_NAME=calcauto_prod
-ADMIN_PASSWORD=Liana2018
+ADMIN_PASSWORD=<valeur secrete>
 OPENAI_API_KEY=sk-proj-...
 GOOGLE_VISION_API_KEY=AIzaSy...
 SMTP_EMAIL=danielgiroux007@gmail.com
@@ -550,7 +576,7 @@ EXPO_PUBLIC_BACKEND_URL=http://localhost:8001
 1. Connectez-vous en tant qu'admin
 2. Allez dans l'onglet **Admin** > **Ordre vehicules**
 3. Faites glisser-deposer les vehicules dans l'ordre souhaite
-4. Sauvegardez (mot de passe admin requis : `Liana2018`)
+4. Sauvegardez (mot de passe admin requis)
 
 ### Ajouter un utilisateur
 Les utilisateurs peuvent s'inscrire eux-memes via la page de connexion. L'admin peut ensuite bloquer/debloquer des utilisateurs depuis l'onglet Admin.
@@ -650,8 +676,8 @@ Sur MongoDB Atlas, vous devez autoriser les IP de Render a se connecter :
 
 | Service | URL | Identifiants |
 |---------|-----|-------------|
-| Application (login) | *(votre URL Vercel)* | `danielgiroux007@gmail.com` / `Liana2018$` |
-| Admin (import/gestion) | *(meme app, onglet Admin)* | Mot de passe: `Liana2018` |
+| Application (login) | *(votre URL Vercel)* | *(gestionnaire de mots de passe)* |
+| Admin (import/gestion) | *(meme app, onglet Admin)* | *(gestionnaire de mots de passe)* |
 | MongoDB Atlas | cloud.mongodb.com | *(votre compte)* |
 | Render Dashboard | dashboard.render.com | *(votre compte GitHub)* |
 | Vercel Dashboard | vercel.com/dashboard | *(votre compte GitHub)* |
@@ -672,14 +698,16 @@ Le projet utilise GitHub Actions pour automatiser les tests et le deploiement.
 #### Etapes du pipeline
 ```
 1. Checkout du code
-2. Installation Python 3.11
-3. Installation des dependances (requirements.txt)
-4. Execution des tests unitaires (pytest)
-   - test_ci_unit.py (32 tests: loyalty, deferred, parsing, metadata)
-   - test_km_adjustments.py (20 tests: regles KM 12k/18k)
-5. [Si tests OK] Deploy Backend vers Render (via deploy hook)
-6. [Si tests OK] Deploy Frontend vers Vercel (via VERCEL_TOKEN)
+2. Installation Python 3.12
+3. Installation des dependances (requirements.txt + pytest), les memes que le serveur
+4. pytest tests/  -> TOUS les fichiers de test hors reseau
+5. [Si tests OK, push sur main] Deploy Backend vers Render (deploy hook)
+6. [Si tests OK, push sur main] Deploy Frontend vers Vercel (VERCEL_TOKEN)
 ```
+
+Limite connue : Render deploie aussi tout seul a chaque commit sur `main`
+(autoDeploy), donc meme si les tests echouent. A corriger : un seul declencheur,
+apres les tests.
 
 #### Secrets GitHub requis
 | Secret | Description |
@@ -691,12 +719,23 @@ Le projet utilise GitHub Actions pour automatiser les tests et le deploiement.
 
 ### Tests automatises
 
-| Fichier | Tests | Description |
-|---------|-------|-------------|
-| `test_ci_unit.py` | 32 | Parsing retail, loyalty, deferred payment, metadata |
-| `test_km_adjustments.py` | 20 | Regles KM 12k/18k, expansion termes |
-| `test_sci_lease.py` | 13 | API SCI, matching Sport/Rebel, calculs lease |
+Le tri est ecrit dans `backend/tests/conftest.py`. Aucun fichier n'est ignore en silence.
+
+| Famille | Fichiers | Quand |
+|---------|----------|-------|
+| Hors reseau | 20 (340 tests ; 17 sautes sans les PDF Stellantis) | A chaque commit et PR |
+| Integration (appellent un serveur, ecrivent des donnees) | 28 | Seulement avec `CALCAUTO_INTEGRATION=1` et une adresse d'essai. Toute adresse de production est refusee. |
+| Quarantaine (`xfail` strict, raison ecrite) | 0 | — |
+
+- `test_tri_des_tests.py` echoue si un nouveau test reseau n'est pas classe.
+- PDF Stellantis : fournis hors depot par `CALCAUTO_PROGRAM_PDF_DIR` et `CALCAUTO_RESIDUAL_PDF_DIR`.
+- Lecteur de factures : les frais administratifs (4CP, 92HC1, 92HC2, 999) sont ecartes
+  des options ; le transport (801) reste.
+- Photographie de la production (reponses en lecture seule) : reference a reproduire
+  a l'identique avant et apres toute refonte.
+- A venir : contrat d'API, isolation entre concessions, calculs d'argent a la cent pres,
+  fumee apres deploiement.
 
 ---
 
-*Document mis a jour le 2 avril 2026 pour CalcAuto AiPro*
+*Document mis a jour le 20 novembre 2026 pour CalcAuto AiPro*

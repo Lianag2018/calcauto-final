@@ -45,14 +45,7 @@ INTEGRATION = {
 PRODUCTION = ("calcauto-aipro", "calcauto-final", "etradevalue.ca", "kenbot")
 
 # Échecs connus : (fichier::classe::test) -> raison.
-QUARANTAINE = {
-    "test_invoice_scanner.py::TestOptionsExtraction::test_options_in_order":
-        "parse_options écarte les lignes de frais (4CP) ; le test les attend. "
-        "À trancher : garder ou non les frais dans les options.",
-    "test_invoice_scanner.py::TestOptionsExtraction::test_all_options_extracted":
-        "parse_options écarte 4CP, 92HC1, 92HC2 ; le test attend 7 options. "
-        "Même décision que ci-dessus.",
-}
+QUARANTAINE = {}
 
 
 def _adresse():
