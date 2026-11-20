@@ -32,6 +32,7 @@ import { GaugeMark } from '../../components/GaugeMark';
 import { Dossier, dossierFromContact, takeQueuedDossier, takeEvalId, syncDossiers, fetchListingUrl, usedQuoteSms, smsHref, windowStickerUrl, smsLinks, tradeDetail, dossierFeeForMode, otherFees, DOSSIER_FEE, WINDSHIELD_FEE } from '../../utils/etvDossier';
 import { newQuoteSms, plainVehicle, hasNameAndPhone } from '../../utils/quoteSms';
 import { findMatchingContact, contactChanges } from '../../utils/contactMatch';
+import { STAGE_COLORS, colorLabel, stageLabel, stockLabel } from '../../utils/vehicleCard';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { Language, saveLanguage, loadLanguage, getTranslation, TranslationKeys } from '../../utils/i18n';
 import { useAuth } from '../../contexts/AuthContext';
@@ -1219,7 +1220,7 @@ export default function HomeScreen() {
   // Lien de la fiche du site pour le véhicule d'inventaire choisi (vide si aucun ou hors vente).
   const listingUrlForSelection = async (): Promise<string> => {
     const stock = selectedInventory?.stock_no;
-    if (!stock) return '';
+    if (!stock || selectedInventory?.stock_pending) return '';
     const token = await getToken();
     const fromEtv = token ? await fetchListingUrl({ Authorization: `Bearer ${token}` }, String(stock)) : '';
     if (fromEtv) return fromEtv;
@@ -1695,7 +1696,8 @@ export default function HomeScreen() {
     const bestLeaseOpt: any = hasLeasePrint ? (leaseResult.bestLease === 'standard' ? leaseResult.standard : leaseResult.alternative) || leaseResult.standard || leaseResult.alternative : null;
     const bestFinPayment = bestOpt === '2' && hasOption2 ? o2Payment : o1Payment;
     const clientLines = [clientName, clientPhone, clientEmail].map((v) => (v || '').trim()).filter(Boolean);
-    const stockNo = selectedInventory?.stock_no || '';
+    // Pas de numéro de stock imprimé tant que le véhicule n'en a pas (repère interne DealerConnect).
+    const stockNo = selectedInventory?.stock_pending ? '' : (selectedInventory?.stock_no || '');
     const ratesHead = terms.map((t) => `<th class="${t === selectedTerm ? 'sel' : ''}">${t} ${mo}</th>`).join('');
     const ratesLine = (label: string, rates: any) => `<tr><td class="lbl">${label}</td>${terms.map((t) => {
       const r = rates ? getRateForTerm(rates, t) : null;
@@ -2404,6 +2406,9 @@ export default function HomeScreen() {
                     <Text style={styles.inventoryStock}>#{vehicle.stock_no}</Text>
                     <Text style={styles.inventoryModel}>{vehicle.year} {vehicle.brand} {vehicle.model}</Text>
                     <Text style={styles.inventoryTrim}>{vehicle.trim}</Text>
+                    {colorLabel(vehicle) !== '' && (
+                      <Text style={[styles.inventoryVin, { color: '#e5e7eb' }]}>{colorLabel(vehicle)}</Text>
+                    )}
                     {vehicle.km > 0 && (
                       <Text style={styles.inventoryVin}>{Number(vehicle.km).toLocaleString('fr-CA')} km</Text>
                     )}
@@ -2893,13 +2898,21 @@ export default function HomeScreen() {
                           setVehiclePrice(String(newVehicleBasePrice(vehicle) || ''));
                         }}
                       >
-                        <Text style={styles.inventoryStock}>#{vehicle.stock_no}</Text>
+                        <Text style={styles.inventoryStock}>{stockLabel(vehicle, lang)}</Text>
+                        {stageLabel(vehicle, lang) && (
+                          <Text style={[styles.inventoryVin, { color: STAGE_COLORS[stageLabel(vehicle, lang)!.tone], fontWeight: '700' }]}>
+                            {stageLabel(vehicle, lang)!.text}
+                          </Text>
+                        )}
                         <Text style={styles.inventoryModel}>
                           {vehicle.year} {vehicle.model}
                         </Text>
                         <Text style={styles.inventoryTrim}>
                           {vehicle.trim}{vehicle.model_code ? <Text style={{ color: '#FFB347', fontWeight: '700' }}>  [{vehicle.model_code}]</Text> : null}
                         </Text>
+                        {colorLabel(vehicle) !== '' && (
+                          <Text style={[styles.inventoryVin, { color: '#e5e7eb' }]}>{colorLabel(vehicle)}</Text>
+                        )}
                         {vehicle.vin && (
                           <Text style={styles.inventoryVin}>VIN: {vehicle.vin}</Text>
                         )}
@@ -2971,9 +2984,14 @@ export default function HomeScreen() {
                   <View style={styles.selectedInventoryInfo}>
                     <Ionicons name="car-sport" size={20} color="#e6c65a" />
                     <Text style={styles.selectedInventoryText}>
-                      Stock #{selectedInventory.stock_no} - {selectedInventory.year} {selectedInventory.brand} {selectedInventory.model} {selectedInventory.trim}
+                      {selectedInventory.stock_pending ? stockLabel(selectedInventory, lang) : `Stock #${selectedInventory.stock_no}`} - {selectedInventory.year} {selectedInventory.brand} {selectedInventory.model} {selectedInventory.trim}
                     </Text>
                   </View>
+                  {(colorLabel(selectedInventory) !== '' || stageLabel(selectedInventory, lang)) && (
+                    <Text style={styles.selectedInventoryVin}>
+                      {[colorLabel(selectedInventory), stageLabel(selectedInventory, lang)?.text].filter(Boolean).join(' · ')}
+                    </Text>
+                  )}
                   {selectedInventory.vin && (
                     <Text style={styles.selectedInventoryVin}>VIN: {selectedInventory.vin}</Text>
                   )}

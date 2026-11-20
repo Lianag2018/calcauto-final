@@ -78,6 +78,31 @@ def _dedupe_by_stock(vehicles: List[Dict[str, Any]], user_id: str) -> List[Dict[
     return list(by_stock.values())
 
 
+async def _add_dealerconnect(vehicles: List[Dict[str, Any]], user: Dict[str, Any], type: Optional[str],
+                            status: Optional[str], year: Optional[int], brand: Optional[str]) -> None:
+    """Complète l'inventaire avec la liste DealerConnect de la concession : étape et couleur
+    sur les fiches existantes, et une fiche pour chaque véhicule jamais vu à l'inventaire
+    (arrivé mais pas encore sur le site, en route, en construction)."""
+    from services import dealerconnect_inventory as dc
+    if not sees_shared_inventory(user):
+        return
+    rows = await db.dealerconnect_vehicles.find({"owner_id": SHARED_OWNER}, {"_id": 0}).to_list(dc.MAX_LIST)
+    if not rows:
+        return
+    dc.attach(vehicles, {r["vin"]: r for r in rows if r.get("vin")})
+    if (type and type != "neuf") or (status and status != "disponible"):
+        return
+    # Tout NIV déjà passé à l'inventaire, même sorti du site : un véhicule vendu ne revient pas.
+    known = [v.get("vin") async for v in db.inventory.find(
+        {"owner_id": {"$in": [SHARED_OWNER, user["id"]]}, "vin": {"$nin": [None, ""]}}, {"_id": 0, "vin": 1})]
+    new_cards = dc.cards(rows, known, SHARED_OWNER, await _reference_codes())
+    if year:
+        new_cards = [c for c in new_cards if c.get("year") == year]
+    if brand:
+        new_cards = [c for c in new_cards if brand.lower() in str(c.get("brand") or "").lower()]
+    vehicles.extend(new_cards)
+
+
 # ============ Association véhicule -> ligne de programme ============
 
 async def _latest_programs() -> List[Dict[str, Any]]:
@@ -258,6 +283,10 @@ async def get_inventory(
         vehicles.append(vehicle)
     vehicles = _dedupe_by_stock(await _on_site_only(vehicles), user["id"])
     await _apply_overrides(vehicles)
+    try:
+        await _add_dealerconnect(vehicles, user, type, status, year, brand)
+    except Exception as e:
+        logger.warning(f"Liste DealerConnect indisponible: {e}")
     for vehicle in vehicles:
         vehicle["shared"] = vehicle.get("owner_id") == SHARED_OWNER
         if not vehicle.get("trim"):
@@ -455,6 +484,45 @@ async def apply_shared_model_codes(payload: dict = Body(...), dry_run: bool = Fa
     return {"ok": True, "written": not dry_run, "changed": len(plan["changes"]), "unchanged": plan["unchanged"],
             "refused": plan["refused"], "changes": plan["changes"][:200]}
 
+
+@router.post("/inventory/shared/dealerconnect")
+async def replace_dealerconnect_list(payload: dict = Body(...), dry_run: bool = False,
+                                     authorization: Optional[str] = Header(None),
+                                     x_admin_password: str = Header(""), x_veille_key: str = Header("")):
+    """Reçoit la liste complète de DealerConnect (en stock, en route, en construction).
+
+    Chaque entrée : {vin (17), year, model_code, status, description, package, paint, interior,
+    paint_name, interior_name, pdsf}. Tout ou rien : la moindre entrée douteuse fait refuser
+    la liste, et une liste de moins de 20 véhicules est tenue pour une lecture ratée. Acceptée,
+    elle remplace la précédente : un véhicule qui n'y est plus disparaît.
+    """
+    from routers.sci import _require_veille
+    from services import dealerconnect_inventory as dc
+    from services.shared_inventory import is_dealerconnect_code
+    from vin_utils import validate_vin_checksum
+    await _require_veille(authorization, x_admin_password, x_veille_key)
+    entries = payload.get("vehicles")
+    if not isinstance(entries, list) or not entries or len(entries) > dc.MAX_LIST:
+        raise HTTPException(status_code=422, detail=f"vehicles : liste de 1 à {dc.MAX_LIST} entrées attendue")
+    plan = dc.plan_list(entries, validate_vin_checksum, is_dealerconnect_code)
+    accepted = not plan["refused"] and len(plan["vehicles"]) >= dc.MIN_COMPLETE_LIST
+    previous = await db.dealerconnect_vehicles.count_documents({"owner_id": SHARED_OWNER})
+    stages: Dict[str, int] = {}
+    for vehicle in plan["vehicles"]:
+        stages[vehicle["stage"]] = stages.get(vehicle["stage"], 0) + 1
+    result = {"ok": accepted, "written": False, "vehicles": len(plan["vehicles"]), "previous_vehicles": previous,
+              "stages": stages, "refused": plan["refused"][:200]}
+    if not accepted:
+        result["reason"] = ("entrées refusées" if plan["refused"]
+                            else f"moins de {dc.MIN_COMPLETE_LIST} véhicules : lecture douteuse")
+        return result
+    if not dry_run:
+        now = datetime.utcnow()
+        documents = [{**vehicle, "owner_id": SHARED_OWNER, "updated_at": now} for vehicle in plan["vehicles"]]
+        await db.dealerconnect_vehicles.delete_many({"owner_id": SHARED_OWNER})
+        await db.dealerconnect_vehicles.insert_many(documents)
+        result["written"] = True
+    return result
 
 @router.put("/inventory/{stock_no}")
 async def update_inventory_vehicle(stock_no: str, update: InventoryUpdate, authorization: Optional[str] = Header(None)):

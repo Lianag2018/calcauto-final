@@ -189,6 +189,7 @@ Contient :
 | GET | `/api/program-meta` | Metadonnees evenement (banniere, loyalty, 90j) |
 | PUT | `/api/programs/reorder` | Reordonnement des programmes (admin) |
 | GET/POST | `/api/inventory` | Gestion de l'inventaire vehiculaire |
+| POST | `/api/inventory/shared/dealerconnect` | Recoit la liste complete de DealerConnect (cle de veille ; `dry_run` pour un essai a blanc) |
 | POST | `/api/invoice/scan` | Scanner une facture (OCR) |
 | POST | `/api/email/send` | Envoyer un calcul par email |
 | GET/POST | `/api/submissions` | Gestion des soumissions (CRM) |
@@ -330,6 +331,7 @@ La chaine de connexion est stockee dans la variable `MONGO_URL` du fichier `.env
 | `submissions` | Soumissions clients (CRM) | `id`, `owner_id`, `client_name`, `client_phone`, `vehicle_*`, `payment_*`, `status` |
 | `contacts` | Contacts importes | `id`, `owner_id`, `name`, `phone`, `email` |
 | `inventory` | Vehicules en stock | `id`, `owner_id`, `stock_no`, `vin`, `brand`, `model`, `msrp`, `status` |
+| `dealerconnect_vehicles` | Liste complete de DealerConnect : en stock, en route, en construction (remplacee en entier a chaque releve) | `owner_id`, `vin`, `year`, `model_code`, `status`, `stage`, `paint`, `interior`, `paint_name`, `interior_name`, `package` |
 | `vehicle_options` | Options/equipements | `stock_no`, `product_code`, `description`, `amount` |
 | `window_stickers` | Window Stickers caches | `vin`, `data`, `images` |
 | `parsing_metrics` | Metriques de scan OCR | `owner_id`, `vin`, `score`, `status`, `duration_sec` |
@@ -544,6 +546,39 @@ Ecran (fenetre « courriel ») : nom, telephone et courriel du client requis
 Les dossiers d'eTradeValue (reprise, prix du directeur `prix_reprise`, montant du
 `paiement_restant`) arrivent par `POST /api/etv/sync`, qui lit
 `kenbot-dashboard-api /api/calcauto/dossiers` a chaque ouverture du CRM.
+
+### Flux de la liste DealerConnect vers les fiches d'inventaire
+
+Le site de la concession ne montre un vehicule qu'une fois mis en vente. DealerConnect
+liste aussi ceux qui viennent d'arriver, ceux en route et ceux en usine.
+
+```
+Mac (releve DealerConnect : niv-valides-dealerconnect.csv -> liste_dealerconnect.py)
+  |  POST /api/inventory/shared/dealerconnect?dry_run=   (cle de veille ou administrateur)
+  v
+routers/inventory.py -> services/dealerconnect_inventory.py
+  |  tout ou rien : NIV (17 + chiffre de controle), forme du code, statut, couleur ;
+  |  moins de 20 vehicules = lecture ratee, rien n'est remplace
+  v
+Mongo `dealerconnect_vehicles` (la liste remplace la precedente)
+  v
+GET /api/inventory  (seulement pour la concession qui voit l'inventaire partage)
+  - fiche deja a l'inventaire, meme NIV : recoit `dc_stage`, `dc_status`, `paint_name`,
+    et la couleur ou le code s'ils manquaient
+  - NIV jamais vu dans `inventory` : nouvelle fiche, `stock_no` = `DC-<8 derniers>`,
+    `stock_pending: true`, sans prix (PDSF a saisir)
+  - NIV deja vu puis sorti du site (vendu) : aucune fiche, il ne revient pas
+```
+
+Etapes (`stage`) tirees du statut de commande : `KZX` = en stock ; autres `KZ…` et `J…` =
+en route ; `D` a `I` = en construction ; `B`, `C` = commande ; tout autre code = inconnu
+(affiche tel quel). L'ecran (`frontend/utils/vehicleCard.ts`) affiche l'etape et la
+couleur sur la fiche, et « Stock a venir » a la place du repere `DC-…`, qui n'est jamais
+imprime sur une soumission.
+
+Limites connues : le numero de stock et le prix n'existent pas dans DealerConnect ;
+l'envoi de la liste se fait encore a la main depuis le Mac (pas de releve automatique) ;
+le remplacement (suppression puis insertion) n'est pas une transaction.
 
 ### Flux de l'import de programmes
 ```
