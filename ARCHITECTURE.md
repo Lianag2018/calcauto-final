@@ -508,6 +508,12 @@ EXPO_PUBLIC_BACKEND_URL=http://localhost:8001
 
 ## 7. Flux de donnees
 
+### Comptant proposé par défaut (subvention gouvernementale)
+
+`frontend/utils/defaultCashDown.ts` tient une petite table de règles datées : marque, début du nom de modèle, montant taxes incluses, dernier jour (`until`). En choisissant un véhicule (`selectProgram`), le champ « Comptant (tx inclus) » reçoit le montant de la règle en vigueur ; une note verte sous le champ dit d'où il vient. Le vendeur peut le changer. Si on passe à un véhicule sans règle, un montant que nous avions proposé est retiré (la subvention ne suit pas le client), un montant tapé à la main reste. Passé la date, la règle ne s'applique plus, sans intervention.
+
+Règle en place : Fiat 500 (tous les modèles « 500… »), 7 000 $ taxes incluses, jusqu'au 31 décembre 2026. Tests : `frontend/tests/defaultCashDown.test.ts`.
+
 ### Flux d'un calcul de financement
 ```
 1. L'utilisateur selectionne un vehicule dans le frontend

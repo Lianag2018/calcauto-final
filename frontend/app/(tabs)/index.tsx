@@ -33,6 +33,7 @@ import { Dossier, dossierFromContact, takeQueuedDossier, takeEvalId, syncDossier
 import { newQuoteSms, plainVehicle, hasNameAndPhone } from '../../utils/quoteSms';
 import { findMatchingContact, contactChanges } from '../../utils/contactMatch';
 import { STAGE_COLORS, colorLabel, searchInventory, stageLabel, stockLabel } from '../../utils/vehicleCard';
+import { cashDownNote, cashDownOnSelect, defaultCashDown } from '../../utils/defaultCashDown';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { Language, saveLanguage, loadLanguage, getTranslation, TranslationKeys } from '../../utils/i18n';
 import { useAuth } from '../../contexts/AuthContext';
@@ -306,6 +307,8 @@ export default function HomeScreen() {
   
   // Comptant (cash down payment, taxes included)
   const [comptantTxInclus, setComptantTxInclus] = useState('');
+  // Montant que nous avons proposé nous-mêmes (subvention) : retiré si on change de véhicule.
+  const [comptantAuto, setComptantAuto] = useState('');
   
   // Accessoires additionnels (ajoutés au prix avant taxes)
   const [accessories, setAccessories] = useState<Array<{description: string; price: string}>>([]);
@@ -971,6 +974,10 @@ export default function HomeScreen() {
 
   const selectProgram = (program: VehicleProgram) => {
     setSelectedProgram(program);
+    // Subvention gouvernementale datée (ex. Fiat 500) : proposée en comptant, modifiable.
+    const cash = cashDownOnSelect(comptantTxInclus, comptantAuto, defaultCashDown(program));
+    setComptantTxInclus(cash.value);
+    setComptantAuto(cash.autoFilled);
     // La prime de fidélité se recoche pour chaque véhicule : jamais reportée d'un client à l'autre.
     setCheckedOffers({});
     setResidualPick({});
@@ -3204,6 +3211,11 @@ export default function HomeScreen() {
                   />
                 </View>
               </View>
+              {!!cashDownNote(comptantTxInclus, defaultCashDown(selectedProgram), lang === 'fr' ? 'fr' : 'en') && (
+                <Text style={{ color: '#2e7d32', fontSize: 12, marginTop: -4, marginBottom: 8 }} testID="cash-down-note">
+                  {cashDownNote(comptantTxInclus, defaultCashDown(selectedProgram), lang === 'fr' ? 'fr' : 'en')}
+                </Text>
+              )}
 
               {/* Frais additionnels (taxables) */}
               <View style={styles.feesSection}>
