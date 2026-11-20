@@ -31,6 +31,7 @@ import { AnimatedSplashScreen } from '../../components/AnimatedSplashScreen';
 import { GaugeMark } from '../../components/GaugeMark';
 import { Dossier, dossierFromContact, takeQueuedDossier, takeEvalId, syncDossiers, fetchListingUrl, usedQuoteSms, smsHref, windowStickerUrl, smsLinks, tradeDetail, dossierFeeForMode, otherFees, DOSSIER_FEE, WINDSHIELD_FEE } from '../../utils/etvDossier';
 import { newQuoteSms, plainVehicle, hasNameAndPhone } from '../../utils/quoteSms';
+import { findMatchingContact, contactChanges } from '../../utils/contactMatch';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { Language, saveLanguage, loadLanguage, getTranslation, TranslationKeys } from '../../utils/i18n';
 import { useAuth } from '../../contexts/AuthContext';
@@ -4572,6 +4573,18 @@ export default function HomeScreen() {
                   style={[styles.emailModalSendButton, sendingEmail && styles.emailModalSendButtonDisabled]}
                   disabled={sendingEmail}
                   onPress={async () => {
+                    // Le nom est requis : sans lui, la fiche du CRM serait anonyme.
+                    if (!(clientName || '').trim()) {
+                      const message = lang === 'fr'
+                        ? 'Le nom du client est requis pour l\'enregistrer au CRM.'
+                        : 'The client name is required to save to the CRM.';
+                      if (Platform.OS === 'web') {
+                        alert(message);
+                      } else {
+                        Alert.alert(lang === 'fr' ? 'Erreur' : 'Error', message);
+                      }
+                      return;
+                    }
                     // Validate phone (required)
                     if (!clientPhone || clientPhone.trim().length < 7) {
                       if (Platform.OS === 'web') {
@@ -4709,18 +4722,12 @@ export default function HomeScreen() {
                           const contactsResponse = await fetch(`${API_URL}/api/contacts`, { headers: authHeaders });
                           const existingContacts = await contactsResponse.json();
                           
-                          const existingContact = existingContacts.find((c: any) => 
-                            c.name?.toLowerCase() === (clientName || '').toLowerCase() ||
-                            (c.phone && c.phone === clientPhone) ||
-                            (c.email && c.email === clientEmail)
-                          );
+                          const client = { name: clientName, phone: clientPhone, email: clientEmail };
+                          const existingContact: any = findMatchingContact(existingContacts, client);
                           
                           if (existingContact) {
-                            // Update existing contact with new info if provided
-                            const updateData: any = {};
-                            if (clientEmail && clientEmail !== existingContact.email) updateData.email = clientEmail;
-                            if (clientPhone && clientPhone !== existingContact.phone) updateData.phone = clientPhone;
-                            if (clientName && clientName !== existingContact.name) updateData.name = clientName;
+                            // Coordonnées nouvelles seulement ; un vrai nom déjà au CRM n'est pas remplacé.
+                            const updateData = contactChanges(existingContact, client);
                             
                             if (Object.keys(updateData).length > 0) {
                               await fetch(`${API_URL}/api/contacts/${existingContact.id}`, {
@@ -4753,6 +4760,8 @@ export default function HomeScreen() {
                         
                         // 2. Save submission to server database
                         try {
+                          // Le CRM garde l'option réellement choisie, pas toujours l'option 1.
+                          const two = selectedOption === '2' || !hasOption1;
                           const payment = paymentFrequency === 'monthly' ? localResult.option1Monthly :
                                          paymentFrequency === 'biweekly' ? localResult.option1Biweekly :
                                          localResult.option1Weekly;
@@ -4769,11 +4778,11 @@ export default function HomeScreen() {
                               vehicle_year: selectedProgram.year,
                               vehicle_price: parseFloat(vehiclePrice) || 0,
                               term: selectedTerm,
-                              payment_monthly: localResult.option1Monthly,
-                              payment_biweekly: localResult.option1Biweekly,
-                              payment_weekly: localResult.option1Weekly,
-                              selected_option: selectedOption || '1',
-                              rate: localResult.option1Rate,
+                              payment_monthly: (two ? localResult.option2Monthly : localResult.option1Monthly) || 0,
+                              payment_biweekly: (two ? localResult.option2Biweekly : localResult.option1Biweekly) || 0,
+                              payment_weekly: (two ? localResult.option2Weekly : localResult.option1Weekly) || 0,
+                              selected_option: two ? '2' : '1',
+                              rate: (two ? localResult.option2Rate : localResult.option1Rate) || 0,
                               program_month: currentPeriod?.month || 2,
                               program_year: currentPeriod?.year || 2026,
                               calculator_state: {

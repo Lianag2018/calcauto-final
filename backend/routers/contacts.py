@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, Body, HTTPException, Header
 from typing import Optional
 from database import db
 from models import Contact, ContactCreate, ContactBulkCreate
@@ -102,26 +102,32 @@ async def delete_contact(contact_id: str, authorization: Optional[str] = Header(
     return {"success": True, "message": "Contact supprimé"}
 
 @router.put("/contacts/{contact_id}")
-async def update_contact(contact_id: str, authorization: Optional[str] = Header(None), name: Optional[str] = None, phone: Optional[str] = None, email: Optional[str] = None):
-    """Met à jour un contact de l'utilisateur connecté"""
+async def update_contact(contact_id: str, authorization: Optional[str] = Header(None), name: Optional[str] = None, phone: Optional[str] = None, email: Optional[str] = None, payload: Optional[dict] = Body(None)):
+    """Met à jour un contact de l'utilisateur connecté.
+
+    Les champs arrivent dans le corps JSON (c'est ce qu'envoie l'écran) ou, comme
+    avant, dans l'adresse. Rien à écrire = erreur 400, jamais un faux succès."""
     user = await get_current_user(authorization)
-    
+
+    body = payload if isinstance(payload, dict) else {}
     update_data = {}
-    if name: update_data["name"] = name
-    if phone: update_data["phone"] = phone
-    if email: update_data["email"] = email
-    
+    for field, from_query in (("name", name), ("phone", phone), ("email", email)):
+        value = from_query if from_query else body.get(field)
+        if isinstance(value, str) and value.strip():
+            update_data[field] = value.strip()
+
     if not update_data:
-        return {"success": False, "message": "Aucune donnée à mettre à jour"}
-    
+        raise HTTPException(status_code=400, detail="Aucune donnée à mettre à jour")
+
     result = await db.contacts.update_one(
         {"id": contact_id, "owner_id": user["id"]},
         {"$set": update_data}
     )
-    
-    if result.modified_count == 0:
+
+    # matched_count : une fiche déjà à jour n'est pas une fiche introuvable.
+    if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Contact non trouvé")
-    return {"success": True, "message": "Contact mis à jour"}
+    return {"success": True, "message": "Contact mis à jour", "updated": sorted(update_data)}
 
 @router.delete("/contacts")
 async def delete_all_contacts(authorization: Optional[str] = Header(None)):
