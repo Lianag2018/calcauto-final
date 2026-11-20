@@ -576,6 +576,11 @@ en route ; `D` a `I` = en construction ; `B`, `C` = commande ; tout autre code =
 couleur sur la fiche, et « Stock a venir » a la place du repere `DC-…`, qui n'est jamais
 imprime sur une soumission.
 
+Recherche directe : en haut du calculateur, un champ cherche dans tout l'inventaire charge
+(neuf et occasion) par numero de stock, fin du NIV ou mots du modele
+(`searchInventory` dans `frontend/utils/vehicleCard.ts`) et ouvre le calcul sur le vehicule
+choisi, avec son programme. Aucun appel serveur de plus.
+
 Limites connues : le numero de stock et le prix n'existent pas dans DealerConnect ;
 l'envoi de la liste se fait encore a la main depuis le Mac (pas de releve automatique) ;
 le remplacement (suppression puis insertion) n'est pas une transaction.

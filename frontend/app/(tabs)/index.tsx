@@ -32,7 +32,7 @@ import { GaugeMark } from '../../components/GaugeMark';
 import { Dossier, dossierFromContact, takeQueuedDossier, takeEvalId, syncDossiers, fetchListingUrl, usedQuoteSms, smsHref, windowStickerUrl, smsLinks, tradeDetail, dossierFeeForMode, otherFees, DOSSIER_FEE, WINDSHIELD_FEE } from '../../utils/etvDossier';
 import { newQuoteSms, plainVehicle, hasNameAndPhone } from '../../utils/quoteSms';
 import { findMatchingContact, contactChanges } from '../../utils/contactMatch';
-import { STAGE_COLORS, colorLabel, stageLabel, stockLabel } from '../../utils/vehicleCard';
+import { STAGE_COLORS, colorLabel, searchInventory, stageLabel, stockLabel } from '../../utils/vehicleCard';
 import { LanguageSelector } from '../../components/LanguageSelector';
 import { Language, saveLanguage, loadLanguage, getTranslation, TranslationKeys } from '../../utils/i18n';
 import { useAuth } from '../../contexts/AuthContext';
@@ -975,6 +975,40 @@ export default function HomeScreen() {
     setCheckedOffers({});
     setResidualPick({});
     setResults(null);
+  };
+
+  // ----- Recherche directe par numéro de stock -----
+  const [stockSearch, setStockSearch] = useState('');
+  const stockMatches = useMemo(() => searchInventory(inventoryList as any[], stockSearch), [inventoryList, stockSearch]);
+  const [stockSearchNote, setStockSearchNote] = useState('');
+
+  // Ouvre le calcul sur un véhicule d'inventaire, neuf ou d'occasion, sans passer par les listes.
+  const pickInventoryVehicle = (vehicle: any) => {
+    setStockSearch('');
+    setStockSearchNote('');
+    setCheckedOffers({});
+    setResults(null);
+    if (vehicle.type === 'occasion') {
+      setVehicleMode('usage');
+      setFraisDossier(current => dossierFeeForMode(current, 'usage'));
+      setSelectedInventory(vehicle);
+      setManualVin('');
+      setVehiclePrice(String(vehicle.asking_price || vehicle.msrp || ''));
+      return;
+    }
+    const program = programs.find(p => matchesInventoryToProgram(vehicle, p));
+    setVehicleMode('neuf');
+    setFraisDossier(current => dossierFeeForMode(current, 'neuf'));
+    if (!program) {
+      setStockSearchNote(lang === 'fr'
+        ? `Aucun programme trouvé pour ${stockLabel(vehicle, 'fr')} (${vehicle.year} ${vehicle.model || ''} ${vehicle.trim || ''}) : choisissez-le dans la liste.`
+        : `No program found for ${stockLabel(vehicle, 'en')} (${vehicle.year} ${vehicle.model || ''} ${vehicle.trim || ''}): pick it from the list.`);
+      return;
+    }
+    selectProgram(program);
+    setSelectedInventory(vehicle);
+    setManualVin('');
+    setVehiclePrice(String(newVehicleBasePrice(vehicle) || ''));
   };
 
   // ----- Dossier d'évaluation eTradeValue -----
@@ -2366,6 +2400,45 @@ export default function HomeScreen() {
                 </Text>
               </TouchableOpacity>
             ))}
+          </View>
+
+          <View style={{ marginHorizontal: 16, marginTop: 10 }} data-testid="stock-search">
+            <TextInput
+              style={styles.input}
+              value={stockSearch}
+              onChangeText={(text) => { setStockSearch(text); setStockSearchNote(''); }}
+              placeholder={lang === 'fr' ? 'Recherche directe : no de stock ou fin du NIV' : 'Direct search: stock # or end of VIN'}
+              placeholderTextColor="#8a93a1"
+              autoCapitalize="characters"
+              autoCorrect={false}
+              returnKeyType="search"
+              onSubmitEditing={() => { if (stockMatches.length === 1) pickInventoryVehicle(stockMatches[0]); }}
+              data-testid="stock-search-input"
+            />
+            {stockMatches.map((vehicle: any) => (
+              <TouchableOpacity
+                key={vehicle.id || vehicle.stock_no}
+                onPress={() => pickInventoryVehicle(vehicle)}
+                style={{ paddingVertical: 10, paddingHorizontal: 12, marginTop: 6, borderRadius: 9, borderWidth: 1, borderColor: '#2f3642', backgroundColor: '#1a1f29' }}
+                data-testid={`stock-search-result-${vehicle.stock_no}`}
+              >
+                <Text style={{ color: '#f4f1ea', fontSize: 14, fontWeight: '700' }}>
+                  {stockLabel(vehicle, lang)}  {vehicle.year} {vehicle.brand} {vehicle.model} {vehicle.trim}
+                </Text>
+                <Text style={{ color: '#b9c0cc', fontSize: 12, marginTop: 2 }}>
+                  {[vehicle.type === 'occasion' ? (lang === 'fr' ? 'Occasion' : 'Used') : (lang === 'fr' ? 'Neuf' : 'New'),
+                    vehicle.model_code, colorLabel(vehicle), stageLabel(vehicle, lang)?.text].filter(Boolean).join(' · ')}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            {stockSearch.trim().length >= 2 && stockMatches.length === 0 && inventoryLoaded && (
+              <Text style={{ color: '#b9c0cc', fontSize: 13, marginTop: 6 }}>
+                {lang === 'fr' ? 'Aucun véhicule disponible ne correspond.' : 'No available vehicle matches.'}
+              </Text>
+            )}
+            {!!stockSearchNote && (
+              <Text style={{ color: '#FFB347', fontSize: 13, marginTop: 6 }}>{stockSearchNote}</Text>
+            )}
           </View>
 
           {!!dossierNote && (
