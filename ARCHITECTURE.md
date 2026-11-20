@@ -526,6 +526,25 @@ EXPO_PUBLIC_BACKEND_URL=http://localhost:8001
    ou creer une soumission CRM (POST /api/submissions)
 ```
 
+### Flux d'une soumission envoyee par courriel vers le CRM
+
+```
+Ecran (fenetre « courriel ») : nom, telephone et courriel du client requis
+  -> POST /api/send-calculation-email
+  -> GET  /api/contacts                 (fiches du conseiller)
+  -> rapprochement : frontend/utils/contactMatch.ts
+       courriel identique, sinon telephone identique (chiffres seulement),
+       sinon meme nom si rien ne le contredit ; un nom vide ne rapproche jamais.
+  -> fiche retrouvee : PUT /api/contacts/{id}  (corps JSON ; coordonnees nouvelles,
+       un vrai nom deja au CRM n'est jamais remplace)
+     aucune fiche   : POST /api/contacts
+  -> POST /api/submissions              (option reellement choisie, suivis 2, 7, 30 jours)
+```
+
+Les dossiers d'eTradeValue (reprise, prix du directeur `prix_reprise`, montant du
+`paiement_restant`) arrivent par `POST /api/etv/sync`, qui lit
+`kenbot-dashboard-api /api/calcauto/dossiers` a chaque ouverture du CRM.
+
 ### Flux de l'import de programmes
 ```
 1. L'admin televerse un PDF (Retail ou Residuel)
