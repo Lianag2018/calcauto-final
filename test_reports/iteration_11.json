@@ -36,7 +36,7 @@
   "test_credentials": {
     "main_app_login": {
       "email": "danielgiroux007@gmail.com",
-      "password": "Liana2018$"
+      "password": "***"
     }
   },
   "seed_data_creation": "None",
@@ -62,7 +62,7 @@
     },
     "login_flow": {
       "status": "PASSED",
-      "description": "Login with danielgiroux007@gmail.com / Liana2018$ works correctly"
+      "description": "Login with danielgiroux007@gmail.com / *** works correctly"
     },
     "vehicle_selection": {
       "status": "PASSED",

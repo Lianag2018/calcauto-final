@@ -10,7 +10,7 @@ import requests
 import os
 
 BASE_URL = os.environ.get('EXPO_PUBLIC_BACKEND_URL', 'https://toc-extraction-fix.preview.emergentagent.com')
-ADMIN_PASSWORD = "Liana2018"
+ADMIN_PASSWORD = os.environ.get("CALCAUTO_ADMIN_PASSWORD", "")
 
 # Test PDF paths
 PDF_JAN = "/tmp/jan2026.pdf"

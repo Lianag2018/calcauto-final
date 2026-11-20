@@ -33,7 +33,7 @@
     "backend": "100% (58/58 tests passed - 32 unit + 20 km_adjustments + 6 residual guide upload)"
   },
   "test_credentials": {
-    "admin_password": "Liana2018",
+    "admin_password": "***",
     "backend_url": "https://toc-extraction-fix.preview.emergentagent.com",
     "test_pdf": "/app/april_2026_residual.pdf"
   },

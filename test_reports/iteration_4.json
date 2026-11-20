@@ -32,7 +32,7 @@
   "seed_data_creation": "None required - using existing RAM 1500 Sport, Rebel vehicle data",
   "test_credentials": {
     "email": "danielgiroux007@gmail.com",
-    "password": "Liana2018$"
+    "password": "***"
   },
   "retest_needed": false,
   "should_main_agent_self_test": false,

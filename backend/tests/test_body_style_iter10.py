@@ -108,7 +108,7 @@ class TestLoginAndInventory:
         """Get auth token via login"""
         login_data = {
             "email": "danielgiroux007@gmail.com",
-            "password": "Liana2018$"
+            "password": os.environ.get("CALCAUTO_TEST_PASSWORD", "")
         }
         response = requests.post(f"{BASE_URL}/api/auth/login", json=login_data)
         if response.status_code == 200:
@@ -119,7 +119,7 @@ class TestLoginAndInventory:
         """Test login with valid credentials"""
         login_data = {
             "email": "danielgiroux007@gmail.com",
-            "password": "Liana2018$"
+            "password": os.environ.get("CALCAUTO_TEST_PASSWORD", "")
         }
         response = requests.post(f"{BASE_URL}/api/auth/login", json=login_data)
         assert response.status_code == 200, f"Login failed: {response.status_code} - {response.text}"

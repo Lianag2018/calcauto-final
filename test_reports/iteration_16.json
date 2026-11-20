@@ -30,7 +30,7 @@
     "frontend": "N/A - Backend only testing"
   },
   "test_credentials": {
-    "admin_password": "Liana2018"
+    "admin_password": "***"
   },
   "seed_data_creation": "None - used existing data, all changes reverted after tests",
   "retest_needed": false,

@@ -11,9 +11,9 @@ import requests
 import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://toc-extraction-fix.preview.emergentagent.com').rstrip('/')
-ADMIN_PASSWORD = "Liana2018"
+ADMIN_PASSWORD = os.environ.get("CALCAUTO_ADMIN_PASSWORD", "")
 TEST_USER_EMAIL = "danielgiroux007@gmail.com"
-TEST_USER_PASSWORD = "Liana2018$"
+TEST_USER_PASSWORD = os.environ.get("CALCAUTO_TEST_PASSWORD", "")
 
 class TestProgramsAPIAlternativeConsumerCash:
     """Tests for alternative_consumer_cash in programs API"""

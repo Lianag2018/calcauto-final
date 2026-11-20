@@ -716,6 +716,16 @@ apres les tests.
 | `VERCEL_TOKEN` | Token API Vercel |
 | `VERCEL_ORG_ID` | ID organisation Vercel |
 | `VERCEL_PROJECT_ID` | ID projet Vercel |
+| `CALCAUTO_TEST_PASSWORD` | Mot de passe du compte utilise par les tests d'integration |
+| `CALCAUTO_ADMIN_PASSWORD` | Mot de passe admin (import) utilise par les tests d'integration |
+
+Les tests lisent ces deux valeurs dans l'environnement (`os.environ`). Aucun mot de passe
+n'est ecrit dans le code, les tests, les rapports ou la documentation. Le serveur, lui,
+lit `ADMIN_PASSWORD` dans les variables de Render.
+
+Reste a faire (touche la production, attend l'accord de Daniel) : retirer la valeur par
+defaut de `ADMIN_PASSWORD` dans `backend/database.py` et le mot de passe pre-rempli pour
+le compte de demonstration dans `frontend/app/import.tsx`.
 
 ### Tests automatises
 

@@ -1,5 +1,5 @@
 {
-  "summary": "Tested CalcAuto AiPro Corrections Memory System. All 9 backend tests passed. The corrections system correctly: 1) Lists corrections via GET /api/corrections with total count and structure, 2) Saves corrections to program_corrections collection when Excel import has modified values, 3) Deletes all corrections via DELETE /api/corrections/all?password=Liana2018, 4) Each correction contains brand, model, trim, year, corrected_values (consumer_cash, alternative_consumer_cash, bonus_cash, option1_rates, option2_rates), and corrected_at timestamp.",
+  "summary": "Tested CalcAuto AiPro Corrections Memory System. All 9 backend tests passed. The corrections system correctly: 1) Lists corrections via GET /api/corrections with total count and structure, 2) Saves corrections to program_corrections collection when Excel import has modified values, 3) Deletes all corrections via DELETE /api/corrections/all?password=***, 4) Each correction contains brand, model, trim, year, corrected_values (consumer_cash, alternative_consumer_cash, bonus_cash, option1_rates, option2_rates), and corrected_at timestamp.",
   "backend_issues": {
     "critical": [],
     "minor": []
@@ -29,13 +29,13 @@
     "frontend": "N/A - backend only testing"
   },
   "test_credentials": {
-    "admin_password": "Liana2018",
+    "admin_password": "***",
     "base_url": "https://toc-extraction-fix.preview.emergentagent.com"
   },
   "seed_data_creation": "Test data created and restored during tests (no persistent changes)",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Corrections Memory System fully tested. Key endpoints: GET /api/corrections returns {total: int, corrections: []}. POST /api/programs/import-excel saves corrections to program_corrections when values are modified. DELETE /api/corrections/all?password=Liana2018 clears all corrections. Each correction has: brand, model, trim, year, corrected_values: {consumer_cash, alternative_consumer_cash, bonus_cash, option1_rates, option2_rates}, corrected_at. The system uses flexible matching via normalize_correction_model() and normalize_correction_str() when applying corrections during PDF import (POST /api/save-programs).",
+  "context_for_next_testing_agent": "Corrections Memory System fully tested. Key endpoints: GET /api/corrections returns {total: int, corrections: []}. POST /api/programs/import-excel saves corrections to program_corrections when values are modified. DELETE /api/corrections/all?password=*** clears all corrections. Each correction has: brand, model, trim, year, corrected_values: {consumer_cash, alternative_consumer_cash, bonus_cash, option1_rates, option2_rates}, corrected_at. The system uses flexible matching via normalize_correction_model() and normalize_correction_str() when applying corrections during PDF import (POST /api/save-programs).",
   "verified_features": {
     "GET /api/corrections": {
       "status": "PASSED",
@@ -48,7 +48,7 @@
       "returns": {"corrections_saved": "count of new corrections"},
       "correction_saved_to": "program_corrections MongoDB collection"
     },
-    "DELETE /api/corrections/all?password=Liana2018": {
+    "DELETE /api/corrections/all?password=***": {
       "status": "PASSED",
       "requires_password": true,
       "returns": {"deleted": "count of deleted corrections"}

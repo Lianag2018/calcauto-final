@@ -19,6 +19,11 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    # Mots de passe des tests : jamais dans le code, lus dans les secrets GitHub.
+    # Vides tant que les secrets ne sont pas créés ; les tests hors réseau n'en ont pas besoin.
+    env:
+      CALCAUTO_TEST_PASSWORD: ${{ secrets.CALCAUTO_TEST_PASSWORD }}
+      CALCAUTO_ADMIN_PASSWORD: ${{ secrets.CALCAUTO_ADMIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 

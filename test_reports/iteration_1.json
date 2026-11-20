@@ -28,7 +28,7 @@
   },
   "test_credentials": {
     "email": "danielgiroux007@gmail.com",
-    "password": "Liana2018$"
+    "password": "***"
   },
   "seed_data_creation": "No seed data created - used existing vehicle in inventory (2025 Ram 2500 Express 4x4 stock #46093)",
   "retest_needed": false,
@@ -38,7 +38,7 @@
     {
       "test_name": "Login with email/password",
       "status": "PASSED",
-      "details": "Successfully logged in with danielgiroux007@gmail.com and Liana2018$"
+      "details": "Successfully logged in with danielgiroux007@gmail.com and ***"
     },
     {
       "test_name": "Navigate to Inventaire tab",

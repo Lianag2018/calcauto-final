@@ -60,7 +60,7 @@
 #### ✅ Password Verification
 - **Status**: PASS
 - **Endpoint**: POST /api/verify-password
-- **Result**: Correct password (Liana2018) accepted, wrong password rejected with 401
+- **Result**: Correct password (***) accepted, wrong password rejected with 401
 
 #### ✅ Ram 2500/3500 2025 Bonus Cash Validation
 - **Status**: PASS

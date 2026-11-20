@@ -32,9 +32,9 @@
   "test_credentials": {
     "main_app_login": {
       "email": "danielgiroux007@gmail.com",
-      "password": "Liana2018$"
+      "password": "***"
     },
-    "import_admin_password": "Liana2018"
+    "import_admin_password": "***"
   },
   "seed_data_creation": "None - using existing inventory items (e.g., #26089)",
   "retest_needed": false,

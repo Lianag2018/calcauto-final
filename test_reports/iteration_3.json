@@ -33,7 +33,7 @@
   },
   "test_credentials": {
     "email": "danielgiroux007@gmail.com",
-    "password": "Liana2018$"
+    "password": "***"
   },
   "seed_data_creation": "No seed data created - used existing inventory",
   "retest_needed": false,

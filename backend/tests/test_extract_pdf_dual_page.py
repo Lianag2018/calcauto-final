@@ -6,7 +6,7 @@ Features tested:
 - POST /api/extract-pdf accepts new optional params lease_start_page and lease_end_page
 - POST /api/extract-pdf with password=wrong returns 401
 - POST /api/extract-pdf with correct password + retail pages only (no lease pages) works
-- POST /api/verify-password works with correct password Liana2018
+- POST /api/verify-password works with correct password ***
 - GET /api/sci/lease-rates returns valid JSON with vehicles_2026 and vehicles_2025 arrays
 - GET /api/sci/vehicle-hierarchy returns valid hierarchy data
 """
@@ -16,7 +16,7 @@ import requests
 import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://toc-extraction-fix.preview.emergentagent.com').rstrip('/')
-ADMIN_PASSWORD = "Liana2018"
+ADMIN_PASSWORD = os.environ.get("CALCAUTO_ADMIN_PASSWORD", "")
 WRONG_PASSWORD = "wrongpassword123"
 
 

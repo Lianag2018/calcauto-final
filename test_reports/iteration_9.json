@@ -33,19 +33,19 @@
   "test_credentials": {
     "main_app_login": {
       "email": "danielgiroux007@gmail.com",
-      "password": "Liana2018$"
+      "password": "***"
     },
-    "import_admin_password": "Liana2018"
+    "import_admin_password": "***"
   },
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Dual-page PDF extraction feature fully tested. Backend /api/extract-pdf accepts optional lease_start_page and lease_end_page params. When provided, it extracts SCI Lease rates from those pages and saves to sci_lease_rates_{month}{year}.json. Frontend import wizard shows dual-page inputs in select-pages step AFTER PDF upload (not visible on upload step). Access import page via /import route, requires main app login first then admin password (Liana2018).",
+  "context_for_next_testing_agent": "Dual-page PDF extraction feature fully tested. Backend /api/extract-pdf accepts optional lease_start_page and lease_end_page params. When provided, it extracts SCI Lease rates from those pages and saves to sci_lease_rates_{month}{year}.json. Frontend import wizard shows dual-page inputs in select-pages step AFTER PDF upload (not visible on upload step). Access import page via /import route, requires main app login first then admin password (***).",
   "verified_features": {
     "backend_apis": {
       "POST_verify_password": {
         "status": "200 OK",
         "test_coverage": [
-          "Accepts correct password Liana2018",
+          "Accepts correct password ***",
           "Rejects wrong password with 401"
         ]
       },

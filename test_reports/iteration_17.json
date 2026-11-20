@@ -30,7 +30,7 @@
     "frontend": "N/A - Backend only testing"
   },
   "test_credentials": {
-    "admin_password": "Liana2018",
+    "admin_password": "***",
     "base_url": "https://toc-extraction-fix.preview.emergentagent.com"
   },
   "seed_data_creation": "None - all test data reverted after each test using pytest fixture",
