@@ -91,6 +91,17 @@ async def keep_imported_data_files():
 
 
 @app.on_event("startup")
+async def close_demo_entry():
+    """27 nov. 2026 : l'ancien compte démo (administrateur sans mot de passe) est fermé."""
+    try:
+        from services import test_account
+        closed = await test_account.close_old_demo(db)
+        logger.info(f"[SECURITE] compte démo fermé, {closed} session(s) retirée(s)")
+    except Exception as e:
+        logger.warning(f"[SECURITE] fermeture du compte démo impossible: {type(e).__name__}")
+
+
+@app.on_event("startup")
 async def run_data_migration():
     """Migration automatique: corrige les donnees 2025 erronees au demarrage"""
     try:

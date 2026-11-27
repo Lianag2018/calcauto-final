@@ -6,7 +6,7 @@ import base64
 import json
 from database import db, ROOT_DIR, SMTP_EMAIL, logger
 from models import SendCalculationEmailRequest, SendReportEmailRequest
-from dependencies import get_current_user, get_optional_user, get_rate_for_term
+from dependencies import get_current_user, get_optional_user, get_rate_for_term, require_admin
 from services.email_service import send_email
 from services.window_sticker import (
     fetch_window_sticker, save_window_sticker_to_db,
@@ -166,6 +166,9 @@ async def get_window_sticker_pdf(vin: str):
 @router.post("/send-calculation-email")
 async def send_calculation_email(request: SendCalculationEmailRequest, authorization: Optional[str] = Header(None)):
     """Envoie un calcul de financement par email avec Window Sticker en pièce jointe et CC à l'utilisateur"""
+    # 27 nov. 2026 : une session est exigée. Sans elle, n'importe qui pouvait faire partir
+    # des courriels au nom de CalcAuto.
+    await get_current_user(authorization)
     try:
         # Récupérer l'email de l'utilisateur connecté pour le CC
         user_email = None
@@ -523,8 +526,9 @@ async def send_calculation_email(request: SendCalculationEmailRequest, authoriza
         raise HTTPException(status_code=500, detail=f"Erreur d'envoi: {str(e)}")
 
 @router.post("/send-import-report")
-async def send_import_report(request: SendReportEmailRequest):
+async def send_import_report(request: SendReportEmailRequest, authorization: Optional[str] = Header(None)):
     """Envoie un rapport par email après l'import des programmes"""
+    await require_admin(authorization)
     try:
         months_fr = {
             1: "Janvier", 2: "Février", 3: "Mars", 4: "Avril",
@@ -607,8 +611,9 @@ async def send_import_report(request: SendReportEmailRequest):
         raise HTTPException(status_code=500, detail=f"Erreur d'envoi: {str(e)}")
 
 @router.post("/test-email")
-async def test_email():
+async def test_email(authorization: Optional[str] = Header(None)):
     """Teste la configuration email"""
+    await require_admin(authorization)
     try:
         html_body = """
         <div style="font-family: Arial; padding: 20px; text-align: center;">

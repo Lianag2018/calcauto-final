@@ -95,7 +95,7 @@ backend/
 ├── fca_parser.py             # Parseur legacy de programmes FCA
 │
 ├── routers/                  # Endpoints API (chaque fichier = un groupe)
-│   ├── auth.py               # /api/auth/* (register, login, logout, demo-login)
+│   ├── auth.py               # /api/auth/* (register, login, logout ; demo-login repond 410)
 │   ├── programs.py           # /api/programs, /api/calculate, /api/periods
 │   ├── submissions.py        # /api/submissions (CRM: soumissions clients)
 │   ├── contacts.py           # /api/contacts (carnet d'adresses)
@@ -175,7 +175,7 @@ Contient :
 |---------|----------|-------------|
 | POST | `/api/auth/register` | Inscription d'un utilisateur |
 | POST | `/api/auth/login` | Connexion (retourne un token) |
-| POST | `/api/auth/demo-login` | Connexion mode demo (sans mot de passe) |
+| POST | `/api/auth/demo-login` | Fermee le 27 nov. 2026 (410). Essais : compte `claude` |
 | GET | `/api/programs` | Liste des programmes de financement (tries par sort_order) |
 | GET | `/api/periods` | Periodes disponibles (mois/annee) |
 | POST | `/api/calculate` | Calcul de financement pour un vehicule |
@@ -241,7 +241,7 @@ frontend/
 │   │   └── calculator/          # Composants du calculateur
 │   │
 │   ├── context/
-│   │   └── AuthContext.tsx       # Contexte d'authentification (login, token, demo)
+│   │   └── AuthContext.tsx       # Contexte d'authentification (login, token, billet eTradeValue)
 │   │
 │   └── hooks/
 │       ├── useCalculator.ts     # Hook du calculateur (loyalty, deferred payment)
@@ -798,9 +798,30 @@ Les tests lisent ces deux valeurs dans l'environnement (`os.environ`). Aucun mot
 n'est ecrit dans le code, les tests, les rapports ou la documentation. Le serveur, lui,
 lit `ADMIN_PASSWORD` dans les variables de Render.
 
-Reste a faire (touche la production, attend l'accord de Daniel) : retirer la valeur par
-defaut de `ADMIN_PASSWORD` dans `backend/database.py` et le mot de passe pre-rempli pour
-le compte de demonstration dans `frontend/app/import.tsx`.
+### Quatre portes fermees (27 novembre 2026)
+
+Constat : quatre acces etaient ouverts en production.
+
+| Porte | Avant | Maintenant |
+|-------|-------|------------|
+| `POST /api/auth/demo-login` | Session d'administrateur sans mot de passe ; l'appli s'y connectait toute seule | 410. L'appli montre l'ecran de connexion. Au demarrage, l'ancien compte demo perd ses droits et ses sessions (ses jetons n'expirent pas) |
+| `POST/PUT/DELETE /api/programs`, `POST /api/seed` | Sans aucune session | `require_admin` |
+| `/api/send-calculation-email`, `/api/send-import-report`, `/api/test-email` | Sans aucune session | Session exigee ; administrateur pour les deux dernieres |
+| Mot de passe d'administrateur de secours | Ecrit dans `backend/database.py`, pre-rempli dans `frontend/app/import.tsx` | Retire partout. `ADMIN_PASSWORD` vide = aucune comparaison acceptee (`admin_password_matches`) |
+
+**Compte d'essai `claude`** (`backend/services/test_account.py`) : il remplace la demo pour
+les essais. Identifiant `claude` ou `claude@calcauto.ca` sur l'ecran de connexion ; mot de
+passe = variable `CLAUDE_TEST_PASSWORD` de Render (16 caracteres au moins), jamais dans le
+code ni dans la base. Sans la variable, le compte est ferme. Droits d'administrateur, comme
+l'ancienne demo. L'adresse est reservee : l'inscription la refuse.
+
+A faire par Daniel dans Render (service du serveur CalcAuto) :
+- verifier que `ADMIN_PASSWORD` est bien regle, sinon l'import par mot de passe est ferme ;
+- **changer** `ADMIN_PASSWORD` : l'ancienne valeur de secours reste lisible dans l'historique Git ;
+- creer `CLAUDE_TEST_PASSWORD` pour ouvrir le compte d'essai.
+
+Reste ouvert, note pour la suite : `/api/auth/register` accepte n'importe qui ; les jetons
+n'expirent jamais ; les mots de passe sont haches en SHA-256 sans sel.
 
 ### Tests automatises
 
@@ -808,7 +829,7 @@ Le tri est ecrit dans `backend/tests/conftest.py`. Aucun fichier n'est ignore en
 
 | Famille | Fichiers | Quand |
 |---------|----------|-------|
-| Hors reseau | 20 (340 tests ; 17 sautes sans les PDF Stellantis) | A chaque commit et PR |
+| Hors reseau | 21 (422 tests ; 17 sautes sans les PDF Stellantis) | A chaque commit et PR |
 | Integration (appellent un serveur, ecrivent des donnees) | 28 | Seulement avec `CALCAUTO_INTEGRATION=1` et une adresse d'essai. Toute adresse de production est refusee. |
 | Quarantaine (`xfail` strict, raison ecrite) | 0 | — |
 
@@ -823,4 +844,4 @@ Le tri est ecrit dans `backend/tests/conftest.py`. Aucun fichier n'est ignore en
 
 ---
 
-*Document mis a jour le 20 novembre 2026 pour CalcAuto AiPro*
+*Document mis a jour le 27 novembre 2026 pour CalcAuto AiPro*
