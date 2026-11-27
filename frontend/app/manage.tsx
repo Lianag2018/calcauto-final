@@ -18,6 +18,7 @@ import { useRouter } from 'expo-router';
 import axios from 'axios';
 
 import { API_URL } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface FinancingTerm {
   term_months: number;
@@ -95,6 +96,9 @@ const DEFAULT_TERMS: FinancingTerm[] = [
 
 export default function ManageScreen() {
   const router = useRouter();
+  const { getToken } = useAuth();
+  // 27 nov. 2026 : écrire un programme demande une session d'administrateur.
+  const authConfig = async () => ({ headers: { Authorization: `Bearer ${await getToken()}` } });
   const [lang, setLang] = useState<'fr' | 'en'>('fr');
   const t = translations[lang];
 
@@ -170,9 +174,9 @@ export default function ManageScreen() {
       };
 
       if (editingProgram) {
-        await axios.put(`${API_URL}/api/programs/${editingProgram.id}`, programData);
+        await axios.put(`${API_URL}/api/programs/${editingProgram.id}`, programData, await authConfig());
       } else {
-        await axios.post(`${API_URL}/api/programs`, programData);
+        await axios.post(`${API_URL}/api/programs`, programData, await authConfig());
       }
 
       await loadPrograms();
@@ -200,7 +204,7 @@ export default function ManageScreen() {
 
   const deleteProgram = async (programId: string) => {
     try {
-      await axios.delete(`${API_URL}/api/programs/${programId}`);
+      await axios.delete(`${API_URL}/api/programs/${programId}`, await authConfig());
       await loadPrograms();
     } catch (error) {
       console.error('Error deleting program:', error);

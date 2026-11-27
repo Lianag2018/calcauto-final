@@ -4717,7 +4717,7 @@ export default function HomeScreen() {
                       ]);
                       const response = await fetch(`${API_URL}/api/send-calculation-email`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await getToken()}` },
                         body: JSON.stringify({
                           submission_pdf_base64: pdfForEmail,
                           listing_url: listingForEmail,

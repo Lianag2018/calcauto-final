@@ -19,7 +19,6 @@ import axios from 'axios';
 import * as DocumentPicker from 'expo-document-picker';
 
 import { API_URL } from '../utils/api';
-import { useAuth } from '../contexts/AuthContext';
 
 interface RatesData {
   rate_36: number;
@@ -74,12 +73,12 @@ function sectionsOf(scan: any): { name: string; pages: string }[] {
 
 export default function ImportScreen() {
   const router = useRouter();
-  const { isDemoUser } = useAuth();
+  // 27 nov. 2026 : plus de compte démo ni de mot de passe pré-rempli.
   
   // Wizard state
-  const [currentStep, setCurrentStep] = useState<Step>(isDemoUser ? 'choose-type' : 'login');
-  const [password, setPassword] = useState(isDemoUser ? 'Liana2018' : '');
-  const [isAuthenticated, setIsAuthenticated] = useState(isDemoUser);
+  const [currentStep, setCurrentStep] = useState<Step>('login');
+  const [password, setPassword] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [docType, setDocType] = useState<'programs' | 'residuals'>('programs');
   
   // Period selection

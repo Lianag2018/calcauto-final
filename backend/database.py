@@ -13,7 +13,11 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # Configuration
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Liana2018')
+# 27 nov. 2026 : aucun mot de passe par défaut dans le code. Sans la variable, l'ancien mot de
+# passe des outils Admin n'est plus accepté ; la session d'un administrateur suffit.
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', '').strip()
+# Compte d'essai « claude » (remplace l'entrée démo sans mot de passe). Fermé sans la variable.
+CLAUDE_TEST_PASSWORD = os.environ.get('CLAUDE_TEST_PASSWORD', '').strip()
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 ADMIN_EMAIL = "danielgiroux007@gmail.com"
 

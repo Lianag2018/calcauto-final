@@ -1750,7 +1750,7 @@ export default function HomeScreen() {
                     try {
                       const response = await fetch(`${API_URL}/api/send-calculation-email`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await getToken()}` },
                         body: JSON.stringify({
                           client_email: clientEmail,
                           client_name: clientName,

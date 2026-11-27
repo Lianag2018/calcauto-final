@@ -8,6 +8,7 @@ import io
 import asyncio
 import pypdf
 import pdfplumber
+from services.etv_link import admin_password_matches
 from database import db, ADMIN_PASSWORD, OPENAI_API_KEY, SMTP_EMAIL, SMTP_PASSWORD, SMTP_HOST, SMTP_PORT, ROOT_DIR, logger
 from models import (
     PDFExtractRequest, ProgramPreview, ExtractedDataResponse,
@@ -714,7 +715,7 @@ async def scan_pdf(
     Scanne le PDF et détecte automatiquement les sections (Retail, Lease, Non-Prime, Key Incentives).
     Retourne les numéros de pages détectés.
     """
-    if password != ADMIN_PASSWORD:
+    if not admin_password_matches(password, ADMIN_PASSWORD):
         raise HTTPException(status_code=401, detail="Mot de passe incorrect")
     try:
         from services.pdfplumber_parser import auto_detect_pages
@@ -763,7 +764,7 @@ async def get_program_meta(month: Optional[int] = None, year: Optional[int] = No
 @router.post("/verify-password")
 async def verify_password(password: str = Form(...)):
     """Vérifie le mot de passe admin"""
-    if password != ADMIN_PASSWORD:
+    if not admin_password_matches(password, ADMIN_PASSWORD):
         raise HTTPException(status_code=401, detail="Mot de passe incorrect")
     return {"success": True, "message": "Mot de passe vérifié"}
 
@@ -782,7 +783,7 @@ async def extract_pdf(
     Extrait les données de financement d'un PDF via pdfplumber (déterministe).
     Auto-détecte les pages si non spécifiées.
     """
-    if password != ADMIN_PASSWORD:
+    if not admin_password_matches(password, ADMIN_PASSWORD):
         raise HTTPException(status_code=401, detail="Mot de passe incorrect")
 
     try:
@@ -1234,7 +1235,7 @@ async def extract_pdf_async(
     lease_end_page: Optional[int] = Form(None)
 ):
     """Upload PDF and start extraction in background. Auto-detects pages if not provided."""
-    if password != ADMIN_PASSWORD:
+    if not admin_password_matches(password, ADMIN_PASSWORD):
         raise HTTPException(status_code=401, detail="Mot de passe incorrect")
 
     pdf_content = await file.read()
@@ -1297,7 +1298,7 @@ async def upload_residual_guide(
     Auto-détecte le mois/année depuis le contenu du PDF.
     Compare avec les données existantes et génère un rapport de changements.
     """
-    if password != ADMIN_PASSWORD:
+    if not admin_password_matches(password, ADMIN_PASSWORD):
         raise HTTPException(status_code=401, detail="Mot de passe incorrect")
     
     import tempfile
@@ -1648,7 +1649,7 @@ async def save_programs(request: SaveProgramsRequest):
     Remplace les programmes existants pour le mois/année spécifié
     Garde seulement les 6 derniers mois d'historique
     """
-    if request.password != ADMIN_PASSWORD:
+    if not admin_password_matches(request.password, ADMIN_PASSWORD):
         raise HTTPException(status_code=401, detail="Mot de passe incorrect")
     
     # Delete existing programs for this period

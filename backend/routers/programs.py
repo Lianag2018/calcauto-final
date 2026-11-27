@@ -4,13 +4,14 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 import uuid
 import re
+from services.etv_link import admin_password_matches
 from database import db, ADMIN_PASSWORD, logger
 from models import (
     VehicleProgram, VehicleProgramCreate, VehicleProgramUpdate,
     CalculationRequest, PaymentComparison, CalculationResponse,
     ProgramPeriod, ImportRequest, FinancingRates
 )
-from dependencies import calculate_monthly_payment, get_rate_for_term, require_admin_or_password
+from dependencies import calculate_monthly_payment, get_rate_for_term, require_admin_or_password, require_admin
 import pypdf
 import io
 
@@ -618,7 +619,8 @@ async def reorder_programs(data: Dict[str, Any], authorization: Optional[str] = 
 
 
 @router.post("/programs", response_model=VehicleProgram)
-async def create_program(program: VehicleProgramCreate):
+async def create_program(program: VehicleProgramCreate, authorization: Optional[str] = Header(None)):
+    await require_admin(authorization)  # 27 nov. 2026 : plus d'écriture sans session d'administrateur
     program_dict = program.dict()
     if program_dict.get("program_month") is None:
         program_dict["program_month"] = datetime.utcnow().month
@@ -664,7 +666,8 @@ async def get_program(program_id: str):
     return VehicleProgram(**_with_alternative_cash(program))
 
 @router.put("/programs/{program_id}", response_model=VehicleProgram)
-async def update_program(program_id: str, update: VehicleProgramUpdate):
+async def update_program(program_id: str, update: VehicleProgramUpdate, authorization: Optional[str] = Header(None)):
+    await require_admin(authorization)
     program = await db.programs.find_one({"id": program_id})
     if not program:
         raise HTTPException(status_code=404, detail="Program not found")
@@ -687,7 +690,8 @@ async def update_program(program_id: str, update: VehicleProgramUpdate):
     return VehicleProgram(**_with_alternative_cash(updated))
 
 @router.delete("/programs/{program_id}")
-async def delete_program(program_id: str):
+async def delete_program(program_id: str, authorization: Optional[str] = Header(None)):
+    await require_admin(authorization)
     result = await db.programs.delete_one({"id": program_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Program not found")
@@ -700,7 +704,7 @@ async def import_programs(request: ImportRequest):
     Importe des programmes de financement (protégé par mot de passe)
     Remplace tous les programmes pour le mois/année spécifié
     """
-    if request.password != ADMIN_PASSWORD:
+    if not admin_password_matches(request.password, ADMIN_PASSWORD):
         raise HTTPException(status_code=401, detail="Mot de passe incorrect")
     
     # Supprimer les programmes existants pour cette période
@@ -825,11 +829,12 @@ async def calculate_financing(request: CalculationRequest):
 
 # Seed initial data from PDF pages 20-21 (Février 2026)
 @router.post("/seed")
-async def seed_data():
+async def seed_data(authorization: Optional[str] = Header(None)):
     """
     Seed les données initiales à partir du PDF Février 2026
     Pages 20 (2026) et 21 (2025)
     """
+    await require_admin(authorization)  # efface tous les programmes : administrateur seulement
     # Clear existing data
     await db.programs.delete_many({})
     
@@ -1270,7 +1275,7 @@ async def get_trim_orders():
 @router.post("/trim-orders/recalculate")
 async def recalculate_sort_orders(password: str = ""):
     """Recalcule le sort_order de tous les programmes à partir des trim_orders stockés."""
-    if password != ADMIN_PASSWORD:
+    if not admin_password_matches(password, ADMIN_PASSWORD):
         raise HTTPException(status_code=401, detail="Mot de passe incorrect")
 
     programs = await db.programs.find({}).to_list(2000)
